@@ -10,7 +10,14 @@ import EsportPage from "./pages/EsportPage";
 import MatchDetailsPage from "./pages/MatchDetailsPage";
 import ApiKeyProvider from "./components/ApiKeyProvider";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 300000, // 5 minutes
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

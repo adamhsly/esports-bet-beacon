@@ -4,10 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ApiKeyContextType {
-  apiKey: string | null;
-  setApiKey: (key: string) => void;
+  oddsApiKey: string | null;
+  pandaScoreApiKey: string | null;
+  setOddsApiKey: (key: string) => void;
+  setPandaScoreApiKey: (key: string) => void;
 }
 
 const ApiKeyContext = createContext<ApiKeyContextType | undefined>(undefined);
@@ -25,31 +28,57 @@ interface ApiKeyProviderProps {
 }
 
 const ApiKeyProvider: React.FC<ApiKeyProviderProps> = ({ children }) => {
-  const [apiKey, setApiKeyState] = useState<string | null>(null);
+  const [oddsApiKey, setOddsApiKeyState] = useState<string | null>(null);
+  const [pandaScoreApiKey, setPandaScoreApiKeyState] = useState<string | null>(
+    "kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk" // Default PandaScore API key
+  );
   const [showDialog, setShowDialog] = useState(false);
-  const [inputApiKey, setInputApiKey] = useState('');
+  const [inputOddsApiKey, setInputOddsApiKey] = useState('');
+  const [inputPandaScoreApiKey, setInputPandaScoreApiKey] = useState('kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk');
+  const [activeTab, setActiveTab] = useState('odds-api');
   
   useEffect(() => {
-    // Check if we have an API key in localStorage
-    const storedApiKey = localStorage.getItem('esports_odds_api_key');
-    if (storedApiKey) {
-      setApiKeyState(storedApiKey);
+    // Check if we have API keys in localStorage
+    const storedOddsApiKey = localStorage.getItem('esports_odds_api_key');
+    const storedPandaScoreApiKey = localStorage.getItem('esports_pandascore_api_key') || "kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk";
+    
+    if (storedOddsApiKey) {
+      setOddsApiKeyState(storedOddsApiKey);
+    }
+    
+    if (storedPandaScoreApiKey) {
+      setPandaScoreApiKeyState(storedPandaScoreApiKey);
     } else {
-      // If not, show dialog to enter API key
+      // Store the default PandaScore API key
+      localStorage.setItem('esports_pandascore_api_key', "kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk");
+    }
+    
+    // If no Odds API key, show dialog
+    if (!storedOddsApiKey) {
       setShowDialog(true);
     }
   }, []);
   
-  const setApiKey = (key: string) => {
+  const setOddsApiKey = (key: string) => {
     localStorage.setItem('esports_odds_api_key', key);
-    setApiKeyState(key);
+    setOddsApiKeyState(key);
+  };
+  
+  const setPandaScoreApiKey = (key: string) => {
+    localStorage.setItem('esports_pandascore_api_key', key);
+    setPandaScoreApiKeyState(key);
   };
   
   const handleSaveApiKey = () => {
-    if (inputApiKey.trim()) {
-      setApiKey(inputApiKey.trim());
-      setShowDialog(false);
+    if (activeTab === 'odds-api' && inputOddsApiKey.trim()) {
+      setOddsApiKey(inputOddsApiKey.trim());
     }
+    
+    if (activeTab === 'pandascore-api' && inputPandaScoreApiKey.trim()) {
+      setPandaScoreApiKey(inputPandaScoreApiKey.trim());
+    }
+    
+    setShowDialog(false);
   };
   
   const handleSkip = () => {
@@ -57,34 +86,70 @@ const ApiKeyProvider: React.FC<ApiKeyProviderProps> = ({ children }) => {
   };
   
   return (
-    <ApiKeyContext.Provider value={{ apiKey, setApiKey }}>
+    <ApiKeyContext.Provider 
+      value={{ 
+        oddsApiKey, 
+        pandaScoreApiKey, 
+        setOddsApiKey, 
+        setPandaScoreApiKey 
+      }}
+    >
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="bg-theme-gray-dark border-theme-gray-light">
           <DialogHeader>
-            <DialogTitle className="text-white">API Key Required</DialogTitle>
+            <DialogTitle className="text-white">API Keys</DialogTitle>
             <DialogDescription>
-              To fetch real esports betting data, we need an API key from The Odds API.
-              You can get a free API key by signing up at <a href="https://the-odds-api.com/" target="_blank" rel="noopener noreferrer" className="text-theme-purple hover:underline">the-odds-api.com</a>
+              We use multiple APIs to fetch esports data. You can configure your API keys below.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="my-4">
-            <Label htmlFor="apiKey">API Key</Label>
-            <Input 
-              id="apiKey" 
-              placeholder="Enter your API key" 
-              value={inputApiKey} 
-              onChange={(e) => setInputApiKey(e.target.value)}
-              className="bg-theme-gray-medium border-theme-gray-light text-white"
-            />
-          </div>
+          <Tabs defaultValue="odds-api" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="odds-api">The Odds API</TabsTrigger>
+              <TabsTrigger value="pandascore-api">PandaScore API</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="odds-api">
+              <div className="my-4">
+                <Label htmlFor="oddsApiKey">The Odds API Key</Label>
+                <Input 
+                  id="oddsApiKey" 
+                  placeholder="Enter your API key" 
+                  value={inputOddsApiKey} 
+                  onChange={(e) => setInputOddsApiKey(e.target.value)}
+                  className="bg-theme-gray-medium border-theme-gray-light text-white"
+                />
+                <p className="text-xs mt-2 text-gray-400">
+                  To fetch real esports betting odds, we need an API key from The Odds API.
+                  You can get a free API key by signing up at <a href="https://the-odds-api.com/" target="_blank" rel="noopener noreferrer" className="text-theme-purple hover:underline">the-odds-api.com</a>
+                </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="pandascore-api">
+              <div className="my-4">
+                <Label htmlFor="pandaScoreApiKey">PandaScore API Key</Label>
+                <Input 
+                  id="pandaScoreApiKey" 
+                  placeholder="Enter your API key" 
+                  value={inputPandaScoreApiKey} 
+                  onChange={(e) => setInputPandaScoreApiKey(e.target.value)}
+                  className="bg-theme-gray-medium border-theme-gray-light text-white"
+                />
+                <p className="text-xs mt-2 text-gray-400">
+                  To fetch real esports match data, we use PandaScore API.
+                  A default key is provided, but you can get your own free API key by signing up at <a href="https://pandascore.co/" target="_blank" rel="noopener noreferrer" className="text-theme-purple hover:underline">pandascore.co</a>
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
           
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={handleSkip} className="border-theme-gray-light text-gray-300">
               Skip (Use Sample Data)
             </Button>
             <Button onClick={handleSaveApiKey} className="bg-theme-purple hover:bg-theme-purple/90">
-              Save API Key
+              Save API Keys
             </Button>
           </DialogFooter>
         </DialogContent>

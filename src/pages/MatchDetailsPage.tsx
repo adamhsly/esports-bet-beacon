@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import { OddsTable, Market, BookmakerOdds } from '@/components/OddsTable';
 import Footer from '@/components/Footer';
 import { getMatchById } from '@/lib/mockData';
 import { fetchMatchById, fetchMatchOdds } from '@/lib/api';
-import { ArrowLeft, Calendar, Trophy, Clock, Info, Star, Loader2 } from 'lucide-react';
+import { fetchMatchById as fetchPandaScoreMatchById } from '@/lib/pandaScoreApi';
+import { ArrowLeft, Calendar, Trophy, Clock, Info, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -15,90 +18,94 @@ import { useToast } from '@/hooks/use-toast';
 const MatchDetailsPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [activeTab, setActiveTab] = useState('odds');
-  const [match, setMatch] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [bookmakerOdds, setBookmakerOdds] = useState<BookmakerOdds[]>([]);
-  const [markets, setMarkets] = useState<Market[]>([]);
   const { toast } = useToast();
   
-  useEffect(() => {
-    const loadMatchData = async () => {
-      setLoading(true);
-      
+  // Fetch match data from PandaScore
+  const { data: match, isLoading: matchLoading, error: matchError } = useQuery({
+    queryKey: ['match', matchId],
+    queryFn: async () => {
       try {
-        // Fetch match details
-        const matchData = await fetchMatchById(matchId || '');
-        
-        if (!matchData) {
-          throw new Error('Match not found');
-        }
-        
-        setMatch(matchData);
-        
-        // Fetch odds
-        const oddsData = await fetchMatchOdds(matchId || '');
-        setBookmakerOdds(oddsData.bookmakerOdds);
-        setMarkets(oddsData.markets);
+        // First try PandaScore API
+        return await fetchPandaScoreMatchById(matchId || '');
       } catch (error) {
-        console.error('Error loading match data:', error);
+        console.error('Error fetching from PandaScore:', error);
+        
+        try {
+          // Then try The Odds API
+          return await fetchMatchById(matchId || '');
+        } catch (oddsError) {
+          console.error('Error fetching from The Odds API:', oddsError);
+          
+          // Finally, fallback to mock data
+          const mockData = getMatchById(matchId || '');
+          if (!mockData) {
+            throw new Error('Match not found');
+          }
+          return mockData;
+        }
+      }
+    },
+  });
+  
+  // Fetch odds data
+  const { data: oddsData, isLoading: oddsLoading } = useQuery({
+    queryKey: ['matchOdds', matchId],
+    queryFn: async () => {
+      try {
+        const data = await fetchMatchOdds(matchId || '');
+        return data;
+      } catch (error) {
+        console.error('Error loading odds data:', error);
         toast({
-          title: "Error loading match data",
+          title: "Error loading odds data",
           description: "Falling back to sample data.",
           variant: "destructive",
         });
         
-        // Fallback to mock data
-        const mockMatch = getMatchById(matchId || '');
-        setMatch(mockMatch);
-        
-        // Sample markets data from existing code
-        if (mockMatch) {
+        // If we have match data, generate sample odds
+        if (match) {
+          // Sample markets data from existing code
           const sampleMarkets: Market[] = [
-            { name: 'Match Winner', options: [mockMatch.teams[0].name, mockMatch.teams[1].name] },
-            { name: 'Map 1 Winner', options: [mockMatch.teams[0].name, mockMatch.teams[1].name] },
+            { name: 'Match Winner', options: [match.teams[0].name, match.teams[1].name] },
+            { name: 'Map 1 Winner', options: [match.teams[0].name, match.teams[1].name] },
             { name: 'Total Maps', options: ['Over 2.5', 'Under 2.5'] },
-            { name: 'Map Handicap', options: [`${mockMatch.teams[0].name} -1.5`, `${mockMatch.teams[1].name} +1.5`] },
+            { name: 'Map Handicap', options: [`${match.teams[0].name} -1.5`, `${match.teams[1].name} +1.5`] },
           ];
-          setMarkets(sampleMarkets);
           
           // Sample bookmaker odds from existing code
           const sampleBookmakerOdds: BookmakerOdds[] = [
             {
               bookmaker: 'BetMaster',
               logo: '/placeholder.svg',
-              odds: { [mockMatch.teams[0].name]: '1.85', [mockMatch.teams[1].name]: '1.95', 'Over 2.5': '2.10', 'Under 2.5': '1.70', [`${mockMatch.teams[0].name} -1.5`]: '2.40', [`${mockMatch.teams[1].name} +1.5`]: '1.55' },
+              odds: { [match.teams[0].name]: '1.85', [match.teams[1].name]: '1.95', 'Over 2.5': '2.10', 'Under 2.5': '1.70', [`${match.teams[0].name} -1.5`]: '2.40', [`${match.teams[1].name} +1.5`]: '1.55' },
               link: '#',
             },
             {
               bookmaker: 'GG.bet',
               logo: '/placeholder.svg',
-              odds: { [mockMatch.teams[0].name]: '1.90', [mockMatch.teams[1].name]: '1.90', 'Over 2.5': '2.05', 'Under 2.5': '1.75', [`${mockMatch.teams[0].name} -1.5`]: '2.35', [`${mockMatch.teams[1].name} +1.5`]: '1.60' },
+              odds: { [match.teams[0].name]: '1.90', [match.teams[1].name]: '1.90', 'Over 2.5': '2.05', 'Under 2.5': '1.75', [`${match.teams[0].name} -1.5`]: '2.35', [`${match.teams[1].name} +1.5`]: '1.60' },
               link: '#',
             },
             {
               bookmaker: 'Betway',
               logo: '/placeholder.svg',
-              odds: { [mockMatch.teams[0].name]: '1.83', [mockMatch.teams[1].name]: '1.97', 'Over 2.5': '2.15', 'Under 2.5': '1.65', [`${mockMatch.teams[0].name} -1.5`]: '2.45', [`${mockMatch.teams[1].name} +1.5`]: '1.50' },
-              link: '#',
-            },
-            {
-              bookmaker: 'Unikrn',
-              logo: '/placeholder.svg',
-              odds: { [mockMatch.teams[0].name]: '1.87', [mockMatch.teams[1].name]: '1.93', 'Over 2.5': '2.08', 'Under 2.5': '1.72', [`${mockMatch.teams[0].name} -1.5`]: '2.38', [`${mockMatch.teams[1].name} +1.5`]: '1.57' },
+              odds: { [match.teams[0].name]: '1.83', [match.teams[1].name]: '1.97', 'Over 2.5': '2.15', 'Under 2.5': '1.65', [`${match.teams[0].name} -1.5`]: '2.45', [`${match.teams[1].name} +1.5`]: '1.50' },
               link: '#',
             },
           ];
-          setBookmakerOdds(sampleBookmakerOdds);
+          
+          return { bookmakerOdds: sampleBookmakerOdds, markets: sampleMarkets };
         }
-      } finally {
-        setLoading(false);
+        
+        throw error;
       }
-    };
-    
-    loadMatchData();
-  }, [matchId, toast]);
+    },
+    enabled: !!match, // Only run this query when match data is available
+  });
   
-  if (loading) {
+  const isLoading = matchLoading || (match && oddsLoading);
+  
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -111,7 +118,7 @@ const MatchDetailsPage: React.FC = () => {
     );
   }
   
-  if (!match) {
+  if (matchError || !match) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -146,6 +153,9 @@ const MatchDetailsPage: React.FC = () => {
     { position: 5, team: 'G2 Esports', matches: 10, wins: 4, losses: 6, points: 12 },
   ];
 
+  // Use data from the odds query if available
+  const markets = oddsData?.markets || [];
+  const bookmakerOdds = oddsData?.bookmakerOdds || [];
   
   return (
     <div className="min-h-screen flex flex-col">
