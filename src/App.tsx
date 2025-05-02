@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import EsportPage from "./pages/EsportPage";
 import MatchDetailsPage from "./pages/MatchDetailsPage";
+import ApiKeyProvider from "./components/ApiKeyProvider";
 
 const queryClient = new QueryClient();
 
@@ -16,17 +17,19 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/esports/:esportId" element={<EsportPage />} />
-          <Route path="/match/:matchId" element={<MatchDetailsPage />} />
-          {/* Redirect from /esports to the default esport (csgo) */}
-          <Route path="/esports" element={<Navigate to="/esports/csgo" replace />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ApiKeyProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/esports/:esportId" element={<EsportPage />} />
+            <Route path="/match/:matchId" element={<MatchDetailsPage />} />
+            {/* Redirect from /esports to the default esport (csgo) */}
+            <Route path="/esports" element={<Navigate to="/esports/csgo" replace />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ApiKeyProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

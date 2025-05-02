@@ -1,22 +1,115 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { OddsTable, Market, BookmakerOdds } from '@/components/OddsTable';
 import Footer from '@/components/Footer';
 import { getMatchById } from '@/lib/mockData';
-import { ArrowLeft, Calendar, Trophy, Clock, Info, Star } from 'lucide-react';
+import { fetchMatchById, fetchMatchOdds } from '@/lib/api';
+import { ArrowLeft, Calendar, Trophy, Clock, Info, Star, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 const MatchDetailsPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [activeTab, setActiveTab] = useState('odds');
+  const [match, setMatch] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [bookmakerOdds, setBookmakerOdds] = useState<BookmakerOdds[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const { toast } = useToast();
   
-  // In a real application, you would fetch this data from an API
-  const match = getMatchById(matchId || '');
+  useEffect(() => {
+    const loadMatchData = async () => {
+      setLoading(true);
+      
+      try {
+        // Fetch match details
+        const matchData = await fetchMatchById(matchId || '');
+        
+        if (!matchData) {
+          throw new Error('Match not found');
+        }
+        
+        setMatch(matchData);
+        
+        // Fetch odds
+        const oddsData = await fetchMatchOdds(matchId || '');
+        setBookmakerOdds(oddsData.bookmakerOdds);
+        setMarkets(oddsData.markets);
+      } catch (error) {
+        console.error('Error loading match data:', error);
+        toast({
+          title: "Error loading match data",
+          description: "Falling back to sample data.",
+          variant: "destructive",
+        });
+        
+        // Fallback to mock data
+        const mockMatch = getMatchById(matchId || '');
+        setMatch(mockMatch);
+        
+        // Sample markets data from existing code
+        if (mockMatch) {
+          const sampleMarkets: Market[] = [
+            { name: 'Match Winner', options: [mockMatch.teams[0].name, mockMatch.teams[1].name] },
+            { name: 'Map 1 Winner', options: [mockMatch.teams[0].name, mockMatch.teams[1].name] },
+            { name: 'Total Maps', options: ['Over 2.5', 'Under 2.5'] },
+            { name: 'Map Handicap', options: [`${mockMatch.teams[0].name} -1.5`, `${mockMatch.teams[1].name} +1.5`] },
+          ];
+          setMarkets(sampleMarkets);
+          
+          // Sample bookmaker odds from existing code
+          const sampleBookmakerOdds: BookmakerOdds[] = [
+            {
+              bookmaker: 'BetMaster',
+              logo: '/placeholder.svg',
+              odds: { [mockMatch.teams[0].name]: '1.85', [mockMatch.teams[1].name]: '1.95', 'Over 2.5': '2.10', 'Under 2.5': '1.70', [`${mockMatch.teams[0].name} -1.5`]: '2.40', [`${mockMatch.teams[1].name} +1.5`]: '1.55' },
+              link: '#',
+            },
+            {
+              bookmaker: 'GG.bet',
+              logo: '/placeholder.svg',
+              odds: { [mockMatch.teams[0].name]: '1.90', [mockMatch.teams[1].name]: '1.90', 'Over 2.5': '2.05', 'Under 2.5': '1.75', [`${mockMatch.teams[0].name} -1.5`]: '2.35', [`${mockMatch.teams[1].name} +1.5`]: '1.60' },
+              link: '#',
+            },
+            {
+              bookmaker: 'Betway',
+              logo: '/placeholder.svg',
+              odds: { [mockMatch.teams[0].name]: '1.83', [mockMatch.teams[1].name]: '1.97', 'Over 2.5': '2.15', 'Under 2.5': '1.65', [`${mockMatch.teams[0].name} -1.5`]: '2.45', [`${mockMatch.teams[1].name} +1.5`]: '1.50' },
+              link: '#',
+            },
+            {
+              bookmaker: 'Unikrn',
+              logo: '/placeholder.svg',
+              odds: { [mockMatch.teams[0].name]: '1.87', [mockMatch.teams[1].name]: '1.93', 'Over 2.5': '2.08', 'Under 2.5': '1.72', [`${mockMatch.teams[0].name} -1.5`]: '2.38', [`${mockMatch.teams[1].name} +1.5`]: '1.57' },
+              link: '#',
+            },
+          ];
+          setBookmakerOdds(sampleBookmakerOdds);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadMatchData();
+  }, [matchId, toast]);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow container mx-auto px-4 py-12 flex flex-col items-center justify-center">
+          <Loader2 className="h-16 w-16 animate-spin text-theme-purple mb-4" />
+          <h2 className="text-xl font-medium">Loading match data...</h2>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
   
   if (!match) {
     return (
@@ -32,42 +125,6 @@ const MatchDetailsPage: React.FC = () => {
       </div>
     );
   }
-  
-  // Sample markets data - in a real app this would come from your API
-  const markets: Market[] = [
-    { name: 'Match Winner', options: [match.teams[0].name, match.teams[1].name] },
-    { name: 'Map 1 Winner', options: [match.teams[0].name, match.teams[1].name] },
-    { name: 'Total Maps', options: ['Over 2.5', 'Under 2.5'] },
-    { name: 'Map Handicap', options: [`${match.teams[0].name} -1.5`, `${match.teams[1].name} +1.5`] },
-  ];
-  
-  // Sample bookmaker odds data - in a real app this would come from your API
-  const bookmakerOdds: BookmakerOdds[] = [
-    {
-      bookmaker: 'BetMaster',
-      logo: '/placeholder.svg',
-      odds: { [match.teams[0].name]: '1.85', [match.teams[1].name]: '1.95', 'Over 2.5': '2.10', 'Under 2.5': '1.70', [`${match.teams[0].name} -1.5`]: '2.40', [`${match.teams[1].name} +1.5`]: '1.55' },
-      link: '#',
-    },
-    {
-      bookmaker: 'GG.bet',
-      logo: '/placeholder.svg',
-      odds: { [match.teams[0].name]: '1.90', [match.teams[1].name]: '1.90', 'Over 2.5': '2.05', 'Under 2.5': '1.75', [`${match.teams[0].name} -1.5`]: '2.35', [`${match.teams[1].name} +1.5`]: '1.60' },
-      link: '#',
-    },
-    {
-      bookmaker: 'Betway',
-      logo: '/placeholder.svg',
-      odds: { [match.teams[0].name]: '1.83', [match.teams[1].name]: '1.97', 'Over 2.5': '2.15', 'Under 2.5': '1.65', [`${match.teams[0].name} -1.5`]: '2.45', [`${match.teams[1].name} +1.5`]: '1.50' },
-      link: '#',
-    },
-    {
-      bookmaker: 'Unikrn',
-      logo: '/placeholder.svg',
-      odds: { [match.teams[0].name]: '1.87', [match.teams[1].name]: '1.93', 'Over 2.5': '2.08', 'Under 2.5': '1.72', [`${match.teams[0].name} -1.5`]: '2.38', [`${match.teams[1].name} +1.5`]: '1.57' },
-      link: '#',
-    },
-  ];
 
   // Team statistics - in a real app these would come from your API
   const team1WinRate = 65; // percentage
@@ -89,6 +146,7 @@ const MatchDetailsPage: React.FC = () => {
     { position: 5, team: 'G2 Esports', matches: 10, wins: 4, losses: 6, points: 12 },
   ];
 
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -206,16 +264,22 @@ const MatchDetailsPage: React.FC = () => {
                 Click on any odds to go directly to the bookmaker and place your bet.
               </p>
               
-              {markets.map((market, index) => (
-                <div key={market.name} className="mb-8">
-                  <h4 className="text-lg font-medium mb-4">{market.name}</h4>
-                  <OddsTable 
-                    bookmakerOdds={bookmakerOdds} 
-                    markets={[market]} 
-                    defaultMarket={market.name}
-                  />
+              {markets.length > 0 ? (
+                markets.map((market, index) => (
+                  <div key={market.name} className="mb-8">
+                    <h4 className="text-lg font-medium mb-4">{market.name}</h4>
+                    <OddsTable 
+                      bookmakerOdds={bookmakerOdds} 
+                      markets={[market]} 
+                      defaultMarket={market.name}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 text-gray-400">
+                  No odds available for this match.
                 </div>
-              ))}
+              )}
             </div>
           </TabsContent>
           
@@ -359,4 +423,3 @@ const MatchDetailsPage: React.FC = () => {
 };
 
 export default MatchDetailsPage;
-
