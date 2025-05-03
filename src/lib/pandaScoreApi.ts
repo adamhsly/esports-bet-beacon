@@ -53,29 +53,31 @@ const getApiKey = (): string => {
 
 const BASE_URL = "https://api.pandascore.co";
 
-// Map our esport types to PandaScore videogame slugs
-const mapEsportTypeToSlug = (esportType: string): string => {
+// Map our esport types to PandaScore API endpoint paths
+const mapEsportTypeToEndpoint = (esportType: string): string => {
   const mapping: Record<string, string> = {
-    csgo: "cs-go",
-    dota2: "dota-2",
-    lol: "league-of-legends",
+    csgo: "csgo",
+    dota2: "dota2",
+    lol: "lol",
     valorant: "valorant",
-    overwatch: "overwatch-2",
-    rocketleague: "rocket-league"
+    overwatch: "ow",
+    rocketleague: "rl"
   };
   
-  return mapping[esportType] || "cs-go"; // Default to CS:GO
+  return mapping[esportType] || "csgo"; // Default to CS:GO
 };
 
 // Fetch upcoming matches for a specific esport
 export async function fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
   try {
     const apiKey = getApiKey();
-    const videogameSlug = mapEsportTypeToSlug(esportType);
+    const endpoint = mapEsportTypeToEndpoint(esportType);
+    
+    console.log(`Fetching upcoming matches for ${esportType} using endpoint: ${endpoint}/matches/upcoming`);
     
     // Using Authorization header instead of query parameter for better security
     const response = await fetch(
-      `${BASE_URL}/matches/upcoming?videogame=${videogameSlug}&sort=begin_at&page=1&per_page=10`,
+      `${BASE_URL}/${endpoint}/matches/upcoming?sort=begin_at&page=1&per_page=10`,
       {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -102,11 +104,13 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
 export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
   try {
     const apiKey = getApiKey();
-    const videogameSlug = mapEsportTypeToSlug(esportType);
+    const endpoint = mapEsportTypeToEndpoint(esportType);
+    
+    console.log(`Fetching live matches for ${esportType} using endpoint: ${endpoint}/matches/running`);
     
     // Using Authorization header instead of query parameter
     const response = await fetch(
-      `${BASE_URL}/matches/running?videogame=${videogameSlug}`,
+      `${BASE_URL}/${endpoint}/matches/running`,
       {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -134,43 +138,48 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo | undef
   try {
     const apiKey = getApiKey();
     
-    // FIX: Handle non-numeric IDs gracefully
-    // PandaScore expects numeric IDs, but our mock data may have alphanumeric IDs
-    const id = parseInt(matchId);
-    
-    // If the ID isn't a valid number, we'll try a different approach
-    if (isNaN(id)) {
-      console.log(`Match ID ${matchId} is not a valid PandaScore ID (not numeric)`);
+    // Handle non-numeric IDs (from The Odds API)
+    if (isNaN(parseInt(matchId))) {
+      console.log(`Match ID ${matchId} is not a numeric PandaScore ID, trying to find in different esports...`);
       
-      // Try to fetch all matches from all esport types and look for the match
+      // Try to fetch from all possible esport endpoints
       const esportTypes = ['csgo', 'lol', 'dota2', 'valorant', 'overwatch', 'rocketleague'];
       
       for (const esportType of esportTypes) {
         try {
           // Try upcoming matches
+          console.log(`Checking ${esportType} upcoming matches for ID: ${matchId}`);
           const upcomingMatches = await fetchUpcomingMatches(esportType);
           const match = upcomingMatches.find(m => m.id === matchId);
-          if (match) return match;
+          if (match) {
+            console.log(`Found match in ${esportType} upcoming matches`);
+            return match;
+          }
           
           // Try live matches
+          console.log(`Checking ${esportType} live matches for ID: ${matchId}`);
           const liveMatches = await fetchLiveMatches(esportType);
           const liveMatch = liveMatches.find(m => m.id === matchId);
-          if (liveMatch) return liveMatch;
+          if (liveMatch) {
+            console.log(`Found match in ${esportType} live matches`);
+            return liveMatch;
+          }
         } catch (err) {
+          console.error(`Error searching in ${esportType}:`, err);
           continue; // Try next esport
         }
       }
       
-      // If we still can't find the match, throw an error
-      throw new Error("Match not found");
+      console.error(`Match with ID ${matchId} not found in any esport type`);
+      throw new Error("Match not found in PandaScore");
     }
     
-    // If we have a numeric ID, use the direct API endpoint
-    console.log(`Fetching PandaScore match with numeric ID: ${id}`);
+    // For numeric IDs, try the direct endpoint
+    const numericId = parseInt(matchId);
+    console.log(`Fetching PandaScore match with numeric ID: ${numericId}`);
     
-    // Using Authorization header instead of query parameter
     const response = await fetch(
-      `${BASE_URL}/matches/${id}`,
+      `${BASE_URL}/matches/${numericId}`,
       {
         headers: {
           'Authorization': `Bearer ${apiKey}`,

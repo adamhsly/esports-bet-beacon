@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -18,6 +18,8 @@ const MatchDetailsPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [activeTab, setActiveTab] = useState('odds');
   const { toast } = useToast();
+  
+  console.log(`Attempting to load match details for ID: ${matchId}`);
   
   // Fetch match data from PandaScore
   const { data: match, isLoading: matchLoading, error: matchError } = useQuery({
@@ -40,8 +42,8 @@ const MatchDetailsPage: React.FC = () => {
           // Log additional information about the current match ID
           console.log(`Current match ID: ${matchId}, typeof: ${typeof matchId}`);
           
-          console.log('Falling back to mock data');
           // Finally, fallback to mock data
+          console.log('Falling back to mock data');
           const mockData = getMatchById(matchId || '');
           if (!mockData) {
             toast({
@@ -62,7 +64,7 @@ const MatchDetailsPage: React.FC = () => {
     queryKey: ['matchOdds', matchId],
     queryFn: async () => {
       try {
-        console.log('Trying to fetch odds data');
+        console.log('Trying to fetch odds data for match:', matchId);
         const data = await fetchMatchOdds(matchId || '');
         return data;
       } catch (error) {

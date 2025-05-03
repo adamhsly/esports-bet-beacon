@@ -1,3 +1,4 @@
+
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
 
@@ -41,27 +42,29 @@ export async function fetchMatchesByEsport(esportType: string): Promise<MatchInf
   try {
     const apiKey = getApiKey();
     
-    // Map our esport types to API sport keys - FIXING: using correct API sport keys
+    // Map our esport types to API sport keys
     const sportKey = mapEsportTypeToApiKey(esportType);
     
-    console.log(`Fetching matches for sport key: ${sportKey}`);
+    console.log(`Fetching matches for esport ${esportType} with sport key: ${sportKey}`);
     
+    // The Odds API requires apiKey as a query parameter
     const response = await fetch(
       `${BASE_URL}/sports/${sportKey}/odds?apiKey=${apiKey}&regions=us,eu&markets=h2h,spreads,totals`
     );
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`API error ${response.status}:`, errorText);
+      console.error(`The Odds API error ${response.status}:`, errorText);
       throw new Error(`API error: ${response.status}`);
     }
     
     const data: ApiMatch[] = await response.json();
+    console.log(`Received ${data.length} matches from The Odds API`);
     
     // Transform API data to our app's format
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
-    console.error("Error fetching matches:", error);
+    console.error("Error fetching matches from The Odds API:", error);
     throw error; // Let the component handle the fallback
   }
 }
@@ -71,15 +74,10 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo | undef
   try {
     const apiKey = getApiKey();
     
-    // If no API key is available, throw error to fall back to mock data
-    if (!apiKey) {
-      throw new Error('No API key available');
-    }
+    console.log(`Attempting to find match with ID ${matchId} in The Odds API`);
     
-    // Note: The Odds API doesn't have a direct endpoint for a single match by ID
-    // So we need to fetch all matches and filter by ID
-    
-    // Fetch from all esport types until we find a match
+    // The Odds API doesn't have a direct endpoint for a single match by ID
+    // So we need to fetch all matches from all esport types and filter by ID
     const esportTypes = ['csgo', 'lol', 'dota2', 'valorant', 'overwatch', 'rocketleague'];
     
     for (const esportType of esportTypes) {
@@ -92,22 +90,30 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo | undef
           `${BASE_URL}/sports/${sportKey}/odds?apiKey=${apiKey}&regions=us,eu&markets=h2h,spreads,totals`
         );
         
-        if (!response.ok) continue; // Try next sport
+        if (!response.ok) {
+          console.error(`API error for ${sportKey}: ${response.status}`);
+          continue; // Try next sport
+        }
         
         const data: ApiMatch[] = await response.json();
+        console.log(`Found ${data.length} matches for ${sportKey}`);
+        
         const match = data.find(m => m.id === matchId);
         
         if (match) {
+          console.log(`Found match with ID ${matchId} in ${sportKey}`);
           return transformMatchData(match, esportType);
         }
       } catch (err) {
+        console.error(`Error searching in ${esportType}:`, err);
         continue; // Try next sport
       }
     }
     
-    throw new Error("Match not found");
+    console.error(`Match with ID ${matchId} not found in any sport from The Odds API`);
+    throw new Error("Match not found in The Odds API");
   } catch (error) {
-    console.error("Error fetching match details:", error);
+    console.error("Error fetching match details from The Odds API:", error);
     throw error;
   }
 }
@@ -120,10 +126,7 @@ export async function fetchMatchOdds(matchId: string): Promise<{
   try {
     const apiKey = getApiKey();
     
-    // If no API key is available, throw error to fall back to mock data
-    if (!apiKey) {
-      throw new Error('No API key available');
-    }
+    console.log(`Fetching odds data for match ID: ${matchId}`);
     
     // Try all esport types to find the match
     const esportTypes = ['csgo', 'lol', 'dota2', 'valorant', 'overwatch', 'rocketleague'];
@@ -132,41 +135,48 @@ export async function fetchMatchOdds(matchId: string): Promise<{
       try {
         const sportKey = mapEsportTypeToApiKey(esportType);
         
+        console.log(`Checking for match odds in ${sportKey}`);
+        
         const response = await fetch(
           `${BASE_URL}/sports/${sportKey}/odds?apiKey=${apiKey}&regions=us,eu&markets=h2h,spreads,totals`
         );
         
-        if (!response.ok) continue; // Try next sport
+        if (!response.ok) {
+          console.error(`API error for ${sportKey}: ${response.status}`);
+          continue; // Try next sport
+        }
         
         const data: ApiMatch[] = await response.json();
         const match = data.find(m => m.id === matchId);
         
         if (match) {
+          console.log(`Found match odds for ID ${matchId} in ${sportKey}`);
           return transformMatchOdds(match);
         }
       } catch (err) {
+        console.error(`Error searching odds in ${esportType}:`, err);
         continue; // Try next sport
       }
     }
     
-    throw new Error("Match not found");
+    console.error(`No odds found for match ID ${matchId} in any sport`);
+    throw new Error("Match odds not found");
   } catch (error) {
     console.error("Error fetching match odds:", error);
     throw error;
   }
 }
 
-// Helper function to map our esport types to API sport keys based on The Odds API documentation
-// FIXING: Using the correct sport keys according to The Odds API
+// Helper function to map our esport types to API sport keys for The Odds API
 function mapEsportTypeToApiKey(esportType: string): string {
-  // Updated mapping according to The Odds API's actual available sport keys
+  // Mapping according to The Odds API documentation
   const mapping: Record<string, string> = {
-    csgo: "cs2", // Updated from esports_counter_strike to cs2
-    dota2: "dota2", // Updated from esports_dota_2 to dota2
-    lol: "league_of_legends", // Updated from esports_league_of_legends to league_of_legends
-    valorant: "valorant", // Updated from esports_valorant to valorant
-    overwatch: "overwatch", // Updated from esports_overwatch to overwatch
-    rocketleague: "rocket_league" // Updated from esports_rocket_league to rocket_league
+    csgo: "cs2",
+    dota2: "dota2",
+    lol: "league_of_legends", 
+    valorant: "valorant",
+    overwatch: "overwatch",
+    rocketleague: "rocket_league"
   };
   
   return mapping[esportType] || "cs2"; // Default to CS2
@@ -230,7 +240,7 @@ function transformMatchOdds(apiMatch: ApiMatch): {
   
   // Transform bookmaker odds
   const bookmakerOdds: BookmakerOdds[] = apiMatch.bookmakers.map(bookmaker => {
-    const odds: Record<string, number | string> = {};
+    const odds: Record<string, string> = {};
     
     // Populate odds for each market and outcome
     bookmaker.markets.forEach(market => {
