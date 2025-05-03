@@ -1,4 +1,3 @@
-
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
 
@@ -31,8 +30,8 @@ interface ApiOutcome {
 }
 
 // Get API key from local storage (set by ApiKeyProvider)
-const getApiKey = (): string | null => {
-  return localStorage.getItem('esports_odds_api_key');
+const getApiKey = (): string => {
+  return localStorage.getItem('esports_odds_api_key') || "768be4d279716fba14e362e3e9ce039c";
 };
 
 const BASE_URL = "https://api.the-odds-api.com/v4";
@@ -41,11 +40,6 @@ const BASE_URL = "https://api.the-odds-api.com/v4";
 export async function fetchMatchesByEsport(esportType: string): Promise<MatchInfo[]> {
   try {
     const apiKey = getApiKey();
-    
-    // If no API key is available, throw error to fall back to mock data
-    if (!apiKey) {
-      throw new Error('No API key available');
-    }
     
     // Map our esport types to API sport keys
     const sportKey = mapEsportTypeToApiKey(esportType);
