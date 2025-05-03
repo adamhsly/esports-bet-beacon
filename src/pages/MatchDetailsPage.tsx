@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -28,8 +27,8 @@ const MatchDetailsPage: React.FC = () => {
         // First try PandaScore API
         console.log('Trying to fetch match data from PandaScore');
         return await fetchPandaScoreMatchById(matchId || '');
-      } catch (error) {
-        console.error('Error fetching from PandaScore:', error);
+      } catch (pandaError) {
+        console.error('Error fetching from PandaScore:', pandaError);
         
         try {
           // Then try The Odds API
@@ -38,10 +37,18 @@ const MatchDetailsPage: React.FC = () => {
         } catch (oddsError) {
           console.error('Error fetching from The Odds API:', oddsError);
           
+          // Log additional information about the current match ID
+          console.log(`Current match ID: ${matchId}, typeof: ${typeof matchId}`);
+          
           console.log('Falling back to mock data');
           // Finally, fallback to mock data
           const mockData = getMatchById(matchId || '');
           if (!mockData) {
+            toast({
+              title: "Match not found",
+              description: "Couldn't find this match in our database.",
+              variant: "destructive",
+            });
             throw new Error('Match not found');
           }
           return mockData;

@@ -1,4 +1,3 @@
-
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
 
@@ -45,12 +44,15 @@ export async function fetchMatchesByEsport(esportType: string): Promise<MatchInf
     // Map our esport types to API sport keys - FIXING: using correct API sport keys
     const sportKey = mapEsportTypeToApiKey(esportType);
     
+    console.log(`Fetching matches for sport key: ${sportKey}`);
+    
     const response = await fetch(
       `${BASE_URL}/sports/${sportKey}/odds?apiKey=${apiKey}&regions=us,eu&markets=h2h,spreads,totals`
     );
     
     if (!response.ok) {
-      console.error(`API error ${response.status}:`, await response.text());
+      const errorText = await response.text();
+      console.error(`API error ${response.status}:`, errorText);
       throw new Error(`API error: ${response.status}`);
     }
     
@@ -83,6 +85,8 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo | undef
     for (const esportType of esportTypes) {
       try {
         const sportKey = mapEsportTypeToApiKey(esportType);
+        
+        console.log(`Looking for match ${matchId} in sport ${sportKey}`);
         
         const response = await fetch(
           `${BASE_URL}/sports/${sportKey}/odds?apiKey=${apiKey}&regions=us,eu&markets=h2h,spreads,totals`
@@ -152,19 +156,20 @@ export async function fetchMatchOdds(matchId: string): Promise<{
   }
 }
 
-// Helper function to map our esport types to API sport keys
-// FIXING: Use the correct sport keys according to The Odds API
+// Helper function to map our esport types to API sport keys based on The Odds API documentation
+// FIXING: Using the correct sport keys according to The Odds API
 function mapEsportTypeToApiKey(esportType: string): string {
+  // Updated mapping according to The Odds API's actual available sport keys
   const mapping: Record<string, string> = {
-    csgo: "esports_counter_strike",
-    dota2: "esports_dota_2",
-    lol: "esports_league_of_legends",
-    valorant: "esports_valorant",
-    overwatch: "esports_overwatch",
-    rocketleague: "esports_rocket_league"
+    csgo: "cs2", // Updated from esports_counter_strike to cs2
+    dota2: "dota2", // Updated from esports_dota_2 to dota2
+    lol: "league_of_legends", // Updated from esports_league_of_legends to league_of_legends
+    valorant: "valorant", // Updated from esports_valorant to valorant
+    overwatch: "overwatch", // Updated from esports_overwatch to overwatch
+    rocketleague: "rocket_league" // Updated from esports_rocket_league to rocket_league
   };
   
-  return mapping[esportType] || "esports_counter_strike"; // Default to CS:GO
+  return mapping[esportType] || "cs2"; // Default to CS2
 }
 
 // Helper function to transform API match data to our app format
