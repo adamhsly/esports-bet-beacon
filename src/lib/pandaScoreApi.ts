@@ -93,6 +93,7 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
     }
     
     const data: PandaScoreMatch[] = await response.json();
+    console.log(`Received ${data.length} upcoming matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
     console.error("Error fetching upcoming matches:", error);
@@ -126,6 +127,7 @@ export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]>
     }
     
     const data: PandaScoreMatch[] = await response.json();
+    console.log(`Received ${data.length} live matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
     console.error("Error fetching live matches:", error);
@@ -219,10 +221,12 @@ function mapPandaScoreGameToEsportType(gameSlug: string): string {
 
 // Helper function to transform PandaScore match data to our app format
 function transformMatchData(match: PandaScoreMatch, esportType: string): MatchInfo {
-  const teams: TeamInfo[] = match.opponents.slice(0, 2).map(opponent => ({
-    name: opponent.opponent.name,
-    logo: opponent.opponent.image_url || '/placeholder.svg'
-  }));
+  const teams: TeamInfo[] = match.opponents && match.opponents.length > 0 
+    ? match.opponents.slice(0, 2).map(opponent => ({
+        name: opponent.opponent.name,
+        logo: opponent.opponent.image_url || '/placeholder.svg'
+      }))
+    : [];
   
   // If we don't have 2 teams, add placeholders
   while (teams.length < 2) {

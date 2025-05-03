@@ -55,6 +55,13 @@ export async function fetchMatchesByEsport(esportType: string): Promise<MatchInf
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`The Odds API error ${response.status}:`, errorText);
+      
+      // According to logs, we need to check for specific errors and handle them
+      if (response.status === 404 && errorText.includes("Unknown sport")) {
+        console.log(`Sport key ${sportKey} not found in The Odds API, using mock data`);
+        throw new Error(`Unknown sport: ${sportKey}`);
+      }
+      
       throw new Error(`API error: ${response.status}`);
     }
     
@@ -169,17 +176,17 @@ export async function fetchMatchOdds(matchId: string): Promise<{
 
 // Helper function to map our esport types to API sport keys for The Odds API
 function mapEsportTypeToApiKey(esportType: string): string {
-  // Mapping according to The Odds API documentation
+  // Based on error logs - using the updated sport keys
   const mapping: Record<string, string> = {
-    csgo: "cs2",
-    dota2: "dota2",
-    lol: "league_of_legends", 
-    valorant: "valorant",
-    overwatch: "overwatch",
-    rocketleague: "rocket_league"
+    csgo: "esports_counter_strike",
+    dota2: "esports_dota_2",
+    lol: "esports_lol", 
+    valorant: "esports_valorant",
+    overwatch: "esports_overwatch_2",
+    rocketleague: "esports_rocket_league"
   };
   
-  return mapping[esportType] || "cs2"; // Default to CS2
+  return mapping[esportType] || "esports_counter_strike"; // Default to CS
 }
 
 // Helper function to transform API match data to our app format

@@ -6,7 +6,7 @@ import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
 import Footer from '@/components/Footer';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
-import { fetchMatchesByEsport } from '@/lib/api';
+import { fetchUpcomingMatches } from '@/lib/pandaScoreApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -21,7 +21,9 @@ const EsportPage: React.FC = () => {
     const loadMatches = async () => {
       setLoading(true);
       try {
-        const matches = await fetchMatchesByEsport(esportId);
+        console.log(`EsportPage: Loading matches for ${esportId}`);
+        // Use PandaScore API directly
+        const matches = await fetchUpcomingMatches(esportId);
         
         // Split matches into today and upcoming based on start time
         const today = new Date();
@@ -41,6 +43,7 @@ const EsportPage: React.FC = () => {
           }
         });
         
+        console.log(`EsportPage: Loaded ${todayMatches.length} matches for today and ${upcomingMatches.length} upcoming matches`);
         setTodayMatches(todayMatches);
         setUpcomingMatches(upcomingMatches);
       } catch (error) {
