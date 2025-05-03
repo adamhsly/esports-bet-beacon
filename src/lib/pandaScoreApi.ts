@@ -115,12 +115,37 @@ export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]>
 export async function fetchMatchById(matchId: string): Promise<MatchInfo | undefined> {
   try {
     const apiKey = getApiKey();
+    
+    // FIX: Handle non-numeric IDs gracefully
+    // PandaScore expects numeric IDs, but our mock data may have alphanumeric IDs
     const id = parseInt(matchId);
     
+    // If the ID isn't a valid number, we'll try a different approach
     if (isNaN(id)) {
-      throw new Error("Invalid match ID");
+      // Try to fetch all matches from all esport types and look for the match
+      const esportTypes = ['csgo', 'lol', 'dota2', 'valorant', 'overwatch', 'rocketleague'];
+      
+      for (const esportType of esportTypes) {
+        try {
+          // Try upcoming matches
+          const upcomingMatches = await fetchUpcomingMatches(esportType);
+          const match = upcomingMatches.find(m => m.id === matchId);
+          if (match) return match;
+          
+          // Try live matches
+          const liveMatches = await fetchLiveMatches(esportType);
+          const liveMatch = liveMatches.find(m => m.id === matchId);
+          if (liveMatch) return liveMatch;
+        } catch (err) {
+          continue; // Try next esport
+        }
+      }
+      
+      // If we still can't find the match, throw an error
+      throw new Error("Match not found");
     }
     
+    // If we have a numeric ID, use the direct API endpoint
     const response = await fetch(
       `${BASE_URL}/matches/${id}?token=${apiKey}`
     );

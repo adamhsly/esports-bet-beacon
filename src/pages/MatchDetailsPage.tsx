@@ -26,16 +26,19 @@ const MatchDetailsPage: React.FC = () => {
     queryFn: async () => {
       try {
         // First try PandaScore API
+        console.log('Trying to fetch match data from PandaScore');
         return await fetchPandaScoreMatchById(matchId || '');
       } catch (error) {
         console.error('Error fetching from PandaScore:', error);
         
         try {
           // Then try The Odds API
+          console.log('Trying to fetch match data from The Odds API');
           return await fetchMatchById(matchId || '');
         } catch (oddsError) {
           console.error('Error fetching from The Odds API:', oddsError);
           
+          console.log('Falling back to mock data');
           // Finally, fallback to mock data
           const mockData = getMatchById(matchId || '');
           if (!mockData) {
@@ -52,6 +55,7 @@ const MatchDetailsPage: React.FC = () => {
     queryKey: ['matchOdds', matchId],
     queryFn: async () => {
       try {
+        console.log('Trying to fetch odds data');
         const data = await fetchMatchOdds(matchId || '');
         return data;
       } catch (error) {
@@ -64,6 +68,7 @@ const MatchDetailsPage: React.FC = () => {
         
         // If we have match data, generate sample odds
         if (match) {
+          console.log('Generating sample odds based on match data');
           // Sample markets data from existing code
           const sampleMarkets: Market[] = [
             { name: 'Match Winner', options: [match.teams[0].name, match.teams[1].name] },
