@@ -25,10 +25,10 @@ const EsportPage: React.FC = () => {
         
         // Fetch live matches
         const liveResponse = await fetch(
-          `https://esports.sportdevs.com/matches?status_type=eq.live&videogame_id=eq.${mapEsportToId(esportId)}`,
+          `https://esports.sportdevs.com/matches?status_type=eq.live`,
           {
             headers: {
-              'x-api-key': sportDevsApiKey,
+              'Authorization': `Bearer ${sportDevsApiKey}`,
               'Accept': 'application/json'
             }
           }
@@ -45,10 +45,10 @@ const EsportPage: React.FC = () => {
         
         // Fetch upcoming matches
         const upcomingResponse = await fetch(
-          `https://esports.sportdevs.com/matches?status_type=eq.upcoming&videogame_id=eq.${mapEsportToId(esportId)}`,
+          `https://esports.sportdevs.com/matches?status_type=eq.upcoming`,
           {
             headers: {
-              'x-api-key': sportDevsApiKey,
+              'Authorization': `Bearer ${sportDevsApiKey}`,
               'Accept': 'application/json'
             }
           }
@@ -82,24 +82,10 @@ const EsportPage: React.FC = () => {
     fetchMatches();
   }, [esportId, toast, sportDevsApiKey]);
   
-  // Helper function to map esport ID to SportDevs API ID
-  const mapEsportToId = (esportId: string): string => {
-    const mapping: Record<string, string> = {
-      'csgo': '1',
-      'lol': '2',
-      'dota2': '3',
-      'valorant': '4',
-      'overwatch': '5',
-      'rocketleague': '6'
-    };
-    
-    return mapping[esportId] || '1'; // Default to CS:GO (1)
-  };
-  
   // Process the raw match data into our app's format
   const processMatchData = (matches: any[], esportType: string): MatchInfo[] => {
     return matches.map(match => {
-      // Extract team data
+      // Extract team data - using opponents if available, or create placeholders
       const teams = match.opponents && match.opponents.length > 0
         ? match.opponents.slice(0, 2).map((opponent: any) => ({
             name: opponent.name || 'N/A',
@@ -116,10 +102,10 @@ const EsportPage: React.FC = () => {
       }
       
       return {
-        id: match.id,
+        id: match.id || 'N/A',
         teams: [teams[0], teams[1]],
         startTime: match.start_time || new Date().toISOString(),
-        tournament: match.tournament?.name || match.serie?.name || 'N/A',
+        tournament: match.league_name || match.tournament?.name || match.serie?.name || 'N/A',
         esportType: esportType,
         bestOf: match.format?.best_of || 1
       };
