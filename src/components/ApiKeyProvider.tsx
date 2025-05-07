@@ -1,21 +1,18 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
 
 interface ApiKeyContextType {
-  oddsApiKey: string | null;
-  pandaScoreApiKey: string | null;
-  setOddsApiKey: (key: string) => void;
-  setPandaScoreApiKey: (key: string) => void;
+  sportDevsApiKey: string;
 }
 
-const ApiKeyContext = createContext<ApiKeyContextType | undefined>(undefined);
+const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
+
+const ApiKeyContext = createContext<ApiKeyContextType>({
+  sportDevsApiKey: API_KEY,
+});
 
 export const useApiKey = () => {
-  const context = useContext(ApiKeyContext);
-  if (!context) {
-    throw new Error('useApiKey must be used within an ApiKeyProvider');
-  }
-  return context;
+  return useContext(ApiKeyContext);
 };
 
 interface ApiKeyProviderProps {
@@ -23,43 +20,11 @@ interface ApiKeyProviderProps {
 }
 
 const ApiKeyProvider: React.FC<ApiKeyProviderProps> = ({ children }) => {
-  // Default API keys
-  const DEFAULT_ODDS_API_KEY = "768be4d279716fba14e362e3e9ce039c";
-  const DEFAULT_PANDASCORE_API_KEY = "kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk";
-  
-  const [oddsApiKey, setOddsApiKeyState] = useState<string | null>(DEFAULT_ODDS_API_KEY);
-  const [pandaScoreApiKey, setPandaScoreApiKeyState] = useState<string | null>(DEFAULT_PANDASCORE_API_KEY);
-  
-  useEffect(() => {
-    // Check if we have API keys in localStorage or set defaults
-    const storedOddsApiKey = localStorage.getItem('esports_odds_api_key') || DEFAULT_ODDS_API_KEY;
-    const storedPandaScoreApiKey = localStorage.getItem('esports_pandascore_api_key') || DEFAULT_PANDASCORE_API_KEY;
-    
-    // Set API keys in state and localStorage
-    setOddsApiKeyState(storedOddsApiKey);
-    localStorage.setItem('esports_odds_api_key', storedOddsApiKey);
-    
-    setPandaScoreApiKeyState(storedPandaScoreApiKey);
-    localStorage.setItem('esports_pandascore_api_key', storedPandaScoreApiKey);
-  }, []);
-  
-  const setOddsApiKey = (key: string) => {
-    localStorage.setItem('esports_odds_api_key', key);
-    setOddsApiKeyState(key);
-  };
-  
-  const setPandaScoreApiKey = (key: string) => {
-    localStorage.setItem('esports_pandascore_api_key', key);
-    setPandaScoreApiKeyState(key);
-  };
-  
+  // The API key is now hardcoded as requested
   return (
     <ApiKeyContext.Provider 
       value={{ 
-        oddsApiKey, 
-        pandaScoreApiKey, 
-        setOddsApiKey, 
-        setPandaScoreApiKey 
+        sportDevsApiKey: API_KEY
       }}
     >
       {children}

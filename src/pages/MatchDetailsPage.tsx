@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import { OddsTable, Market, BookmakerOdds } from '@/components/OddsTable';
 import Footer from '@/components/Footer';
 import { getMatchById } from '@/lib/mockData';
-import { fetchMatchById, fetchMatchOdds } from '@/lib/api';
-import { fetchMatchById as fetchPandaScoreMatchById } from '@/lib/pandaScoreApi';
+import { fetchMatchById, fetchMatchOdds } from '@/lib/sportDevsApi';
 import { ArrowLeft, Calendar, Trophy, Clock, Info, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,40 +20,32 @@ const MatchDetailsPage: React.FC = () => {
   
   console.log(`Attempting to load match details for ID: ${matchId}`);
   
-  // Fetch match data from PandaScore
+  // Fetch match data from SportDevs
   const { data: match, isLoading: matchLoading, error: matchError } = useQuery({
     queryKey: ['match', matchId],
     queryFn: async () => {
       try {
-        // First try PandaScore API
-        console.log('Trying to fetch match data from PandaScore');
-        return await fetchPandaScoreMatchById(matchId || '');
-      } catch (pandaError) {
-        console.error('Error fetching from PandaScore:', pandaError);
+        // Get match data from SportDevs API
+        console.log('Fetching match data from SportDevs API');
+        return await fetchMatchById(matchId || '');
+      } catch (error) {
+        console.error('Error fetching from SportDevs API:', error);
         
-        try {
-          // Then try The Odds API
-          console.log('Trying to fetch match data from The Odds API');
-          return await fetchMatchById(matchId || '');
-        } catch (oddsError) {
-          console.error('Error fetching from The Odds API:', oddsError);
-          
-          // Log additional information about the current match ID
-          console.log(`Current match ID: ${matchId}, typeof: ${typeof matchId}`);
-          
-          // Finally, fallback to mock data
-          console.log('Falling back to mock data');
-          const mockData = getMatchById(matchId || '');
-          if (!mockData) {
-            toast({
-              title: "Match not found",
-              description: "Couldn't find this match in our database.",
-              variant: "destructive",
-            });
-            throw new Error('Match not found');
-          }
-          return mockData;
+        // Log additional information about the current match ID
+        console.log(`Current match ID: ${matchId}, typeof: ${typeof matchId}`);
+        
+        // Fallback to mock data
+        console.log('Falling back to mock data');
+        const mockData = getMatchById(matchId || '');
+        if (!mockData) {
+          toast({
+            title: "Match not found",
+            description: "Couldn't find this match in our database.",
+            variant: "destructive",
+          });
+          throw new Error('Match not found');
         }
+        return mockData;
       }
     },
   });
@@ -64,7 +55,7 @@ const MatchDetailsPage: React.FC = () => {
     queryKey: ['matchOdds', matchId],
     queryFn: async () => {
       try {
-        console.log('Trying to fetch odds data for match:', matchId);
+        console.log('Fetching odds data for match:', matchId);
         const data = await fetchMatchOdds(matchId || '');
         return data;
       } catch (error) {
@@ -78,7 +69,7 @@ const MatchDetailsPage: React.FC = () => {
         // If we have match data, generate sample odds
         if (match) {
           console.log('Generating sample odds based on match data');
-          // Sample markets data from existing code
+          // Sample markets data
           const sampleMarkets: Market[] = [
             { name: 'Match Winner', options: [match.teams[0].name, match.teams[1].name] },
             { name: 'Map 1 Winner', options: [match.teams[0].name, match.teams[1].name] },
@@ -86,7 +77,7 @@ const MatchDetailsPage: React.FC = () => {
             { name: 'Map Handicap', options: [`${match.teams[0].name} -1.5`, `${match.teams[1].name} +1.5`] },
           ];
           
-          // Sample bookmaker odds from existing code
+          // Sample bookmaker odds
           const sampleBookmakerOdds: BookmakerOdds[] = [
             {
               bookmaker: 'BetMaster',
