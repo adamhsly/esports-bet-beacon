@@ -143,11 +143,12 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo> {
   try {
     console.log(`SportDevs API: Fetching match details for ID: ${matchId}`);
     
+    // Update to use the correct endpoint format for fetching by ID
     const response = await fetch(
-      `${BASE_URL}/esports/matches/${matchId}`,
+      `https://esports.sportdevs.com/matches?id=eq.${matchId}`,
       {
         headers: {
-          'x-api-key': API_KEY,
+          'Authorization': `Bearer ${API_KEY}`,
           'Accept': 'application/json'
         }
       }
@@ -159,11 +160,25 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo> {
       throw new Error(`API error: ${response.status}`);
     }
     
-    const match: SportDevsMatch = await response.json();
+    const matches = await response.json();
     console.log(`SportDevs API: Received match details for ID: ${matchId}`);
     
+    if (!matches || matches.length === 0) {
+      throw new Error('Match not found');
+    }
+    
+    const match = matches[0]; // Get the first match from the array
+    
     // Determine the esport type from the match data
-    const esportType = mapGameSlugToEsportType(match.videogame.slug);
+    let esportType = 'csgo'; // Default
+    if (match.class_name) {
+      // Map class_name to our esport types
+      if (match.class_name === 'CS:GO') esportType = 'csgo';
+      else if (match.class_name === 'LoL') esportType = 'lol';
+      else if (match.class_name === 'Dota 2') esportType = 'dota2';
+      else if (match.class_name === 'Valorant') esportType = 'valorant';
+    }
+    
     return transformMatchData(match, esportType);
   } catch (error) {
     console.error("Error fetching match by ID from SportDevs:", error);
@@ -220,14 +235,42 @@ function mapGameSlugToEsportType(gameSlug: string): string {
 }
 
 // Helper function to transform match data to our app's format
-function transformMatchData(match: SportDevsMatch, esportType: string): MatchInfo {
+function transformMatchData(match: any, esportType: string): MatchInfo {
   // Extract team data, ensuring we have 2 teams
-  const teams: TeamInfo[] = match.opponents && match.opponents.length > 0 
-    ? match.opponents.slice(0, 2).map(team => ({
-        name: team.name,
-        logo: team.image_url || '/placeholder.svg'
-      }))
-    : [];
+  let teams: TeamInfo[] = [];
+  
+  // First try to get teams from direct opponents data
+  if (match.opponents && match.opponents.length > 0) {
+    teams = match.opponents.slice(0, 2).map((team: any) => ({
+      name: team.name,
+      logo: team.image_url || '/placeholder.svg'
+    }));
+  }
+  // Then try home_team and away_team
+  else if (match.home_team_name && match.away_team_name) {
+    teams = [
+      { 
+        name: match.home_team_name, 
+        logo: match.home_team_hash_image ? 
+          `https://assets.b365api.com/images/team/m/${match.home_team_hash_image}.png` : 
+          '/placeholder.svg' 
+      },
+      { 
+        name: match.away_team_name, 
+        logo: match.away_team_hash_image ? 
+          `https://assets.b365api.com/images/team/m/${match.away_team_hash_image}.png` : 
+          '/placeholder.svg' 
+      }
+    ];
+  }
+  // Then try to extract from name as last resort
+  else if (match.name && match.name.includes(' vs ')) {
+    const [team1Name, team2Name] = match.name.split(' vs ').map((t: string) => t.trim());
+    teams = [
+      { name: team1Name, logo: '/placeholder.svg' },
+      { name: team2Name, logo: '/placeholder.svg' }
+    ];
+  }
   
   // If we don't have 2 teams, add placeholders
   while (teams.length < 2) {
@@ -237,18 +280,24 @@ function transformMatchData(match: SportDevsMatch, esportType: string): MatchInf
     });
   }
   
+  // Determine the tournament name
+  const tournamentName = match.tournament?.name || match.serie?.name || match.tournament_name || match.league_name || "Unknown Tournament";
+  
+  // Determine the best of format
+  let bestOf = match.format?.best_of || 3;
+  
   return {
     id: match.id,
     teams: [teams[0], teams[1]],
-    startTime: match.start_time,
-    tournament: match.tournament?.name || match.serie?.name || "Unknown Tournament",
+    startTime: match.start_time || new Date().toISOString(),
+    tournament: tournamentName,
     esportType: esportType,
-    bestOf: match.format?.best_of || 3
+    bestOf: bestOf
   };
 }
 
 // Helper function to transform odds data to our app's format
-function transformOddsData(oddsData: SportDevsOdds): {
+function transformOddsData(oddsData: any): {
   bookmakerOdds: BookmakerOdds[];
   markets: Market[];
 } {
