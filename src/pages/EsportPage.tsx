@@ -23,9 +23,9 @@ const EsportPage: React.FC = () => {
       try {
         console.log(`EsportPage: Loading matches for ${esportId}`);
         
-        // Fetch live matches
+        // Fetch live matches - adding limit parameter to improve load time
         const liveResponse = await fetch(
-          `https://esports.sportdevs.com/matches?status_type=eq.live`,
+          `https://esports.sportdevs.com/matches?status_type=eq.live&limit=20`,
           {
             headers: {
               'Authorization': `Bearer ${sportDevsApiKey}`,
@@ -43,9 +43,9 @@ const EsportPage: React.FC = () => {
         setLiveMatches(processedLiveMatches);
         console.log(`EsportPage: Loaded ${processedLiveMatches.length} live matches`);
         
-        // Fetch upcoming matches
+        // Fetch upcoming matches - adding limit parameter to improve load time
         const upcomingResponse = await fetch(
-          `https://esports.sportdevs.com/matches?status_type=eq.upcoming`,
+          `https://esports.sportdevs.com/matches?status_type=eq.upcoming&limit=20`,
           {
             headers: {
               'Authorization': `Bearer ${sportDevsApiKey}`,
@@ -71,7 +71,6 @@ const EsportPage: React.FC = () => {
           variant: "destructive",
         });
         
-        // Instead of fallback data, we'll set empty arrays
         setLiveMatches([]);
         setUpcomingMatches([]);
       } finally {
@@ -82,16 +81,39 @@ const EsportPage: React.FC = () => {
     fetchMatches();
   }, [esportId, toast, sportDevsApiKey]);
   
+  // Extract team names from a match name string formatted as "Team A vs Team B"
+  const extractTeamNames = (matchName: string): [string, string] => {
+    if (!matchName || !matchName.includes(' vs ')) {
+      return ['N/A', 'N/A'];
+    }
+    
+    const parts = matchName.split(' vs ');
+    const team1 = parts[0].trim();
+    const team2 = parts.length > 1 ? parts[1].trim() : 'N/A';
+    
+    return [team1, team2];
+  };
+  
   // Process the raw match data into our app's format
   const processMatchData = (matches: any[], esportType: string): MatchInfo[] => {
     return matches.map(match => {
-      // Extract team data - using opponents if available, or create placeholders
-      const teams = match.opponents && match.opponents.length > 0
-        ? match.opponents.slice(0, 2).map((opponent: any) => ({
-            name: opponent.name || 'N/A',
-            logo: opponent.image_url || '/placeholder.svg'
-          }))
-        : [];
+      let teams: TeamInfo[] = [];
+      
+      // First try to get teams from opponents array
+      if (match.opponents && match.opponents.length > 0) {
+        teams = match.opponents.slice(0, 2).map((opponent: any) => ({
+          name: opponent.name || 'N/A',
+          logo: opponent.image_url || '/placeholder.svg'
+        }));
+      } 
+      // If no opponents data, extract from match name
+      else if (match.name) {
+        const [team1Name, team2Name] = extractTeamNames(match.name);
+        teams = [
+          { name: team1Name, logo: '/placeholder.svg' },
+          { name: team2Name, logo: '/placeholder.svg' }
+        ];
+      }
       
       // Add placeholder team if needed
       while (teams.length < 2) {
