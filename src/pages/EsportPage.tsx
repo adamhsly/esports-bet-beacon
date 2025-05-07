@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import EsportsNavigation from '@/components/EsportsNavigation';
-import { MatchCard, MatchInfo } from '@/components/MatchCard';
+import { MatchCard, MatchInfo, TeamInfo } from '@/components/MatchCard';
 import Footer from '@/components/Footer';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
