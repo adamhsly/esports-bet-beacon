@@ -26,6 +26,9 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               <Link to="/esports/csgo" className="text-gray-300 hover:text-white">
                 Matches
               </Link>
+              <Link to="/tournaments" className="text-gray-300 hover:text-white">
+                Tournaments
+              </Link>
               <Link to="/news" className="text-gray-300 hover:text-white">
                 News
               </Link>
@@ -91,6 +94,13 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
                 onClick={() => setIsMenuOpen(false)}
               >
                 Matches
+              </Link>
+              <Link 
+                to="/tournaments" 
+                className="text-white hover:text-theme-purple py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tournaments
               </Link>
               <Link 
                 to="/news" 

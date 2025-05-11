@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
 import { fetchLiveMatches, fetchUpcomingMatches } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Trophy } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 
@@ -134,6 +135,83 @@ const Index = () => {
                 <p className="text-gray-400">No upcoming matches at the moment. Check back later!</p>
               </div>
             )}
+          </div>
+          
+          {/* Tournaments Section */}
+          <div className="mb-10">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold font-gaming">
+                <span className="highlight-gradient">Active</span> Tournaments
+              </h2>
+              <Button asChild variant="ghost" className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
+                <Link to="/tournaments">
+                  View All <ArrowRight size={16} className="ml-1" />
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Featured Tournament Cards */}
+              <div className="bg-theme-gray-dark border border-theme-gray-medium p-4 rounded-md hover:border-theme-purple transition-all flex flex-col">
+                <div className="flex items-center mb-3">
+                  <Trophy size={20} className="text-theme-purple mr-2" />
+                  <h3 className="font-bold">ESL Pro League Season 17</h3>
+                </div>
+                <div className="text-sm text-gray-400 mb-3">
+                  Mar 23, 2023 - Apr 10, 2023 • CS:GO
+                </div>
+                <div className="text-sm mb-3">
+                  <span className="text-theme-green">$850,000</span> Prize Pool
+                </div>
+                <div className="mt-auto text-right">
+                  <Button asChild variant="ghost" size="sm" className="text-theme-purple hover:bg-theme-purple/10">
+                    <Link to="/tournament/1">
+                      View Details <ArrowRight size={14} className="ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-theme-gray-dark border border-theme-gray-medium p-4 rounded-md hover:border-theme-purple transition-all flex flex-col">
+                <div className="flex items-center mb-3">
+                  <Trophy size={20} className="text-theme-purple mr-2" />
+                  <h3 className="font-bold">BLAST Premier: Spring Finals 2023</h3>
+                </div>
+                <div className="text-sm text-gray-400 mb-3">
+                  Jun 7, 2023 - Jun 11, 2023 • CS:GO
+                </div>
+                <div className="text-sm mb-3">
+                  <span className="text-theme-green">$425,000</span> Prize Pool
+                </div>
+                <div className="mt-auto text-right">
+                  <Button asChild variant="ghost" size="sm" className="text-theme-purple hover:bg-theme-purple/10">
+                    <Link to="/tournament/2">
+                      View Details <ArrowRight size={14} className="ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-theme-gray-dark border border-theme-gray-medium p-4 rounded-md hover:border-theme-purple transition-all flex flex-col">
+                <div className="flex items-center mb-3">
+                  <Trophy size={20} className="text-theme-purple mr-2" />
+                  <h3 className="font-bold">VCT Masters Tokyo</h3>
+                </div>
+                <div className="text-sm text-gray-400 mb-3">
+                  Jun 1, 2023 - Jun 25, 2023 • Valorant
+                </div>
+                <div className="text-sm mb-3">
+                  <span className="text-theme-green">$685,000</span> Prize Pool
+                </div>
+                <div className="mt-auto text-right">
+                  <Button asChild variant="ghost" size="sm" className="text-theme-purple hover:bg-theme-purple/10">
+                    <Link to="/tournament/3">
+                      View Details <ArrowRight size={14} className="ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="mb-10">
