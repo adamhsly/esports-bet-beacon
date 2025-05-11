@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { fetchLiveMatches, fetchUpcomingMatches } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
-import { getMockMatches } from '@/lib/mockData';
+import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
@@ -32,9 +31,7 @@ const Index = () => {
       } catch (error) {
         console.error('Error loading live matches:', error);
         // Use mock data if API fails
-        const mockMatches = getMockMatches().filter((match) => 
-          new Date(match.startTime) <= new Date()
-        );
+        const mockMatches = getTodayMatches('csgo');
         setLiveMatches(mockMatches.slice(0, 3));
       } finally {
         setLoadingLive(false);
@@ -60,9 +57,7 @@ const Index = () => {
       } catch (error) {
         console.error('Error loading upcoming matches:', error);
         // Use mock data if API fails
-        const mockMatches = getMockMatches().filter((match) => 
-          new Date(match.startTime) > new Date()
-        );
+        const mockMatches = getUpcomingMatches('csgo');
         setUpcomingMatches(mockMatches.slice(0, 3));
       } finally {
         setLoadingUpcoming(false);
