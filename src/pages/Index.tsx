@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import MatchCard, { MatchInfo } from '@/components/MatchCard';
-import { fetchLiveMatches, fetchUpcomingMatches } from '@/lib/sportDevsApi';
+import { MatchCard } from '@/components/MatchCard';
+import { fetchLiveMatches, fetchUpcomingMatches, MatchInfo } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import EsportsNavigation from '@/components/EsportsNavigation';
@@ -25,8 +26,21 @@ const Index: React.FC = () => {
           fetchUpcomingMatches(activeEsport)
         ]);
         
-        setLiveMatches(live);
-        setUpcomingMatches(upcoming);
+        // Ensure returned match objects have exactly two teams
+        const processMatches = (matches: MatchInfo[]): MatchInfo[] => {
+          return matches.map(match => ({
+            ...match,
+            teams: match.teams.length >= 2 
+              ? [match.teams[0], match.teams[1]] 
+              : [
+                  match.teams[0] || { name: 'TBD', logo: '/placeholder.svg' },
+                  match.teams[1] || { name: 'TBD', logo: '/placeholder.svg' }
+                ]
+          }));
+        };
+        
+        setLiveMatches(processMatches(live));
+        setUpcomingMatches(processMatches(upcoming));
       } catch (error) {
         console.error('Error loading matches:', error);
         toast({
@@ -130,14 +144,17 @@ const Index: React.FC = () => {
         </p>
         
         <div className="mb-8">
-          <EsportsNavigation activeEsport={activeEsport} onEsportChange={handleEsportChange} />
+          <EsportsNavigation 
+            activeEsport={activeEsport} 
+            onEsportChange={handleEsportChange} 
+          />
         </div>
         
         <h2 className="text-xl font-bold mb-4">Live Matches</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {liveMatches.length > 0 ? (
             liveMatches.map((match) => (
-              <MatchCard key={match.id} match={match} />
+              <MatchCard key={match.id} match={match as any} />
             ))
           ) : (
             <div className="text-center py-20 col-span-full">
@@ -150,7 +167,7 @@ const Index: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {upcomingMatches.length > 0 ? (
             upcomingMatches.map((match) => (
-              <MatchCard key={match.id} match={match} />
+              <MatchCard key={match.id} match={match as any} />
             ))
           ) : (
             <div className="text-center py-20 col-span-full">
@@ -165,4 +182,3 @@ const Index: React.FC = () => {
 };
 
 export default Index;
-

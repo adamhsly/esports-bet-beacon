@@ -1,6 +1,7 @@
+
 import { API_KEY, BASE_URL, mapEsportTypeToGameId } from './apiConfig';
 import { MatchInfo, SportDevsMatch, OddsResponse } from './types';
-import { transformMatchData, transformOddsData } from './transformers';
+import { transformMatchData } from './transformers';
 
 // Fetch all upcoming matches for a specific esport
 export async function fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
@@ -238,6 +239,7 @@ export async function fetchMatchOdds(matchId: string): Promise<OddsResponse> {
     const oddsData = await response.json();
     console.log(`SportDevs API: Received odds for match ID: ${matchId}`);
     
+    // Import this from the transformers file
     return transformOddsData(oddsData);
   } catch (error) {
     console.error("Error fetching match odds from SportDevs:", error);

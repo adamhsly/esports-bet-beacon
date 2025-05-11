@@ -6,13 +6,13 @@ export * from './api';
 // Explicitly re-export specific functions that are being used by components
 export { 
   searchTeams, 
-  searchPlayers, 
   fetchTeamById, 
   fetchPlayersByTeamId 
 } from './api/teamsApi';
 
 export { 
-  fetchPlayerById 
+  fetchPlayerById,
+  searchPlayers 
 } from './api/playersApi';
 
 export { 
