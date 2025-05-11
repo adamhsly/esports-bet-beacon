@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useApiKey } from '@/components/ApiKeyProvider';
+import { memoryCache } from '@/utils/cacheUtils';
 
 const EsportPage: React.FC = () => {
   const { esportId = 'csgo' } = useParams<{ esportId: string }>();
@@ -26,52 +27,64 @@ const EsportPage: React.FC = () => {
     apiKeyRef.current = sportDevsApiKey;
   }, [esportId, sportDevsApiKey]);
   
+  const fetchMatches = async (status: 'live' | 'upcoming', esportType: string) => {
+    // Generate cache key
+    const cacheKey = `matches-${status}-${esportType}`;
+    
+    // Try to get data from cache first
+    const cachedData = memoryCache.get<MatchInfo[]>(cacheKey);
+    if (cachedData) {
+      console.log(`Cache hit for ${cacheKey}`);
+      return cachedData;
+    }
+    
+    console.log(`Cache miss for ${cacheKey}, fetching from API...`);
+    
+    try {
+      const response = await fetch(
+        `https://esports.sportdevs.com/matches?status_type=eq.${status}&limit=20`,
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKeyRef.current}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`${status} matches API error: ${response.status}`);
+      }
+      
+      const matchesData = await response.json();
+      const processedMatches = processMatchData(matchesData, esportType);
+      
+      // Cache the results - live matches for 30s, upcoming for 5 min
+      const ttl = status === 'live' ? 30 : 300;
+      memoryCache.set(cacheKey, processedMatches, ttl);
+      
+      return processedMatches;
+    } catch (error) {
+      console.error(`Error fetching ${status} matches:`, error);
+      throw error;
+    }
+  };
+  
   useEffect(() => {
-    const fetchMatches = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
         console.log(`EsportPage: Loading matches for ${esportId}`);
         
-        // Fetch live matches - adding limit parameter to improve load time
-        const liveResponse = await fetch(
-          `https://esports.sportdevs.com/matches?status_type=eq.live&limit=20`,
-          {
-            headers: {
-              'Authorization': `Bearer ${sportDevsApiKey}`,
-              'Accept': 'application/json'
-            }
-          }
-        );
+        // Fetch both types of matches in parallel
+        const [liveFetched, upcomingFetched] = await Promise.all([
+          fetchMatches('live', esportId),
+          fetchMatches('upcoming', esportId)
+        ]);
         
-        if (!liveResponse.ok) {
-          throw new Error(`Live matches API error: ${liveResponse.status}`);
-        }
+        setLiveMatches(liveFetched);
+        setUpcomingMatches(upcomingFetched);
         
-        const liveMatchesData = await liveResponse.json();
-        const processedLiveMatches = processMatchData(liveMatchesData, esportId);
-        setLiveMatches(processedLiveMatches);
-        console.log(`EsportPage: Loaded ${processedLiveMatches.length} live matches`);
-        
-        // Fetch upcoming matches - adding limit parameter to improve load time
-        const upcomingResponse = await fetch(
-          `https://esports.sportdevs.com/matches?status_type=eq.upcoming&limit=20`,
-          {
-            headers: {
-              'Authorization': `Bearer ${sportDevsApiKey}`,
-              'Accept': 'application/json'
-            }
-          }
-        );
-        
-        if (!upcomingResponse.ok) {
-          throw new Error(`Upcoming matches API error: ${upcomingResponse.status}`);
-        }
-        
-        const upcomingMatchesData = await upcomingResponse.json();
-        const processedUpcomingMatches = processMatchData(upcomingMatchesData, esportId);
-        setUpcomingMatches(processedUpcomingMatches);
-        console.log(`EsportPage: Loaded ${processedUpcomingMatches.length} upcoming matches`);
-        
+        console.log(`EsportPage: Loaded ${liveFetched.length} live and ${upcomingFetched.length} upcoming matches for ${esportId}`);
       } catch (error) {
         console.error('Error loading matches:', error);
         toast({
@@ -87,40 +100,23 @@ const EsportPage: React.FC = () => {
       }
     };
     
-    fetchMatches();
+    loadData();
     
-    // Set up interval for polling live matches every 10 seconds
-    const pollingInterval = setInterval(() => {
+    // Set up interval for polling live matches every 30 seconds (reduced frequency to minimize API calls)
+    const pollingInterval = setInterval(async () => {
       console.log('Polling for live match updates');
       
-      fetch(
-        `https://esports.sportdevs.com/matches?status_type=eq.live&limit=20`,
-        {
-          headers: {
-            'Authorization': `Bearer ${apiKeyRef.current}`,
-            'Accept': 'application/json'
-          }
-        }
-      )
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          const processedMatches = processMatchData(data, esportIdRef.current);
-          setLiveMatches(processedMatches);
-          console.log(`Updated ${processedMatches.length} live matches`);
-        })
-        .catch(error => {
-          console.error('Error polling live matches:', error);
-          // Don't show toast on polling errors to avoid spamming
-        });
-    }, 10000);
+      try {
+        const liveFetched = await fetchMatches('live', esportIdRef.current);
+        setLiveMatches(liveFetched);
+      } catch (error) {
+        console.error('Error polling live matches:', error);
+        // Don't show toast on polling errors to avoid spamming
+      }
+    }, 30000);
     
     return () => clearInterval(pollingInterval);
-  }, [esportId, toast, sportDevsApiKey]);
+  }, [esportId, toast]);
   
   // Extract team names from a match name string formatted as "Team A vs Team B"
   const extractTeamNames = (matchName: string): [string, string] => {

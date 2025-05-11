@@ -1,10 +1,24 @@
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
+import { memoryCache, createCachedFunction } from '@/utils/cacheUtils';
 
 // API Constants
 const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
 const BASE_URL = "https://api.sportdevs.com";
 const WEB_URL = "https://esports.sportdevs.com";
+
+// Cache TTL constants (in seconds)
+const CACHE_TTL = {
+  LIVE_MATCHES: 30,       // 30 seconds for live matches
+  UPCOMING_MATCHES: 300,  // 5 minutes for upcoming matches
+  MATCH_DETAILS: 300,     // 5 minutes for match details
+  TOURNAMENT: 3600,       // 1 hour for tournament data
+  TEAM: 3600,             // 1 hour for team data
+  PLAYER: 3600,           // 1 hour for player data
+  NEWS: 1800,             // 30 minutes for news
+  STANDINGS: 3600,        // 1 hour for standings
+  ODDS: 120               // 2 minutes for odds
+};
 
 // Types for SportDevs API responses
 interface SportDevsMatch {
@@ -74,30 +88,41 @@ const mapEsportTypeToGameId = (esportType: string): string => {
   return mapping[esportType] || "csgo"; // Default to CS:GO
 };
 
-// Fetch all upcoming matches for a specific esport
-export async function fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
+// Raw API call functions
+
+/**
+ * Core fetch function with error handling and logging
+ */
+async function fetchFromSportDevs(url: string, apiKey: string = API_KEY): Promise<any> {
+  console.log(`SportDevs API Request: ${url}`);
+  
+  const response = await fetch(url, {
+    headers: {
+      'x-api-key': apiKey,
+      'Accept': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`SportDevs API error ${response.status}:`, errorText);
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  console.log(`SportDevs API Response: ${url} - Received data successfully`);
+  return data;
+}
+
+/**
+ * Raw function to fetch upcoming matches
+ */
+async function _fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
   try {
     const gameId = mapEsportTypeToGameId(esportType);
-    
     console.log(`SportDevs API: Fetching upcoming matches for ${esportType} (${gameId})`);
     
-    const response = await fetch(
-      `${BASE_URL}/esports/${gameId}/matches/upcoming`,
-      {
-        headers: {
-          'x-api-key': API_KEY,
-          'Accept': 'application/json'
-        }
-      }
-    );
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`SportDevs API error ${response.status}:`, errorText);
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const data: SportDevsMatch[] = await response.json();
+    const data = await fetchFromSportDevs(`${BASE_URL}/esports/${gameId}/matches/upcoming`);
     console.log(`SportDevs API: Received ${data.length} upcoming matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
@@ -106,30 +131,15 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
   }
 }
 
-// Fetch live matches for a specific esport
-export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
+/**
+ * Raw function to fetch live matches
+ */
+async function _fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
   try {
     const gameId = mapEsportTypeToGameId(esportType);
-    
     console.log(`SportDevs API: Fetching live matches for ${esportType} (${gameId})`);
     
-    const response = await fetch(
-      `${BASE_URL}/esports/${gameId}/matches/live`,
-      {
-        headers: {
-          'x-api-key': API_KEY,
-          'Accept': 'application/json'
-        }
-      }
-    );
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`SportDevs API error ${response.status}:`, errorText);
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const data: SportDevsMatch[] = await response.json();
+    const data = await fetchFromSportDevs(`${BASE_URL}/esports/${gameId}/matches/live`);
     console.log(`SportDevs API: Received ${data.length} live matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
@@ -138,29 +148,17 @@ export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]>
   }
 }
 
-// Fetch match by ID
-export async function fetchMatchById(matchId: string): Promise<MatchInfo> {
+/**
+ * Raw function to fetch match by ID
+ */
+async function _fetchMatchById(matchId: string): Promise<MatchInfo> {
   try {
     console.log(`SportDevs API: Fetching match details for ID: ${matchId}`);
     
     // Use the correct endpoint format for fetching by ID
-    const response = await fetch(
-      `${WEB_URL}/matches?id=eq.${matchId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const matches = await fetchFromSportDevs(
+      `${WEB_URL}/matches?id=eq.${matchId}`
     );
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`SportDevs API error ${response.status}:`, errorText);
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const matches = await response.json();
     console.log(`SportDevs API: Received match details for ID: ${matchId}`, matches);
     
     if (!matches || matches.length === 0) {
@@ -186,26 +184,16 @@ export async function fetchMatchById(matchId: string): Promise<MatchInfo> {
   }
 }
 
-// Fetch match games by match ID
-export async function fetchMatchGames(matchId: string) {
+/**
+ * Raw function to fetch match games
+ */
+async function _fetchMatchGames(matchId: string) {
   try {
     console.log(`SportDevs API: Fetching match games for ID: ${matchId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/matches-games?match_id=eq.${matchId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const games = await fetchFromSportDevs(
+      `${WEB_URL}/matches-games?match_id=eq.${matchId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const games = await response.json();
     console.log(`SportDevs API: Received ${games.length} games for match ID: ${matchId}`);
     return games;
     
@@ -215,26 +203,16 @@ export async function fetchMatchGames(matchId: string) {
   }
 }
 
-// Fetch match statistics by match ID
-export async function fetchMatchStatistics(matchId: string) {
+/**
+ * Raw function to fetch match statistics
+ */
+async function _fetchMatchStatistics(matchId: string) {
   try {
     console.log(`SportDevs API: Fetching match statistics for ID: ${matchId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/matches-games-statistics?match_id=eq.${matchId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const statistics = await fetchFromSportDevs(
+      `${WEB_URL}/matches-games-statistics?match_id=eq.${matchId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const statistics = await response.json();
     console.log(`SportDevs API: Received statistics for match ID: ${matchId}`);
     return statistics;
     
@@ -244,26 +222,16 @@ export async function fetchMatchStatistics(matchId: string) {
   }
 }
 
-// Fetch team by ID
-export async function fetchTeamById(teamId: string) {
+/**
+ * Raw function to fetch team by ID
+ */
+async function _fetchTeamById(teamId: string) {
   try {
     console.log(`SportDevs API: Fetching team details for ID: ${teamId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/teams?id=eq.${teamId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const teams = await fetchFromSportDevs(
+      `${WEB_URL}/teams?id=eq.${teamId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const teams = await response.json();
     
     if (!teams || teams.length === 0) {
       throw new Error('Team not found');
@@ -277,26 +245,16 @@ export async function fetchTeamById(teamId: string) {
   }
 }
 
-// Fetch players by team ID
-export async function fetchPlayersByTeamId(teamId: string) {
+/**
+ * Raw function to fetch players by team ID
+ */
+async function _fetchPlayersByTeamId(teamId: string) {
   try {
     console.log(`SportDevs API: Fetching players for team ID: ${teamId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/players?team_id=eq.${teamId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const players = await fetchFromSportDevs(
+      `${WEB_URL}/players?team_id=eq.${teamId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const players = await response.json();
     console.log(`SportDevs API: Received ${players.length} players for team ID: ${teamId}`);
     return players;
     
@@ -306,26 +264,16 @@ export async function fetchPlayersByTeamId(teamId: string) {
   }
 }
 
-// Fetch player by ID
-export async function fetchPlayerById(playerId: string) {
+/**
+ * Raw function to fetch player by ID
+ */
+async function _fetchPlayerById(playerId: string) {
   try {
     console.log(`SportDevs API: Fetching player details for ID: ${playerId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/players?id=eq.${playerId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const players = await fetchFromSportDevs(
+      `${WEB_URL}/players?id=eq.${playerId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const players = await response.json();
     
     if (!players || players.length === 0) {
       throw new Error('Player not found');
@@ -339,26 +287,16 @@ export async function fetchPlayerById(playerId: string) {
   }
 }
 
-// Fetch news articles
-export async function fetchNews(limit = 10) {
+/**
+ * Raw function to fetch news articles
+ */
+async function _fetchNews(limit = 10) {
   try {
     console.log(`SportDevs API: Fetching news articles, limit: ${limit}`);
     
-    const response = await fetch(
-      `${WEB_URL}/news?limit=${limit}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const news = await fetchFromSportDevs(
+      `${WEB_URL}/news?limit=${limit}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const news = await response.json();
     console.log(`SportDevs API: Received ${news.length} news articles`);
     return news;
     
@@ -368,26 +306,16 @@ export async function fetchNews(limit = 10) {
   }
 }
 
-// Fetch tournaments
-export async function fetchTournaments(limit = 10) {
+/**
+ * Raw function to fetch tournaments
+ */
+async function _fetchTournaments(limit = 10) {
   try {
     console.log(`SportDevs API: Fetching tournaments, limit: ${limit}`);
     
-    const response = await fetch(
-      `${WEB_URL}/tournaments?limit=${limit}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const tournaments = await fetchFromSportDevs(
+      `${WEB_URL}/tournaments?limit=${limit}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const tournaments = await response.json();
     console.log(`SportDevs API: Received ${tournaments.length} tournaments`);
     return tournaments;
     
@@ -397,26 +325,16 @@ export async function fetchTournaments(limit = 10) {
   }
 }
 
-// Fetch tournament by ID
-export async function fetchTournamentById(tournamentId: string) {
+/**
+ * Raw function to fetch tournament by ID
+ */
+async function _fetchTournamentById(tournamentId: string) {
   try {
     console.log(`SportDevs API: Fetching tournament details for ID: ${tournamentId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/tournaments?id=eq.${tournamentId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const tournaments = await fetchFromSportDevs(
+      `${WEB_URL}/tournaments?id=eq.${tournamentId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const tournaments = await response.json();
     
     if (!tournaments || tournaments.length === 0) {
       throw new Error('Tournament not found');
@@ -430,26 +348,16 @@ export async function fetchTournamentById(tournamentId: string) {
   }
 }
 
-// Fetch matches by tournament ID
-export async function fetchMatchesByTournamentId(tournamentId: string) {
+/**
+ * Raw function to fetch matches by tournament ID
+ */
+async function _fetchMatchesByTournamentId(tournamentId: string) {
   try {
     console.log(`SportDevs API: Fetching matches for tournament ID: ${tournamentId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/matches?tournament_id=eq.${tournamentId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const matches = await fetchFromSportDevs(
+      `${WEB_URL}/matches?tournament_id=eq.${tournamentId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const matches = await response.json();
     console.log(`SportDevs API: Received ${matches.length} matches for tournament ID: ${tournamentId}`);
     
     // Process and return matches in our app's format
@@ -472,27 +380,17 @@ export async function fetchMatchesByTournamentId(tournamentId: string) {
   }
 }
 
-// Fetch league information by name search
-export async function fetchLeagueByName(leagueName: string) {
+/**
+ * Raw function to fetch league by name
+ */
+async function _fetchLeagueByName(leagueName: string) {
   try {
     console.log(`SportDevs API: Searching for league with name: ${leagueName}`);
     
     const encodedName = encodeURIComponent(leagueName);
-    const response = await fetch(
-      `${WEB_URL}/leagues?name=like.*${encodedName}*`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const leagues = await fetchFromSportDevs(
+      `${WEB_URL}/leagues?name=like.*${encodedName}*`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const leagues = await response.json();
     console.log(`SportDevs API: Found ${leagues.length} leagues matching "${leagueName}"`);
     
     return leagues.length > 0 ? leagues[0] : null;
@@ -503,26 +401,16 @@ export async function fetchLeagueByName(leagueName: string) {
   }
 }
 
-// Fetch standings by league ID
-export async function fetchStandingsByLeagueId(leagueId: string) {
+/**
+ * Raw function to fetch standings by league ID
+ */
+async function _fetchStandingsByLeagueId(leagueId: string) {
   try {
     console.log(`SportDevs API: Fetching standings for league ID: ${leagueId}`);
     
-    const response = await fetch(
-      `${WEB_URL}/standings?league_id=eq.${leagueId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const standings = await fetchFromSportDevs(
+      `${WEB_URL}/standings?league_id=eq.${leagueId}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const standings = await response.json();
     console.log(`SportDevs API: Received ${standings.length} standings entries for league ID: ${leagueId}`);
     return standings;
     
@@ -532,27 +420,17 @@ export async function fetchStandingsByLeagueId(leagueId: string) {
   }
 }
 
-// Search for teams by name
-export async function searchTeams(query: string, limit = 10) {
+/**
+ * Raw function to search for teams by name
+ */
+async function _searchTeams(query: string, limit = 10) {
   try {
     console.log(`SportDevs API: Searching teams with query: "${query}"`);
     
     const encodedQuery = encodeURIComponent(query);
-    const response = await fetch(
-      `${WEB_URL}/teams?name=like.*${encodedQuery}*&limit=${limit}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const teams = await fetchFromSportDevs(
+      `${WEB_URL}/teams?name=like.*${encodedQuery}*&limit=${limit}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const teams = await response.json();
     console.log(`SportDevs API: Found ${teams.length} teams matching "${query}"`);
     return teams;
     
@@ -562,27 +440,17 @@ export async function searchTeams(query: string, limit = 10) {
   }
 }
 
-// Search for players by name
-export async function searchPlayers(query: string, limit = 10) {
+/**
+ * Raw function to search for players by name
+ */
+async function _searchPlayers(query: string, limit = 10) {
   try {
     console.log(`SportDevs API: Searching players with query: "${query}"`);
     
     const encodedQuery = encodeURIComponent(query);
-    const response = await fetch(
-      `${WEB_URL}/players?name=like.*${encodedQuery}*&limit=${limit}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Accept': 'application/json'
-        }
-      }
+    const players = await fetchFromSportDevs(
+      `${WEB_URL}/players?name=like.*${encodedQuery}*&limit=${limit}`
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const players = await response.json();
     console.log(`SportDevs API: Found ${players.length} players matching "${query}"`);
     return players;
     
@@ -592,31 +460,19 @@ export async function searchPlayers(query: string, limit = 10) {
   }
 }
 
-// Fetch odds for a specific match
-export async function fetchMatchOdds(matchId: string): Promise<{
+/**
+ * Raw function to fetch odds for a specific match
+ */
+async function _fetchMatchOdds(matchId: string): Promise<{
   bookmakerOdds: BookmakerOdds[];
   markets: Market[];
 }> {
   try {
     console.log(`SportDevs API: Fetching odds for match ID: ${matchId}`);
     
-    const response = await fetch(
-      `${BASE_URL}/esports/matches/${matchId}/odds`,
-      {
-        headers: {
-          'x-api-key': API_KEY,
-          'Accept': 'application/json'
-        }
-      }
+    const oddsData = await fetchFromSportDevs(
+      `${BASE_URL}/esports/matches/${matchId}/odds`
     );
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`SportDevs API error ${response.status}:`, errorText);
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const oddsData: SportDevsOdds = await response.json();
     console.log(`SportDevs API: Received odds for match ID: ${matchId}`);
     
     return transformOddsData(oddsData);
@@ -625,6 +481,111 @@ export async function fetchMatchOdds(matchId: string): Promise<{
     throw error;
   }
 }
+
+// Apply caching to the API call functions
+export const fetchUpcomingMatches = createCachedFunction(
+  _fetchUpcomingMatches,
+  (esportType) => `upcoming-matches-${esportType}`,
+  CACHE_TTL.UPCOMING_MATCHES
+);
+
+export const fetchLiveMatches = createCachedFunction(
+  _fetchLiveMatches,
+  (esportType) => `live-matches-${esportType}`,
+  CACHE_TTL.LIVE_MATCHES
+);
+
+export const fetchMatchById = createCachedFunction(
+  _fetchMatchById,
+  (matchId) => `match-${matchId}`,
+  CACHE_TTL.MATCH_DETAILS
+);
+
+export const fetchMatchGames = createCachedFunction(
+  _fetchMatchGames,
+  (matchId) => `match-games-${matchId}`,
+  CACHE_TTL.MATCH_DETAILS
+);
+
+export const fetchMatchStatistics = createCachedFunction(
+  _fetchMatchStatistics,
+  (matchId) => `match-stats-${matchId}`,
+  CACHE_TTL.MATCH_DETAILS
+);
+
+export const fetchTeamById = createCachedFunction(
+  _fetchTeamById,
+  (teamId) => `team-${teamId}`,
+  CACHE_TTL.TEAM
+);
+
+export const fetchPlayersByTeamId = createCachedFunction(
+  _fetchPlayersByTeamId,
+  (teamId) => `team-players-${teamId}`,
+  CACHE_TTL.TEAM
+);
+
+export const fetchPlayerById = createCachedFunction(
+  _fetchPlayerById,
+  (playerId) => `player-${playerId}`,
+  CACHE_TTL.PLAYER
+);
+
+export const fetchNews = createCachedFunction(
+  _fetchNews,
+  (limit) => `news-${limit}`,
+  CACHE_TTL.NEWS
+);
+
+export const fetchTournaments = createCachedFunction(
+  _fetchTournaments,
+  (limit) => `tournaments-${limit}`,
+  CACHE_TTL.TOURNAMENT
+);
+
+export const fetchTournamentById = createCachedFunction(
+  _fetchTournamentById,
+  (tournamentId) => `tournament-${tournamentId}`,
+  CACHE_TTL.TOURNAMENT
+);
+
+export const fetchMatchesByTournamentId = createCachedFunction(
+  _fetchMatchesByTournamentId,
+  (tournamentId) => `tournament-matches-${tournamentId}`,
+  CACHE_TTL.TOURNAMENT
+);
+
+export const fetchLeagueByName = createCachedFunction(
+  _fetchLeagueByName,
+  (leagueName) => `league-${leagueName}`,
+  CACHE_TTL.TOURNAMENT
+);
+
+export const fetchStandingsByLeagueId = createCachedFunction(
+  _fetchStandingsByLeagueId,
+  (leagueId) => `league-standings-${leagueId}`,
+  CACHE_TTL.STANDINGS
+);
+
+export const searchTeams = createCachedFunction(
+  _searchTeams,
+  (query, limit) => `teams-search-${query}-${limit}`,
+  CACHE_TTL.TEAM
+);
+
+export const searchPlayers = createCachedFunction(
+  _searchPlayers,
+  (query, limit) => `players-search-${query}-${limit}`,
+  CACHE_TTL.PLAYER
+);
+
+export const fetchMatchOdds = createCachedFunction(
+  _fetchMatchOdds,
+  (matchId) => `match-odds-${matchId}`,
+  CACHE_TTL.ODDS
+);
+
+// Helper functions
 
 // Helper function to map game slug to our esport type
 function mapGameSlugToEsportType(gameSlug: string): string {
@@ -755,4 +716,14 @@ function transformOddsData(oddsData: any): {
   });
   
   return { bookmakerOdds, markets };
+}
+
+// Export a function to clear the cache for testing purposes
+export function clearCache(): void {
+  memoryCache.clear();
+}
+
+// Export cache stats function for debugging
+export function getCacheStats(): { size: number; keys: string[] } {
+  return memoryCache.getStats();
 }

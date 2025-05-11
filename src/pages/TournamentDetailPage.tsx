@@ -7,7 +7,8 @@ import {
   fetchTournamentById, 
   fetchMatchesByTournamentId, 
   fetchLeagueByName, 
-  fetchStandingsByLeagueId 
+  fetchStandingsByLeagueId,
+  getCacheStats
 } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -23,7 +24,15 @@ const TournamentDetailPage: React.FC = () => {
   const [matches, setMatches] = useState<MatchInfo[]>([]);
   const [standings, setStandings] = useState<TeamStanding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cacheStats, setCacheStats] = useState<{ size: number; keys: string[] }>({ size: 0, keys: [] });
   const { toast } = useToast();
+  
+  // Debug function to show cache status
+  const updateCacheStats = () => {
+    const stats = getCacheStats();
+    setCacheStats(stats);
+    console.log('Current cache stats:', stats);
+  };
   
   useEffect(() => {
     async function loadTournamentData() {
@@ -71,6 +80,9 @@ const TournamentDetailPage: React.FC = () => {
           // Generate mock standings if API fails
           generateMockStandings(tournamentMatches);
         }
+        
+        // Update cache stats after all fetches are complete
+        updateCacheStats();
         
       } catch (error) {
         console.error('Error loading tournament data:', error);
@@ -290,6 +302,11 @@ const TournamentDetailPage: React.FC = () => {
                 </div>
               </TabsContent>
             </Tabs>
+
+            {/* Optional: Debug info section (can be hidden in production) */}
+            <div className="mt-10 text-xs text-gray-500 border-t border-gray-800 pt-4">
+              <p>Cache items: {cacheStats.size}</p>
+            </div>
           </>
         ) : (
           <div className="text-center py-20">

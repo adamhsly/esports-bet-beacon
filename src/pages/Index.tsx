@@ -23,7 +23,7 @@ const Index = () => {
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
   const { toast } = useToast();
   
-  // Fetch live matches and refresh every 10 seconds
+  // Fetch live matches and refresh every 30 seconds (increased from 10 for optimization)
   useEffect(() => {
     async function loadLiveMatches() {
       try {
@@ -41,10 +41,10 @@ const Index = () => {
     
     loadLiveMatches();
     
-    // Set up polling every 10 seconds
+    // Set up polling every 30 seconds (increased from 10 to reduce API calls)
     const interval = setInterval(() => {
       loadLiveMatches();
-    }, 10000);
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
