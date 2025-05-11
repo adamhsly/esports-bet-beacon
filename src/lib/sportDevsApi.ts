@@ -1,52 +1,758 @@
+import { MatchInfo, TeamInfo } from '@/components/MatchCard';
+import { BookmakerOdds, Market } from '@/components/OddsTable';
 
-// This file is now just a re-export of the refactored API modules
-// We keep this file for backwards compatibility with existing code
-export * from './api';
+// API Constants
+const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
+const BASE_URL = "https://api.sportdevs.com";
+const WEB_URL = "https://esports.sportdevs.com";
 
-// Explicitly re-export specific functions that are being used by components
-export { 
-  searchTeams, 
-  fetchTeamById, 
-  fetchPlayersByTeamId 
-} from './api/teamsApi';
+// Types for SportDevs API responses
+interface SportDevsMatch {
+  id: string;
+  status: string;
+  start_time: string;
+  opponents: SportDevsTeam[];
+  tournament: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  serie: {
+    id: string;
+    name: string;
+    full_name: string;
+  };
+  videogame: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  format: {
+    type: string;
+    best_of: number;
+  };
+}
 
-export { 
-  fetchPlayerById,
-  searchPlayers 
-} from './api/playersApi';
+interface SportDevsTeam {
+  id: string;
+  name: string;
+  image_url: string | null;
+  slug: string;
+}
 
-export { 
-  fetchLiveMatches, 
-  fetchUpcomingMatches,
-  fetchMatchById,
-  fetchMatchesByTournamentId,
-  fetchMatchOdds
-} from './api/matchesApi';
+interface SportDevsOdds {
+  bookmakers: SportDevsBookmaker[];
+}
 
-export {
-  fetchTournaments,
-  fetchTournamentById,
-  fetchLeagueByName,
-  fetchStandingsByLeagueId
-} from './api/tournamentsApi';
+interface SportDevsBookmaker {
+  name: string;
+  image_url: string | null;
+  markets: SportDevsMarket[];
+}
 
-export {
-  fetchNews
-} from './api/newsApi';
+interface SportDevsMarket {
+  name: string;
+  outcomes: SportDevsOutcome[];
+}
 
-// Re-export transformers
-export {
-  transformMatchData,
-  transformOddsData
-} from './api/transformers';
+interface SportDevsOutcome {
+  name: string;
+  price: number;
+}
 
-// Re-export types
-export type {
-  MatchInfo,
-  TeamInfo,
-  SportDevsMatch,
-  SportDevsTeam,
-  SportDevsOdds,
-  OddsResponse,
-  StandingsTeam
-} from './api/types';
+// Map our esport types to SportDevs API game identifiers
+const mapEsportTypeToGameId = (esportType: string): string => {
+  const mapping: Record<string, string> = {
+    csgo: "csgo",
+    dota2: "dota2",
+    lol: "lol",
+    valorant: "valorant",
+    overwatch: "overwatch",
+    rocketleague: "rl"
+  };
+  
+  return mapping[esportType] || "csgo"; // Default to CS:GO
+};
+
+// Fetch all upcoming matches for a specific esport
+export async function fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
+  try {
+    const gameId = mapEsportTypeToGameId(esportType);
+    
+    console.log(`SportDevs API: Fetching upcoming matches for ${esportType} (${gameId})`);
+    
+    const response = await fetch(
+      `${BASE_URL}/esports/${gameId}/matches/upcoming`,
+      {
+        headers: {
+          'x-api-key': API_KEY,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`SportDevs API error ${response.status}:`, errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data: SportDevsMatch[] = await response.json();
+    console.log(`SportDevs API: Received ${data.length} upcoming matches for ${esportType}`);
+    return data.map(match => transformMatchData(match, esportType));
+  } catch (error) {
+    console.error("Error fetching upcoming matches from SportDevs:", error);
+    throw error;
+  }
+}
+
+// Fetch live matches for a specific esport
+export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
+  try {
+    const gameId = mapEsportTypeToGameId(esportType);
+    
+    console.log(`SportDevs API: Fetching live matches for ${esportType} (${gameId})`);
+    
+    const response = await fetch(
+      `${BASE_URL}/esports/${gameId}/matches/live`,
+      {
+        headers: {
+          'x-api-key': API_KEY,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`SportDevs API error ${response.status}:`, errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data: SportDevsMatch[] = await response.json();
+    console.log(`SportDevs API: Received ${data.length} live matches for ${esportType}`);
+    return data.map(match => transformMatchData(match, esportType));
+  } catch (error) {
+    console.error("Error fetching live matches from SportDevs:", error);
+    throw error;
+  }
+}
+
+// Fetch match by ID
+export async function fetchMatchById(matchId: string): Promise<MatchInfo> {
+  try {
+    console.log(`SportDevs API: Fetching match details for ID: ${matchId}`);
+    
+    // Use the correct endpoint format for fetching by ID
+    const response = await fetch(
+      `${WEB_URL}/matches?id=eq.${matchId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`SportDevs API error ${response.status}:`, errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const matches = await response.json();
+    console.log(`SportDevs API: Received match details for ID: ${matchId}`, matches);
+    
+    if (!matches || matches.length === 0) {
+      throw new Error('Match not found');
+    }
+    
+    const match = matches[0]; // Get the first match from the array
+    
+    // Determine the esport type from the match data
+    let esportType = 'csgo'; // Default
+    if (match.class_name) {
+      // Map class_name to our esport types
+      if (match.class_name === 'CS:GO') esportType = 'csgo';
+      else if (match.class_name === 'LoL') esportType = 'lol';
+      else if (match.class_name === 'Dota 2') esportType = 'dota2';
+      else if (match.class_name === 'Valorant') esportType = 'valorant';
+    }
+    
+    return transformMatchData(match, esportType);
+  } catch (error) {
+    console.error("Error fetching match by ID from SportDevs:", error);
+    throw error;
+  }
+}
+
+// Fetch match games by match ID
+export async function fetchMatchGames(matchId: string) {
+  try {
+    console.log(`SportDevs API: Fetching match games for ID: ${matchId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/matches-games?match_id=eq.${matchId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const games = await response.json();
+    console.log(`SportDevs API: Received ${games.length} games for match ID: ${matchId}`);
+    return games;
+    
+  } catch (error) {
+    console.error("Error fetching match games:", error);
+    throw error;
+  }
+}
+
+// Fetch match statistics by match ID
+export async function fetchMatchStatistics(matchId: string) {
+  try {
+    console.log(`SportDevs API: Fetching match statistics for ID: ${matchId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/matches-games-statistics?match_id=eq.${matchId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const statistics = await response.json();
+    console.log(`SportDevs API: Received statistics for match ID: ${matchId}`);
+    return statistics;
+    
+  } catch (error) {
+    console.error("Error fetching match statistics:", error);
+    throw error;
+  }
+}
+
+// Fetch team by ID
+export async function fetchTeamById(teamId: string) {
+  try {
+    console.log(`SportDevs API: Fetching team details for ID: ${teamId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/teams?id=eq.${teamId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const teams = await response.json();
+    
+    if (!teams || teams.length === 0) {
+      throw new Error('Team not found');
+    }
+    
+    return teams[0];
+    
+  } catch (error) {
+    console.error("Error fetching team by ID:", error);
+    throw error;
+  }
+}
+
+// Fetch players by team ID
+export async function fetchPlayersByTeamId(teamId: string) {
+  try {
+    console.log(`SportDevs API: Fetching players for team ID: ${teamId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/players?team_id=eq.${teamId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const players = await response.json();
+    console.log(`SportDevs API: Received ${players.length} players for team ID: ${teamId}`);
+    return players;
+    
+  } catch (error) {
+    console.error("Error fetching players by team ID:", error);
+    throw error;
+  }
+}
+
+// Fetch player by ID
+export async function fetchPlayerById(playerId: string) {
+  try {
+    console.log(`SportDevs API: Fetching player details for ID: ${playerId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/players?id=eq.${playerId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const players = await response.json();
+    
+    if (!players || players.length === 0) {
+      throw new Error('Player not found');
+    }
+    
+    return players[0];
+    
+  } catch (error) {
+    console.error("Error fetching player by ID:", error);
+    throw error;
+  }
+}
+
+// Fetch news articles
+export async function fetchNews(limit = 10) {
+  try {
+    console.log(`SportDevs API: Fetching news articles, limit: ${limit}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/news?limit=${limit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const news = await response.json();
+    console.log(`SportDevs API: Received ${news.length} news articles`);
+    return news;
+    
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    throw error;
+  }
+}
+
+// Fetch tournaments
+export async function fetchTournaments(limit = 10) {
+  try {
+    console.log(`SportDevs API: Fetching tournaments, limit: ${limit}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/tournaments?limit=${limit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const tournaments = await response.json();
+    console.log(`SportDevs API: Received ${tournaments.length} tournaments`);
+    return tournaments;
+    
+  } catch (error) {
+    console.error("Error fetching tournaments:", error);
+    throw error;
+  }
+}
+
+// Fetch tournament by ID
+export async function fetchTournamentById(tournamentId: string) {
+  try {
+    console.log(`SportDevs API: Fetching tournament details for ID: ${tournamentId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/tournaments?id=eq.${tournamentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const tournaments = await response.json();
+    
+    if (!tournaments || tournaments.length === 0) {
+      throw new Error('Tournament not found');
+    }
+    
+    return tournaments[0];
+    
+  } catch (error) {
+    console.error("Error fetching tournament by ID:", error);
+    throw error;
+  }
+}
+
+// Fetch matches by tournament ID
+export async function fetchMatchesByTournamentId(tournamentId: string) {
+  try {
+    console.log(`SportDevs API: Fetching matches for tournament ID: ${tournamentId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/matches?tournament_id=eq.${tournamentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const matches = await response.json();
+    console.log(`SportDevs API: Received ${matches.length} matches for tournament ID: ${tournamentId}`);
+    
+    // Process and return matches in our app's format
+    return matches.map((match: any) => {
+      // Determine the esport type from the match data
+      let esportType = 'csgo'; // Default
+      if (match.class_name) {
+        if (match.class_name === 'CS:GO') esportType = 'csgo';
+        else if (match.class_name === 'LoL') esportType = 'lol';
+        else if (match.class_name === 'Dota 2') esportType = 'dota2';
+        else if (match.class_name === 'Valorant') esportType = 'valorant';
+      }
+      
+      return transformMatchData(match, esportType);
+    });
+    
+  } catch (error) {
+    console.error("Error fetching matches by tournament ID:", error);
+    throw error;
+  }
+}
+
+// Fetch league information by name search
+export async function fetchLeagueByName(leagueName: string) {
+  try {
+    console.log(`SportDevs API: Searching for league with name: ${leagueName}`);
+    
+    const encodedName = encodeURIComponent(leagueName);
+    const response = await fetch(
+      `${WEB_URL}/leagues?name=like.*${encodedName}*`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const leagues = await response.json();
+    console.log(`SportDevs API: Found ${leagues.length} leagues matching "${leagueName}"`);
+    
+    return leagues.length > 0 ? leagues[0] : null;
+    
+  } catch (error) {
+    console.error("Error searching for league by name:", error);
+    throw error;
+  }
+}
+
+// Fetch standings by league ID
+export async function fetchStandingsByLeagueId(leagueId: string) {
+  try {
+    console.log(`SportDevs API: Fetching standings for league ID: ${leagueId}`);
+    
+    const response = await fetch(
+      `${WEB_URL}/standings?league_id=eq.${leagueId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const standings = await response.json();
+    console.log(`SportDevs API: Received ${standings.length} standings entries for league ID: ${leagueId}`);
+    return standings;
+    
+  } catch (error) {
+    console.error("Error fetching standings by league ID:", error);
+    throw error;
+  }
+}
+
+// Search for teams by name
+export async function searchTeams(query: string, limit = 10) {
+  try {
+    console.log(`SportDevs API: Searching teams with query: "${query}"`);
+    
+    const encodedQuery = encodeURIComponent(query);
+    const response = await fetch(
+      `${WEB_URL}/teams?name=like.*${encodedQuery}*&limit=${limit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const teams = await response.json();
+    console.log(`SportDevs API: Found ${teams.length} teams matching "${query}"`);
+    return teams;
+    
+  } catch (error) {
+    console.error("Error searching teams:", error);
+    throw error;
+  }
+}
+
+// Search for players by name
+export async function searchPlayers(query: string, limit = 10) {
+  try {
+    console.log(`SportDevs API: Searching players with query: "${query}"`);
+    
+    const encodedQuery = encodeURIComponent(query);
+    const response = await fetch(
+      `${WEB_URL}/players?name=like.*${encodedQuery}*&limit=${limit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const players = await response.json();
+    console.log(`SportDevs API: Found ${players.length} players matching "${query}"`);
+    return players;
+    
+  } catch (error) {
+    console.error("Error searching players:", error);
+    throw error;
+  }
+}
+
+// Fetch odds for a specific match
+export async function fetchMatchOdds(matchId: string): Promise<{
+  bookmakerOdds: BookmakerOdds[];
+  markets: Market[];
+}> {
+  try {
+    console.log(`SportDevs API: Fetching odds for match ID: ${matchId}`);
+    
+    const response = await fetch(
+      `${BASE_URL}/esports/matches/${matchId}/odds`,
+      {
+        headers: {
+          'x-api-key': API_KEY,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`SportDevs API error ${response.status}:`, errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const oddsData: SportDevsOdds = await response.json();
+    console.log(`SportDevs API: Received odds for match ID: ${matchId}`);
+    
+    return transformOddsData(oddsData);
+  } catch (error) {
+    console.error("Error fetching match odds from SportDevs:", error);
+    throw error;
+  }
+}
+
+// Helper function to map game slug to our esport type
+function mapGameSlugToEsportType(gameSlug: string): string {
+  const mapping: Record<string, string> = {
+    "csgo": "csgo",
+    "dota2": "dota2",
+    "lol": "lol",
+    "valorant": "valorant",
+    "overwatch": "overwatch",
+    "rl": "rocketleague"
+  };
+  
+  return mapping[gameSlug] || "csgo";
+}
+
+// Helper function to transform match data to our app's format
+function transformMatchData(match: any, esportType: string): MatchInfo {
+  // Extract team data, ensuring we have 2 teams
+  let teams: TeamInfo[] = [];
+  
+  // First try to get teams from direct opponents data
+  if (match.opponents && match.opponents.length > 0) {
+    teams = match.opponents.slice(0, 2).map((team: any) => ({
+      name: team.name,
+      logo: team.image_url || '/placeholder.svg'
+    }));
+  }
+  // Then try home_team and away_team
+  else if (match.home_team_name && match.away_team_name) {
+    teams = [
+      { 
+        name: match.home_team_name, 
+        logo: match.home_team_hash_image ? 
+          `https://assets.b365api.com/images/team/m/${match.home_team_hash_image}.png` : 
+          '/placeholder.svg' 
+      },
+      { 
+        name: match.away_team_name, 
+        logo: match.away_team_hash_image ? 
+          `https://assets.b365api.com/images/team/m/${match.away_team_hash_image}.png` : 
+          '/placeholder.svg' 
+      }
+    ];
+  }
+  // Then try to extract from name as last resort
+  else if (match.name && match.name.includes(' vs ')) {
+    const [team1Name, team2Name] = match.name.split(' vs ').map((t: string) => t.trim());
+    teams = [
+      { name: team1Name, logo: '/placeholder.svg' },
+      { name: team2Name, logo: '/placeholder.svg' }
+    ];
+  }
+  
+  // If we don't have 2 teams, add placeholders
+  while (teams.length < 2) {
+    teams.push({
+      name: 'TBD',
+      logo: '/placeholder.svg'
+    });
+  }
+  
+  // Determine the tournament name
+  const tournamentName = match.tournament?.name || match.serie?.name || match.tournament_name || match.league_name || "Unknown Tournament";
+  
+  // Determine the best of format
+  let bestOf = match.format?.best_of || 3;
+  
+  return {
+    id: match.id,
+    teams: [teams[0], teams[1]],
+    startTime: match.start_time || new Date().toISOString(),
+    tournament: tournamentName,
+    esportType: esportType,
+    bestOf: bestOf
+  };
+}
+
+// Helper function to transform odds data to our app's format
+function transformOddsData(oddsData: any): {
+  bookmakerOdds: BookmakerOdds[];
+  markets: Market[];
+} {
+  // Extract unique market types from all bookmakers
+  const marketTypes = new Set<string>();
+  const marketOptionsMap: Record<string, string[]> = {};
+  
+  oddsData.bookmakers.forEach(bookmaker => {
+    bookmaker.markets.forEach(market => {
+      marketTypes.add(market.name);
+      
+      // Initialize market options array if needed
+      if (!marketOptionsMap[market.name]) {
+        marketOptionsMap[market.name] = [];
+      }
+      
+      // Add unique options to the market
+      market.outcomes.forEach(outcome => {
+        if (!marketOptionsMap[market.name].includes(outcome.name)) {
+          marketOptionsMap[market.name].push(outcome.name);
+        }
+      });
+    });
+  });
+  
+  // Transform markets
+  const markets: Market[] = Array.from(marketTypes).map(marketName => ({
+    name: marketName,
+    options: marketOptionsMap[marketName] || []
+  }));
+  
+  // Transform bookmaker odds
+  const bookmakerOdds: BookmakerOdds[] = oddsData.bookmakers.map(bookmaker => {
+    const odds: Record<string, string> = {};
+    
+    // Populate odds for each market and outcome
+    bookmaker.markets.forEach(market => {
+      market.outcomes.forEach(outcome => {
+        odds[outcome.name] = outcome.price.toString();
+      });
+    });
+    
+    return {
+      bookmaker: bookmaker.name,
+      logo: bookmaker.image_url || '/placeholder.svg',
+      odds,
+      link: `https://example.com?bookmaker=${bookmaker.name.toLowerCase()}`, // This would be your affiliate link
+    };
+  });
+  
+  return { bookmakerOdds, markets };
+}

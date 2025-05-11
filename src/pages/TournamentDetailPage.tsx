@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -6,14 +7,14 @@ import {
   fetchTournamentById, 
   fetchMatchesByTournamentId, 
   fetchLeagueByName, 
-  fetchStandingsByLeagueId,
-  MatchInfo
+  fetchStandingsByLeagueId 
 } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BracketView from '@/components/tournament/BracketView';
 import StandingsTable, { TeamStanding } from '@/components/tournament/StandingsTable';
+import { MatchInfo } from '@/components/MatchCard';
 import { MatchCard } from '@/components/MatchCard';
 
 const TournamentDetailPage: React.FC = () => {
@@ -39,19 +40,7 @@ const TournamentDetailPage: React.FC = () => {
         
         // Fetch tournament matches
         const tournamentMatches = await fetchMatchesByTournamentId(tournamentId);
-        
-        // Process matches to ensure they have exactly 2 teams
-        const processedMatches = tournamentMatches.map(match => ({
-          ...match,
-          teams: match.teams.length >= 2 
-            ? [match.teams[0], match.teams[1]] 
-            : [
-                match.teams[0] || { name: 'TBD', logo: '/placeholder.svg' },
-                match.teams[1] || { name: 'TBD', logo: '/placeholder.svg' }
-              ]
-        }));
-        
-        setMatches(processedMatches);
+        setMatches(tournamentMatches);
         
         // Try to fetch standings via league
         try {
@@ -80,7 +69,7 @@ const TournamentDetailPage: React.FC = () => {
         } catch (error) {
           console.error('Error fetching tournament standings:', error);
           // Generate mock standings if API fails
-          generateMockStandings(processedMatches);
+          generateMockStandings(tournamentMatches);
         }
         
       } catch (error) {
@@ -269,7 +258,7 @@ const TournamentDetailPage: React.FC = () => {
               
               <TabsContent value="bracket" className="pt-6">
                 <BracketView 
-                  matches={matches as any} 
+                  matches={matches} 
                   tournamentName={tournamentData.name}
                 />
               </TabsContent>
@@ -291,7 +280,7 @@ const TournamentDetailPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {matches.length > 0 ? (
                     matches.map(match => (
-                      <MatchCard key={match.id} match={match as any} />
+                      <MatchCard key={match.id} match={match} />
                     ))
                   ) : (
                     <div className="col-span-3 text-center py-10 bg-theme-gray-dark/50 rounded-md">
