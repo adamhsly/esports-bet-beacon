@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -14,7 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BracketView from '@/components/tournament/BracketView';
 import StandingsTable, { TeamStanding } from '@/components/tournament/StandingsTable';
-import { MatchInfo } from '@/components/MatchCard';
+import { MatchInfo } from '@/lib/sportDevsApi';
 import { MatchCard } from '@/components/MatchCard';
 
 const TournamentDetailPage: React.FC = () => {

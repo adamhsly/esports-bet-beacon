@@ -1,7 +1,6 @@
-
 import { API_KEY, BASE_URL, mapEsportTypeToGameId } from './apiConfig';
-import { MatchInfo, SportDevsMatch } from './types';
-import { transformMatchData } from './transformers';
+import { MatchInfo, SportDevsMatch, OddsResponse } from './types';
+import { transformMatchData, transformOddsData } from './transformers';
 
 // Fetch all upcoming matches for a specific esport
 export async function fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
