@@ -8,6 +8,10 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import EsportPage from "./pages/EsportPage";
 import MatchDetailsPage from "./pages/MatchDetailsPage";
+import NewsPage from "./pages/NewsPage";
+import TeamsPage from "./pages/TeamsPage";
+import TeamDetailPage from "./pages/TeamDetailPage";
+import PlayerDetailPage from "./pages/PlayerDetailPage";
 import ApiKeyProvider from "./components/ApiKeyProvider";
 
 const queryClient = new QueryClient({
@@ -30,6 +34,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/esports/:esportId" element={<EsportPage />} />
             <Route path="/match/:matchId" element={<MatchDetailsPage />} />
+            <Route path="/news" element={<NewsPage />} />
+            <Route path="/teams" element={<TeamsPage />} />
+            <Route path="/team/:teamId" element={<TeamDetailPage />} />
+            <Route path="/player/:playerId" element={<PlayerDetailPage />} />
             {/* Redirect from /esports to the default esport (csgo) */}
             <Route path="/esports" element={<Navigate to="/esports/csgo" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
+import SearchableNavbar from '@/components/SearchableNavbar';
 import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo, TeamInfo } from '@/components/MatchCard';
 import Footer from '@/components/Footer';
@@ -16,6 +16,15 @@ const EsportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { sportDevsApiKey } = useApiKey();
+  
+  // Use ref to avoid dependency issues with the interval
+  const esportIdRef = useRef(esportId);
+  const apiKeyRef = useRef(sportDevsApiKey);
+  
+  useEffect(() => {
+    esportIdRef.current = esportId;
+    apiKeyRef.current = sportDevsApiKey;
+  }, [esportId, sportDevsApiKey]);
   
   useEffect(() => {
     const fetchMatches = async () => {
@@ -79,6 +88,38 @@ const EsportPage: React.FC = () => {
     };
     
     fetchMatches();
+    
+    // Set up interval for polling live matches every 10 seconds
+    const pollingInterval = setInterval(() => {
+      console.log('Polling for live match updates');
+      
+      fetch(
+        `https://esports.sportdevs.com/matches?status_type=eq.live&limit=20`,
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKeyRef.current}`,
+            'Accept': 'application/json'
+          }
+        }
+      )
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          const processedMatches = processMatchData(data, esportIdRef.current);
+          setLiveMatches(processedMatches);
+          console.log(`Updated ${processedMatches.length} live matches`);
+        })
+        .catch(error => {
+          console.error('Error polling live matches:', error);
+          // Don't show toast on polling errors to avoid spamming
+        });
+    }, 10000);
+    
+    return () => clearInterval(pollingInterval);
   }, [esportId, toast, sportDevsApiKey]);
   
   // Extract team names from a match name string formatted as "Team A vs Team B"
@@ -96,7 +137,24 @@ const EsportPage: React.FC = () => {
   
   // Process the raw match data into our app's format
   const processMatchData = (matches: any[], esportType: string): MatchInfo[] => {
-    return matches.map(match => {
+    // Filter matches based on the selected esport type
+    // This is a simple implementation; in a real app, you'd want more sophisticated filtering
+    const filteredMatches = matches.filter(match => {
+      if (match.videogame && match.videogame.slug) {
+        return match.videogame.slug.includes(esportType.toLowerCase());
+      }
+      if (match.class_name) {
+        const className = match.class_name.toLowerCase();
+        if (esportType === 'csgo' && (className.includes('cs') || className.includes('counter'))) return true;
+        if (esportType === 'lol' && (className.includes('league') || className.includes('lol'))) return true;
+        if (esportType === 'dota2' && className.includes('dota')) return true;
+        if (esportType === 'valorant' && className.includes('valorant')) return true;
+      }
+      // Default: include all matches if we can't determine the type
+      return true;
+    });
+    
+    return filteredMatches.map(match => {
       let teams: TeamInfo[] = [];
       
       // First try to get teams from opponents array
@@ -136,7 +194,7 @@ const EsportPage: React.FC = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <SearchableNavbar />
       <div className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold font-gaming mb-6">
           <span className="highlight-gradient">{esportId.toUpperCase()}</span> Betting Odds
@@ -159,8 +217,8 @@ const EsportPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10 text-gray-400">
-                  No live matches in progress.
+                <div className="text-center py-10 text-gray-400 bg-theme-gray-dark/50 rounded-md">
+                  No live {esportId.toUpperCase()} matches in progress.
                 </div>
               )}
             </section>
@@ -174,8 +232,8 @@ const EsportPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10 text-gray-400">
-                  No upcoming matches found.
+                <div className="text-center py-10 text-gray-400 bg-theme-gray-dark/50 rounded-md">
+                  No upcoming {esportId.toUpperCase()} matches found.
                 </div>
               )}
             </section>
