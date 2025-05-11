@@ -160,23 +160,23 @@ const TournamentDetailPage: React.FC = () => {
   const generateMockStandings = (matchData: MatchInfo[]) => {
     // Extract unique teams from match data
     const uniqueTeams = new Set<string>();
-    matchData.forEach(m => {
-      uniqueTeams.add(m.teams[0].name);
-      uniqueTeams.add(m.teams[1].name);
+    matchData.forEach(match => {
+      uniqueTeams.add(match.teams[0].name);
+      uniqueTeams.add(match.teams[1].name);
     });
     
     const teamArray = Array.from(uniqueTeams);
     
     // Generate mock standings
     const mockStandings: TeamStanding[] = teamArray.map((teamName, index) => {
-      const teamMatches = matchData.filter(m => 
-        m.teams[0].name === teamName || m.teams[1].name === teamName
+      const teamMatches = matchData.filter(match => 
+        match.teams[0].name === teamName || match.teams[1].name === teamName
       );
       
       // Find team logo
-      const teamLogo = matchData.find(m => 
-        m.teams[0].name === teamName || m.teams[1].name === teamName
-      )?.teams[m.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg';
+      const teamLogo = matchData.find(match => 
+        match.teams[0].name === teamName || match.teams[1].name === teamName
+      )?.teams[match.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg';
       
       // Generate random stats
       const wins = Math.floor(Math.random() * 10) + 1;
