@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -32,6 +32,8 @@ const MatchDetailsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('odds');
   const { toast } = useToast();
   const { sportDevsApiKey } = useApiKey();
+  const [timeUntilMatch, setTimeUntilMatch] = useState<string>('');
+  const [isMatchLive, setIsMatchLive] = useState(false);
   
   console.log(`Attempting to load match details for ID: ${matchId}`);
   
@@ -285,6 +287,42 @@ const MatchDetailsPage: React.FC = () => {
   const markets = oddsData?.markets || [];
   const bookmakerOdds = oddsData?.bookmakerOdds || [];
   
+  // Update countdown timer
+  useEffect(() => {
+    if (!match) return;
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const startTime = new Date(match.startTime);
+      
+      // Check if match has started (adding 5 minutes buffer for pre-game activities)
+      if (now >= startTime) {
+        setIsMatchLive(true);
+        setTimeUntilMatch('');
+        return;
+      }
+      
+      setIsMatchLive(false);
+      
+      // Calculate time difference
+      const diff = startTime.getTime() - now.getTime();
+      
+      // Convert to hours, minutes
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      setTimeUntilMatch(`${hours}h ${minutes}m`);
+    };
+    
+    // Initial update
+    updateCountdown();
+    
+    // Update every minute
+    const interval = setInterval(updateCountdown, 60000);
+    
+    return () => clearInterval(interval);
+  }, [match]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -352,8 +390,20 @@ const MatchDetailsPage: React.FC = () => {
                 })}
               </div>
               <div className="mt-4 px-4 py-2 border border-theme-purple bg-theme-purple/10 rounded-md">
-                <div className="text-sm text-theme-purple">Match starts in</div>
-                <div className="text-lg font-medium text-white">12h 30m</div>
+                {isMatchLive ? (
+                  <>
+                    <div className="text-sm text-theme-purple">Match status</div>
+                    <div className="text-lg font-medium text-white flex items-center">
+                      <span className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></span>
+                      LIVE
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm text-theme-purple">Match starts in</div>
+                    <div className="text-lg font-medium text-white">{timeUntilMatch}</div>
+                  </>
+                )}
               </div>
             </div>
             
