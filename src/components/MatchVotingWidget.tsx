@@ -113,7 +113,7 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
           const teamId = team.id || `team${index + 1}`;
           const hasVoted = votedTeamId === teamId;
           const votePercentage = getVotePercentage(teamId);
-          // Get enhanced team logo URL using our new utility
+          // Always get fresh team logo URL
           const teamLogoUrl = getEnhancedTeamLogoUrl(team);
           console.log(`VotingWidget - Team ${team.name} logo: ${teamLogoUrl}`);
           
