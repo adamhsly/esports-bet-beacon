@@ -12,12 +12,14 @@ import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { TeamProfile } from '@/components/TeamProfile';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import DynamicMatchSEOContent from '@/components/DynamicMatchSEOContent';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MatchDetails {
   id: string;
   startTime: string;
   tournament: string;
   esportType: string;
+  twitchChannel?: string;
   teams: {
     id?: string;
     name: string;
@@ -31,6 +33,7 @@ const MatchDetailsPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [matchDetails, setMatchDetails] = useState<MatchDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     async function fetchMatchDetails() {
@@ -41,6 +44,8 @@ const MatchDetailsPage = () => {
         startTime: new Date().toISOString(),
         tournament: 'The International',
         esportType: 'dota2',
+        // Mock Twitch channel for demonstration
+        twitchChannel: 'esl_dota2',
         teams: [
           { name: 'Team Secret', logo: '/placeholder.svg' },
           { name: 'Nigma Galaxy', logo: '/placeholder.svg' },
@@ -136,6 +141,28 @@ const MatchDetailsPage = () => {
                 <span>{matchDetails.tournament}</span>
               </div>
             </div>
+            
+            {/* Twitch Stream Embed */}
+            {matchDetails.twitchChannel && (
+              <div className="mb-8 bg-theme-gray-dark border border-theme-gray-medium rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-theme-gray-medium">
+                  <h2 className="text-lg font-bold text-white flex items-center">
+                    <span className="h-2 w-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                    Live Stream
+                  </h2>
+                </div>
+                <div className="relative w-full" style={{ paddingTop: isMobile ? '56.25%' : '40%' }}>
+                  <iframe
+                    src={`https://player.twitch.tv/?channel=${matchDetails.twitchChannel}&parent=esports-bet-beacon.lovable.app&muted=true`}
+                    frameBorder="0"
+                    allowFullScreen={true}
+                    scrolling="no"
+                    className="absolute top-0 left-0 w-full h-full"
+                    title={`${matchDetails.teams?.[0]?.name || 'Team 1'} vs ${matchDetails.teams?.[1]?.name || 'Team 2'} Live Stream`}
+                  ></iframe>
+                </div>
+              </div>
+            )}
             
             <Tabs defaultValue="odds" className="w-full">
               <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1">
