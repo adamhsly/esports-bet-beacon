@@ -14,6 +14,8 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useApiKey } from '@/components/ApiKeyProvider';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { TeamInfo } from '@/components/MatchCard';
+import { getTeamImageUrl } from '@/utils/cacheUtils';
 
 interface StandingsData {
   position: number;
@@ -43,7 +45,14 @@ const MatchDetailsPage: React.FC = () => {
         
         // Ensure team images are properly processed
         if (matchData && matchData.teams) {
-          matchData.teams = matchData.teams.map((team: any) => {
+          // Make sure we have exactly two teams, even if we need to add placeholder teams
+          const processedTeams: [TeamInfo, TeamInfo] = [
+            matchData.teams[0] || { name: 'TBD', logo: '/placeholder.svg', id: 'unknown', hash_image: null },
+            matchData.teams[1] || { name: 'TBD', logo: '/placeholder.svg', id: 'unknown', hash_image: null }
+          ];
+          
+          // Process each team to ensure proper image URLs
+          matchData.teams = processedTeams.map((team: TeamInfo) => {
             // If we have id and hash_image, generate proper image URL
             if (team.id && team.hash_image) {
               console.log(`Processing team image for ${team.name} with hash ${team.hash_image}`);
