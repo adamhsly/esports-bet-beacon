@@ -12,6 +12,7 @@ interface MatchVotingWidgetProps {
 
 const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams }) => {
   const { toast } = useToast();
+  // Always initialize state values
   const [votes, setVotes] = useState<{ [teamId: string]: number }>({});
   const [votedTeamId, setVotedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +21,10 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
   useEffect(() => {
     const loadVotes = () => {
       try {
+        // These values are used for initialization only
+        let team1Id = teams[0]?.id || 'team1';
+        let team2Id = teams[1]?.id || 'team2';
+        
         // Check if user already voted
         const userVotedTeam = localStorage.getItem(`match_${matchId}_user_vote`);
         if (userVotedTeam) {
@@ -27,13 +32,13 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
         }
         
         // Load team votes
-        const team1Votes = parseInt(localStorage.getItem(`match_${matchId}_votes_${teams[0].id}`) || '0');
-        const team2Votes = parseInt(localStorage.getItem(`match_${matchId}_votes_${teams[1].id}`) || '0');
+        const team1Votes = parseInt(localStorage.getItem(`match_${matchId}_votes_${team1Id}`) || '0');
+        const team2Votes = parseInt(localStorage.getItem(`match_${matchId}_votes_${team2Id}`) || '0');
         
         // Initialize with some votes if none exist
         const initialVotes = {
-          [teams[0].id || 'team1']: team1Votes || Math.floor(Math.random() * 20) + 30,
-          [teams[1].id || 'team2']: team2Votes || Math.floor(Math.random() * 20) + 25
+          [team1Id]: team1Votes || Math.floor(Math.random() * 20) + 30,
+          [team2Id]: team2Votes || Math.floor(Math.random() * 20) + 25
         };
         
         setVotes(initialVotes);
@@ -89,6 +94,12 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
     return ((votes[teamId || 'unknown'] || 0) * 10);
   };
   
+  // Make sure we have valid teams data
+  const safeTeams: [TeamInfo, TeamInfo] = [
+    teams[0] || { name: 'Team 1', logo: '/placeholder.svg', id: 'team1' },
+    teams[1] || { name: 'Team 2', logo: '/placeholder.svg', id: 'team2' }
+  ];
+  
   return (
     <div className="bg-theme-gray-dark border border-theme-gray-medium rounded-lg p-3 mb-4">
       <div className="flex items-center justify-between">
@@ -97,7 +108,7 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
       </div>
       
       <div className="flex justify-between items-center gap-2 mt-2">
-        {teams.map((team, index) => {
+        {safeTeams.map((team, index) => {
           const teamId = team.id || `team${index + 1}`;
           const hasVoted = votedTeamId === teamId;
           const votePercentage = getVotePercentage(teamId);
