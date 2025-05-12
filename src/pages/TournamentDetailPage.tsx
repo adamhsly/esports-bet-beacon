@@ -175,9 +175,13 @@ const TournamentDetailPage: React.FC = () => {
       );
       
       // Find team logo
-      const teamLogo = matchData.find(match => 
+      const foundMatch = matchData.find(match => 
         match.teams[0].name === teamName || match.teams[1].name === teamName
-      )?.teams[match.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg';
+      );
+      
+      const teamLogo = foundMatch ? 
+        foundMatch.teams[foundMatch.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg' : 
+        '/placeholder.svg';
       
       // Generate random stats
       const wins = Math.floor(Math.random() * 10) + 1;
