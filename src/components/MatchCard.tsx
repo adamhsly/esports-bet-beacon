@@ -3,10 +3,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Clock, ArrowRight } from 'lucide-react';
+import { getTeamImageUrl } from '@/utils/cacheUtils';
 
 export interface TeamInfo {
   name: string;
   logo: string;
+  id?: string;
+  hash_image?: string;
 }
 
 export interface MatchInfo {
@@ -36,6 +39,14 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     minute: '2-digit',
   });
 
+  // Get proper team logo URLs, using cache if available
+  const getTeamLogo = (team: TeamInfo) => {
+    if (team.id && team.hash_image) {
+      return getTeamImageUrl(team.id, team.hash_image);
+    }
+    return team.logo || '/placeholder.svg';
+  };
+
   return (
     <div className="match-card bg-theme-gray-dark/80 border border-theme-gray-medium p-4 rounded-md hover:border-theme-purple transition-all">
       <div className="flex justify-between items-center mb-3">
@@ -47,13 +58,29 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       
       <div className="flex justify-between items-center my-4">
         <div className="flex items-center space-x-3">
-          <img src={teams[0].logo || '/placeholder.svg'} alt={teams[0].name} className="w-10 h-10 object-contain" />
+          <img 
+            src={getTeamLogo(teams[0])} 
+            alt={teams[0].name} 
+            className="w-10 h-10 object-contain" 
+            onError={(e) => {
+              // Fallback if image fails to load
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
+            }}
+          />
           <span className="font-medium text-white">{teams[0].name}</span>
         </div>
         <span className="text-gray-400">vs</span>
         <div className="flex items-center space-x-3">
           <span className="font-medium text-white">{teams[1].name}</span>
-          <img src={teams[1].logo || '/placeholder.svg'} alt={teams[1].name} className="w-10 h-10 object-contain" />
+          <img 
+            src={getTeamLogo(teams[1])} 
+            alt={teams[1].name} 
+            className="w-10 h-10 object-contain"
+            onError={(e) => {
+              // Fallback if image fails to load
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
+            }}
+          />
         </div>
       </div>
       

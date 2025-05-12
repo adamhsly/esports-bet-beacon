@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -156,8 +155,10 @@ const EsportPage: React.FC = () => {
       // First try to get teams from opponents array
       if (match.opponents && match.opponents.length > 0) {
         teams = match.opponents.slice(0, 2).map((opponent: any) => ({
+          id: opponent.id || `team-${opponent.name}`,
           name: opponent.name || 'N/A',
-          logo: opponent.image_url || '/placeholder.svg'
+          logo: opponent.image_url || '/placeholder.svg',
+          hash_image: opponent.hash_image || null
         }));
       } 
       // If no opponents data, extract from match name
