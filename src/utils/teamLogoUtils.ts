@@ -3,9 +3,8 @@
  * Based on the LootMarket esport-team-logos repository
  */
 
-// Base path for logo images
-// In production, this would point to your CDN or static assets folder
-const BASE_LOGO_PATH = '/team-logos';
+// Base path for GitHub raw content - the raw file content URL for the repo
+const BASE_LOGO_PATH = 'https://raw.githubusercontent.com/lootmarket/esport-team-logos/master';
 
 // Mapping of team names (lowercase) to their filenames in the logo repository
 // This handles common naming variations like "NAVI" vs "Natus Vincere"
@@ -60,24 +59,18 @@ const teamLogoMap: Record<string, string> = {
   '100t': '100t',
   'team solomid': 'tsm',
   'tsm': 'tsm',
-  'cloud9': 'cloud9',
   'c9': 'cloud9',
   
   // Dota 2 Teams
   'team secret': 'secret',
   'secret': 'secret',
-  'og': 'og',
-  'eg': 'eg',
   'evil geniuses': 'eg',
+  'eg': 'eg',
   'lgd': 'lgd',
   'psg.lgd': 'lgd',
-  'team liquid': 'liquid',
-  'liquid': 'liquid',
   'nigma': 'nigma',
   'alliance': 'alliance',
   'vp': 'virtuspro',
-  'virtus.pro': 'virtuspro',
-  'virtuspro': 'virtuspro',
   
   // General default values for testing/placeholder
   'team1': 'placeholder',
@@ -103,6 +96,7 @@ export const getTeamLogoUrl = (teamName: string): string => {
   const logoFilename = teamLogoMap[normalizedName];
   
   if (logoFilename) {
+    // GitHub raw content URL pattern
     return `${BASE_LOGO_PATH}/${logoFilename}.png`;
   }
   

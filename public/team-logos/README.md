@@ -1,24 +1,24 @@
 
 # Team Logos
 
-This directory contains team logos sourced from the [LootMarket esport-team-logos repository](https://github.com/lootmarket/esport-team-logos).
+This application uses team logos sourced directly from the [LootMarket esport-team-logos repository](https://github.com/lootmarket/esport-team-logos).
 
-## Usage
+## Implementation Details
 
-- All logos are PNG format
-- Logos are named consistently with the team name (lowercase, no spaces)
-- Example: `navi.png`, `faze.png`, `liquid.png`
+- Logos are loaded directly from the GitHub repository raw content URLs
+- The base URL used is: `https://raw.githubusercontent.com/lootmarket/esport-team-logos/master/`
+- Each logo is referenced by its filename: `{team-name}.png`
+- Example: `https://raw.githubusercontent.com/lootmarket/esport-team-logos/master/navi.png`
+
+## Team Name Mapping
+
+A mapping between team names and logo filenames is maintained in `src/utils/teamLogoUtils.ts`
 
 ## Attribution
 
-Original logos are from the LootMarket GitHub repository:
+All logos are from the LootMarket GitHub repository:
 https://github.com/lootmarket/esport-team-logos
 
-Logos are hosted locally to ensure availability and performance.
+## Fallback
 
-## Adding New Logos
-
-1. Download the logo from the official team source
-2. Convert to PNG if necessary
-3. Name the file according to the standard naming convention
-4. Add the mapping in `src/utils/teamLogoUtils.ts`
+If a team logo cannot be found, the application will display a placeholder image.
