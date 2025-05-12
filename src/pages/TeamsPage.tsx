@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -6,12 +7,19 @@ import { useToast } from '@/hooks/use-toast';
 import { searchTeams } from '@/lib/sportDevsApi';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, List, Grid2X2 } from 'lucide-react';
+import { Search, Loader2, List, Grid2X2, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import EsportsNavigation from '@/components/EsportsNavigation';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Table, 
   TableBody, 
@@ -22,6 +30,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Team {
   id: string;
@@ -30,6 +39,8 @@ interface Team {
   hash_image?: string | null;
   country?: string;
   acronym?: string;
+  rank?: number;
+  winRate?: number;
 }
 
 const TeamsPage: React.FC = () => {
@@ -39,6 +50,7 @@ const TeamsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeEsport, setActiveEsport] = useState('csgo');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
   
   useEffect(() => {
@@ -53,9 +65,19 @@ const TeamsPage: React.FC = () => {
         console.log('TeamsPage: Searching teams with term:', searchTerm);
         const teamsData = await searchTeams(searchTerm, 50);
         console.log('TeamsPage: Received teams data:', teamsData);
+
+        // Add random rankings to the teams
+        const teamsWithRanking = teamsData.map((team, index) => ({
+          ...team,
+          rank: Math.floor(Math.random() * 20) + 1,
+          winRate: Math.floor(Math.random() * 40) + 50
+        }));
         
-        setTeams(teamsData);
-        setFilteredTeams(teamsData);
+        // Sort teams by rank initially
+        const sortedTeams = sortTeamsByRank(teamsWithRanking, 'asc');
+        
+        setTeams(sortedTeams);
+        setFilteredTeams(sortedTeams);
       } catch (error) {
         console.error('Error loading teams:', error);
         toast({
@@ -89,25 +111,41 @@ const TeamsPage: React.FC = () => {
     setFilteredTeams(filtered);
   }, [searchQuery, teams]);
   
+  const sortTeamsByRank = (teamsToSort: Team[], direction: 'asc' | 'desc'): Team[] => {
+    return [...teamsToSort].sort((a, b) => {
+      const rankA = a.rank || 999;
+      const rankB = b.rank || 999;
+      
+      return direction === 'asc' ? rankA - rankB : rankB - rankA;
+    });
+  };
+
+  const handleSortDirectionChange = () => {
+    const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortDirection(newDirection);
+    setFilteredTeams(sortTeamsByRank(filteredTeams, newDirection));
+  };
+  
   const generateSampleTeams = () => {
     const sampleTeams: Team[] = [
-      { id: '1', name: 'Natus Vincere', image_url: '/placeholder.svg', hash_image: null, acronym: 'NAVI', country: 'Ukraine' },
-      { id: '2', name: 'Team Liquid', image_url: '/placeholder.svg', hash_image: null, acronym: 'TL', country: 'United States' },
-      { id: '3', name: 'Fnatic', image_url: '/placeholder.svg', hash_image: null, acronym: 'FNC', country: 'United Kingdom' },
-      { id: '4', name: 'G2 Esports', image_url: '/placeholder.svg', hash_image: null, acronym: 'G2', country: 'Germany' },
-      { id: '5', name: 'Vitality', image_url: '/placeholder.svg', hash_image: null, acronym: 'VIT', country: 'France' },
-      { id: '6', name: 'Cloud9', image_url: '/placeholder.svg', hash_image: null, acronym: 'C9', country: 'United States' },
-      { id: '7', name: 'Astralis', image_url: '/placeholder.svg', hash_image: null, acronym: 'AST', country: 'Denmark' },
-      { id: '8', name: 'FaZe Clan', image_url: '/placeholder.svg', hash_image: null, acronym: 'FaZe', country: 'International' },
-      { id: '9', name: 'Team Secret', image_url: '/placeholder.svg', hash_image: null, acronym: 'Secret', country: 'Europe' },
-      { id: '10', name: 'Evil Geniuses', image_url: '/placeholder.svg', hash_image: null, acronym: 'EG', country: 'United States' },
-      { id: '11', name: 'T1', image_url: '/placeholder.svg', hash_image: null, acronym: 'T1', country: 'South Korea' },
-      { id: '12', name: 'Team Spirit', image_url: '/placeholder.svg', hash_image: null, acronym: 'Spirit', country: 'Russia' }
+      { id: '1', name: 'Natus Vincere', image_url: '/placeholder.svg', hash_image: null, acronym: 'NAVI', country: 'Ukraine', rank: 1, winRate: 78 },
+      { id: '2', name: 'Team Liquid', image_url: '/placeholder.svg', hash_image: null, acronym: 'TL', country: 'United States', rank: 2, winRate: 75 },
+      { id: '3', name: 'Fnatic', image_url: '/placeholder.svg', hash_image: null, acronym: 'FNC', country: 'United Kingdom', rank: 3, winRate: 72 },
+      { id: '4', name: 'G2 Esports', image_url: '/placeholder.svg', hash_image: null, acronym: 'G2', country: 'Germany', rank: 4, winRate: 70 },
+      { id: '5', name: 'Vitality', image_url: '/placeholder.svg', hash_image: null, acronym: 'VIT', country: 'France', rank: 5, winRate: 68 },
+      { id: '6', name: 'Cloud9', image_url: '/placeholder.svg', hash_image: null, acronym: 'C9', country: 'United States', rank: 6, winRate: 65 },
+      { id: '7', name: 'Astralis', image_url: '/placeholder.svg', hash_image: null, acronym: 'AST', country: 'Denmark', rank: 7, winRate: 64 },
+      { id: '8', name: 'FaZe Clan', image_url: '/placeholder.svg', hash_image: null, acronym: 'FaZe', country: 'International', rank: 8, winRate: 62 },
+      { id: '9', name: 'Team Secret', image_url: '/placeholder.svg', hash_image: null, acronym: 'Secret', country: 'Europe', rank: 9, winRate: 60 },
+      { id: '10', name: 'Evil Geniuses', image_url: '/placeholder.svg', hash_image: null, acronym: 'EG', country: 'United States', rank: 10, winRate: 59 },
+      { id: '11', name: 'T1', image_url: '/placeholder.svg', hash_image: null, acronym: 'T1', country: 'South Korea', rank: 11, winRate: 57 },
+      { id: '12', name: 'Team Spirit', image_url: '/placeholder.svg', hash_image: null, acronym: 'Spirit', country: 'Russia', rank: 12, winRate: 55 }
     ];
     
     console.log('TeamsPage: Generated sample teams:', sampleTeams);
-    setTeams(sampleTeams);
-    setFilteredTeams(sampleTeams);
+    const sortedTeams = sortTeamsByRank(sampleTeams, sortDirection);
+    setTeams(sortedTeams);
+    setFilteredTeams(sortedTeams);
   };
   
   const handleEsportChange = (esportId: string) => {
@@ -155,7 +193,23 @@ const TeamsPage: React.FC = () => {
           <TableHead>Name</TableHead>
           <TableHead>Tag</TableHead>
           <TableHead>Country</TableHead>
-          <TableHead className="text-center">Ranking</TableHead>
+          <TableHead className="text-center">
+            <div className="flex items-center justify-center">
+              <span className="mr-2">Ranking</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleSortDirectionChange}
+                className="h-6 w-6"
+              >
+                {sortDirection === 'asc' ? (
+                  <ArrowUpAZ className="h-4 w-4" />
+                ) : (
+                  <ArrowDownAZ className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </TableHead>
           <TableHead className="text-center">Win Rate</TableHead>
         </TableRow>
       </TableHeader>
@@ -199,10 +253,10 @@ const TeamsPage: React.FC = () => {
                 )}
               </TableCell>
               <TableCell className="text-center">
-                <Badge className="bg-theme-purple">#{Math.floor(Math.random() * 20) + 1}</Badge>
+                <Badge className="bg-theme-purple">#{team.rank || '-'}</Badge>
               </TableCell>
               <TableCell className="text-center">
-                {`${Math.floor(Math.random() * 40) + 50}%`}
+                {`${team.winRate || '-'}%`}
               </TableCell>
             </TableRow>
           ))
@@ -239,7 +293,7 @@ const TeamsPage: React.FC = () => {
                 
                 <h3 className="font-bold text-lg mb-1">{team.name}</h3>
                 
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
                   {team.acronym && (
                     <Badge variant="outline" className="font-normal">
                       {team.acronym}
@@ -250,6 +304,15 @@ const TeamsPage: React.FC = () => {
                       {team.country}
                     </Badge>
                   )}
+                </div>
+                
+                <div className="mt-2 flex gap-3 items-center justify-center">
+                  <Badge className="bg-theme-purple">
+                    Rank #{team.rank || '-'}
+                  </Badge>
+                  <span className="text-sm text-gray-400">
+                    {team.winRate || '-'}% Win Rate
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -271,7 +334,10 @@ const TeamsPage: React.FC = () => {
         </p>
         
         <div className="mb-8">
-          <EsportsNavigation activeEsport={activeEsport} />
+          <EsportsNavigation 
+            activeEsport={activeEsport}
+            onEsportChange={handleEsportChange}
+          />
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
@@ -286,23 +352,52 @@ const TeamsPage: React.FC = () => {
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
           
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('table')}
-              className="bg-theme-gray-dark border border-theme-gray-medium hover:bg-theme-gray-medium"
-            >
-              <List size={20} />
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('grid')}
-              className="bg-theme-gray-dark border border-theme-gray-medium hover:bg-theme-gray-medium"
-            >
-              <Grid2X2 size={20} />
-            </Button>
+          <div className="flex gap-2 items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-theme-gray-dark border border-theme-gray-medium hover:bg-theme-gray-medium"
+                >
+                  <ArrowUpAZ className="h-4 w-4 mr-2" />
+                  Sort by Rank
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => {
+                  setSortDirection('asc');
+                  setFilteredTeams(sortTeamsByRank(filteredTeams, 'asc'));
+                }}>
+                  Lowest to Highest
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  setSortDirection('desc');
+                  setFilteredTeams(sortTeamsByRank(filteredTeams, 'desc'));
+                }}>
+                  Highest to Lowest
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('table')}
+                className="bg-theme-gray-dark border border-theme-gray-medium hover:bg-theme-gray-medium"
+              >
+                <List size={20} />
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('grid')}
+                className="bg-theme-gray-dark border border-theme-gray-medium hover:bg-theme-gray-medium"
+              >
+                <Grid2X2 size={20} />
+              </Button>
+            </div>
           </div>
         </div>
         

@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -15,12 +14,26 @@ const esportsTypes = [
 
 interface EsportsNavigationProps {
   activeEsport?: string;
+  onEsportChange?: (esportId: string) => void;
 }
 
-const EsportsNavigation: React.FC<EsportsNavigationProps> = ({ activeEsport = 'csgo' }) => {
+const EsportsNavigation: React.FC<EsportsNavigationProps> = ({ 
+  activeEsport = 'csgo',
+  onEsportChange 
+}) => {
+  const handleEsportChange = (value: string) => {
+    if (onEsportChange) {
+      onEsportChange(value);
+    }
+  };
+
   return (
     <div className="w-full overflow-auto pb-2 mb-6">
-      <Tabs defaultValue={activeEsport} className="w-full">
+      <Tabs 
+        defaultValue={activeEsport} 
+        className="w-full"
+        onValueChange={handleEsportChange}
+      >
         <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 overflow-x-auto">
           {esportsTypes.map((esport) => (
             <TabsTrigger
@@ -30,12 +43,9 @@ const EsportsNavigation: React.FC<EsportsNavigationProps> = ({ activeEsport = 'c
                 "py-2 px-4 whitespace-nowrap",
                 "data-[state=active]:bg-theme-purple data-[state=active]:text-white"
               )}
-              asChild
             >
-              <Link to={`/esports/${esport.id}`}>
-                <span className="mr-2">{esport.icon}</span>
-                {esport.name}
-              </Link>
+              <span className="mr-2">{esport.icon}</span>
+              {esport.name}
             </TabsTrigger>
           ))}
         </TabsList>
