@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for mapping team names to logo filenames
  * Based on the LootMarket esport-team-logos repository
@@ -92,10 +93,13 @@ export const getTeamLogoUrl = (teamName: string): string => {
   // Normalize the team name (lowercase)
   const normalizedName = teamName.toLowerCase();
   
+  console.log(`Looking up logo for team: "${normalizedName}"`);
+  
   // Find the logo filename in our map
   const logoFilename = teamLogoMap[normalizedName];
   
   if (logoFilename) {
+    console.log(`Found direct match for ${normalizedName} -> ${logoFilename}`);
     // GitHub raw content URL pattern
     return `${BASE_LOGO_PATH}/${logoFilename}.png`;
   }
@@ -106,6 +110,7 @@ export const getTeamLogoUrl = (teamName: string): string => {
   );
   
   if (partialMatch) {
+    console.log(`Found partial match for ${normalizedName} -> ${partialMatch} -> ${teamLogoMap[partialMatch]}`);
     return `${BASE_LOGO_PATH}/${teamLogoMap[partialMatch]}.png`;
   }
   

@@ -115,6 +115,7 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
           const votePercentage = getVotePercentage(teamId);
           // Get enhanced team logo URL using our new utility
           const teamLogoUrl = getEnhancedTeamLogoUrl(team);
+          console.log(`VotingWidget - Team ${team.name} logo: ${teamLogoUrl}`);
           
           return (
             <div key={teamId} className="flex-1">
@@ -137,7 +138,7 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
                     alt={team.name} 
                     className="w-6 h-6 object-contain"
                     onError={(e) => {
-                      console.log(`Logo load error for ${team.name}, falling back to placeholder`);
+                      console.log(`VotingWidget - Logo load error for ${team.name}, falling back to placeholder`);
                       (e.target as HTMLImageElement).src = '/placeholder.svg';
                     }}
                   />

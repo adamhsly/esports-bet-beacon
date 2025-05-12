@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -41,8 +42,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
   // Get proper team logo URLs, using enhanced logo mapping
   const getTeamLogo = (team: TeamInfo): string => {
-    console.log('MatchCard - Processing team image:', team);
-    return getEnhancedTeamLogoUrl(team);
+    const logoUrl = getEnhancedTeamLogoUrl(team);
+    console.log(`MatchCard - Team ${team.name} logo: ${logoUrl}`);
+    return logoUrl;
   };
 
   return (
