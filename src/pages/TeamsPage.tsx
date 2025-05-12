@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -11,7 +10,8 @@ import { Search, Loader2, List, Grid2X2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import EsportsNavigation from '@/components/EsportsNavigation';
-import { getTeamImageUrl, getEnhancedTeamLogoUrl } from '@/utils/cacheUtils';
+import { getTeamImageUrl } from '@/utils/cacheUtils';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { 
   Table, 
   TableBody, 
