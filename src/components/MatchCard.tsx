@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Clock, ArrowRight } from 'lucide-react';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 export interface TeamInfo {
   name: string;
@@ -39,23 +39,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     minute: '2-digit',
   });
 
-  // Get proper team logo URLs, using cache if available
+  // Get proper team logo URLs, using enhanced logo mapping
   const getTeamLogo = (team: TeamInfo): string => {
     console.log('MatchCard - Processing team image:', team);
-    
-    if (team.id && team.hash_image) {
-      const imageUrl = getTeamImageUrl(team.id, team.hash_image);
-      console.log(`MatchCard - Generated URL for team ${team.name}:`, imageUrl);
-      return imageUrl;
-    }
-    
-    if (team.logo && team.logo !== '/placeholder.svg') {
-      console.log(`MatchCard - Using provided logo for team ${team.name}:`, team.logo);
-      return team.logo;
-    }
-    
-    console.log(`MatchCard - Using placeholder for team ${team.name}`);
-    return '/placeholder.svg';
+    return getEnhancedTeamLogoUrl(team);
   };
 
   return (

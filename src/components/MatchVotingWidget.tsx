@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ThumbsUp } from 'lucide-react';
 import { TeamInfo } from '@/components/MatchCard';
 import { useToast } from '@/hooks/use-toast';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 interface MatchVotingWidgetProps {
   matchId: string;
@@ -112,6 +113,8 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
           const teamId = team.id || `team${index + 1}`;
           const hasVoted = votedTeamId === teamId;
           const votePercentage = getVotePercentage(teamId);
+          // Get enhanced team logo URL using our new utility
+          const teamLogoUrl = getEnhancedTeamLogoUrl(team);
           
           return (
             <div key={teamId} className="flex-1">
@@ -130,10 +133,11 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
               >
                 <div className="flex items-center gap-2">
                   <img 
-                    src={team.logo || '/placeholder.svg'} 
+                    src={teamLogoUrl} 
                     alt={team.name} 
                     className="w-6 h-6 object-contain"
                     onError={(e) => {
+                      console.log(`Logo load error for ${team.name}, falling back to placeholder`);
                       (e.target as HTMLImageElement).src = '/placeholder.svg';
                     }}
                   />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +16,7 @@ import { useApiKey } from '@/components/ApiKeyProvider';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { TeamInfo } from '@/components/MatchCard';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 
 interface StandingsData {
@@ -59,15 +59,11 @@ const MatchDetailsPage: React.FC = () => {
           const updatedTeams: [TeamInfo, TeamInfo] = [
             { 
               ...processedTeams[0],
-              logo: processedTeams[0].id && processedTeams[0].hash_image 
-                ? getTeamImageUrl(processedTeams[0].id, processedTeams[0].hash_image)
-                : processedTeams[0].logo
+              logo: getEnhancedTeamLogoUrl(processedTeams[0])
             },
             {
               ...processedTeams[1],
-              logo: processedTeams[1].id && processedTeams[1].hash_image
-                ? getTeamImageUrl(processedTeams[1].id, processedTeams[1].hash_image)
-                : processedTeams[1].logo
+              logo: getEnhancedTeamLogoUrl(processedTeams[1])
             }
           ];
           
@@ -92,6 +88,21 @@ const MatchDetailsPage: React.FC = () => {
           });
           throw new Error('Match not found');
         }
+        
+        // Ensure team logos are processed in mock data as well
+        if (mockData && mockData.teams) {
+          mockData.teams = [
+            { 
+              ...mockData.teams[0],
+              logo: getEnhancedTeamLogoUrl(mockData.teams[0])
+            },
+            {
+              ...mockData.teams[1],
+              logo: getEnhancedTeamLogoUrl(mockData.teams[1])
+            }
+          ] as [TeamInfo, TeamInfo];
+        }
+        
         return mockData;
       }
     },
