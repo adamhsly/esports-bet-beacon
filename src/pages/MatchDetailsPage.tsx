@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -244,6 +245,42 @@ const MatchDetailsPage: React.FC = () => {
   
   const isLoading = matchLoading || (match && (oddsLoading || standingsLoading));
   
+  // Update countdown timer - this MUST be called unconditionally
+  useEffect(() => {
+    if (!match) return;
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const startTime = new Date(match.startTime);
+      
+      // Check if match has started
+      if (now >= startTime) {
+        setIsMatchLive(true);
+        setTimeUntilMatch('');
+        return;
+      }
+      
+      setIsMatchLive(false);
+      
+      // Calculate time difference
+      const diff = startTime.getTime() - now.getTime();
+      
+      // Convert to hours, minutes
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      setTimeUntilMatch(`${hours}h ${minutes}m`);
+    };
+    
+    // Initial update
+    updateCountdown();
+    
+    // Update every minute
+    const interval = setInterval(updateCountdown, 60000);
+    
+    return () => clearInterval(interval);
+  }, [match]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -286,42 +323,6 @@ const MatchDetailsPage: React.FC = () => {
   // Use data from the odds query if available
   const markets = oddsData?.markets || [];
   const bookmakerOdds = oddsData?.bookmakerOdds || [];
-  
-  // Update countdown timer - this MUST be called unconditionally
-  useEffect(() => {
-    if (!match) return;
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const startTime = new Date(match.startTime);
-      
-      // Check if match has started
-      if (now >= startTime) {
-        setIsMatchLive(true);
-        setTimeUntilMatch('');
-        return;
-      }
-      
-      setIsMatchLive(false);
-      
-      // Calculate time difference
-      const diff = startTime.getTime() - now.getTime();
-      
-      // Convert to hours, minutes
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      setTimeUntilMatch(`${hours}h ${minutes}m`);
-    };
-    
-    // Initial update
-    updateCountdown();
-    
-    // Update every minute
-    const interval = setInterval(updateCountdown, 60000);
-    
-    return () => clearInterval(interval);
-  }, [match]);
 
   return (
     <div className="min-h-screen flex flex-col">
