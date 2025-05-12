@@ -170,14 +170,14 @@ const TournamentDetailPage: React.FC = () => {
     
     // Generate mock standings
     const mockStandings: TeamStanding[] = teamArray.map((teamName, index) => {
-      const teamMatches = matchData.filter(matchItem => 
-        matchItem.teams[0].name === teamName || matchItem.teams[1].name === teamName
+      const teamMatches = matchData.filter(match => 
+        match.teams[0].name === teamName || match.teams[1].name === teamName
       );
       
       // Find team logo
-      const teamLogo = matchData.find(matchItem => 
-        matchItem.teams[0].name === teamName || matchItem.teams[1].name === teamName
-      )?.teams[matchItem.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg';
+      const teamLogo = matchData.find(match => 
+        match.teams[0].name === teamName || match.teams[1].name === teamName
+      )?.teams[match.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg';
       
       // Generate random stats
       const wins = Math.floor(Math.random() * 10) + 1;
