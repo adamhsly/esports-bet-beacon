@@ -90,89 +90,67 @@ const MatchVotingWidget: React.FC<MatchVotingWidgetProps> = ({ matchId, teams })
   };
   
   return (
-    <div className="bg-theme-gray-dark border border-theme-gray-medium rounded-lg p-6 mb-6">
-      <h3 className="text-lg font-medium text-center mb-4">Who will win this match?</h3>
+    <div className="bg-theme-gray-dark border border-theme-gray-medium rounded-lg p-3 mb-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium">Who will win?</h3>
+        <p className="text-xs text-gray-400">Total votes: {totalVotes * 10}</p>
+      </div>
       
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="flex justify-between items-center gap-2 mt-2">
         {teams.map((team, index) => {
           const teamId = team.id || `team${index + 1}`;
           const hasVoted = votedTeamId === teamId;
           const votePercentage = getVotePercentage(teamId);
           
           return (
-            <div 
-              key={teamId}
-              className={`flex-1 w-full ${index === 0 ? 'md:mr-2' : 'md:ml-2'}`}
-            >
-              <div 
+            <div key={teamId} className="flex-1">
+              <Button
+                onClick={() => handleVote(teamId)}
+                disabled={!!votedTeamId || isLoading}
                 className={`
-                  relative flex flex-col items-center p-4 rounded-lg border-2 transition-all
+                  w-full px-2 py-1 h-auto transition-colors flex items-center justify-between
                   ${hasVoted 
-                    ? 'bg-theme-purple bg-opacity-20 border-theme-purple' 
-                    : 'bg-theme-gray-medium bg-opacity-30 border-theme-gray-medium hover:border-theme-purple'}
+                    ? 'bg-theme-purple text-white' 
+                    : votedTeamId 
+                      ? 'bg-theme-gray-medium text-gray-400' 
+                      : 'bg-theme-gray-light hover:bg-theme-purple hover:text-white'}
+                  ${hasVoted ? 'relative' : ''}
                 `}
               >
-                <img 
-                  src={team.logo || '/placeholder.svg'} 
-                  alt={team.name} 
-                  className="w-16 h-16 object-contain mb-2"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-                <h4 className="font-medium text-lg mb-2">{team.name}</h4>
-                
-                <div className="flex flex-col items-center w-full">
-                  <div className="w-full bg-theme-gray-medium rounded-full h-2.5 mb-2">
-                    <div 
-                      className="bg-theme-purple h-2.5 rounded-full transition-all duration-500" 
-                      style={{ width: `${votePercentage}%` }}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between w-full text-sm">
-                    <span>{votePercentage}%</span>
-                    <span>{getDisplayVotes(teamId)} votes</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={team.logo || '/placeholder.svg'} 
+                    alt={team.name} 
+                    className="w-6 h-6 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                  <span className="text-xs font-medium truncate max-w-[80px]">{team.name}</span>
                 </div>
                 
-                <Button
-                  onClick={() => handleVote(teamId)}
-                  disabled={!!votedTeamId || isLoading}
-                  className={`
-                    mt-4 w-full transition-colors
-                    ${hasVoted 
-                      ? 'bg-theme-purple text-white' 
-                      : votedTeamId 
-                        ? 'bg-theme-gray-medium text-gray-400' 
-                        : 'bg-theme-gray-light hover:bg-theme-purple hover:text-white'}
-                  `}
-                >
-                  <ThumbsUp size={16} className="mr-2" />
-                  {hasVoted 
-                    ? 'Voted!' 
-                    : votedTeamId 
-                      ? 'Already Voted' 
-                      : 'Vote'}
-                </Button>
+                <div className="text-xs">
+                  {votePercentage}%
+                  {hasVoted && <ThumbsUp size={12} className="ml-1 inline-block" />}
+                </div>
                 
                 {hasVoted && (
-                  <div className="absolute -top-2 -right-2 bg-theme-purple text-white text-xs px-2 py-1 rounded-full">
+                  <div className="absolute -top-2 -right-2 bg-theme-purple text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     Your pick
                   </div>
                 )}
+              </Button>
+              
+              <div className="w-full bg-theme-gray-medium rounded-full h-1 mt-1">
+                <div 
+                  className="bg-theme-purple h-1 rounded-full transition-all duration-500" 
+                  style={{ width: `${votePercentage}%` }}
+                />
               </div>
             </div>
           );
         })}
       </div>
-      
-      <p className="text-xs text-center text-gray-400 mt-4">
-        {votedTeamId 
-          ? 'Thanks for voting!' 
-          : 'Click on a team to cast your vote'} 
-        • Total votes: {totalVotes * 10}
-      </p>
     </div>
   );
 };
