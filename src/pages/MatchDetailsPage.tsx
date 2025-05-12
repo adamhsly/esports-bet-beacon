@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +16,7 @@ import { useApiKey } from '@/components/ApiKeyProvider';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { TeamInfo } from '@/components/MatchCard';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
+import MatchVotingWidget from '@/components/MatchVotingWidget';
 
 interface StandingsData {
   position: number;
@@ -377,6 +377,11 @@ const MatchDetailsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* NEW: Voting Widget */}
+        {matchId && match.teams && (
+          <MatchVotingWidget matchId={matchId} teams={match.teams} />
+        )}
         
         {/* Tabs Navigation */}
         <Tabs defaultValue="odds" className="mb-6" onValueChange={setActiveTab}>
