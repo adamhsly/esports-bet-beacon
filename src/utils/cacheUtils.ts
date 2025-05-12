@@ -166,18 +166,25 @@ export const IMAGE_CACHE_TTL = {
  */
 export function getTeamImageUrl(teamId: string, hashImage?: string | null): string {
   if (!hashImage) {
+    console.log(`getTeamImageUrl: No hash_image provided for team ${teamId}, returning placeholder`);
     return '/placeholder.svg';
   }
   
-  const cacheKey = `team_image_${teamId}`;
+  const cacheKey = `team_image_${teamId}_${hashImage}`;
   const cachedUrl = memoryCache.get<string>(cacheKey);
   
   if (cachedUrl) {
+    console.log(`getTeamImageUrl: Cache hit for team ${teamId} - ${cachedUrl}`);
     return cachedUrl;
   }
   
   // Construct image URL
-  const imageUrl = `https://images.sportdevs.com/${hashImage}.png`;
+  // First try with the hash prefix
+  const imageUrl = hashImage.startsWith('http') 
+    ? hashImage 
+    : `https://images.sportdevs.com/${hashImage}.png`;
+    
+  console.log(`getTeamImageUrl: Generated image URL for team ${teamId} - ${imageUrl}`);
   memoryCache.set(cacheKey, imageUrl, IMAGE_CACHE_TTL.TEAM_IMAGE);
   
   return imageUrl;
@@ -191,20 +198,26 @@ export function getTeamImageUrl(teamId: string, hashImage?: string | null): stri
  */
 export function getTournamentImageUrl(tournamentId: string, hashImage?: string | null): string {
   if (!hashImage) {
+    console.log(`getTournamentImageUrl: No hash_image provided for tournament ${tournamentId}, returning placeholder`);
     return '/placeholder.svg';
   }
   
-  const cacheKey = `tournament_image_${tournamentId}`;
+  const cacheKey = `tournament_image_${tournamentId}_${hashImage}`;
   const cachedUrl = memoryCache.get<string>(cacheKey);
   
   if (cachedUrl) {
+    console.log(`getTournamentImageUrl: Cache hit for tournament ${tournamentId} - ${cachedUrl}`);
     return cachedUrl;
   }
   
   // Construct image URL
-  const imageUrl = `https://images.sportdevs.com/${hashImage}.png`;
+  // First try with the hash prefix
+  const imageUrl = hashImage.startsWith('http') 
+    ? hashImage 
+    : `https://images.sportdevs.com/${hashImage}.png`;
+    
+  console.log(`getTournamentImageUrl: Generated image URL for tournament ${tournamentId} - ${imageUrl}`);
   memoryCache.set(cacheKey, imageUrl, IMAGE_CACHE_TTL.TOURNAMENT_IMAGE);
   
   return imageUrl;
 }
-

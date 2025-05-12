@@ -11,11 +11,13 @@ import { Search, Loader2, Trophy, Calendar, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import EsportsNavigation from '@/components/EsportsNavigation';
+import { getTeamImageUrl } from '@/utils/cacheUtils';
 
 interface Team {
   id: string;
   name: string;
   image_url: string | null;
+  hash_image?: string | null;
   country?: string;
   acronym?: string;
 }
@@ -37,7 +39,9 @@ const TeamsPage: React.FC = () => {
         
         // Use a random team name to get some results
         const searchTerm = commonTeams[Math.floor(Math.random() * commonTeams.length)];
+        console.log('TeamsPage: Searching teams with term:', searchTerm);
         const teamsData = await searchTeams(searchTerm, 50);
+        console.log('TeamsPage: Received teams data:', teamsData);
         
         setTeams(teamsData);
         setFilteredTeams(teamsData);
@@ -76,20 +80,21 @@ const TeamsPage: React.FC = () => {
   
   const generateSampleTeams = () => {
     const sampleTeams: Team[] = [
-      { id: '1', name: 'Natus Vincere', image_url: '/placeholder.svg', acronym: 'NAVI', country: 'Ukraine' },
-      { id: '2', name: 'Team Liquid', image_url: '/placeholder.svg', acronym: 'TL', country: 'United States' },
-      { id: '3', name: 'Fnatic', image_url: '/placeholder.svg', acronym: 'FNC', country: 'United Kingdom' },
-      { id: '4', name: 'G2 Esports', image_url: '/placeholder.svg', acronym: 'G2', country: 'Germany' },
-      { id: '5', name: 'Vitality', image_url: '/placeholder.svg', acronym: 'VIT', country: 'France' },
-      { id: '6', name: 'Cloud9', image_url: '/placeholder.svg', acronym: 'C9', country: 'United States' },
-      { id: '7', name: 'Astralis', image_url: '/placeholder.svg', acronym: 'AST', country: 'Denmark' },
-      { id: '8', name: 'FaZe Clan', image_url: '/placeholder.svg', acronym: 'FaZe', country: 'International' },
-      { id: '9', name: 'Team Secret', image_url: '/placeholder.svg', acronym: 'Secret', country: 'Europe' },
-      { id: '10', name: 'Evil Geniuses', image_url: '/placeholder.svg', acronym: 'EG', country: 'United States' },
-      { id: '11', name: 'T1', image_url: '/placeholder.svg', acronym: 'T1', country: 'South Korea' },
-      { id: '12', name: 'Team Spirit', image_url: '/placeholder.svg', acronym: 'Spirit', country: 'Russia' }
+      { id: '1', name: 'Natus Vincere', image_url: '/placeholder.svg', hash_image: null, acronym: 'NAVI', country: 'Ukraine' },
+      { id: '2', name: 'Team Liquid', image_url: '/placeholder.svg', hash_image: null, acronym: 'TL', country: 'United States' },
+      { id: '3', name: 'Fnatic', image_url: '/placeholder.svg', hash_image: null, acronym: 'FNC', country: 'United Kingdom' },
+      { id: '4', name: 'G2 Esports', image_url: '/placeholder.svg', hash_image: null, acronym: 'G2', country: 'Germany' },
+      { id: '5', name: 'Vitality', image_url: '/placeholder.svg', hash_image: null, acronym: 'VIT', country: 'France' },
+      { id: '6', name: 'Cloud9', image_url: '/placeholder.svg', hash_image: null, acronym: 'C9', country: 'United States' },
+      { id: '7', name: 'Astralis', image_url: '/placeholder.svg', hash_image: null, acronym: 'AST', country: 'Denmark' },
+      { id: '8', name: 'FaZe Clan', image_url: '/placeholder.svg', hash_image: null, acronym: 'FaZe', country: 'International' },
+      { id: '9', name: 'Team Secret', image_url: '/placeholder.svg', hash_image: null, acronym: 'Secret', country: 'Europe' },
+      { id: '10', name: 'Evil Geniuses', image_url: '/placeholder.svg', hash_image: null, acronym: 'EG', country: 'United States' },
+      { id: '11', name: 'T1', image_url: '/placeholder.svg', hash_image: null, acronym: 'T1', country: 'South Korea' },
+      { id: '12', name: 'Team Spirit', image_url: '/placeholder.svg', hash_image: null, acronym: 'Spirit', country: 'Russia' }
     ];
     
+    console.log('TeamsPage: Generated sample teams:', sampleTeams);
     setTeams(sampleTeams);
     setFilteredTeams(sampleTeams);
   };
@@ -97,6 +102,14 @@ const TeamsPage: React.FC = () => {
   const handleEsportChange = (esportId: string) => {
     setActiveEsport(esportId);
     setLoading(true);
+  };
+  
+  // Get team image from cache or use fallback
+  const getTeamImage = (team: Team): string => {
+    if (team.id && team.hash_image) {
+      return getTeamImageUrl(team.id, team.hash_image);
+    }
+    return team.image_url || '/placeholder.svg';
   };
   
   if (loading) {
@@ -149,9 +162,14 @@ const TeamsPage: React.FC = () => {
                     <div className="flex flex-col items-center text-center">
                       <div className="bg-theme-gray-medium rounded-full p-2 mb-4">
                         <img 
-                          src={team.image_url || '/placeholder.svg'} 
+                          src={getTeamImage(team)} 
                           alt={team.name} 
                           className="w-24 h-24 object-contain"
+                          onError={(e) => {
+                            console.log('Team card image failed to load:', team.name);
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
                         />
                       </div>
                       

@@ -34,6 +34,7 @@ export interface TeamProfileProps {
       opponent?: string;
       opponent_image?: string;
       opponent_hash_image?: string;
+      opponent_id?: string;
     }[];
   };
 }
@@ -43,6 +44,13 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
   const teamLogo = team.hash_image 
     ? getTeamImageUrl(team.id, team.hash_image)
     : (team.image_url || '/placeholder.svg');
+
+  console.log('TeamProfile - Team Data:', {
+    id: team.id,
+    name: team.name,
+    hash_image: team.hash_image,
+    logo: teamLogo
+  });
 
   return (
     <div className="space-y-6">
@@ -55,7 +63,7 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
                 alt={team.name} 
                 className="w-20 h-20 object-contain bg-theme-gray-medium p-2 rounded-md"
                 onError={(e) => {
-                  // Fallback if image fails to load
+                  console.log('Team image failed to load:', teamLogo);
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
@@ -126,6 +134,11 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
                     <AvatarImage 
                       src={playerImage}
                       alt={player.name}
+                      onError={(e) => {
+                        console.log('Player image failed to load:', playerImage);
+                        (e.target as HTMLImageElement).onerror = null; // Prevent infinite loop
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
                     />
                     <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -151,8 +164,8 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
           <div className="space-y-2">
             {team.matches ? team.matches.filter(match => new Date(match.start_time) > new Date()).map(match => {
               // Get opponent image with cache support if hash_image exists
-              const opponentImage = match.opponent_hash_image
-                ? getTeamImageUrl('opponent', match.opponent_hash_image)
+              const opponentImage = match.opponent_id && match.opponent_hash_image
+                ? getTeamImageUrl(match.opponent_id, match.opponent_hash_image)
                 : (match.opponent_image || '/placeholder.svg');
                 
               return (

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -7,7 +8,7 @@ import Footer from '@/components/Footer';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useApiKey } from '@/components/ApiKeyProvider';
-import { memoryCache } from '@/utils/cacheUtils';
+import { memoryCache, getTeamImageUrl } from '@/utils/cacheUtils';
 
 const EsportPage: React.FC = () => {
   const { esportId = 'csgo' } = useParams<{ esportId: string }>();
@@ -55,7 +56,9 @@ const EsportPage: React.FC = () => {
       }
       
       const matchesData = await response.json();
+      console.log(`EsportPage: Raw ${status} matches data:`, matchesData);
       const processedMatches = processMatchData(matchesData, esportType);
+      console.log(`EsportPage: Processed ${status} matches:`, processedMatches);
       
       // Cache the results - live matches for 30s, upcoming for 5 min
       const ttl = status === 'live' ? 30 : 300;
@@ -154,12 +157,15 @@ const EsportPage: React.FC = () => {
       
       // First try to get teams from opponents array
       if (match.opponents && match.opponents.length > 0) {
-        teams = match.opponents.slice(0, 2).map((opponent: any) => ({
-          id: opponent.id || `team-${opponent.name}`,
-          name: opponent.name || 'N/A',
-          logo: opponent.image_url || '/placeholder.svg',
-          hash_image: opponent.hash_image || null
-        }));
+        teams = match.opponents.slice(0, 2).map((opponent: any) => {
+          console.log('Processing opponent:', opponent);
+          return {
+            id: opponent.id || `team-${opponent.name}`,
+            name: opponent.name || 'N/A',
+            logo: opponent.image_url || '/placeholder.svg',
+            hash_image: opponent.hash_image || null
+          };
+        });
       } 
       // If no opponents data, extract from match name
       else if (match.name) {
@@ -177,6 +183,16 @@ const EsportPage: React.FC = () => {
           logo: '/placeholder.svg'
         });
       }
+      
+      // For debugging purposes, log the team object with image info
+      teams.forEach((team, index) => {
+        if (team.id && team.hash_image) {
+          const imageUrl = getTeamImageUrl(team.id, team.hash_image);
+          console.log(`Team ${index} (${team.name}) image URL: ${imageUrl}`);
+        } else {
+          console.log(`Team ${index} (${team.name}) has no hash_image or id`);
+        }
+      });
       
       return {
         id: match.id || 'N/A',

@@ -23,13 +23,17 @@ const TeamDetailPage: React.FC = () => {
           throw new Error('Team ID is required');
         }
         
+        console.log('TeamDetailPage: Fetching team data for ID:', teamId);
+        
         // Fetch team details
         const team = await fetchTeamById(teamId);
+        console.log('TeamDetailPage: Received team data:', team);
         
         // Fetch team players
         let players: any[] = [];
         try {
           players = await fetchPlayersByTeamId(teamId);
+          console.log('TeamDetailPage: Received players data:', players);
         } catch (error) {
           console.error('Error fetching team players:', error);
         }
@@ -37,15 +41,19 @@ const TeamDetailPage: React.FC = () => {
         // Combine data
         const combinedData = {
           ...team,
+          id: team.id || teamId, // Ensure ID is available
+          hash_image: team.hash_image || null,
           players: players.map(player => ({
             id: player.id,
             name: player.name,
             image_url: player.image_url,
+            hash_image: player.hash_image || null,
             role: player.role,
             country: player.country
           }))
         };
         
+        console.log('TeamDetailPage: Combined team data:', combinedData);
         setTeamData(combinedData);
       } catch (error) {
         console.error('Error loading team data:', error);
@@ -70,15 +78,16 @@ const TeamDetailPage: React.FC = () => {
       id: teamId || '1',
       name: 'Team Sample',
       image_url: '/placeholder.svg',
+      hash_image: null,
       country: 'International',
       region: 'Global',
       acronym: 'TS',
       players: [
-        { id: '101', name: 'Player One', image_url: '/placeholder.svg', role: 'Captain', country: 'United States' },
-        { id: '102', name: 'Player Two', image_url: '/placeholder.svg', role: 'Support', country: 'Canada' },
-        { id: '103', name: 'Player Three', image_url: '/placeholder.svg', role: 'Entry Fragger', country: 'Sweden' },
-        { id: '104', name: 'Player Four', image_url: '/placeholder.svg', role: 'AWPer', country: 'Denmark' },
-        { id: '105', name: 'Player Five', image_url: '/placeholder.svg', role: 'Rifler', country: 'France' }
+        { id: '101', name: 'Player One', image_url: '/placeholder.svg', hash_image: null, role: 'Captain', country: 'United States' },
+        { id: '102', name: 'Player Two', image_url: '/placeholder.svg', hash_image: null, role: 'Support', country: 'Canada' },
+        { id: '103', name: 'Player Three', image_url: '/placeholder.svg', hash_image: null, role: 'Entry Fragger', country: 'Sweden' },
+        { id: '104', name: 'Player Four', image_url: '/placeholder.svg', hash_image: null, role: 'AWPer', country: 'Denmark' },
+        { id: '105', name: 'Player Five', image_url: '/placeholder.svg', hash_image: null, role: 'Rifler', country: 'France' }
       ],
       matches: [
         { 
@@ -86,18 +95,23 @@ const TeamDetailPage: React.FC = () => {
           name: 'Team Sample vs Team Rival', 
           start_time: new Date(Date.now() + 86400000).toISOString(), // tomorrow 
           opponent: 'Team Rival',
-          opponent_image: '/placeholder.svg'
+          opponent_image: '/placeholder.svg',
+          opponent_hash_image: null,
+          opponent_id: '301'
         },
         { 
           id: '202', 
           name: 'Team Elite vs Team Sample', 
           start_time: new Date(Date.now() + 172800000).toISOString(), // day after tomorrow
           opponent: 'Team Elite',
-          opponent_image: '/placeholder.svg'
+          opponent_image: '/placeholder.svg',
+          opponent_hash_image: null,
+          opponent_id: '302'
         }
       ]
     };
     
+    console.log('TeamDetailPage: Generated sample team data:', sampleTeam);
     setTeamData(sampleTeam);
   };
 
