@@ -287,7 +287,7 @@ const MatchDetailsPage: React.FC = () => {
   const markets = oddsData?.markets || [];
   const bookmakerOdds = oddsData?.bookmakerOdds || [];
   
-  // Update countdown timer
+  // Update countdown timer - this MUST be called unconditionally
   useEffect(() => {
     if (!match) return;
 
@@ -295,7 +295,7 @@ const MatchDetailsPage: React.FC = () => {
       const now = new Date();
       const startTime = new Date(match.startTime);
       
-      // Check if match has started (adding 5 minutes buffer for pre-game activities)
+      // Check if match has started
       if (now >= startTime) {
         setIsMatchLive(true);
         setTimeUntilMatch('');
@@ -433,7 +433,7 @@ const MatchDetailsPage: React.FC = () => {
           <MatchVotingWidget matchId={matchId} teams={match.teams} />
         )}
         
-        {/* Tabs Navigation */}
+        {/* Tabs Navigation and Tab Contents */}
         <Tabs defaultValue="odds" className="mb-6" onValueChange={setActiveTab}>
           <TabsList className="bg-theme-gray-dark border border-theme-gray-light mb-6 w-full grid grid-cols-3 md:flex md:justify-start p-1">
             <TabsTrigger 
