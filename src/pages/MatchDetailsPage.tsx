@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, Trophy, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OddsTable } from '@/components/OddsTable';
-import { MatchVotingWidget } from '@/components/MatchVotingWidget';
+import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { TeamProfile } from '@/components/TeamProfile';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import DynamicMatchSEOContent from '@/components/DynamicMatchSEOContent';
@@ -55,6 +56,48 @@ const MatchDetailsPage = () => {
 
     fetchMatchDetails();
   }, [matchId]);
+
+  // Create mock data for OddsTable component
+  const mockBookmakerOdds = [
+    {
+      bookmaker: "BetZone",
+      logo: "/placeholder.svg",
+      odds: {
+        "Team Secret": "1.85",
+        "Nigma Galaxy": "1.95"
+      },
+      link: "#"
+    },
+    {
+      bookmaker: "GG.bet",
+      logo: "/placeholder.svg",
+      odds: {
+        "Team Secret": "1.90",
+        "Nigma Galaxy": "1.92"
+      },
+      link: "#"
+    },
+    {
+      bookmaker: "Betway",
+      logo: "/placeholder.svg",
+      odds: {
+        "Team Secret": "1.87",
+        "Nigma Galaxy": "1.93"
+      },
+      link: "#"
+    }
+  ];
+
+  const mockMarkets = [
+    {
+      name: "Match Winner",
+      options: ["Team Secret", "Nigma Galaxy"]
+    },
+    {
+      name: "Map 1 Winner",
+      options: ["Team Secret", "Nigma Galaxy"]
+    }
+  ];
 
   if (isLoading) {
     return (
@@ -110,24 +153,55 @@ const MatchDetailsPage = () => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="odds" className="mt-6">
-                <OddsTable />
+                <OddsTable 
+                  bookmakerOdds={mockBookmakerOdds}
+                  markets={mockMarkets}
+                />
               </TabsContent>
               <TabsContent value="team1" className="mt-6">
                 {matchDetails.teams && matchDetails.teams.length > 0 ? (
-                  <TeamProfile team={matchDetails.teams[0]} />
+                  <TeamProfile 
+                    team={{
+                      id: matchDetails.teams[0].id || 'team1',
+                      name: matchDetails.teams[0].name,
+                      image_url: matchDetails.teams[0].logo,
+                      hash_image: matchDetails.teams[0].hash_image
+                    }} 
+                  />
                 ) : (
                   <p>Team 1 profile will be displayed here.</p>
                 )}
               </TabsContent>
               <TabsContent value="team2" className="mt-6">
                 {matchDetails.teams && matchDetails.teams.length > 1 ? (
-                  <TeamProfile team={matchDetails.teams[1]} />
+                  <TeamProfile 
+                    team={{
+                      id: matchDetails.teams[1].id || 'team2',
+                      name: matchDetails.teams[1].name,
+                      image_url: matchDetails.teams[1].logo,
+                      hash_image: matchDetails.teams[1].hash_image
+                    }}
+                  />
                 ) : (
                   <p>Team 2 profile will be displayed here.</p>
                 )}
               </TabsContent>
               <TabsContent value="community" className="mt-6">
-                <MatchVotingWidget />
+                <MatchVotingWidget 
+                  matchId={matchDetails.id}
+                  teams={[
+                    { 
+                      id: matchDetails.teams[0]?.id || 'team1',
+                      name: matchDetails.teams[0]?.name || 'Team 1', 
+                      logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                    },
+                    { 
+                      id: matchDetails.teams[1]?.id || 'team2',
+                      name: matchDetails.teams[1]?.name || 'Team 2', 
+                      logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                    }
+                  ]}
+                />
               </TabsContent>
             </Tabs>
             
