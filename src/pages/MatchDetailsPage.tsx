@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -52,18 +53,22 @@ const MatchDetailsPage: React.FC = () => {
           ];
           
           // Process each team to ensure proper image URLs
-          matchData.teams = processedTeams.map((team: TeamInfo) => {
-            // If we have id and hash_image, generate proper image URL
-            if (team.id && team.hash_image) {
-              console.log(`Processing team image for ${team.name} with hash ${team.hash_image}`);
-              const imageUrl = getTeamImageUrl(team.id, team.hash_image);
-              return {
-                ...team,
-                logo: imageUrl // Update logo with proper URL
-              };
+          const updatedTeams: [TeamInfo, TeamInfo] = [
+            { 
+              ...processedTeams[0],
+              logo: processedTeams[0].id && processedTeams[0].hash_image 
+                ? getTeamImageUrl(processedTeams[0].id, processedTeams[0].hash_image)
+                : processedTeams[0].logo
+            },
+            {
+              ...processedTeams[1],
+              logo: processedTeams[1].id && processedTeams[1].hash_image
+                ? getTeamImageUrl(processedTeams[1].id, processedTeams[1].hash_image)
+                : processedTeams[1].logo
             }
-            return team;
-          });
+          ];
+          
+          matchData.teams = updatedTeams;
         }
         
         return matchData;
