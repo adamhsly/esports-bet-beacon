@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, Trophy } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
+import SEOContentBlock from '@/components/SEOContentBlock';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
@@ -67,6 +67,16 @@ const Index = () => {
     
     loadUpcomingMatches();
   }, []);
+
+  const homepageSEOContent = {
+    title: "Your Ultimate Esports Betting & Stats Platform",
+    paragraphs: [
+      "Stay updated with live esports scores from major tournaments and competitions around the world. Our real-time esports match tracker provides second-by-second updates from your favorite games including CS:GO, League of Legends, Dota 2, and Valorant.",
+      "Compare esports odds from leading betting sites in one convenient location. Find the best value for your bets with our comprehensive esports odds comparison tool featuring upcoming esports matches across all major titles.",
+      "Explore in-depth team stats, performance analytics, and historical match results to inform your betting decisions. Our database tracks player performance, team rankings, and head-to-head statistics from all professional esports competitions.",
+      "Whether you're following international championships or regional qualifiers, our platform provides all the information you need to stay ahead of the game with live coverage, match predictions, and expert analysis for the most competitive esports titles."
+    ]
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -235,6 +245,12 @@ const Index = () => {
         <TopBettingSites />
         <PromoBanner />
         <Testimonials />
+        
+        {/* SEO Content Block */}
+        <SEOContentBlock 
+          title={homepageSEOContent.title}
+          paragraphs={homepageSEOContent.paragraphs}
+        />
       </div>
       <Footer />
     </div>
