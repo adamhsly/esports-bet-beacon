@@ -39,7 +39,25 @@ const MatchDetailsPage: React.FC = () => {
       try {
         // Get match data from SportDevs API
         console.log('Fetching match data from SportDevs API');
-        return await fetchMatchById(matchId || '');
+        const matchData = await fetchMatchById(matchId || '');
+        
+        // Ensure team images are properly processed
+        if (matchData && matchData.teams) {
+          matchData.teams = matchData.teams.map((team: any) => {
+            // If we have id and hash_image, generate proper image URL
+            if (team.id && team.hash_image) {
+              console.log(`Processing team image for ${team.name} with hash ${team.hash_image}`);
+              const imageUrl = getTeamImageUrl(team.id, team.hash_image);
+              return {
+                ...team,
+                logo: imageUrl // Update logo with proper URL
+              };
+            }
+            return team;
+          });
+        }
+        
+        return matchData;
       } catch (error) {
         console.error('Error fetching from SportDevs API:', error);
         
@@ -295,6 +313,10 @@ const MatchDetailsPage: React.FC = () => {
                 src={match.teams[0].logo || '/placeholder.svg'} 
                 alt={match.teams[0].name} 
                 className="w-24 h-24 object-contain mb-3" 
+                onError={(e) => {
+                  console.log(`MatchDetailsPage - Team 1 image failed to load:`, match.teams[0].logo);
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
               <h2 className="text-2xl font-bold text-white">{match.teams[0].name}</h2>
               <div className="mt-2 flex items-center gap-1">
@@ -326,6 +348,10 @@ const MatchDetailsPage: React.FC = () => {
                 src={match.teams[1].logo || '/placeholder.svg'} 
                 alt={match.teams[1].name} 
                 className="w-24 h-24 object-contain mb-3" 
+                onError={(e) => {
+                  console.log(`MatchDetailsPage - Team 2 image failed to load:`, match.teams[1].logo);
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
               <h2 className="text-2xl font-bold text-white">{match.teams[1].name}</h2>
               <div className="mt-2 flex items-center gap-1">

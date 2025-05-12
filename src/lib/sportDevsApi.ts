@@ -621,8 +621,9 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
   if (match.opponents && match.opponents.length > 0) {
     teams = match.opponents.slice(0, 2).map((team: any) => ({
       name: team.name,
-      logo: team.image_url || 
-        (team.hash_image ? getTeamImageUrl(team.id, team.hash_image) : '/placeholder.svg')
+      id: team.id,
+      hash_image: team.hash_image,
+      logo: team.image_url || '/placeholder.svg'
     }));
   }
   // Then try home_team and away_team
@@ -630,12 +631,16 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
     teams = [
       { 
         name: match.home_team_name, 
+        id: match.home_team_id,
+        hash_image: match.home_team_hash_image,
         logo: match.home_team_hash_image ? 
           getTeamImageUrl(match.home_team_id || 'unknown', match.home_team_hash_image) : 
           '/placeholder.svg' 
       },
       { 
         name: match.away_team_name, 
+        id: match.away_team_id,
+        hash_image: match.away_team_hash_image,
         logo: match.away_team_hash_image ? 
           getTeamImageUrl(match.away_team_id || 'unknown', match.away_team_hash_image) : 
           '/placeholder.svg' 
@@ -664,6 +669,9 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
   
   // Determine the best of format
   let bestOf = match.format?.best_of || 3;
+  
+  // Log team data to help debug
+  console.log(`transformMatchData: Processed teams for match ${match.id}:`, teams);
   
   return {
     id: match.id,

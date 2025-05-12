@@ -40,10 +40,9 @@ export interface TeamProfileProps {
 }
 
 export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
-  // Get team logo with cache support
-  const teamLogo = team.hash_image 
-    ? getTeamImageUrl(team.id, team.hash_image)
-    : (team.image_url || '/placeholder.svg');
+  // Use image_url if it's already processed, otherwise get it from hash_image
+  const teamLogo = team.image_url || 
+    (team.hash_image ? getTeamImageUrl(team.id, team.hash_image) : '/placeholder.svg');
 
   console.log('TeamProfile - Team Data:', {
     id: team.id,
@@ -123,10 +122,11 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
             {team.players ? team.players.map(player => {
-              // Get player image with cache support if hash_image exists
-              const playerImage = player.hash_image
-                ? getTeamImageUrl(player.id, player.hash_image)
-                : (player.image_url || '/placeholder.svg');
+              // Use player's image_url if available, otherwise generate URL from hash_image
+              const playerImage = player.image_url || 
+                (player.hash_image && player.id ? 
+                  getTeamImageUrl(player.id, player.hash_image) : 
+                  '/placeholder.svg');
                 
               return (
                 <Link to={`/player/${player.id}`} key={player.id} className="flex items-center p-2 bg-theme-gray-medium/50 rounded hover:bg-theme-gray-medium">
@@ -163,7 +163,7 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({ team }) => {
           </h3>
           <div className="space-y-2">
             {team.matches ? team.matches.filter(match => new Date(match.start_time) > new Date()).map(match => {
-              // Get opponent image with cache support if hash_image exists
+              // Get opponent image with more reliable processing
               const opponentImage = match.opponent_id && match.opponent_hash_image
                 ? getTeamImageUrl(match.opponent_id, match.opponent_hash_image)
                 : (match.opponent_image || '/placeholder.svg');

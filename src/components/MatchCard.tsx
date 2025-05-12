@@ -40,11 +40,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   });
 
   // Get proper team logo URLs, using cache if available
-  const getTeamLogo = (team: TeamInfo) => {
+  const getTeamLogo = (team: TeamInfo): string => {
+    console.log('MatchCard - Processing team image:', team);
+    
     if (team.id && team.hash_image) {
-      return getTeamImageUrl(team.id, team.hash_image);
+      const imageUrl = getTeamImageUrl(team.id, team.hash_image);
+      console.log(`MatchCard - Generated URL for team ${team.name}:`, imageUrl);
+      return imageUrl;
     }
-    return team.logo || '/placeholder.svg';
+    
+    if (team.logo && team.logo !== '/placeholder.svg') {
+      console.log(`MatchCard - Using provided logo for team ${team.name}:`, team.logo);
+      return team.logo;
+    }
+    
+    console.log(`MatchCard - Using placeholder for team ${team.name}`);
+    return '/placeholder.svg';
   };
 
   return (
@@ -63,7 +74,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             alt={teams[0].name} 
             className="w-10 h-10 object-contain" 
             onError={(e) => {
-              // Fallback if image fails to load
+              console.log(`MatchCard - Image load error for team ${teams[0].name}`);
               (e.target as HTMLImageElement).src = '/placeholder.svg';
             }}
           />
@@ -77,7 +88,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             alt={teams[1].name} 
             className="w-10 h-10 object-contain"
             onError={(e) => {
-              // Fallback if image fails to load
+              console.log(`MatchCard - Image load error for team ${teams[1].name}`);
               (e.target as HTMLImageElement).src = '/placeholder.svg';
             }}
           />

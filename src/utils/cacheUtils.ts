@@ -1,4 +1,3 @@
-
 type CacheItem<T> = {
   data: T;
   timestamp: number;
@@ -178,11 +177,17 @@ export function getTeamImageUrl(teamId: string, hashImage?: string | null): stri
     return cachedUrl;
   }
   
-  // Construct image URL
-  // First try with the hash prefix
-  const imageUrl = hashImage.startsWith('http') 
-    ? hashImage 
-    : `https://images.sportdevs.com/${hashImage}.png`;
+  // Improved image URL construction
+  let imageUrl: string;
+  
+  if (hashImage.startsWith('http')) {
+    imageUrl = hashImage;
+  } else {
+    // Handle potential hash variations (with or without extension)
+    imageUrl = hashImage.includes('.') 
+      ? `https://images.sportdevs.com/${hashImage}` 
+      : `https://images.sportdevs.com/${hashImage}.png`;
+  }
     
   console.log(`getTeamImageUrl: Generated image URL for team ${teamId} - ${imageUrl}`);
   memoryCache.set(cacheKey, imageUrl, IMAGE_CACHE_TTL.TEAM_IMAGE);
@@ -210,11 +215,17 @@ export function getTournamentImageUrl(tournamentId: string, hashImage?: string |
     return cachedUrl;
   }
   
-  // Construct image URL
-  // First try with the hash prefix
-  const imageUrl = hashImage.startsWith('http') 
-    ? hashImage 
-    : `https://images.sportdevs.com/${hashImage}.png`;
+  // Improved image URL construction
+  let imageUrl: string;
+  
+  if (hashImage.startsWith('http')) {
+    imageUrl = hashImage;
+  } else {
+    // Handle potential hash variations (with or without extension)
+    imageUrl = hashImage.includes('.')
+      ? `https://images.sportdevs.com/${hashImage}`
+      : `https://images.sportdevs.com/${hashImage}.png`;
+  }
     
   console.log(`getTournamentImageUrl: Generated image URL for tournament ${tournamentId} - ${imageUrl}`);
   memoryCache.set(cacheKey, imageUrl, IMAGE_CACHE_TTL.TOURNAMENT_IMAGE);

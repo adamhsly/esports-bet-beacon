@@ -7,6 +7,7 @@ import TeamProfile from '@/components/TeamProfile';
 import { fetchTeamById, fetchPlayersByTeamId } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { getTeamImageUrl } from '@/utils/cacheUtils';
 
 const TeamDetailPage: React.FC = () => {
   const { teamId } = useParams<{ teamId: string }>();
@@ -38,22 +39,31 @@ const TeamDetailPage: React.FC = () => {
           console.error('Error fetching team players:', error);
         }
         
+        // Process players to ensure they have proper image URLs
+        const processedPlayers = players.map(player => ({
+          id: player.id,
+          name: player.name,
+          image_url: player.image_url,
+          hash_image: player.hash_image || null,
+          role: player.role,
+          country: player.country
+        }));
+
+        // Ensure the team has an image URL based on hash_image
+        const teamImageUrl = team.hash_image ? 
+          getTeamImageUrl(team.id, team.hash_image) : 
+          (team.image_url || '/placeholder.svg');
+        
         // Combine data
         const combinedData = {
           ...team,
           id: team.id || teamId, // Ensure ID is available
+          image_url: teamImageUrl, // Set the processed image URL
           hash_image: team.hash_image || null,
-          players: players.map(player => ({
-            id: player.id,
-            name: player.name,
-            image_url: player.image_url,
-            hash_image: player.hash_image || null,
-            role: player.role,
-            country: player.country
-          }))
+          players: processedPlayers,
         };
         
-        console.log('TeamDetailPage: Combined team data:', combinedData);
+        console.log('TeamDetailPage: Combined team data with processed images:', combinedData);
         setTeamData(combinedData);
       } catch (error) {
         console.error('Error loading team data:', error);
