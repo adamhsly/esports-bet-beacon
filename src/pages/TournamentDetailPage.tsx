@@ -8,7 +8,8 @@ import {
   fetchMatchesByTournamentId, 
   fetchLeagueByName, 
   fetchStandingsByLeagueId,
-  getCacheStats
+  getCacheStats,
+  processTournamentData
 } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -17,6 +18,7 @@ import BracketView from '@/components/tournament/BracketView';
 import StandingsTable, { TeamStanding } from '@/components/tournament/StandingsTable';
 import { MatchInfo } from '@/components/MatchCard';
 import { MatchCard } from '@/components/MatchCard';
+import { getTournamentImageUrl } from '@/utils/cacheUtils';
 
 const TournamentDetailPage: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -45,7 +47,10 @@ const TournamentDetailPage: React.FC = () => {
         
         // Fetch tournament details
         const tournament = await fetchTournamentById(tournamentId);
-        setTournamentData(tournament);
+        
+        // Process tournament data to ensure images are cached
+        const processedTournament = processTournamentData(tournament);
+        setTournamentData(processedTournament);
         
         // Fetch tournament matches
         const tournamentMatches = await fetchMatchesByTournamentId(tournamentId);
@@ -64,7 +69,9 @@ const TournamentDetailPage: React.FC = () => {
               team: {
                 id: standing.team_id || `team-${index}`,
                 name: standing.team_name || `Team ${index + 1}`,
-                logo: standing.team_logo_url || '/placeholder.svg'
+                logo: standing.team_hash_image ? 
+                      getTeamImageUrl(standing.team_id, standing.team_hash_image) : 
+                      '/placeholder.svg'
               },
               matches_played: standing.matches_played || 0,
               wins: standing.wins || 0,
@@ -238,9 +245,17 @@ const TournamentDetailPage: React.FC = () => {
             <div className="mb-8 flex flex-col md:flex-row items-center md:justify-between">
               <div className="flex items-center mb-4 md:mb-0">
                 <img 
-                  src={tournamentData.image_url || '/placeholder.svg'} 
+                  src={
+                    tournamentData.hash_image 
+                      ? getTournamentImageUrl(tournamentData.id, tournamentData.hash_image)
+                      : (tournamentData.image_url || '/placeholder.svg')
+                  } 
                   alt={tournamentData.name} 
                   className="w-16 h-16 object-contain mr-4"
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
                 />
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold">{tournamentData.name}</h1>
@@ -307,9 +322,10 @@ const TournamentDetailPage: React.FC = () => {
               </TabsContent>
             </Tabs>
 
-            {/* Optional: Debug info section (can be hidden in production) */}
+            {/* Debug info section showing cache statistics */}
             <div className="mt-10 text-xs text-gray-500 border-t border-gray-800 pt-4">
               <p>Cache items: {cacheStats.size}</p>
+              <p>Image cache keys: {cacheStats.keys.filter(k => k.includes('_image_')).join(', ')}</p>
             </div>
           </>
         ) : (

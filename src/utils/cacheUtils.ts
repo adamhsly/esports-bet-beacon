@@ -151,3 +151,60 @@ export function createCachedFunction<TArgs extends any[], TResult>(
     return result;
   };
 }
+
+// Cache TTL constants specifically for images (in seconds)
+export const IMAGE_CACHE_TTL = {
+  TEAM_IMAGE: 86400,      // 24 hours for team images
+  TOURNAMENT_IMAGE: 86400 // 24 hours for tournament images
+};
+
+/**
+ * Get team image URL from cache or construct it
+ * @param teamId - Team ID
+ * @param hashImage - Team hash image value
+ * @returns Image URL
+ */
+export function getTeamImageUrl(teamId: string, hashImage?: string | null): string {
+  if (!hashImage) {
+    return '/placeholder.svg';
+  }
+  
+  const cacheKey = `team_image_${teamId}`;
+  const cachedUrl = memoryCache.get<string>(cacheKey);
+  
+  if (cachedUrl) {
+    return cachedUrl;
+  }
+  
+  // Construct image URL
+  const imageUrl = `https://images.sportdevs.com/${hashImage}.png`;
+  memoryCache.set(cacheKey, imageUrl, IMAGE_CACHE_TTL.TEAM_IMAGE);
+  
+  return imageUrl;
+}
+
+/**
+ * Get tournament image URL from cache or construct it
+ * @param tournamentId - Tournament ID
+ * @param hashImage - Tournament hash image value
+ * @returns Image URL
+ */
+export function getTournamentImageUrl(tournamentId: string, hashImage?: string | null): string {
+  if (!hashImage) {
+    return '/placeholder.svg';
+  }
+  
+  const cacheKey = `tournament_image_${tournamentId}`;
+  const cachedUrl = memoryCache.get<string>(cacheKey);
+  
+  if (cachedUrl) {
+    return cachedUrl;
+  }
+  
+  // Construct image URL
+  const imageUrl = `https://images.sportdevs.com/${hashImage}.png`;
+  memoryCache.set(cacheKey, imageUrl, IMAGE_CACHE_TTL.TOURNAMENT_IMAGE);
+  
+  return imageUrl;
+}
+

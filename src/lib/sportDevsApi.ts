@@ -1,6 +1,11 @@
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
-import { memoryCache, createCachedFunction } from '@/utils/cacheUtils';
+import { 
+  memoryCache, 
+  createCachedFunction, 
+  getTeamImageUrl, 
+  getTournamentImageUrl 
+} from '@/utils/cacheUtils';
 
 // API Constants
 const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
@@ -237,7 +242,10 @@ async function _fetchTeamById(teamId: string) {
       throw new Error('Team not found');
     }
     
-    return teams[0];
+    const team = teams[0];
+    
+    // Process team to cache image URL
+    return processTeamData(team);
     
   } catch (error) {
     console.error("Error fetching team by ID:", error);
@@ -340,7 +348,10 @@ async function _fetchTournamentById(tournamentId: string) {
       throw new Error('Tournament not found');
     }
     
-    return tournaments[0];
+    const tournament = tournaments[0];
+    
+    // Process tournament to cache image URL
+    return processTournamentData(tournament);
     
   } catch (error) {
     console.error("Error fetching tournament by ID:", error);
@@ -610,7 +621,8 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
   if (match.opponents && match.opponents.length > 0) {
     teams = match.opponents.slice(0, 2).map((team: any) => ({
       name: team.name,
-      logo: team.image_url || '/placeholder.svg'
+      logo: team.image_url || 
+        (team.hash_image ? getTeamImageUrl(team.id, team.hash_image) : '/placeholder.svg')
     }));
   }
   // Then try home_team and away_team
@@ -619,13 +631,13 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
       { 
         name: match.home_team_name, 
         logo: match.home_team_hash_image ? 
-          `https://assets.b365api.com/images/team/m/${match.home_team_hash_image}.png` : 
+          getTeamImageUrl(match.home_team_id || 'unknown', match.home_team_hash_image) : 
           '/placeholder.svg' 
       },
       { 
         name: match.away_team_name, 
         logo: match.away_team_hash_image ? 
-          `https://assets.b365api.com/images/team/m/${match.away_team_hash_image}.png` : 
+          getTeamImageUrl(match.away_team_id || 'unknown', match.away_team_hash_image) : 
           '/placeholder.svg' 
       }
     ];
@@ -661,6 +673,26 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
     esportType: esportType,
     bestOf: bestOf
   };
+}
+
+// Enhanced function to process tournament data and cache images
+export function processTournamentData(tournament: any) {
+  if (tournament && tournament.id && tournament.hash_image) {
+    // Cache the tournament image URL
+    getTournamentImageUrl(tournament.id, tournament.hash_image);
+  }
+  
+  return tournament;
+}
+
+// Enhanced function to process team data and cache images
+export function processTeamData(team: any) {
+  if (team && team.id && team.hash_image) {
+    // Cache the team image URL
+    getTeamImageUrl(team.id, team.hash_image);
+  }
+  
+  return team;
 }
 
 // Helper function to transform odds data to our app's format
