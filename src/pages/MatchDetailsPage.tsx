@@ -13,7 +13,9 @@ import { TeamProfile } from '@/components/TeamProfile';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import DynamicMatchSEOContent from '@/components/DynamicMatchSEOContent';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { fetchMatchById } from '@/lib/pandaScoreApi';
+import { fetchMatchById as fetchMatchByIdPS } from '@/lib/pandaScoreApi';
+import { fetchMatchById as fetchMatchByIdSD } from '@/lib/sportDevsApi';
+import { fetchMatchById as fetchMatchByIdOdds } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/components/ui/use-toast';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
@@ -44,20 +46,57 @@ const MatchDetailsPage = () => {
     queryFn: async () => {
       console.log(`Fetching match details for ID: ${matchId}`);
       try {
-        // Try to fetch real data from API
+        // Try to fetch from multiple API sources
         if (matchId) {
-          const match = await fetchMatchById(matchId);
-          if (match) {
-            console.log("Match data successfully retrieved:", match);
-            return {
-              ...match,
-              twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
-                             match.esportType === 'lol' ? 'lck' : 
-                             match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
-            };
+          // Try PandaScore API first
+          try {
+            const match = await fetchMatchByIdPS(matchId);
+            if (match) {
+              console.log("Match data successfully retrieved from PandaScore:", match);
+              return {
+                ...match,
+                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
+                               match.esportType === 'lol' ? 'lck' : 
+                               match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
+              };
+            }
+          } catch (psError) {
+            console.log("PandaScore API error:", psError);
+          }
+          
+          // Try SportDevs API next
+          try {
+            const match = await fetchMatchByIdSD(matchId);
+            if (match) {
+              console.log("Match data successfully retrieved from SportDevs:", match);
+              return {
+                ...match,
+                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
+                               match.esportType === 'lol' ? 'lck' : 
+                               match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
+              };
+            }
+          } catch (sdError) {
+            console.log("SportDevs API error:", sdError);
+          }
+          
+          // Try The Odds API last
+          try {
+            const match = await fetchMatchByIdOdds(matchId);
+            if (match) {
+              console.log("Match data successfully retrieved from Odds API:", match);
+              return {
+                ...match,
+                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
+                               match.esportType === 'lol' ? 'lck' : 
+                               match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
+              };
+            }
+          } catch (oddsError) {
+            console.log("Odds API error:", oddsError);
           }
         }
-        throw new Error("Match not found");
+        throw new Error("Match not found in any API");
       } catch (err) {
         console.error("Error fetching match:", err);
         // Fall back to mock data only if fetch fails
@@ -254,77 +293,92 @@ const MatchDetailsPage = () => {
               </div>
             )}
             
-            {/* Voting Widget */}
-            <div className="mb-8">
-              <h3 className="text-lg font-bold mb-4">Community Vote</h3>
-              <MatchVotingWidget 
-                matchId={matchDetails.id}
-                teams={[
-                  { 
-                    id: matchDetails.teams[0]?.id || 'team1',
-                    name: matchDetails.teams[0]?.name || 'Team 1', 
-                    logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                  },
-                  { 
-                    id: matchDetails.teams[1]?.id || 'team2',
-                    name: matchDetails.teams[1]?.name || 'Team 2', 
-                    logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                  }
-                ]}
-              />
-            </div>
-            
-            {/* Team Stats Tabs */}
-            <div className="mb-8">
-              <h3 className="text-lg font-bold mb-4">Team Stats</h3>
-              <Tabs defaultValue="team1" className="w-full">
-                <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1">
-                  <TabsTrigger value="team1" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
-                    {matchDetails.teams && matchDetails.teams.length > 0 ? matchDetails.teams[0].name : 'Team 1'}
-                  </TabsTrigger>
-                  <TabsTrigger value="team2" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
-                    {matchDetails.teams && matchDetails.teams.length > 1 ? matchDetails.teams[1].name : 'Team 2'}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="team1" className="mt-2">
-                  {matchDetails.teams && matchDetails.teams.length > 0 ? (
-                    <TeamProfile 
-                      team={{
-                        id: matchDetails.teams[0].id || 'team1',
-                        name: matchDetails.teams[0].name,
-                        image_url: matchDetails.teams[0].logo,
-                        hash_image: matchDetails.teams[0].hash_image
-                      }} 
-                    />
-                  ) : (
-                    <p>Team 1 profile will be displayed here.</p>
-                  )}
-                </TabsContent>
-                <TabsContent value="team2" className="mt-2">
-                  {matchDetails.teams && matchDetails.teams.length > 1 ? (
-                    <TeamProfile 
-                      team={{
-                        id: matchDetails.teams[1].id || 'team2',
-                        name: matchDetails.teams[1].name,
-                        image_url: matchDetails.teams[1].logo,
-                        hash_image: matchDetails.teams[1].hash_image
-                      }}
-                    />
-                  ) : (
-                    <p>Team 2 profile will be displayed here.</p>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
-            
-            {/* Odds Widget */}
-            <div className="mb-8">
-              <h3 className="text-lg font-bold mb-4">Betting Odds</h3>
-              <OddsTable 
-                bookmakerOdds={mockBookmakerOdds}
-                markets={mockMarkets}
-              />
-            </div>
+            {/* Match Information Tabs */}
+            <Tabs defaultValue="vote" className="mb-8">
+              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-4">
+                <TabsTrigger value="vote" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
+                  Community Vote
+                </TabsTrigger>
+                <TabsTrigger value="teams" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
+                  Team Stats
+                </TabsTrigger>
+                <TabsTrigger value="odds" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
+                  Betting Odds
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Voting Widget */}
+              <TabsContent value="vote" className="mt-2">
+                <h3 className="text-lg font-bold mb-4">Community Vote</h3>
+                <MatchVotingWidget 
+                  matchId={matchDetails.id}
+                  teams={[
+                    { 
+                      id: matchDetails.teams[0]?.id || 'team1',
+                      name: matchDetails.teams[0]?.name || 'Team 1', 
+                      logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                    },
+                    { 
+                      id: matchDetails.teams[1]?.id || 'team2',
+                      name: matchDetails.teams[1]?.name || 'Team 2', 
+                      logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                    }
+                  ]}
+                />
+              </TabsContent>
+              
+              {/* Team Stats */}
+              <TabsContent value="teams" className="mt-2">
+                <h3 className="text-lg font-bold mb-4">Team Stats</h3>
+                <Tabs defaultValue="team1" className="w-full">
+                  <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1">
+                    <TabsTrigger value="team1" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
+                      {matchDetails.teams && matchDetails.teams.length > 0 ? matchDetails.teams[0].name : 'Team 1'}
+                    </TabsTrigger>
+                    <TabsTrigger value="team2" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
+                      {matchDetails.teams && matchDetails.teams.length > 1 ? matchDetails.teams[1].name : 'Team 2'}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="team1" className="mt-2">
+                    {matchDetails.teams && matchDetails.teams.length > 0 ? (
+                      <TeamProfile 
+                        team={{
+                          id: matchDetails.teams[0].id || 'team1',
+                          name: matchDetails.teams[0].name,
+                          image_url: matchDetails.teams[0].logo,
+                          hash_image: matchDetails.teams[0].hash_image
+                        }} 
+                      />
+                    ) : (
+                      <p>Team 1 profile will be displayed here.</p>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="team2" className="mt-2">
+                    {matchDetails.teams && matchDetails.teams.length > 1 ? (
+                      <TeamProfile 
+                        team={{
+                          id: matchDetails.teams[1].id || 'team2',
+                          name: matchDetails.teams[1].name,
+                          image_url: matchDetails.teams[1].logo,
+                          hash_image: matchDetails.teams[1].hash_image
+                        }}
+                      />
+                    ) : (
+                      <p>Team 2 profile will be displayed here.</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+              
+              {/* Odds Widget */}
+              <TabsContent value="odds" className="mt-2">
+                <h3 className="text-lg font-bold mb-4">Betting Odds</h3>
+                <OddsTable 
+                  bookmakerOdds={mockBookmakerOdds}
+                  markets={mockMarkets}
+                />
+              </TabsContent>
+            </Tabs>
             
             {matchDetails.teams && matchDetails.teams.length >= 2 && (
               <DynamicMatchSEOContent
