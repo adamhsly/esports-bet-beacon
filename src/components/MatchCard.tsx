@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -92,7 +91,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         
         <Button variant="ghost" size="sm" asChild className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
           <Link to={`/match/${id}`}>
-            Compare Odds
+            View Match
             <ArrowRight size={14} className="ml-1.5" />
           </Link>
         </Button>
