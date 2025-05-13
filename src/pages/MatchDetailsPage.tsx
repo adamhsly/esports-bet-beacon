@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,10 @@ import { TeamProfile } from '@/components/TeamProfile';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import DynamicMatchSEOContent from '@/components/DynamicMatchSEOContent';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { fetchMatchById } from '@/lib/pandaScoreApi';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from '@/components/ui/use-toast';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 interface MatchDetails {
   id: string;
@@ -26,50 +30,85 @@ interface MatchDetails {
     logo: string;
     hash_image?: string | null;
   }[];
-  // Add other match detail properties as needed
+  bestOf?: number;
 }
 
 const MatchDetailsPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
-  const [matchDetails, setMatchDetails] = useState<MatchDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  
+  // Use React Query to fetch match details
+  const { data: matchDetails, isLoading, error } = useQuery({
+    queryKey: ['match', matchId],
+    queryFn: async () => {
+      console.log(`Fetching match details for ID: ${matchId}`);
+      try {
+        // Try to fetch real data from API
+        if (matchId) {
+          const match = await fetchMatchById(matchId);
+          if (match) {
+            console.log("Match data successfully retrieved:", match);
+            return {
+              ...match,
+              twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
+                             match.esportType === 'lol' ? 'lck' : 
+                             match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
+            };
+          }
+        }
+        throw new Error("Match not found");
+      } catch (err) {
+        console.error("Error fetching match:", err);
+        // Fall back to mock data only if fetch fails
+        console.log("Using mock data as fallback");
+        
+        // Create fallback data based on the match ID
+        const teamNames = matchId?.includes('team') ? 
+          ['Team Liquid', 'Team Secret'] : 
+          ['Evil Geniuses', 'Nigma Galaxy'];
+          
+        const mockMatchDetails: MatchDetails = {
+          id: matchId || '123',
+          startTime: new Date().toISOString(),
+          tournament: 'The International',
+          esportType: 'dota2',
+          twitchChannel: 'esl_dota2',
+          bestOf: 3,
+          teams: [
+            { name: teamNames[0], logo: '/placeholder.svg', id: 'team1' },
+            { name: teamNames[1], logo: '/placeholder.svg', id: 'team2' },
+          ],
+        };
+        
+        return mockMatchDetails;
+      }
+    },
+    enabled: !!matchId,
+    staleTime: 60000, // 1 minute
+    retryOnMount: true,
+    retry: 1
+  });
 
   useEffect(() => {
-    async function fetchMatchDetails() {
-      setIsLoading(true);
-      // Mock data for demonstration
-      const mockMatchDetails: MatchDetails = {
-        id: matchId || '123',
-        startTime: new Date().toISOString(),
-        tournament: 'The International',
-        esportType: 'dota2',
-        // Mock Twitch channel for demonstration
-        twitchChannel: 'esl_dota2',
-        teams: [
-          { name: 'Team Secret', logo: '/placeholder.svg' },
-          { name: 'Nigma Galaxy', logo: '/placeholder.svg' },
-        ],
-      };
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setMatchDetails(mockMatchDetails);
-      setIsLoading(false);
+    if (error) {
+      console.error("Error loading match details:", error);
+      toast({
+        title: "Error loading match details",
+        description: "We couldn't load the match information. Please try again later.",
+        variant: "destructive",
+      });
     }
-
-    fetchMatchDetails();
-  }, [matchId]);
+  }, [error]);
 
   // Create mock data for OddsTable component
-  const mockBookmakerOdds = [
+  const mockBookmakerOdds = matchDetails ? [
     {
       bookmaker: "BetZone",
       logo: "/placeholder.svg",
       odds: {
-        "Team Secret": "1.85",
-        "Nigma Galaxy": "1.95"
+        [matchDetails.teams[0]?.name || "Team 1"]: "1.85",
+        [matchDetails.teams[1]?.name || "Team 2"]: "1.95"
       },
       link: "#"
     },
@@ -77,8 +116,8 @@ const MatchDetailsPage = () => {
       bookmaker: "GG.bet",
       logo: "/placeholder.svg",
       odds: {
-        "Team Secret": "1.90",
-        "Nigma Galaxy": "1.92"
+        [matchDetails.teams[0]?.name || "Team 1"]: "1.90",
+        [matchDetails.teams[1]?.name || "Team 2"]: "1.92"
       },
       link: "#"
     },
@@ -86,23 +125,23 @@ const MatchDetailsPage = () => {
       bookmaker: "Betway",
       logo: "/placeholder.svg",
       odds: {
-        "Team Secret": "1.87",
-        "Nigma Galaxy": "1.93"
+        [matchDetails.teams[0]?.name || "Team 1"]: "1.87",
+        [matchDetails.teams[1]?.name || "Team 2"]: "1.93"
       },
       link: "#"
     }
-  ];
+  ] : [];
 
-  const mockMarkets = [
+  const mockMarkets = matchDetails ? [
     {
       name: "Match Winner",
-      options: ["Team Secret", "Nigma Galaxy"]
+      options: [matchDetails.teams[0]?.name || "Team 1", matchDetails.teams[1]?.name || "Team 2"]
     },
     {
       name: "Map 1 Winner",
-      options: ["Team Secret", "Nigma Galaxy"]
+      options: [matchDetails.teams[0]?.name || "Team 1", matchDetails.teams[1]?.name || "Team 2"]
     }
-  ];
+  ] : [];
 
   if (isLoading) {
     return (
@@ -149,9 +188,13 @@ const MatchDetailsPage = () => {
                   {/* Team 1 */}
                   <div className="flex-1 p-4 text-center">
                     <img 
-                      src={matchDetails.teams[0]?.logo || "/placeholder.svg"} 
+                      src={getEnhancedTeamLogoUrl(matchDetails.teams[0])} 
                       alt={matchDetails.teams[0]?.name || "Team 1"} 
                       className="w-20 h-20 object-contain mx-auto mb-2"
+                      onError={(e) => {
+                        console.log(`Match Page - Image load error for team ${matchDetails.teams[0]?.name}`);
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
                     />
                     <h3 className="text-lg font-bold">{matchDetails.teams[0]?.name || "Team 1"}</h3>
                   </div>
@@ -175,9 +218,13 @@ const MatchDetailsPage = () => {
                   {/* Team 2 */}
                   <div className="flex-1 p-4 text-center">
                     <img 
-                      src={matchDetails.teams[1]?.logo || "/placeholder.svg"} 
+                      src={getEnhancedTeamLogoUrl(matchDetails.teams[1])} 
                       alt={matchDetails.teams[1]?.name || "Team 2"} 
                       className="w-20 h-20 object-contain mx-auto mb-2"
+                      onError={(e) => {
+                        console.log(`Match Page - Image load error for team ${matchDetails.teams[1]?.name}`);
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
                     />
                     <h3 className="text-lg font-bold">{matchDetails.teams[1]?.name || "Team 2"}</h3>
                   </div>
