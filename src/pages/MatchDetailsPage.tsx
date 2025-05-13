@@ -13,11 +13,9 @@ import { TeamProfile } from '@/components/TeamProfile';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import DynamicMatchSEOContent from '@/components/DynamicMatchSEOContent';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { fetchMatchById as fetchMatchByIdPS } from '@/lib/pandaScoreApi';
-import { fetchMatchById as fetchMatchByIdSD } from '@/lib/sportDevsApi';
-import { fetchMatchById as fetchMatchByIdOdds } from '@/lib/api';
+import { fetchMatchById } from '@/lib/sportDevsApi';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 interface MatchDetails {
@@ -46,57 +44,20 @@ const MatchDetailsPage = () => {
     queryFn: async () => {
       console.log(`Fetching match details for ID: ${matchId}`);
       try {
-        // Try to fetch from multiple API sources
+        // Using only SportDevs API
         if (matchId) {
-          // Try PandaScore API first
-          try {
-            const match = await fetchMatchByIdPS(matchId);
-            if (match) {
-              console.log("Match data successfully retrieved from PandaScore:", match);
-              return {
-                ...match,
-                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
-                               match.esportType === 'lol' ? 'lck' : 
-                               match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
-              };
-            }
-          } catch (psError) {
-            console.log("PandaScore API error:", psError);
-          }
-          
-          // Try SportDevs API next
-          try {
-            const match = await fetchMatchByIdSD(matchId);
-            if (match) {
-              console.log("Match data successfully retrieved from SportDevs:", match);
-              return {
-                ...match,
-                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
-                               match.esportType === 'lol' ? 'lck' : 
-                               match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
-              };
-            }
-          } catch (sdError) {
-            console.log("SportDevs API error:", sdError);
-          }
-          
-          // Try The Odds API last
-          try {
-            const match = await fetchMatchByIdOdds(matchId);
-            if (match) {
-              console.log("Match data successfully retrieved from Odds API:", match);
-              return {
-                ...match,
-                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
-                               match.esportType === 'lol' ? 'lck' : 
-                               match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
-              };
-            }
-          } catch (oddsError) {
-            console.log("Odds API error:", oddsError);
+          const match = await fetchMatchById(matchId);
+          if (match) {
+            console.log("Match data successfully retrieved from SportDevs:", match);
+            return {
+              ...match,
+              twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
+                            match.esportType === 'lol' ? 'lck' : 
+                            match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
+            };
           }
         }
-        throw new Error("Match not found in any API");
+        throw new Error("Match not found in SportDevs API");
       } catch (err) {
         console.error("Error fetching match:", err);
         // Fall back to mock data only if fetch fails
