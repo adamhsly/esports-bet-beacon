@@ -17,6 +17,7 @@ import { fetchMatchById } from '@/lib/sportDevsApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import TeamPlayerStatsVisualizer from '@/components/TeamPlayerStatsVisualizer';
 
 interface MatchDetails {
   id: string;
@@ -307,32 +308,46 @@ const MatchDetailsPage = () => {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="team1" className="mt-2">
-                    {matchDetails.teams && matchDetails.teams.length > 0 ? (
+                    <div className="space-y-6">
                       <TeamProfile 
                         team={{
-                          id: matchDetails.teams[0].id || 'team1',
-                          name: matchDetails.teams[0].name,
-                          image_url: matchDetails.teams[0].logo,
-                          hash_image: matchDetails.teams[0].hash_image
+                          id: matchDetails.teams[0]?.id || 'team1',
+                          name: matchDetails.teams[0]?.name || 'Team 1',
+                          image_url: matchDetails.teams[0]?.logo || '/placeholder.svg',
+                          hash_image: matchDetails.teams[0]?.hash_image || null
                         }} 
                       />
-                    ) : (
-                      <p>Team 1 profile will be displayed here.</p>
-                    )}
+                      
+                      {/* Add the new TeamPlayerStatsVisualizer component for the first team */}
+                      <TeamPlayerStatsVisualizer
+                        teamId={matchDetails.teams[0]?.id || 'team1'}
+                        teamName={matchDetails.teams[0]?.name || 'Team 1'}
+                        esportType={matchDetails.esportType}
+                        opponentTeamId={matchDetails.teams[1]?.id}
+                        opponentTeamName={matchDetails.teams[1]?.name}
+                      />
+                    </div>
                   </TabsContent>
                   <TabsContent value="team2" className="mt-2">
-                    {matchDetails.teams && matchDetails.teams.length > 1 ? (
+                    <div className="space-y-6">
                       <TeamProfile 
                         team={{
-                          id: matchDetails.teams[1].id || 'team2',
-                          name: matchDetails.teams[1].name,
-                          image_url: matchDetails.teams[1].logo,
-                          hash_image: matchDetails.teams[1].hash_image
+                          id: matchDetails.teams[1]?.id || 'team2',
+                          name: matchDetails.teams[1]?.name || 'Team 2',
+                          image_url: matchDetails.teams[1]?.logo || '/placeholder.svg',
+                          hash_image: matchDetails.teams[1]?.hash_image || null
                         }}
                       />
-                    ) : (
-                      <p>Team 2 profile will be displayed here.</p>
-                    )}
+                      
+                      {/* Add the new TeamPlayerStatsVisualizer component for the second team */}
+                      <TeamPlayerStatsVisualizer
+                        teamId={matchDetails.teams[1]?.id || 'team2'}
+                        teamName={matchDetails.teams[1]?.name || 'Team 2'}
+                        esportType={matchDetails.esportType}
+                        opponentTeamId={matchDetails.teams[0]?.id}
+                        opponentTeamName={matchDetails.teams[0]?.name}
+                      />
+                    </div>
                   </TabsContent>
                 </Tabs>
               </TabsContent>

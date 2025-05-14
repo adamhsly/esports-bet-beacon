@@ -98,7 +98,7 @@ const mapEsportTypeToGameId = (esportType: string): string => {
 /**
  * Core fetch function with error handling and logging
  */
-async function fetchFromSportDevs(url: string, apiKey: string): Promise<any> {
+export async function fetchFromSportDevs(url: string, apiKey: string): Promise<any> {
   console.log(`SportDevs API Request: ${url}`);
   
   // Different header format based on API endpoint type
@@ -129,7 +129,7 @@ async function fetchFromSportDevs(url: string, apiKey: string): Promise<any> {
 /**
  * Get the API key from the ApiKeyProvider
  */
-function getApiKey(): string {
+export function getApiKey(): string {
   // Use the hardcoded API key from ApiKeyProvider
   return "GsZ3ovnDw0umMvL5p7SfPA";
 }
