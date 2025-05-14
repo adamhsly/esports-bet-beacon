@@ -5,14 +5,14 @@ import {
   generateMockMatchData
 } from '@/lib/teamStatsApi';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import MatchTimelineSelector from '@/components/stats/MatchTimelineSelector';
 import PlayerPerformanceChart from '@/components/stats/PlayerPerformanceChart';
 import TeamStatsRadarChart from '@/components/stats/TeamStatsRadarChart';
 import TeamPerformanceTrend from '@/components/stats/TeamPerformanceTrend';
 import { useToast } from '@/hooks/use-toast';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface TeamPlayerStatsVisualizerProps {
   teamId: string;
@@ -34,7 +34,6 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
   const [matchDetails, setMatchDetails] = useState<any>(null);
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
   const [isLoadingMatchDetails, setIsLoadingMatchDetails] = useState(false);
-  const [viewMode, setViewMode] = useState<'single' | 'aggregate'>('single');
   const { toast } = useToast();
   
   // Convert esportType to the appropriate format for the charts
@@ -173,6 +172,64 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
     return stats;
   }, [matchDetails]);
   
+  // Calculate aggregate team statistics
+  const aggregateStats = useMemo(() => {
+    if (!matches || matches.length === 0) return null;
+    
+    // Initialize counters
+    let totalMatches = matches.length;
+    let wins = 0;
+    let totalKills = 0;
+    let totalDeaths = 0;
+    let totalAssists = 0;
+    let matchesWithStats = 0;
+    
+    // Calculate stats from all matches
+    matches.forEach(match => {
+      // Count wins
+      if (match.result === 'win') {
+        wins++;
+      }
+      
+      // Aggregate team stats if available
+      if (match.teamStats) {
+        matchesWithStats++;
+        totalKills += match.teamStats.kills || 0;
+        totalDeaths += match.teamStats.deaths || 0;
+        totalAssists += match.teamStats.assists || 0;
+      }
+    });
+    
+    // Calculate win rate
+    const winRate = totalMatches > 0 ? (wins / totalMatches * 100).toFixed(1) : '0';
+    
+    // Calculate K/D ratio
+    const kdRatio = totalDeaths > 0 ? (totalKills / totalDeaths).toFixed(2) : '0';
+    
+    // Calculate K/D/A ratio
+    const kdaRatio = totalDeaths > 0 ? ((totalKills + totalAssists) / totalDeaths).toFixed(2) : '0';
+    
+    // Calculate average stats per match
+    const avgKills = matchesWithStats > 0 ? (totalKills / matchesWithStats).toFixed(1) : '0';
+    const avgDeaths = matchesWithStats > 0 ? (totalDeaths / matchesWithStats).toFixed(1) : '0';
+    
+    // Get recent form (last 5 matches)
+    const recentForm = matches
+      .slice(0, 5)
+      .map(match => match.result || 'unknown')
+      .map(result => result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D');
+    
+    return {
+      winRate,
+      kdRatio,
+      kdaRatio,
+      avgKills,
+      avgDeaths,
+      recentForm,
+      matchesAnalyzed: totalMatches
+    };
+  }, [matches]);
+
   if (isLoadingMatches && matches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -189,65 +246,141 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
           <Calendar className="h-5 w-5 mr-2 text-theme-purple" />
           Team Statistics
         </h3>
-        
-        <Select
-          value={viewMode}
-          onValueChange={(value) => setViewMode(value as 'single' | 'aggregate')}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="View Mode" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="single">Single Match</SelectItem>
-            <SelectItem value="aggregate">Aggregate Trends</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       
-      {viewMode === 'single' ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-            <MatchTimelineSelector
-              matches={matches}
-              selectedMatchId={selectedMatchId}
-              onSelectMatch={setSelectedMatchId}
-              isLoading={isLoadingMatches}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Tabs defaultValue="players" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="players">Player Performance</TabsTrigger>
-                <TabsTrigger value="team">Team Statistics</TabsTrigger>
-              </TabsList>
+      {/* Aggregate Stats Section (Always Shown) */}
+      <div className="mb-6">
+        <Card className="p-4 bg-theme-gray-dark border border-theme-gray-medium">
+          <h4 className="text-md font-medium mb-3 flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2 text-theme-purple" />
+            Aggregate Performance
+          </h4>
+          
+          {isLoadingMatches ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-theme-purple" />
+            </div>
+          ) : aggregateStats ? (
+            <div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="bg-theme-gray-medium/30 p-3 rounded-md">
+                  <p className="text-sm text-gray-400">Win Rate</p>
+                  <p className="text-xl font-bold">{aggregateStats.winRate}%</p>
+                </div>
+                <div className="bg-theme-gray-medium/30 p-3 rounded-md">
+                  <p className="text-sm text-gray-400">K/D Ratio</p>
+                  <p className="text-xl font-bold">{aggregateStats.kdRatio}</p>
+                </div>
+                <div className="bg-theme-gray-medium/30 p-3 rounded-md">
+                  <p className="text-sm text-gray-400">Avg. Kills</p>
+                  <p className="text-xl font-bold">{aggregateStats.avgKills}</p>
+                </div>
+                <div className="bg-theme-gray-medium/30 p-3 rounded-md">
+                  <p className="text-sm text-gray-400">Matches</p>
+                  <p className="text-xl font-bold">{aggregateStats.matchesAnalyzed}</p>
+                </div>
+              </div>
               
-              <TabsContent value="players">
-                <PlayerPerformanceChart
-                  playerStats={playerStats}
-                  gameType={gameType as any}
-                  isLoading={isLoadingMatchDetails}
-                />
-              </TabsContent>
-              
-              <TabsContent value="team">
-                <TeamStatsRadarChart
-                  teamStats={teamStats}
-                  gameType={gameType as any}
-                  isLoading={isLoadingMatchDetails}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <TeamPerformanceTrend
-            matches={enhancedMatches}
-            gameType={gameType as any}
+              <div className="flex items-center">
+                <p className="text-sm mr-2">Form (Last 5):</p>
+                <div className="flex space-x-1">
+                  {aggregateStats.recentForm.map((result, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold
+                        ${result === 'W' ? 'bg-green-500/70' : 
+                          result === 'L' ? 'bg-red-500/70' : 'bg-gray-500/70'}`}
+                    >
+                      {result}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No aggregate statistics available</p>
+          )}
+        </Card>
+      </div>
+      
+      {/* Match History and Details Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <h4 className="text-md font-medium mb-3 flex items-center">
+            <Calendar className="h-5 w-5 mr-2 text-theme-purple" />
+            Match History
+          </h4>
+          <MatchTimelineSelector
+            matches={matches}
+            selectedMatchId={selectedMatchId}
+            onSelectMatch={setSelectedMatchId}
             isLoading={isLoadingMatches}
           />
         </div>
-      )}
+        <div className="md:col-span-2">
+          <Tabs defaultValue="players" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="players">Player Performance</TabsTrigger>
+              <TabsTrigger value="team">Team Statistics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="players">
+              <Card className="p-4 bg-theme-gray-dark border border-theme-gray-medium">
+                <h4 className="text-md font-medium mb-3 flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-theme-purple" />
+                  Player Stats - {selectedMatchId ? `Match #${selectedMatchId}` : 'Selected Match'}
+                </h4>
+                <div className="w-full">
+                  <AspectRatio ratio={16 / 9} className="bg-theme-gray-medium/20 rounded-md overflow-hidden">
+                    <PlayerPerformanceChart
+                      playerStats={playerStats}
+                      gameType={gameType as any}
+                      isLoading={isLoadingMatchDetails}
+                    />
+                  </AspectRatio>
+                </div>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="team">
+              <Card className="p-4 bg-theme-gray-dark border border-theme-gray-medium">
+                <h4 className="text-md font-medium mb-3 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-theme-purple" />
+                  Team Stats - {selectedMatchId ? `Match #${selectedMatchId}` : 'Selected Match'}
+                </h4>
+                <div className="w-full">
+                  <AspectRatio ratio={16 / 9} className="bg-theme-gray-medium/20 rounded-md overflow-hidden">
+                    <TeamStatsRadarChart
+                      teamStats={teamStats}
+                      gameType={gameType as any}
+                      isLoading={isLoadingMatchDetails}
+                    />
+                  </AspectRatio>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+          
+          {/* Team Performance Trend */}
+          <div className="mt-6">
+            <Card className="p-4 bg-theme-gray-dark border border-theme-gray-medium">
+              <h4 className="text-md font-medium mb-3 flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2 text-theme-purple" />
+                Performance Trend
+              </h4>
+              <div className="w-full">
+                <AspectRatio ratio={16 / 9} className="bg-theme-gray-medium/20 rounded-md overflow-hidden">
+                  <TeamPerformanceTrend
+                    matches={enhancedMatches}
+                    gameType={gameType as any}
+                    isLoading={isLoadingMatches}
+                  />
+                </AspectRatio>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
