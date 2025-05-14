@@ -1,10 +1,11 @@
+
 import React, { createContext, useContext } from 'react';
 
 interface ApiKeyContextType {
   sportDevsApiKey: string;
 }
 
-// We'll keep using this API key but with the correct authorization format
+// This API key is meant to be used with the correct authorization format (Bearer token)
 const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
 
 const ApiKeyContext = createContext<ApiKeyContextType>({

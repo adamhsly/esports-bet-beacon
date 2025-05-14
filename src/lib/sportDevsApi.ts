@@ -219,7 +219,8 @@ async function _fetchMatchGames(matchId: string) {
     console.log(`SportDevs API: Fetching match games for ID: ${matchId}`);
     
     const games = await fetchFromSportDevs(
-      `${WEB_URL}/matches-games?match_id=eq.${matchId}`
+      `${WEB_URL}/matches-games?match_id=eq.${matchId}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received ${games.length} games for match ID: ${matchId}`);
     return games;
@@ -238,7 +239,8 @@ async function _fetchMatchStatistics(matchId: string) {
     console.log(`SportDevs API: Fetching match statistics for ID: ${matchId}`);
     
     const statistics = await fetchFromSportDevs(
-      `${WEB_URL}/matches-games-statistics?match_id=eq.${matchId}`
+      `${WEB_URL}/matches-games-statistics?match_id=eq.${matchId}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received statistics for match ID: ${matchId}`);
     return statistics;
@@ -257,7 +259,8 @@ async function _fetchTeamById(teamId: string) {
     console.log(`SportDevs API: Fetching team details for ID: ${teamId}`);
     
     const teams = await fetchFromSportDevs(
-      `${WEB_URL}/teams?id=eq.${teamId}`
+      `${WEB_URL}/teams?id=eq.${teamId}`,
+      getApiKey()
     );
     
     if (!teams || teams.length === 0) {
@@ -283,7 +286,8 @@ async function _fetchPlayersByTeamId(teamId: string) {
     console.log(`SportDevs API: Fetching players for team ID: ${teamId}`);
     
     const players = await fetchFromSportDevs(
-      `${WEB_URL}/players?team_id=eq.${teamId}`
+      `${WEB_URL}/players?team_id=eq.${teamId}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received ${players.length} players for team ID: ${teamId}`);
     return players;
@@ -302,7 +306,8 @@ async function _fetchPlayerById(playerId: string) {
     console.log(`SportDevs API: Fetching player details for ID: ${playerId}`);
     
     const players = await fetchFromSportDevs(
-      `${WEB_URL}/players?id=eq.${playerId}`
+      `${WEB_URL}/players?id=eq.${playerId}`,
+      getApiKey()
     );
     
     if (!players || players.length === 0) {
@@ -325,7 +330,8 @@ async function _fetchNews(limit = 10) {
     console.log(`SportDevs API: Fetching news articles, limit: ${limit}`);
     
     const news = await fetchFromSportDevs(
-      `${WEB_URL}/news?limit=${limit}`
+      `${WEB_URL}/news?limit=${limit}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received ${news.length} news articles`);
     return news;
@@ -344,7 +350,8 @@ async function _fetchTournaments(limit = 10) {
     console.log(`SportDevs API: Fetching tournaments, limit: ${limit}`);
     
     const tournaments = await fetchFromSportDevs(
-      `${WEB_URL}/tournaments?limit=${limit}`
+      `${WEB_URL}/tournaments?limit=${limit}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received ${tournaments.length} tournaments`);
     return tournaments;
@@ -363,7 +370,8 @@ async function _fetchTournamentById(tournamentId: string) {
     console.log(`SportDevs API: Fetching tournament details for ID: ${tournamentId}`);
     
     const tournaments = await fetchFromSportDevs(
-      `${WEB_URL}/tournaments?id=eq.${tournamentId}`
+      `${WEB_URL}/tournaments?id=eq.${tournamentId}`,
+      getApiKey()
     );
     
     if (!tournaments || tournaments.length === 0) {
@@ -389,7 +397,8 @@ async function _fetchMatchesByTournamentId(tournamentId: string) {
     console.log(`SportDevs API: Fetching matches for tournament ID: ${tournamentId}`);
     
     const matches = await fetchFromSportDevs(
-      `${WEB_URL}/matches?tournament_id=eq.${tournamentId}`
+      `${WEB_URL}/matches?tournament_id=eq.${tournamentId}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received ${matches.length} matches for tournament ID: ${tournamentId}`);
     
@@ -422,7 +431,8 @@ async function _fetchLeagueByName(leagueName: string) {
     
     const encodedName = encodeURIComponent(leagueName);
     const leagues = await fetchFromSportDevs(
-      `${WEB_URL}/leagues?name=like.*${encodedName}*`
+      `${WEB_URL}/leagues?name=like.*${encodedName}*`,
+      getApiKey()
     );
     console.log(`SportDevs API: Found ${leagues.length} leagues matching "${leagueName}"`);
     
@@ -442,7 +452,8 @@ async function _fetchStandingsByLeagueId(leagueId: string) {
     console.log(`SportDevs API: Fetching standings for league ID: ${leagueId}`);
     
     const standings = await fetchFromSportDevs(
-      `${WEB_URL}/standings?league_id=eq.${leagueId}`
+      `${WEB_URL}/standings?league_id=eq.${leagueId}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received ${standings.length} standings entries for league ID: ${leagueId}`);
     return standings;
@@ -462,7 +473,8 @@ async function _searchTeams(query: string, limit = 10) {
     
     const encodedQuery = encodeURIComponent(query);
     const teams = await fetchFromSportDevs(
-      `${WEB_URL}/teams?name=like.*${encodedQuery}*&limit=${limit}`
+      `${WEB_URL}/teams?name=like.*${encodedQuery}*&limit=${limit}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Found ${teams.length} teams matching "${query}"`);
     return teams;
@@ -482,7 +494,8 @@ async function _searchPlayers(query: string, limit = 10) {
     
     const encodedQuery = encodeURIComponent(query);
     const players = await fetchFromSportDevs(
-      `${WEB_URL}/players?name=like.*${encodedQuery}*&limit=${limit}`
+      `${WEB_URL}/players?name=like.*${encodedQuery}*&limit=${limit}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Found ${players.length} players matching "${query}"`);
     return players;
@@ -504,7 +517,8 @@ async function _fetchMatchOdds(matchId: string): Promise<{
     console.log(`SportDevs API: Fetching odds for match ID: ${matchId}`);
     
     const oddsData = await fetchFromSportDevs(
-      `${BASE_URL}/esports/matches/${matchId}/odds`
+      `${BASE_URL}/esports/matches/${matchId}/odds`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received odds for match ID: ${matchId}`);
     
