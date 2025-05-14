@@ -1,4 +1,3 @@
-
 import { memoryCache, createCachedFunction } from '@/utils/cacheUtils';
 import { fetchFromSportDevs, getApiKey } from './sportDevsApi';
 import { clamp, randomInRange, randomNormal } from './utils';
@@ -151,9 +150,11 @@ export async function fetchRecentTeamMatches(teamId: string, limit = 10) {
   try {
     console.log(`Fetching recent matches for team ID: ${teamId}`);
     
-    // Validate team ID
-    if (!teamId || teamId === 'team1' || teamId === 'team2' || teamId.startsWith('unknown')) {
-      console.log(`Invalid team ID ${teamId} - using mock data instead`);
+    // Validate team ID - convert to string to ensure consistent handling
+    const teamIdStr = String(teamId);
+    
+    if (!teamIdStr || teamIdStr === 'team1' || teamIdStr === 'team2' || teamIdStr.startsWith('unknown')) {
+      console.log(`Invalid team ID ${teamIdStr} - using mock data instead`);
       throw new Error('Invalid team ID');
     }
 
@@ -164,7 +165,7 @@ export async function fetchRecentTeamMatches(teamId: string, limit = 10) {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Fetch matches within date range
-    const matches = await fetchMatchesByTeamAndDate(teamId, startDateStr, endDate);
+    const matches = await fetchMatchesByTeamAndDate(teamIdStr, startDateStr, endDate);
     
     // Limit results if needed
     return matches.slice(0, limit);
@@ -281,15 +282,25 @@ const consistentPlayerNames = {
 };
 
 // Helper function to generate mock data for testing when API fails
-export function generateMockMatchData(teamId: string, opponentId: string, matchCount = 5) {
-  console.log(`Generating mock match data for team ${teamId} vs ${opponentId}, count: ${matchCount}`);
+export function generateMockMatchData(teamId: string | number, opponentId: string | number, matchCount = 5) {
+  // Convert IDs to strings to ensure consistent handling
+  const teamIdStr = String(teamId);
+  const opponentIdStr = String(opponentId);
+  
+  console.log(`Generating mock match data for team ${teamIdStr} vs ${opponentIdStr}, count: ${matchCount}`);
   
   const matches = [];
   const currentDate = new Date();
   
   // Select game type based on team ID to ensure consistency
   const gameTypes = ["csgo", "dota2", "lol"];
-  const teamIdSum = teamId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  // Use a simple hash function to derive a consistent game type from the team ID string
+  let teamIdSum = 0;
+  for (let i = 0; i < teamIdStr.length; i++) {
+    teamIdSum += teamIdStr.charCodeAt(i);
+  }
+  
   const gameType = gameTypes[teamIdSum % gameTypes.length];
   console.log(`Selected game type for mock data: ${gameType}`);
   
@@ -362,17 +373,17 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
       });
       
       return {
-        player_id: `player-${teamId}-${j}`,
+        player_id: `player-${teamIdStr}-${j}`,
         player_name: playerName,
         role: role,
-        team_id: teamId,
+        team_id: teamIdStr,
         ...stats
       };
     });
     
     // Generate team stats
     const teamStats: TeamStats = {
-      team_id: teamId,
+      team_id: teamIdStr,
       team_name: "Your Team",
       match_id: `mock-match-${i}`,
       result: teamWon ? "win" : "loss",
@@ -420,8 +431,8 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
     // Create match object
     const match = {
       id: `mock-match-${i}`,
-      home_team_id: teamWon ? teamId : opponentId,
-      away_team_id: teamWon ? opponentId : teamId,
+      home_team_id: teamWon ? teamIdStr : opponentIdStr,
+      away_team_id: teamWon ? opponentIdStr : teamIdStr,
       home_team_name: teamWon ? "Your Team" : `Opponent ${i}`,
       away_team_name: teamWon ? `Opponent ${i}` : "Your Team",
       tournament_name: `Mock Tournament ${Math.floor(i/3) + 1}`,
@@ -432,9 +443,9 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
       
       // Include the generated data
       lineups: playerRoles.map((role, j) => ({
-        player_id: `player-${teamId}-${j}`,
+        player_id: `player-${teamIdStr}-${j}`,
         player_name: `${role} Player`,
-        team_id: teamId,
+        team_id: teamIdStr,
         role: role
       })),
       
@@ -446,6 +457,8 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
   }
   
   console.log(`Generated ${matches.length} mock matches with ${gameType} data`);
+  console.log("Sample player stats:", matches[0].playerStats[0]);
+  console.log("Sample team stats:", matches[0].teamStats);
+  
   return matches;
 }
-

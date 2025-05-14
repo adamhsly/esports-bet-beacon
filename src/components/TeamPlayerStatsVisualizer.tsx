@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   fetchRecentTeamMatches, 
@@ -53,12 +54,6 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
       try {
         console.log(`Loading match history for team ${teamId} (${teamName})`);
         
-        // Validate team ID
-        if (!teamId || teamId === 'team1' || teamId === 'team2' || teamId === 'unknown') {
-          console.log(`Invalid team ID ${teamId} - using mock data`);
-          throw new Error("Invalid team ID");
-        }
-        
         // Try to fetch recent matches from API
         const recentMatches = await fetchRecentTeamMatches(teamId);
         
@@ -71,8 +66,19 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
           // Otherwise, generate mock data
           console.log(`No matches found for team ${teamId} - generating mock data`);
           const mockMatches = generateMockMatchData(teamId, opponentTeamId || 'unknown', 8);
-          setMatches(mockMatches);
-          setSelectedMatchId(mockMatches[0].id);
+          console.log("Generated mock matches:", mockMatches.length);
+          
+          if (mockMatches && mockMatches.length > 0) {
+            setMatches(mockMatches);
+            setSelectedMatchId(mockMatches[0].id);
+          } else {
+            console.error("Failed to generate mock matches");
+            toast({
+              title: "Error loading data",
+              description: "Could not load match history or generate sample data.",
+              variant: "destructive",
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading match history:', error);
@@ -85,8 +91,14 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
         // Generate detailed mock data as fallback
         console.log(`Generating fallback mock data for team ${teamId} vs ${opponentTeamId || 'unknown'}`);
         const mockMatches = generateMockMatchData(teamId, opponentTeamId || 'unknown', 8);
-        setMatches(mockMatches);
-        setSelectedMatchId(mockMatches[0].id);
+        console.log("Generated fallback mock matches:", mockMatches.length);
+        
+        if (mockMatches && mockMatches.length > 0) {
+          setMatches(mockMatches);
+          setSelectedMatchId(mockMatches[0].id);
+        } else {
+          console.error("Failed to generate fallback mock matches");
+        }
       } finally {
         setIsLoadingMatches(false);
       }
