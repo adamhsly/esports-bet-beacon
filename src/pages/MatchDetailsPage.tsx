@@ -60,27 +60,33 @@ const MatchDetailsPage = () => {
         throw new Error("Match not found in SportDevs API");
       } catch (err) {
         console.error("Error fetching match:", err);
-        // Fall back to mock data only if fetch fails
-        console.log("Using mock data as fallback");
         
-        // Create fallback data based on the match ID
-        const teamNames = matchId?.includes('team') ? 
+        // Create fallback data based on the match ID from params
+        // Do not hardcode the match ID, use the one from the URL
+        const currentMatchId = matchId || 'unknown';
+        
+        // Generate team names based on the matchId to create unique fallback data
+        // This ensures each match page will have different content based on the URL
+        const teamNames = currentMatchId.includes('team') ? 
           ['Team Liquid', 'Team Secret'] : 
-          ['Evil Geniuses', 'Nigma Galaxy'];
+          (parseInt(currentMatchId) % 2 === 0 ? 
+           ['Evil Geniuses', 'Nigma Galaxy'] : 
+           ['OG', 'Cloud9']);
           
         const mockMatchDetails: MatchDetails = {
-          id: matchId || '123',
+          id: currentMatchId,
           startTime: new Date().toISOString(),
           tournament: 'The International',
           esportType: 'dota2',
           twitchChannel: 'esl_dota2',
           bestOf: 3,
           teams: [
-            { name: teamNames[0], logo: '/placeholder.svg', id: 'team1' },
-            { name: teamNames[1], logo: '/placeholder.svg', id: 'team2' },
+            { name: teamNames[0], logo: '/placeholder.svg', id: `team${currentMatchId}-1` },
+            { name: teamNames[1], logo: '/placeholder.svg', id: `team${currentMatchId}-2` },
           ],
         };
         
+        console.log("Using mock data as fallback for match ID:", currentMatchId);
         return mockMatchDetails;
       }
     },

@@ -1,3 +1,4 @@
+
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
 import { 
@@ -8,7 +9,6 @@ import {
 } from '@/utils/cacheUtils';
 
 // API Constants
-const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
 const BASE_URL = "https://api.sportdevs.com";
 const WEB_URL = "https://esports.sportdevs.com";
 
@@ -98,15 +98,22 @@ const mapEsportTypeToGameId = (esportType: string): string => {
 /**
  * Core fetch function with error handling and logging
  */
-async function fetchFromSportDevs(url: string, apiKey: string = API_KEY): Promise<any> {
+async function fetchFromSportDevs(url: string, apiKey: string): Promise<any> {
   console.log(`SportDevs API Request: ${url}`);
   
-  const response = await fetch(url, {
-    headers: {
-      'x-api-key': apiKey,
-      'Accept': 'application/json'
-    }
-  });
+  // Different header format based on API endpoint type
+  const headers: Record<string, string> = {
+    'Accept': 'application/json'
+  };
+  
+  // Use Bearer token format for WEB_URL endpoints, x-api-key for BASE_URL endpoints
+  if (url.startsWith(WEB_URL)) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  } else {
+    headers['x-api-key'] = apiKey;
+  }
+  
+  const response = await fetch(url, { headers });
   
   if (!response.ok) {
     const errorText = await response.text();
@@ -120,6 +127,14 @@ async function fetchFromSportDevs(url: string, apiKey: string = API_KEY): Promis
 }
 
 /**
+ * Get the API key from the ApiKeyProvider
+ */
+function getApiKey(): string {
+  // Use the hardcoded API key from ApiKeyProvider
+  return "GsZ3ovnDw0umMvL5p7SfPA";
+}
+
+/**
  * Raw function to fetch upcoming matches
  */
 async function _fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
@@ -127,7 +142,10 @@ async function _fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
     const gameId = mapEsportTypeToGameId(esportType);
     console.log(`SportDevs API: Fetching upcoming matches for ${esportType} (${gameId})`);
     
-    const data = await fetchFromSportDevs(`${BASE_URL}/esports/${gameId}/matches/upcoming`);
+    const data = await fetchFromSportDevs(
+      `${BASE_URL}/esports/${gameId}/matches/upcoming`,
+      getApiKey()
+    );
     console.log(`SportDevs API: Received ${data.length} upcoming matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
@@ -144,7 +162,10 @@ async function _fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
     const gameId = mapEsportTypeToGameId(esportType);
     console.log(`SportDevs API: Fetching live matches for ${esportType} (${gameId})`);
     
-    const data = await fetchFromSportDevs(`${BASE_URL}/esports/${gameId}/matches/live`);
+    const data = await fetchFromSportDevs(
+      `${BASE_URL}/esports/${gameId}/matches/live`,
+      getApiKey()
+    );
     console.log(`SportDevs API: Received ${data.length} live matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
@@ -162,7 +183,8 @@ async function _fetchMatchById(matchId: string): Promise<MatchInfo> {
     
     // Use the correct endpoint format for fetching by ID
     const matches = await fetchFromSportDevs(
-      `${WEB_URL}/matches?id=eq.${matchId}`
+      `${WEB_URL}/matches?id=eq.${matchId}`,
+      getApiKey()
     );
     console.log(`SportDevs API: Received match details for ID: ${matchId}`, matches);
     

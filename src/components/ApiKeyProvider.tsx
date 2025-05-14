@@ -1,10 +1,10 @@
-
 import React, { createContext, useContext } from 'react';
 
 interface ApiKeyContextType {
   sportDevsApiKey: string;
 }
 
+// We'll keep using this API key but with the correct authorization format
 const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
 
 const ApiKeyContext = createContext<ApiKeyContextType>({
@@ -20,7 +20,6 @@ interface ApiKeyProviderProps {
 }
 
 const ApiKeyProvider: React.FC<ApiKeyProviderProps> = ({ children }) => {
-  // The API key is now hardcoded as requested
   return (
     <ApiKeyContext.Provider 
       value={{ 
