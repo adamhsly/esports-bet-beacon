@@ -186,29 +186,25 @@ export function toast(props: ToastProps) {
   }
 }
 
-const [state, dispatch] = React.createContext<[State, React.Dispatch<Action>]>({
-  toasts: [],
-} as State, () => {
-  throw new Error('ToastProvider not found')
-})
+const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
 
 export function ToastProvider(props: React.PropsWithChildren) {
   const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
 
-  const value = React.useMemo(() => [state, dispatch], [state])
+  const value = React.useMemo(() => {
+    return {
+      toasts: state.toasts,
+      toast: (props: ToastProps) => toast(props),
+      dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+      update: (props: Partial<ToasterToast>) => dispatch({ type: actionTypes.UPDATE_TOAST, toast: props }),
+    }
+  }, [state])
 
   return (
-    <ToastContext.Provider
-      value={{
-        toasts: state.toasts,
-        toast: (props) => toast(props),
-        dismiss: (toastId) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
-        update: (props) => dispatch({ type: actionTypes.UPDATE_TOAST, toast: props }),
-      }}
-    >
+    <ToastContext.Provider value={value}>
       {props.children}
     </ToastContext.Provider>
-  );
+  )
 }
 
 export { type ToastProps, type ToastActionElement }
