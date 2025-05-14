@@ -44,11 +44,21 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
     return 'csgo'; // default
   }, [esportType]);
   
+  console.log(`TeamPlayerStatsVisualizer - initializing for team: ${teamId}(${teamName}), esportType: ${esportType}, gameType: ${gameType}`);
+  
   // Load match history when component mounts
   useEffect(() => {
     const loadMatchHistory = async () => {
       setIsLoadingMatches(true);
       try {
+        console.log(`Loading match history for team ${teamId} (${teamName})`);
+        
+        // Validate team ID
+        if (!teamId || teamId === 'team1' || teamId === 'team2' || teamId === 'unknown') {
+          console.log(`Invalid team ID ${teamId} - using mock data`);
+          throw new Error("Invalid team ID");
+        }
+        
         // Try to fetch recent matches from API
         const recentMatches = await fetchRecentTeamMatches(teamId);
         
@@ -59,21 +69,22 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
           setSelectedMatchId(recentMatches[0].id);
         } else {
           // Otherwise, generate mock data
-          console.log(`Generating mock match data for team ${teamId}`);
-          const mockMatches = generateMockMatchData(teamId, opponentTeamId || 'unknown');
+          console.log(`No matches found for team ${teamId} - generating mock data`);
+          const mockMatches = generateMockMatchData(teamId, opponentTeamId || 'unknown', 8);
           setMatches(mockMatches);
           setSelectedMatchId(mockMatches[0].id);
         }
       } catch (error) {
         console.error('Error loading match history:', error);
         toast({
-          title: "Error loading match history",
-          description: "Could not load match history. Using sample data instead.",
-          variant: "destructive",
+          title: "Using sample data",
+          description: "Could not load match history from API. Showing sample data instead.",
+          variant: "default",
         });
         
-        // Generate mock data as fallback
-        const mockMatches = generateMockMatchData(teamId, opponentTeamId || 'unknown');
+        // Generate detailed mock data as fallback
+        console.log(`Generating fallback mock data for team ${teamId} vs ${opponentTeamId || 'unknown'}`);
+        const mockMatches = generateMockMatchData(teamId, opponentTeamId || 'unknown', 8);
         setMatches(mockMatches);
         setSelectedMatchId(mockMatches[0].id);
       } finally {
@@ -82,7 +93,7 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
     };
     
     loadMatchHistory();
-  }, [teamId, opponentTeamId, toast]);
+  }, [teamId, opponentTeamId, teamName, toast]);
   
   // Load match details when selected match changes
   useEffect(() => {
@@ -91,6 +102,8 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
       
       setIsLoadingMatchDetails(true);
       try {
+        console.log(`Loading details for match ${selectedMatchId}`);
+        
         // Try to fetch match details from API
         const details = await fetchMatchFullDetails(selectedMatchId);
         
@@ -100,9 +113,9 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
           setMatchDetails(details);
         } else {
           // Otherwise, use mock data embedded in the match
+          console.log(`Using embedded mock details for match ${selectedMatchId}`);
           const selectedMatch = matches.find(m => m.id === selectedMatchId);
           if (selectedMatch) {
-            console.log(`Using embedded mock details for match ${selectedMatchId}`);
             setMatchDetails({
               lineups: selectedMatch.lineups || [],
               playerStats: selectedMatch.playerStats || [],
@@ -113,14 +126,15 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
       } catch (error) {
         console.error('Error loading match details:', error);
         toast({
-          title: "Error loading match details",
+          title: "Using available data",
           description: "Could not load match details. Using available data instead.",
-          variant: "destructive",
+          variant: "default",
         });
         
         // Use any available data from the match object as fallback
         const selectedMatch = matches.find(m => m.id === selectedMatchId);
         if (selectedMatch) {
+          console.log(`Falling back to embedded data for match ${selectedMatchId}`);
           setMatchDetails({
             lineups: selectedMatch.lineups || [],
             playerStats: selectedMatch.playerStats || [],
@@ -176,6 +190,8 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
   const aggregateStats = useMemo(() => {
     if (!matches || matches.length === 0) return null;
     
+    console.log(`Calculating aggregate stats from ${matches.length} matches`);
+    
     // Initialize counters
     let totalMatches = matches.length;
     let wins = 0;
@@ -219,6 +235,8 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
       .map(match => match.result || 'unknown')
       .map(result => result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D');
     
+    console.log(`Aggregate stats calculated: Win rate ${winRate}%, K/D ${kdRatio}`);
+    
     return {
       winRate,
       kdRatio,
@@ -248,7 +266,7 @@ const TeamPlayerStatsVisualizer: React.FC<TeamPlayerStatsVisualizerProps> = ({
         </h3>
       </div>
       
-      {/* Aggregate Stats Section (Always Shown) */}
+      {/* Aggregate Stats Section (Always Shown at Top) */}
       <div className="mb-6">
         <Card className="p-4 bg-theme-gray-dark border border-theme-gray-medium">
           <h4 className="text-md font-medium mb-3 flex items-center">

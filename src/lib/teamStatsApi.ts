@@ -1,6 +1,7 @@
 
 import { memoryCache, createCachedFunction } from '@/utils/cacheUtils';
 import { fetchFromSportDevs, getApiKey } from './sportDevsApi';
+import { clamp, randomInRange, randomNormal } from './utils';
 
 // Cache TTL for different types of data (in seconds)
 const CACHE_TTL = {
@@ -125,6 +126,14 @@ export const fetchMatchTeamStats = createCachedFunction(
 // Utility function to get matches for the last 6 months
 export async function fetchRecentTeamMatches(teamId: string, limit = 10) {
   try {
+    console.log(`Fetching recent matches for team ID: ${teamId}`);
+    
+    // Validate team ID
+    if (!teamId || teamId === 'team1' || teamId === 'team2' || teamId.startsWith('unknown')) {
+      console.log(`Invalid team ID ${teamId} - using mock data instead`);
+      throw new Error('Invalid team ID');
+    }
+
     // Calculate date range (last 6 months)
     const endDate = new Date().toISOString().split('T')[0]; // Today
     const startDate = new Date();
@@ -145,6 +154,14 @@ export async function fetchRecentTeamMatches(teamId: string, limit = 10) {
 // Utility function to get comprehensive match data including lineups and stats
 export async function fetchMatchFullDetails(matchId: string) {
   try {
+    console.log(`Fetching full details for match ID: ${matchId}`);
+    
+    // Validate match ID
+    if (!matchId || matchId.startsWith('mock-match')) {
+      console.log(`Invalid match ID ${matchId} - using mock data instead`);
+      return null;
+    }
+
     // Fetch all the details in parallel
     const [lineups, playerStats, teamStats] = await Promise.all([
       fetchMatchLineups(matchId),
@@ -159,97 +176,252 @@ export async function fetchMatchFullDetails(matchId: string) {
     };
   } catch (error) {
     console.error("Error fetching match full details:", error);
-    return {
-      lineups: [],
-      playerStats: [],
-      teamStats: []
-    };
+    return null;
   }
 }
 
+// Define game-specific stat templates for mock data
+const gameStatTemplates = {
+  csgo: {
+    playerStats: [
+      { name: "kills", min: 5, max: 30, mean: 18, stdDev: 5 },
+      { name: "deaths", min: 5, max: 25, mean: 15, stdDev: 4 },
+      { name: "assists", min: 2, max: 15, mean: 7, stdDev: 3 },
+      { name: "adr", min: 50, max: 120, mean: 80, stdDev: 15 },
+      { name: "flash_assists", min: 0, max: 10, mean: 4, stdDev: 2 },
+      { name: "headshots", min: 3, max: 15, mean: 9, stdDev: 3 },
+      { name: "first_kills", min: 0, max: 5, mean: 2, stdDev: 1 },
+      { name: "clutches", min: 0, max: 3, mean: 1, stdDev: 0.8 }
+    ],
+    teamStats: [
+      { name: "rounds_won", min: 5, max: 16, mean: 11, stdDev: 3 },
+      { name: "rounds_lost", min: 5, max: 16, mean: 11, stdDev: 3 },
+      { name: "bomb_plants", min: 3, max: 12, mean: 7, stdDev: 2 },
+      { name: "bomb_defuses", min: 0, max: 5, mean: 2, stdDev: 1 },
+      { name: "first_kills", min: 5, max: 15, mean: 9, stdDev: 2 },
+      { name: "team_kills", min: 0, max: 3, mean: 1, stdDev: 0.5 },
+      { name: "clutch_rounds", min: 0, max: 5, mean: 2, stdDev: 1 },
+      { name: "eco_rounds_won", min: 0, max: 3, mean: 1, stdDev: 0.7 }
+    ]
+  },
+  dota2: {
+    playerStats: [
+      { name: "kills", min: 2, max: 15, mean: 7, stdDev: 3 },
+      { name: "deaths", min: 1, max: 12, mean: 6, stdDev: 2 },
+      { name: "assists", min: 5, max: 25, mean: 12, stdDev: 5 },
+      { name: "gpm", min: 300, max: 800, mean: 500, stdDev: 100 },
+      { name: "xpm", min: 300, max: 700, mean: 500, stdDev: 100 },
+      { name: "last_hits", min: 50, max: 400, mean: 200, stdDev: 80 },
+      { name: "denies", min: 5, max: 30, mean: 15, stdDev: 5 },
+      { name: "hero_damage", min: 5000, max: 40000, mean: 18000, stdDev: 7000 }
+    ],
+    teamStats: [
+      { name: "towers_destroyed", min: 1, max: 11, mean: 6, stdDev: 2 },
+      { name: "roshans_killed", min: 0, max: 3, mean: 1, stdDev: 0.8 },
+      { name: "team_fights_won", min: 2, max: 15, mean: 7, stdDev: 3 },
+      { name: "wards_placed", min: 10, max: 50, mean: 25, stdDev: 8 },
+      { name: "sentries_placed", min: 10, max: 40, mean: 20, stdDev: 7 },
+      { name: "camps_stacked", min: 2, max: 20, mean: 8, stdDev: 4 },
+      { name: "runes_collected", min: 5, max: 25, mean: 15, stdDev: 5 },
+      { name: "total_gold", min: 15000, max: 40000, mean: 25000, stdDev: 5000 }
+    ]
+  },
+  lol: {
+    playerStats: [
+      { name: "kills", min: 1, max: 15, mean: 6, stdDev: 3 },
+      { name: "deaths", min: 0, max: 10, mean: 4, stdDev: 2 },
+      { name: "assists", min: 2, max: 20, mean: 10, stdDev: 4 },
+      { name: "cs", min: 150, max: 400, mean: 250, stdDev: 50 },
+      { name: "vision_score", min: 20, max: 100, mean: 50, stdDev: 15 },
+      { name: "damage_dealt", min: 10000, max: 50000, mean: 25000, stdDev: 8000 },
+      { name: "gold_earned", min: 8000, max: 20000, mean: 13000, stdDev: 3000 },
+      { name: "wards_placed", min: 5, max: 30, mean: 15, stdDev: 5 }
+    ],
+    teamStats: [
+      { name: "dragons", min: 0, max: 4, mean: 2, stdDev: 1 },
+      { name: "barons", min: 0, max: 2, mean: 1, stdDev: 0.5 },
+      { name: "towers", min: 1, max: 11, mean: 6, stdDev: 2 },
+      { name: "inhibitors", min: 0, max: 3, mean: 1, stdDev: 0.8 },
+      { name: "heralds", min: 0, max: 2, mean: 1, stdDev: 0.5 },
+      { name: "gold_difference", min: -10000, max: 10000, mean: 0, stdDev: 4000 },
+      { name: "first_blood", min: 0, max: 1, mean: 0.5, stdDev: 0.5 },
+      { name: "team_kills", min: 5, max: 40, mean: 20, stdDev: 7 }
+    ]
+  }
+};
+
+// Set fixed player names for consistent trending analysis
+const consistentPlayerNames = {
+  csgo: ["AWPer", "Rifler", "Entry", "Support", "IGL"],
+  dota2: ["Carry", "Midlaner", "Offlaner", "Soft Support", "Hard Support"],
+  lol: ["Top", "Jungle", "Mid", "ADC", "Support"]
+};
+
 // Helper function to generate mock data for testing when API fails
 export function generateMockMatchData(teamId: string, opponentId: string, matchCount = 5) {
+  console.log(`Generating mock match data for team ${teamId} vs ${opponentId}, count: ${matchCount}`);
+  
   const matches = [];
   const currentDate = new Date();
   
-  // Game-specific stat templates
-  const gameStats = {
-    csgo: {
-      playerStats: ["kills", "deaths", "assists", "headshots", "flash_assists", "adr"],
-      teamStats: ["rounds_won", "rounds_lost", "bomb_plants", "bomb_defuses", "first_kills"]
-    },
-    dota2: {
-      playerStats: ["kills", "deaths", "assists", "gpm", "xpm", "last_hits", "denies"],
-      teamStats: ["towers_destroyed", "roshans_killed", "team_fights_won", "wards_placed"]
-    },
-    lol: {
-      playerStats: ["kills", "deaths", "assists", "cs", "vision_score", "damage_dealt"],
-      teamStats: ["dragons", "barons", "towers", "inhibitors", "heralds"]
-    }
-  };
-  
-  // Select random game type for mock data
+  // Select game type based on team ID to ensure consistency
   const gameTypes = ["csgo", "dota2", "lol"];
-  const gameType = gameTypes[Math.floor(Math.random() * gameTypes.length)];
-  const statsTemplate = gameStats[gameType as keyof typeof gameStats];
+  const teamIdSum = teamId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const gameType = gameTypes[teamIdSum % gameTypes.length];
+  console.log(`Selected game type for mock data: ${gameType}`);
+  
+  // Get the appropriate stat templates
+  const statTemplate = gameStatTemplates[gameType as keyof typeof gameStatTemplates];
+  const playerRoles = consistentPlayerNames[gameType as keyof typeof consistentPlayerNames];
+  
+  // Create consistent performance profiles for players (some better, some worse)
+  const playerPerformanceMultipliers = [1.2, 1.1, 1.0, 0.9, 0.8];
+  
+  // Generate team performance pattern (gradually improving, declining, or mixed)
+  // This makes trends more visible and interesting
+  const teamTrend = Math.random() > 0.5 ? 0.1 : -0.1; // Improving or declining
   
   for (let i = 0; i < matchCount; i++) {
     // Create date for match (progressively further in the past)
     const matchDate = new Date(currentDate);
-    matchDate.setDate(matchDate.getDate() - (i * 7)); // Weekly matches
+    matchDate.setDate(matchDate.getDate() - (i * 3 + Math.floor(Math.random() * 3))); // Matches every 3-5 days
     
-    // Generate random outcome (team win probability 60%)
-    const teamWon = Math.random() < 0.6;
+    // Generate match outcome with slight bias toward recent trend
+    const trendFactor = teamTrend * i * 0.15; // Small cumulative effect
+    const teamWon = Math.random() < (0.5 + trendFactor);
+    
+    // Generate more realistic score based on game type
+    let score;
+    if (gameType === "csgo") {
+      const teamScore = teamWon ? randomInRange(13, 16) : randomInRange(3, 14);
+      const opponentScore = teamWon ? randomInRange(3, 14) : randomInRange(13, 16);
+      score = `${teamScore}-${opponentScore}`;
+    } else {
+      // Dota2/LoL typically best of 3
+      score = teamWon ? "2-1" : "1-2";
+      if (Math.random() > 0.7) {
+        score = teamWon ? "2-0" : "0-2"; // Sometimes clean sweeps
+      }
+    }
+    
+    // Create detailed player stats with consistent player names and roles
+    const playerStats = playerRoles.map((role, j) => {
+      const performanceMultiplier = playerPerformanceMultipliers[j];
+      const playerName = `${role} Player`;
+      
+      // Create stats object based on the game type
+      const stats = {};
+      
+      // Apply team trend to individual performances (gradually getting better/worse)
+      const matchTrendFactor = 1 + (teamTrend * i * 0.1);
+      
+      // Generate values for each stat
+      statTemplate.playerStats.forEach(stat => {
+        // Calculate adjusted mean based on player performance profile and match trend
+        const adjustedMean = stat.mean * performanceMultiplier * matchTrendFactor;
+        
+        // Generate random value following normal distribution
+        let value = randomNormal(adjustedMean, stat.stdDev);
+        
+        // Clamp to min/max range
+        value = clamp(value, stat.min, stat.max);
+        
+        // Round to integer for most stats
+        if (stat.name !== "adr" && !stat.name.includes("pm")) {
+          value = Math.round(value);
+        } else {
+          // Round to 1 decimal for values like ADR, GPM, etc.
+          value = Math.round(value * 10) / 10;
+        }
+        
+        // @ts-ignore - Dynamic assignment
+        stats[stat.name] = value;
+      });
+      
+      return {
+        player_id: `player-${teamId}-${j}`,
+        player_name: playerName,
+        role: role,
+        team_id: teamId,
+        ...stats
+      };
+    });
+    
+    // Generate team stats
+    const teamStats = {
+      team_id: teamId,
+      team_name: "Your Team",
+      match_id: `mock-match-${i}`,
+      result: teamWon ? "win" : "loss",
+    };
+    
+    // Apply team trend to stats
+    const matchTrendFactor = 1 + (teamTrend * i * 0.1);
+    
+    // Add specific stats based on game type
+    statTemplate.teamStats.forEach(stat => {
+      // Calculate adjusted mean based on match trend
+      const adjustedMean = stat.mean * matchTrendFactor;
+      
+      // Generate random value following normal distribution
+      let value = randomNormal(adjustedMean, stat.stdDev);
+      
+      // Clamp to min/max range
+      value = clamp(value, stat.min, stat.max);
+      
+      // Round to integer for most stats
+      if (!stat.name.includes("difference")) {
+        value = Math.round(value);
+      } else {
+        // Round to nearest 100 for differences
+        value = Math.round(value / 100) * 100;
+      }
+      
+      // @ts-ignore - Dynamic assignment
+      teamStats[stat.name] = value;
+    });
+    
+    // Calculate kills, deaths, assists aggregates from player stats
+    let totalKills = 0, totalDeaths = 0, totalAssists = 0;
+    playerStats.forEach(player => {
+      totalKills += player.kills || 0;
+      totalDeaths += player.deaths || 0;
+      totalAssists += player.assists || 0;
+    });
+    
+    // Add these to team stats
+    teamStats.kills = totalKills;
+    teamStats.deaths = totalDeaths;
+    teamStats.assists = totalAssists;
     
     // Create match object
     const match = {
       id: `mock-match-${i}`,
       home_team_id: teamWon ? teamId : opponentId,
       away_team_id: teamWon ? opponentId : teamId,
-      home_team_name: teamWon ? "Your Team" : "Opponent " + i,
-      away_team_name: teamWon ? "Opponent " + i : "Your Team",
-      tournament_name: `Mock Tournament ${Math.floor(i/2) + 1}`,
+      home_team_name: teamWon ? "Your Team" : `Opponent ${i}`,
+      away_team_name: teamWon ? `Opponent ${i}` : "Your Team",
+      tournament_name: `Mock Tournament ${Math.floor(i/3) + 1}`,
       start_time: matchDate.toISOString(),
       status: "finished",
       result: teamWon ? "win" : "loss",
-      score: teamWon ? "2-1" : "1-2",
+      score: score,
       
-      // Mock players and stats
-      lineups: Array(5).fill(0).map((_, j) => ({
-        player_id: `player-${j}`,
-        player_name: `Player ${j+1}`,
-        team_id: teamId
+      // Include the generated data
+      lineups: playerRoles.map((role, j) => ({
+        player_id: `player-${teamId}-${j}`,
+        player_name: `${role} Player`,
+        team_id: teamId,
+        role: role
       })),
       
-      playerStats: Array(5).fill(0).map((_, j) => {
-        // Create random stats based on the game type
-        const stats = {};
-        statsTemplate.playerStats.forEach(stat => {
-          // @ts-ignore
-          stats[stat] = Math.floor(Math.random() * 30) + 5;
-        });
-        
-        return {
-          player_id: `player-${j}`,
-          player_name: `Player ${j+1}`,
-          team_id: teamId,
-          ...stats
-        };
-      }),
-      
-      teamStats: {
-        team_id: teamId,
-        team_name: "Your Team",
-        ...statsTemplate.teamStats.reduce((acc, stat) => {
-          // @ts-ignore
-          acc[stat] = Math.floor(Math.random() * 20) + 1;
-          return acc;
-        }, {})
-      }
+      playerStats: playerStats,
+      teamStats: teamStats
     };
     
     matches.push(match);
   }
   
+  console.log(`Generated ${matches.length} mock matches with ${gameType} data`);
   return matches;
 }
