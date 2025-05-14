@@ -14,6 +14,29 @@ const CACHE_TTL = {
 // Base URL for the SportDevs API
 const WEB_URL = "https://esports.sportdevs.com";
 
+// Define interfaces for our data structures
+interface PlayerStats {
+  player_id: string;
+  player_name: string;
+  role: string;
+  team_id: string;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  [key: string]: any; // Allow for other game-specific stats
+}
+
+interface TeamStats {
+  team_id: string;
+  team_name: string;
+  match_id: string;
+  result: string;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  [key: string]: any; // Allow for other game-specific stats
+}
+
 /**
  * Fetch matches by team ID within a date range
  */
@@ -305,12 +328,12 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
     }
     
     // Create detailed player stats with consistent player names and roles
-    const playerStats = playerRoles.map((role, j) => {
+    const playerStats: PlayerStats[] = playerRoles.map((role, j) => {
       const performanceMultiplier = playerPerformanceMultipliers[j];
       const playerName = `${role} Player`;
       
       // Create stats object based on the game type
-      const stats = {};
+      const stats: Record<string, any> = {};
       
       // Apply team trend to individual performances (gradually getting better/worse)
       const matchTrendFactor = 1 + (teamTrend * i * 0.1);
@@ -334,7 +357,7 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
           value = Math.round(value * 10) / 10;
         }
         
-        // @ts-ignore - Dynamic assignment
+        // Add the stat to the stats object
         stats[stat.name] = value;
       });
       
@@ -348,7 +371,7 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
     });
     
     // Generate team stats
-    const teamStats = {
+    const teamStats: TeamStats = {
       team_id: teamId,
       team_name: "Your Team",
       match_id: `mock-match-${i}`,
@@ -377,8 +400,8 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
         value = Math.round(value / 100) * 100;
       }
       
-      // @ts-ignore - Dynamic assignment
-      teamStats[stat.name] = value;
+      // Add the stat to the teamStats object
+      (teamStats as any)[stat.name] = value;
     });
     
     // Calculate kills, deaths, assists aggregates from player stats
@@ -425,3 +448,4 @@ export function generateMockMatchData(teamId: string, opponentId: string, matchC
   console.log(`Generated ${matches.length} mock matches with ${gameType} data`);
   return matches;
 }
+
