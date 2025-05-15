@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 import type {
@@ -187,18 +186,33 @@ export function toast(props: ToastProps) {
   }
 }
 
-// Initialize the state and dispatch outside of any component
-const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
+// Create a separate React.useReducer call that doesn't get initialized outside of a component
+const useReducerState = () => React.useReducer(reducer, { toasts: [] })
+
+// Export the initial state and dispatch for external use
+export const [initialState, initialDispatch] = { toasts: [] } as const
+
+// Keep track of the dispatch function outside components
+let dispatch = (action: Action) => {
+  console.error(
+    "Toast dispatch called outside of provider. This is a no-op. Make sure your app is wrapped in a ToastProvider."
+  )
+}
 
 export function ToastProvider(props: React.PropsWithChildren) {
-  const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
+  const [state, innerDispatch] = useReducerState()
+  
+  // Update the outer dispatch reference
+  React.useEffect(() => {
+    dispatch = innerDispatch
+  }, [innerDispatch])
 
   const value = React.useMemo(() => {
     return {
       toasts: state.toasts,
       toast: (props: ToastProps) => toast(props),
-      dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
-      update: (props: Partial<ToasterToast>) => dispatch({ type: actionTypes.UPDATE_TOAST, toast: props }),
+      dismiss: (toastId?: string) => innerDispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+      update: (props: Partial<ToasterToast>) => innerDispatch({ type: actionTypes.UPDATE_TOAST, toast: props }),
     }
   }, [state])
 
