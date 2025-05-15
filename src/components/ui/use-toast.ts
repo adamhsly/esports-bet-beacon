@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -186,6 +187,7 @@ export function toast(props: ToastProps) {
   }
 }
 
+// Initialize the state and dispatch outside of any component
 const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
 
 export function ToastProvider(props: React.PropsWithChildren) {
