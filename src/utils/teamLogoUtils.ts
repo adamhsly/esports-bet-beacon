@@ -81,7 +81,8 @@ const teamLogoMap: Record<string, string> = {
   'team1': 'placeholder',
   'team2': 'placeholder',
   'tbd': 'placeholder',
-  'unknown': 'placeholder'
+  'unknown': 'placeholder',
+  'unknown team': 'placeholder'
 };
 
 /**
@@ -145,7 +146,7 @@ const isValidImageUrl = (url?: string | null): boolean => {
  */
 export const getEnhancedTeamLogoUrl = (team: {
   name: string;
-  logo?: string;
+  logo?: string | null;
   image_url?: string | null;
   id?: string;
   hash_image?: string | null;

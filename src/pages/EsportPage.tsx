@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -158,25 +159,49 @@ const EsportPage: React.FC = () => {
       // First try to get teams from opponents array
       if (match.opponents && match.opponents.length > 0) {
         teams = match.opponents.slice(0, 2).map((opponent: any) => {
-          console.log('Processing opponent:', opponent);
+          // Enhanced logging to debug team object creation
+          console.log('EsportPage - Processing opponent:', opponent);
           
-          // Create a complete team object with all properties needed for logo display
+          // Create a complete team object with ALL properties needed for logo display
           const team: TeamInfo = {
-            id: opponent.id || `team-${opponent.name}`,
+            id: opponent.id || `team-${opponent.name || 'unknown'}`,
             name: opponent.name || 'Unknown Team',
             logo: opponent.image_url || null,
             image_url: opponent.image_url || null,
             hash_image: opponent.hash_image || null
           };
           
-          // Debug log to check team object structure
-          console.log(`Created team object for ${team.name}:`, team);
+          // Debug log to check complete team object structure
+          console.log(`EsportPage - Created team object for ${team.name}:`, team);
           
           return team;
         });
       } 
+      // If no opponents data but has home_team and away_team objects
+      else if (match.home_team && match.away_team) {
+        console.log('EsportPage - Using home_team/away_team data:', match.home_team, match.away_team);
+        
+        teams = [
+          {
+            id: match.home_team.id || `team-${match.home_team.name || 'unknown'}`,
+            name: match.home_team.name || 'Unknown Team',
+            logo: match.home_team.image_url || null,
+            image_url: match.home_team.image_url || null,
+            hash_image: match.home_team.hash_image || null
+          },
+          {
+            id: match.away_team.id || `team-${match.away_team.name || 'unknown'}`,
+            name: match.away_team.name || 'Unknown Team',
+            logo: match.away_team.image_url || null,
+            image_url: match.away_team.image_url || null,
+            hash_image: match.away_team.hash_image || null
+          }
+        ];
+      }
       // If no opponents data, extract from match name
       else if (match.name) {
+        console.log('EsportPage - Extracting team names from match name:', match.name);
+        
         const [team1Name, team2Name] = extractTeamNames(match.name);
         teams = [
           { 
@@ -206,6 +231,17 @@ const EsportPage: React.FC = () => {
           id: 'unknown-team'
         });
       }
+      
+      // Final verification to ensure all team objects have ALL required properties
+      teams.forEach((team, index) => {
+        console.log(`EsportPage - Final team ${index} (${team.name}) object:`, {
+          id: team.id,
+          name: team.name,
+          logo: team.logo,
+          image_url: team.image_url,
+          hash_image: team.hash_image
+        });
+      });
       
       return {
         id: match.id || 'unknown-match',
