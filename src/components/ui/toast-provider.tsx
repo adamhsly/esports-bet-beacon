@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { type ToastProps } from "@/components/ui/toast"
 import { TOAST_LIMIT, TOAST_REMOVE_DELAY, ToasterToast, ToastContextType } from "./toast-types"
@@ -195,12 +196,13 @@ export function ToastProvider(props: React.PropsWithChildren) {
 }
 
 export function useToast() {
-  const { toast, dismiss, update } = useToastContext()
+  const { toast, dismiss, update, toasts } = useToastContext()
 
   return {
     toast,
     dismiss,
     update,
+    toasts,
   }
 }
 
