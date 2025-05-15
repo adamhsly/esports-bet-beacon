@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -149,6 +150,19 @@ function useToastContext() {
   return context
 }
 
+// Create a separate React.useReducer call that doesn't get initialized outside of a component
+const useReducerState = () => React.useReducer(reducer, { toasts: [] })
+
+// Export the initial state and dispatch for external use
+export const initialState = { toasts: [] } as const
+
+// Keep track of the dispatch function outside components
+let dispatch = (action: Action) => {
+  console.error(
+    "Toast dispatch called outside of provider. This is a no-op. Make sure your app is wrapped in a ToastProvider."
+  )
+}
+
 export function useToast() {
   const { toast, dismiss, update } = useToastContext()
 
@@ -161,11 +175,18 @@ export function useToast() {
 
 export function toast(props: ToastProps) {
   const id = genId()
-  const update = (props: ToastProps) => dispatch({
-    type: actionTypes.UPDATE_TOAST,
-    toast: { ...props, id },
-  })
-  const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
+  
+  const update = (props: ToastProps) => 
+    dispatch({
+      type: actionTypes.UPDATE_TOAST,
+      toast: { ...props, id },
+    })
+  
+  const dismiss = () => 
+    dispatch({ 
+      type: actionTypes.DISMISS_TOAST, 
+      toastId: id 
+    })
 
   dispatch({
     type: actionTypes.ADD_TOAST,
@@ -184,19 +205,6 @@ export function toast(props: ToastProps) {
     dismiss,
     update,
   }
-}
-
-// Create a separate React.useReducer call that doesn't get initialized outside of a component
-const useReducerState = () => React.useReducer(reducer, { toasts: [] })
-
-// Export the initial state and dispatch for external use
-export const initialState = { toasts: [] } as const
-
-// Keep track of the dispatch function outside components
-let dispatch = (action: Action) => {
-  console.error(
-    "Toast dispatch called outside of provider. This is a no-op. Make sure your app is wrapped in a ToastProvider."
-  )
 }
 
 export function ToastProvider(props: React.PropsWithChildren) {
