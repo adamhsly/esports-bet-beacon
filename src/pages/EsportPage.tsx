@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -160,14 +159,20 @@ const EsportPage: React.FC = () => {
       if (match.opponents && match.opponents.length > 0) {
         teams = match.opponents.slice(0, 2).map((opponent: any) => {
           console.log('Processing opponent:', opponent);
-          return {
+          
+          // Create a complete team object with all properties needed for logo display
+          const team: TeamInfo = {
             id: opponent.id || `team-${opponent.name}`,
-            name: opponent.name || 'N/A',
-            // Ensure all necessary properties for logo display are included
+            name: opponent.name || 'Unknown Team',
             logo: opponent.image_url || null,
             image_url: opponent.image_url || null,
             hash_image: opponent.hash_image || null
           };
+          
+          // Debug log to check team object structure
+          console.log(`Created team object for ${team.name}:`, team);
+          
+          return team;
         });
       } 
       // If no opponents data, extract from match name
@@ -194,7 +199,7 @@ const EsportPage: React.FC = () => {
       // Add placeholder team if needed
       while (teams.length < 2) {
         teams.push({
-          name: 'N/A',
+          name: 'Unknown Team',
           logo: null,
           image_url: null,
           hash_image: null,
@@ -202,22 +207,11 @@ const EsportPage: React.FC = () => {
         });
       }
       
-      // For debugging purposes, log the team object with image info
-      teams.forEach((team, index) => {
-        console.log(`Team ${index} (${team.name}) complete object:`, team);
-        if (team.id && team.hash_image) {
-          const imageUrl = getTeamImageUrl(team.id, team.hash_image);
-          console.log(`Team ${index} (${team.name}) image URL: ${imageUrl}`);
-        } else {
-          console.log(`Team ${index} (${team.name}) has no hash_image or id`);
-        }
-      });
-      
       return {
-        id: match.id || 'N/A',
+        id: match.id || 'unknown-match',
         teams: [teams[0], teams[1]],
         startTime: match.start_time || new Date().toISOString(),
-        tournament: match.league_name || match.tournament?.name || match.serie?.name || 'N/A',
+        tournament: match.league_name || match.tournament?.name || match.serie?.name || 'Unknown Tournament',
         esportType: esportType,
         bestOf: match.format?.best_of || 1
       };

@@ -42,6 +42,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
   // Get proper team logo URLs, using enhanced logo mapping
   const getTeamLogo = (team: TeamInfo): string => {
+    // Debug log to ensure we're getting the complete team object
+    console.log(`MatchCard - Getting logo for team:`, team);
+    
     // Call getEnhancedTeamLogoUrl with all available image properties
     const logoUrl = getEnhancedTeamLogoUrl({
       name: team.name,
@@ -51,7 +54,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       hash_image: team.hash_image
     });
     
-    console.log(`MatchCard - Team ${team.name} logo: ${logoUrl}`);
+    console.log(`MatchCard - Team ${team.name} logo resolved to: ${logoUrl}`);
     return logoUrl;
   };
 
