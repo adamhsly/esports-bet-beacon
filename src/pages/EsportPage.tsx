@@ -162,8 +162,9 @@ const EsportPage: React.FC = () => {
           return {
             id: opponent.id || `team-${opponent.name}`,
             name: opponent.name || 'N/A',
-            logo: opponent.image_url || '/placeholder.svg',
-            hash_image: opponent.hash_image || null
+            image_url: opponent.image_url || null,
+            hash_image: opponent.hash_image || null,
+            logo: opponent.image_url || null  // Add logo property for consistency
           };
         });
       } 
@@ -171,8 +172,8 @@ const EsportPage: React.FC = () => {
       else if (match.name) {
         const [team1Name, team2Name] = extractTeamNames(match.name);
         teams = [
-          { name: team1Name, logo: '/placeholder.svg' },
-          { name: team2Name, logo: '/placeholder.svg' }
+          { name: team1Name, logo: '/placeholder.svg', image_url: null },
+          { name: team2Name, logo: '/placeholder.svg', image_url: null }
         ];
       }
       
@@ -180,7 +181,8 @@ const EsportPage: React.FC = () => {
       while (teams.length < 2) {
         teams.push({
           name: 'N/A',
-          logo: '/placeholder.svg'
+          logo: '/placeholder.svg',
+          image_url: null
         });
       }
       

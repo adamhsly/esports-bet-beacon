@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,9 +8,10 @@ import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 export interface TeamInfo {
   name: string;
-  logo: string;
+  logo?: string;
+  image_url?: string | null;
   id?: string;
-  hash_image?: string;
+  hash_image?: string | null;
 }
 
 export interface MatchInfo {
@@ -41,7 +43,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
   // Get proper team logo URLs, using enhanced logo mapping
   const getTeamLogo = (team: TeamInfo): string => {
-    const logoUrl = getEnhancedTeamLogoUrl(team);
+    // Call getEnhancedTeamLogoUrl with all available image properties
+    const logoUrl = getEnhancedTeamLogoUrl({
+      name: team.name,
+      logo: team.logo,
+      image_url: team.image_url,
+      id: team.id,
+      hash_image: team.hash_image
+    });
+    
     console.log(`MatchCard - Team ${team.name} logo: ${logoUrl}`);
     return logoUrl;
   };

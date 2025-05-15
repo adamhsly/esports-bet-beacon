@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -153,22 +152,15 @@ const TeamsPage: React.FC = () => {
     setLoading(true);
   };
   
-  // Get team image from cache or use fallback
+  // Get team image with enhanced handling
   const getTeamImage = (team: Team): string => {
-    const enhancedLogoUrl = getEnhancedTeamLogoUrl({
-      id: team.id,
+    // Use our enhanced utility function with all possible image sources
+    return getEnhancedTeamLogoUrl({
       name: team.name,
+      image_url: team.image_url,
+      id: team.id,
+      hash_image: team.hash_image
     });
-    
-    if (enhancedLogoUrl) {
-      return enhancedLogoUrl;
-    }
-    
-    if (team.id && team.hash_image) {
-      return getTeamImageUrl(team.id, team.hash_image);
-    }
-    
-    return team.image_url || '/placeholder.svg';
   };
   
   if (loading) {

@@ -73,6 +73,10 @@ const teamLogoMap: Record<string, string> = {
   'alliance': 'alliance',
   'vp': 'virtuspro',
   
+  // Added more teams for better coverage
+  'nord esports': 'placeholder',
+  'the ruddy sack': 'placeholder',
+  
   // General default values for testing/placeholder
   'team1': 'placeholder',
   'team2': 'placeholder',
@@ -120,6 +124,19 @@ export const getTeamLogoUrl = (teamName: string): string => {
 };
 
 /**
+ * Checks if a URL is valid and not a placeholder
+ * 
+ * @param url The URL to check
+ * @returns boolean indicating if the URL is valid and not a placeholder
+ */
+const isValidImageUrl = (url?: string | null): boolean => {
+  if (!url) return false;
+  if (url === '/placeholder.svg') return false;
+  if (url.includes('undefined')) return false;
+  return true;
+};
+
+/**
  * Gets the appropriate logo URL for a team based on team information
  * Uses the existing image URL if available, otherwise falls back to the logo mapping
  * 
@@ -129,14 +146,37 @@ export const getTeamLogoUrl = (teamName: string): string => {
 export const getEnhancedTeamLogoUrl = (team: {
   name: string;
   logo?: string;
+  image_url?: string | null;
   id?: string;
-  hash_image?: string;
+  hash_image?: string | null;
 }): string => {
-  // If we already have a valid logo that's not the placeholder, use it
-  if (team.logo && team.logo !== '/placeholder.svg' && !team.logo.includes('undefined')) {
+  // Check and log all available image sources for debugging
+  console.log(`Team ${team.name} image sources:`, {
+    logo: team.logo,
+    image_url: team.image_url,
+    id: team.id,
+    hash_image: team.hash_image
+  });
+
+  // First, try to use team.logo if it's valid
+  if (isValidImageUrl(team.logo)) {
+    console.log(`Using provided logo for ${team.name}: ${team.logo}`);
     return team.logo;
   }
   
-  // Otherwise, try to get the mapped logo
+  // Next, try to use team.image_url if it's valid
+  if (isValidImageUrl(team.image_url)) {
+    console.log(`Using image_url for ${team.name}: ${team.image_url}`);
+    return team.image_url;
+  }
+  
+  // Next, try to generate an image URL from hash_image if available
+  if (team.id && team.hash_image) {
+    const hashImageUrl = `https://images.sportdevs.com/${team.hash_image}.png`;
+    console.log(`Generated hash image URL for ${team.name}: ${hashImageUrl}`);
+    return hashImageUrl;
+  }
+  
+  // If all else fails, try to get the logo by team name mapping
   return getTeamLogoUrl(team.name);
 };
