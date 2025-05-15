@@ -3,12 +3,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Clock, ArrowRight } from 'lucide-react';
-import { getTeamImageUrl } from '@/utils/cacheUtils';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 export interface TeamInfo {
   name: string;
-  logo?: string;
+  logo?: string | null;
   image_url?: string | null;
   id?: string;
   hash_image?: string | null;

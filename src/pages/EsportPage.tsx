@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -162,9 +163,10 @@ const EsportPage: React.FC = () => {
           return {
             id: opponent.id || `team-${opponent.name}`,
             name: opponent.name || 'N/A',
+            // Ensure all necessary properties for logo display are included
+            logo: opponent.image_url || null,
             image_url: opponent.image_url || null,
-            hash_image: opponent.hash_image || null,
-            logo: opponent.image_url || null  // Add logo property for consistency
+            hash_image: opponent.hash_image || null
           };
         });
       } 
@@ -172,8 +174,20 @@ const EsportPage: React.FC = () => {
       else if (match.name) {
         const [team1Name, team2Name] = extractTeamNames(match.name);
         teams = [
-          { name: team1Name, logo: '/placeholder.svg', image_url: null },
-          { name: team2Name, logo: '/placeholder.svg', image_url: null }
+          { 
+            name: team1Name, 
+            logo: null,
+            image_url: null,
+            hash_image: null,
+            id: `team-${team1Name}`
+          },
+          { 
+            name: team2Name, 
+            logo: null,
+            image_url: null,
+            hash_image: null,
+            id: `team-${team2Name}`
+          }
         ];
       }
       
@@ -181,13 +195,16 @@ const EsportPage: React.FC = () => {
       while (teams.length < 2) {
         teams.push({
           name: 'N/A',
-          logo: '/placeholder.svg',
-          image_url: null
+          logo: null,
+          image_url: null,
+          hash_image: null,
+          id: 'unknown-team'
         });
       }
       
       // For debugging purposes, log the team object with image info
       teams.forEach((team, index) => {
+        console.log(`Team ${index} (${team.name}) complete object:`, team);
         if (team.id && team.hash_image) {
           const imageUrl = getTeamImageUrl(team.id, team.hash_image);
           console.log(`Team ${index} (${team.name}) image URL: ${imageUrl}`);
