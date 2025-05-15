@@ -190,7 +190,7 @@ export function toast(props: ToastProps) {
 const useReducerState = () => React.useReducer(reducer, { toasts: [] })
 
 // Export the initial state and dispatch for external use
-export const [initialState, initialDispatch] = { toasts: [] } as const
+export const initialState = { toasts: [] } as const
 
 // Keep track of the dispatch function outside components
 let dispatch = (action: Action) => {
