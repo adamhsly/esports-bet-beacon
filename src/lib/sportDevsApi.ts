@@ -98,32 +98,52 @@ const mapEsportTypeToGameId = (esportType: string): string => {
 /**
  * Core fetch function with error handling and logging
  */
-export async function fetchFromSportDevs(url: string, apiKey: string): Promise<any> {
+export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 3): Promise<any> {
   console.log(`SportDevs API Request: ${url}`);
   
-  // Different header format based on API endpoint type
-  const headers: Record<string, string> = {
-    'Accept': 'application/json'
-  };
-  
-  // Use Bearer token format for WEB_URL endpoints, x-api-key for BASE_URL endpoints
-  if (url.startsWith(WEB_URL)) {
-    headers['Authorization'] = `Bearer ${apiKey}`;
-  } else {
-    headers['x-api-key'] = apiKey;
+  let attempts = 0;
+  while (attempts < maxRetries) {
+    try {
+      attempts++;
+      
+      // Different header format based on API endpoint type
+      const headers: Record<string, string> = {
+        'Accept': 'application/json'
+      };
+      
+      // Use Bearer token format for WEB_URL endpoints, x-api-key for BASE_URL endpoints
+      if (url.startsWith(WEB_URL)) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      } else {
+        headers['x-api-key'] = apiKey;
+      }
+      
+      const response = await fetch(url, { headers });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`SportDevs API error ${response.status} (attempt ${attempts}/${maxRetries}):`, errorText);
+        if (attempts === maxRetries) {
+          throw new Error(`API error: ${response.status} after ${maxRetries} attempts`);
+        }
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 8000)));
+        continue;
+      }
+      
+      const data = await response.json();
+      console.log(`SportDevs API Response: ${url} - Received data successfully`);
+      return data;
+    } catch (error) {
+      if (attempts === maxRetries) {
+        throw error;
+      }
+      console.error(`Attempt ${attempts}/${maxRetries} failed:`, error);
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 8000)));
+    }
   }
-  
-  const response = await fetch(url, { headers });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`SportDevs API error ${response.status}:`, errorText);
-    throw new Error(`API error: ${response.status}`);
-  }
-  
-  const data = await response.json();
-  console.log(`SportDevs API Response: ${url} - Received data successfully`);
-  return data;
+  throw new Error(`Failed to fetch after ${maxRetries} attempts`);
 }
 
 /**
