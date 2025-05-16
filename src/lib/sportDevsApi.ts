@@ -106,12 +106,12 @@ const rateLimitConfig = {
   currentCalls: 0
 };
 
-export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 3): Promise<any> {
+export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 2): Promise<any> {
   // Check rate limiting
   const now = Date.now();
   if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
       rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
-    throw new Error('Rate limit exceeded');
+    return null;
   }
   
   rateLimitConfig.currentCalls++;
@@ -119,7 +119,7 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
   
   console.log(`SportDevs API Request: ${url}`);
   
-  const timeout = 10000; // 10 second timeout
+  const timeout = 5000; // 5 second timeout
   let attempts = 0;
   while (attempts < maxRetries) {
     try {
@@ -171,7 +171,8 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
     }
   }
   rateLimitConfig.currentCalls--;
-  throw new Error(`Failed to fetch after ${maxRetries} attempts`);
+  console.log(`Failed to fetch after ${maxRetries} attempts, returning null`);
+  return null;
 }
 
 /**
@@ -194,6 +195,7 @@ async function _fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
       `${BASE_URL}/esports/${gameId}/matches/upcoming`,
       getApiKey()
     );
+    if (!data) return [];
     console.log(`SportDevs API: Received ${data.length} upcoming matches for ${esportType}`);
     return Promise.all(data.map(match => transformMatchData(match, esportType)));
   } catch (error) {
