@@ -78,7 +78,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       </div>
     );
   };
-  );
 
   return (
     <div className="match-card bg-theme-gray-dark/80 border border-theme-gray-medium p-4 rounded-md hover:border-theme-purple transition-all">
