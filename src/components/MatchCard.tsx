@@ -58,10 +58,20 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     return logoUrl;
   };
 
-  // Fallback element to render when image fails to load
-  const ImageFallback = () => (
-    <div className="w-10 h-10 bg-theme-gray-medium flex items-center justify-center rounded-full">
-      <ImageOff size={16} className="text-theme-gray-light" />
+  // Render team logo with proper fallback
+  const TeamLogo = ({ team, className }: { team: TeamInfo, className?: string }) => (
+    <div className={`flex items-center justify-center ${className || ''}`}>
+      <img 
+        src={getTeamLogo(team)} 
+        alt={`${team.name} logo`} 
+        className="w-10 h-10 object-contain rounded-full"
+        onError={(e) => {
+          console.log(`MatchCard - Image load error for team ${team.name}`);
+          e.currentTarget.onerror = null; // Prevent infinite loop
+          // Replace with a fallback image rather than a placeholder path
+          e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='5'/%3E%3Cpath d='M20 21a8 8 0 0 0-16 0'/%3E%3C/svg%3E";
+        }}
+      />
     </div>
   );
 
@@ -76,29 +86,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       
       <div className="flex justify-between items-center my-4">
         <div className="flex items-center space-x-3">
-          <img 
-            src={getTeamLogo(teams[0])} 
-            alt={teams[0].name} 
-            className="w-10 h-10 object-contain" 
-            onError={(e) => {
-              console.log(`MatchCard - Image load error for team ${teams[0].name}`);
-              (e.target as HTMLImageElement).src = '/placeholder.svg';
-            }}
-          />
+          <TeamLogo team={teams[0]} />
           <span className="font-medium text-white">{teams[0].name}</span>
         </div>
         <span className="text-gray-400">vs</span>
         <div className="flex items-center space-x-3">
           <span className="font-medium text-white">{teams[1].name}</span>
-          <img 
-            src={getTeamLogo(teams[1])} 
-            alt={teams[1].name} 
-            className="w-10 h-10 object-contain"
-            onError={(e) => {
-              console.log(`MatchCard - Image load error for team ${teams[1].name}`);
-              (e.target as HTMLImageElement).src = '/placeholder.svg';
-            }}
-          />
+          <TeamLogo team={teams[1]} />
         </div>
       </div>
       

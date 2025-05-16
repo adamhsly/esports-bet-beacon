@@ -151,6 +151,17 @@ export const getEnhancedTeamLogoUrl = (team: {
   id?: string;
   hash_image?: string | null;
 }): string => {
+  if (!team) {
+    console.error('getEnhancedTeamLogoUrl received undefined or null team object');
+    return '/placeholder.svg';
+  }
+
+  // Safety check for missing team name
+  if (!team.name) {
+    console.error('Team object is missing name property');
+    return '/placeholder.svg';
+  }
+
   // Check and log all available image sources for debugging
   console.log(`Team ${team.name} image sources:`, {
     logo: team.logo,
