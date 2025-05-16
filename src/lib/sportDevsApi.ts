@@ -101,6 +101,7 @@ const mapEsportTypeToGameId = (esportType: string): string => {
 export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 3): Promise<any> {
   console.log(`SportDevs API Request: ${url}`);
   
+  const timeout = 10000; // 10 second timeout
   let attempts = 0;
   while (attempts < maxRetries) {
     try {
@@ -110,6 +111,10 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       const headers: Record<string, string> = {
         'Accept': 'application/json'
       };
+
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       
       // Use Bearer token format for WEB_URL endpoints, x-api-key for BASE_URL endpoints
       if (url.startsWith(WEB_URL)) {
@@ -118,7 +123,10 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
         headers['x-api-key'] = apiKey;
       }
       
-      const response = await fetch(url, { headers });
+      const response = await fetch(url, { 
+        headers,
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
       
       if (!response.ok) {
         const errorText = await response.text();
