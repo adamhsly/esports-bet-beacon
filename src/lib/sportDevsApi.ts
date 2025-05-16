@@ -147,7 +147,7 @@ async function _fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
       getApiKey()
     );
     console.log(`SportDevs API: Received ${data.length} upcoming matches for ${esportType}`);
-    return data.map(match => transformMatchData(match, esportType));
+    return Promise.all(data.map(match => transformMatchData(match, esportType)));
   } catch (error) {
     console.error("Error fetching upcoming matches from SportDevs:", error);
     throw error;
@@ -649,7 +649,7 @@ function mapGameSlugToEsportType(gameSlug: string): string {
 }
 
 // Helper function to transform match data to our app's format
-function transformMatchData(match: any, esportType: string): MatchInfo {
+async function transformMatchData(match: any, esportType: string): Promise<MatchInfo> {
   // Extract team data, ensuring we have 2 teams
   let teams: TeamInfo[] = [];
   
