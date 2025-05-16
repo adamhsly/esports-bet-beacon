@@ -200,7 +200,7 @@ async function _fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
     return Promise.all(data.map(match => transformMatchData(match, esportType)));
   } catch (error) {
     console.error("Error fetching upcoming matches from SportDevs:", error);
-    throw error;
+    return []; // Return empty array instead of throwing
   }
 }
 
@@ -216,11 +216,12 @@ async function _fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
       `${BASE_URL}/esports/${gameId}/matches/live`,
       getApiKey()
     );
+    if (!data) return [];
     console.log(`SportDevs API: Received ${data.length} live matches for ${esportType}`);
     return data.map(match => transformMatchData(match, esportType));
   } catch (error) {
     console.error("Error fetching live matches from SportDevs:", error);
-    throw error;
+    return []; // Return empty array instead of throwing
   }
 }
 
