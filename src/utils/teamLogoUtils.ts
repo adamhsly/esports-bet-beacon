@@ -46,6 +46,7 @@ const teamLogoMap: Record<string, string> = {
   'damwon': 'damwon',
   'damwon gaming': 'damwon',
   'dwg kia': 'damwon',
+  'dplus kia': 'damwon',
   'dk': 'damwon',
   'rng': 'rng',
   'royal never give up': 'rng',
@@ -54,6 +55,7 @@ const teamLogoMap: Record<string, string> = {
   'mad lions': 'mad',
   'gen.g': 'geng',
   'geng': 'geng',
+  'gen.g esports': 'geng',
   'hanwha life esports': 'hle',
   'hle': 'hle',
   '100 thieves': '100t',
@@ -61,6 +63,19 @@ const teamLogoMap: Record<string, string> = {
   'team solomid': 'tsm',
   'tsm': 'tsm',
   'c9': 'cloud9',
+  'kt rolster': 'kt',
+  'kt': 'kt',
+  'drx': 'drx',
+  'fredit brion': 'brion',
+  'brion': 'brion',
+  'nongshim red force': 'ns',
+  'ns': 'ns',
+  'sandbox gaming': 'sandbox',
+  'sandbox': 'sandbox',
+  'funplus phoenix': 'fpx',
+  'fpx': 'fpx',
+  'jd gaming': 'jdg',
+  'jdg': 'jdg',
   
   // Dota 2 Teams
   'team secret': 'secret',
@@ -117,6 +132,18 @@ export const getTeamLogoUrl = (teamName: string): string => {
   if (partialMatch) {
     console.log(`Found partial match for ${normalizedName} -> ${partialMatch} -> ${teamLogoMap[partialMatch]}`);
     return `${BASE_LOGO_PATH}/${teamLogoMap[partialMatch]}.png`;
+  }
+  
+  // If the team has a hash_image or image_url, prioritize those
+  if (team.hash_image) {
+    const hashImageUrl = `https://images.sportdevs.com/${team.hash_image}.png`;
+    console.log(`Using hash_image URL for ${teamName}: ${hashImageUrl}`);
+    return hashImageUrl;
+  }
+  
+  if (team.image_url) {
+    console.log(`Using image_url for ${teamName}: ${team.image_url}`);
+    return team.image_url;
   }
   
   // Fall back to placeholder
