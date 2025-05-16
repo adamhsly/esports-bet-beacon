@@ -134,17 +134,8 @@ export const getTeamLogoUrl = (teamName: string): string => {
     return `${BASE_LOGO_PATH}/${teamLogoMap[partialMatch]}.png`;
   }
   
-  // If the team has a hash_image or image_url, prioritize those
-  if (team.hash_image) {
-    const hashImageUrl = `https://images.sportdevs.com/${team.hash_image}.png`;
-    console.log(`Using hash_image URL for ${teamName}: ${hashImageUrl}`);
-    return hashImageUrl;
-  }
-  
-  if (team.image_url) {
-    console.log(`Using image_url for ${teamName}: ${team.image_url}`);
-    return team.image_url;
-  }
+  // Do not check team object here since we only have teamName at this point
+  // This section was causing a ReferenceError
   
   // Fall back to placeholder
   console.log(`No logo found for team: ${teamName}`);
