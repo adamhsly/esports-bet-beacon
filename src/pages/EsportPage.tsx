@@ -137,9 +137,8 @@ const EsportPage: React.FC = () => {
   // Process the raw match data into our app's format
   const processMatchData = (matches: any[], esportType: string): MatchInfo[] => {
     // Filter matches based on the selected esport type
-    // This is a simple implementation; in a real app, you'd want more sophisticated filtering
     const filteredMatches = matches.filter(match => {
-      if (match.videogame && match.videogame.slug) {
+      if (match.videogame?.slug) {
         return match.videogame.slug.includes(esportType.toLowerCase());
       }
       if (match.class_name) {
@@ -149,38 +148,21 @@ const EsportPage: React.FC = () => {
         if (esportType === 'dota2' && className.includes('dota')) return true;
         if (esportType === 'valorant' && className.includes('valorant')) return true;
       }
-      // Default: include all matches if we can't determine the type
       return true;
     });
     
     return filteredMatches.map(match => {
       let teams: TeamInfo[] = [];
       
-      // First try to get teams from opponents array
-      if (match.opponents && match.opponents.length > 0) {
-        teams = match.opponents.slice(0, 2).map((opponent: any) => {
-          // Enhanced logging to debug team object creation
-          console.log('EsportPage - Processing opponent:', opponent);
-          
-          // Create a complete team object with ALL properties needed for logo display
-          const team: TeamInfo = {
-            id: opponent.id || `team-${opponent.name || 'unknown'}`,
-            name: opponent.name || 'Unknown Team',
-            logo: opponent.image_url || null,
-            image_url: opponent.image_url || null,
-            hash_image: opponent.hash_image || null
-          };
-          
-          // Debug log to check complete team object structure
-          console.log(`EsportPage - Created team object for ${team.name}:`, team);
-          
-          return team;
-        });
-      } 
-      // If no opponents data but has home_team and away_team objects
-      else if (match.home_team && match.away_team) {
-        console.log('EsportPage - Using home_team/away_team data:', match.home_team, match.away_team);
-        
+      if (match.opponents?.length > 0) {
+        teams = match.opponents.slice(0, 2).map((opponent: any) => ({
+          id: opponent.id || `team-${opponent.name || 'unknown'}`,
+          name: opponent.name || 'Unknown Team',
+          logo: opponent.image_url || null,
+          image_url: opponent.image_url || null,
+          hash_image: opponent.hash_image || null
+        }));
+      } else if (match.home_team && match.away_team) {
         teams = [
           {
             id: match.home_team.id || `team-${match.home_team.name || 'unknown'}`,
@@ -197,11 +179,7 @@ const EsportPage: React.FC = () => {
             hash_image: match.away_team.hash_image || null
           }
         ];
-      }
-      // If no opponents data, extract from match name
-      else if (match.name) {
-        console.log('EsportPage - Extracting team names from match name:', match.name);
-        
+      } else if (match.name) {
         const [team1Name, team2Name] = extractTeamNames(match.name);
         teams = [
           { 
@@ -221,7 +199,6 @@ const EsportPage: React.FC = () => {
         ];
       }
       
-      // Add placeholder team if needed
       while (teams.length < 2) {
         teams.push({
           name: 'Unknown Team',
@@ -232,22 +209,14 @@ const EsportPage: React.FC = () => {
         });
       }
       
-      // Final verification to ensure all team objects have ALL required properties
-      teams.forEach((team, index) => {
-        console.log(`EsportPage - Final team ${index} (${team.name}) object:`, {
-          id: team.id,
-          name: team.name,
-          logo: team.logo,
-          image_url: team.image_url,
-          hash_image: team.hash_image
-        });
-      });
-      
       return {
         id: match.id || 'unknown-match',
         teams: [teams[0], teams[1]],
         startTime: match.start_time || new Date().toISOString(),
         tournament: match.league_name || match.tournament?.name || match.serie?.name || 'Unknown Tournament',
+        tournament_name: match.tournament?.name,
+        season_name: match.season?.name,
+        class_name: match.class_name,
         esportType: esportType,
         bestOf: match.format?.best_of || 1
       };
