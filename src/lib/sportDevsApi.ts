@@ -106,31 +106,25 @@ const rateLimitConfig = {
   currentCalls: 0
 };
 
-export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 2): Promise<any> {
-  let retryCount = 0;
-  const maxAttempts = maxRetries + 1;
-
-  while (retryCount < maxAttempts) {
-    // Check rate limiting
-    const now = Date.now();
-    if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
-        rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
-      // Wait with exponential backoff before retrying
-      const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      retryCount++;
-      continue;
-    }
-    
-    rateLimitConfig.currentCalls++;
-    rateLimitConfig.lastCallTime = now;
-  
+export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 1): Promise<any> {
   console.log(`SportDevs API Request: ${url}`);
   
   const timeout = 5000; // 5 second timeout
   let attempts = 0;
-  while (attempts < maxRetries) {
+  const maxAttempts = maxRetries + 1;
+  
+  while (attempts < maxAttempts) {
     try {
+      // Check rate limiting
+      const now = Date.now();
+      if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
+          rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
+        console.log('Rate limit reached, skipping request');
+        return [];
+      }
+      
+      rateLimitConfig.currentCalls++;
+      rateLimitConfig.lastCallTime = now;
       attempts++;
       
       // Different header format based on API endpoint type
@@ -155,14 +149,8 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       }).finally(() => clearTimeout(timeoutId));
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`SportDevs API error ${response.status} (attempt ${attempts}/${maxRetries}):`, errorText);
-        if (attempts === maxRetries) {
-          throw new Error(`API error: ${response.status} after ${maxRetries} attempts`);
-        }
-        // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 8000)));
-        continue;
+        console.error(`SportDevs API error ${response.status}`);
+        return [];
       }
       
       const data = await response.json();
