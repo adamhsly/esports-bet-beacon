@@ -159,6 +159,15 @@ export const getEnhancedTeamLogoUrl = (team: {
     hash_image: team.hash_image
   });
 
+  // Enhanced debugging for edge cases
+  if (team.logo && typeof team.logo === 'object') {
+    console.warn(`Team ${team.name} has an object as logo instead of string:`, team.logo);
+  }
+  
+  if (team.image_url && typeof team.image_url === 'object') {
+    console.warn(`Team ${team.name} has an object as image_url instead of string:`, team.image_url);
+  }
+
   // First, try to use team.logo if it's valid
   if (isValidImageUrl(team.logo)) {
     console.log(`Using provided logo for ${team.name}: ${team.logo}`);

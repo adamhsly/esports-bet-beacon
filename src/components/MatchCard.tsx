@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight, ImageOff } from 'lucide-react';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 export interface TeamInfo {
@@ -42,8 +42,14 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
   // Get logo URL by passing the complete team object directly to getEnhancedTeamLogoUrl
   const getTeamLogo = (team: TeamInfo): string => {
-    // Debug log to ensure we're getting the complete team object
-    console.log(`MatchCard - Getting logo for team:`, team);
+    // Debug log with detailed team object information
+    console.log(`MatchCard - Getting logo for team:`, {
+      name: team.name,
+      id: team.id,
+      logo: team.logo,
+      image_url: team.image_url,
+      hash_image: team.hash_image
+    });
     
     // Pass the entire team object to getEnhancedTeamLogoUrl
     const logoUrl = getEnhancedTeamLogoUrl(team);
@@ -51,6 +57,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     console.log(`MatchCard - Team ${team.name} logo resolved to: ${logoUrl}`);
     return logoUrl;
   };
+
+  // Fallback element to render when image fails to load
+  const ImageFallback = () => (
+    <div className="w-10 h-10 bg-theme-gray-medium flex items-center justify-center rounded-full">
+      <ImageOff size={16} className="text-theme-gray-light" />
+    </div>
+  );
 
   return (
     <div className="match-card bg-theme-gray-dark/80 border border-theme-gray-medium p-4 rounded-md hover:border-theme-purple transition-all">
