@@ -98,7 +98,25 @@ const mapEsportTypeToGameId = (esportType: string): string => {
 /**
  * Core fetch function with error handling and logging
  */
+// Rate limiting configuration
+const rateLimitConfig = {
+  lastCallTime: 0,
+  minIntervalMs: 2000, // Minimum 2 seconds between calls
+  maxConcurrent: 2,
+  currentCalls: 0
+};
+
 export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 3): Promise<any> {
+  // Check rate limiting
+  const now = Date.now();
+  if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
+      rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
+    throw new Error('Rate limit exceeded');
+  }
+  
+  rateLimitConfig.currentCalls++;
+  rateLimitConfig.lastCallTime = now;
+  
   console.log(`SportDevs API Request: ${url}`);
   
   const timeout = 10000; // 10 second timeout
@@ -144,6 +162,7 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       return data;
     } catch (error) {
       if (attempts === maxRetries) {
+        rateLimitConfig.currentCalls--;
         throw error;
       }
       console.error(`Attempt ${attempts}/${maxRetries} failed:`, error);
@@ -151,6 +170,7 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 8000)));
     }
   }
+  rateLimitConfig.currentCalls--;
   throw new Error(`Failed to fetch after ${maxRetries} attempts`);
 }
 
