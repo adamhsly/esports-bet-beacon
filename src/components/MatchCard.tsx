@@ -59,19 +59,25 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   };
 
   // Render team logo with proper fallback
-  const TeamLogo = ({ team, className }: { team: TeamInfo, className?: string }) => (
-    <div className={`flex items-center justify-center ${className || ''}`}>
-      <img 
-        src={getEnhancedTeamLogoUrl(team)} 
-        alt={`${team.name} logo`} 
-        className="w-10 h-10 object-contain rounded-full"
-        onError={(e) => {
-          console.log(`MatchCard - Image load error for team ${team.name}`);
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = '/placeholder.svg';
-        }}
-      />
-    </div>
+  const TeamLogo = ({ team, className }: { team: TeamInfo, className?: string }) => {
+    // Debug log to check team object
+    console.log('TeamLogo rendering for team:', team);
+    
+    return (
+      <div className={`flex items-center justify-center ${className || ''}`}>
+        <img 
+          src={getTeamLogo(team)} 
+          alt={`${team.name} logo`} 
+          className="w-10 h-10 object-contain rounded-full"
+          onError={(e) => {
+            console.log(`MatchCard - Image load error for team ${team.name}`);
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/placeholder.svg';
+          }}
+        />
+      </div>
+    );
+  };
   );
 
   return (
