@@ -158,25 +158,25 @@ const EsportPage: React.FC = () => {
         teams = match.opponents.slice(0, 2).map((opponent: any) => ({
           id: opponent.id || `team-${opponent.name || 'unknown'}`,
           name: opponent.name || 'Unknown Team',
-          logo: opponent.image_url || null,
+          logo: opponent.hash_image ? `https://images.sportdevs.com/${opponent.hash_image}.png` : null,
           image_url: opponent.image_url || null,
           hash_image: opponent.hash_image || null
         }));
-      } else if (match.home_team && match.away_team) {
+      } else if (match.home_team_name && match.away_team_name) {
         teams = [
           {
-            id: match.home_team.id || `team-${match.home_team.name || 'unknown'}`,
-            name: match.home_team.name || 'Unknown Team',
-            logo: match.home_team.image_url || null,
-            image_url: match.home_team.image_url || null,
-            hash_image: match.home_team.hash_image || null
+            id: match.home_team_id || `team-${match.home_team_name || 'unknown'}`,
+            name: match.home_team_name || 'Unknown Team',
+            logo: match.home_team_hash_image ? `https://images.sportdevs.com/${match.home_team_hash_image}.png` : null,
+            image_url: null,
+            hash_image: match.home_team_hash_image || null
           },
           {
-            id: match.away_team.id || `team-${match.away_team.name || 'unknown'}`,
-            name: match.away_team.name || 'Unknown Team',
-            logo: match.away_team.image_url || null,
-            image_url: match.away_team.image_url || null,
-            hash_image: match.away_team.hash_image || null
+            id: match.away_team_id || `team-${match.away_team_name || 'unknown'}`,
+            name: match.away_team_name || 'Unknown Team',
+            logo: match.away_team_hash_image ? `https://images.sportdevs.com/${match.away_team_hash_image}.png` : null,
+            image_url: null,
+            hash_image: match.away_team_hash_image || null
           }
         ];
       } else if (match.name) {
