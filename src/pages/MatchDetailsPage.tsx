@@ -361,6 +361,16 @@ const MatchDetailsPage = () => {
                 />
               </TabsContent>
             </Tabs>
+
+            {/* Lineup Section */}
+            {matchDetails.teams && matchDetails.teams.length >= 2 && (
+              <MatchLineupTable 
+                homeTeamPlayers={matchDetails.homeTeamPlayers || []}
+                awayTeamPlayers={matchDetails.awayTeamPlayers || []}
+                homeTeamName={matchDetails.teams[0].name}
+                awayTeamName={matchDetails.teams[1].name}
+              />
+            )}
             
             {matchDetails.teams && matchDetails.teams.length >= 2 && (
               <DynamicMatchSEOContent

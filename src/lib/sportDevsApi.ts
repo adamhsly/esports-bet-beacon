@@ -709,13 +709,19 @@ function transformMatchData(match: any, esportType: string): MatchInfo {
   // Log team data to help debug
   console.log(`transformMatchData: Processed teams for match ${match.id}:`, teams);
   
+  // Fetch players for both teams
+  const homeTeamPlayers = teams[0]?.id ? await fetchPlayersByTeamId(teams[0].id) : [];
+  const awayTeamPlayers = teams[1]?.id ? await fetchPlayersByTeamId(teams[1].id) : [];
+
   return {
     id: match.id,
     teams: [teams[0], teams[1]],
     startTime: match.start_time || new Date().toISOString(),
     tournament: tournamentName,
     esportType: esportType,
-    bestOf: bestOf
+    bestOf: bestOf,
+    homeTeamPlayers,
+    awayTeamPlayers
   };
 }
 
