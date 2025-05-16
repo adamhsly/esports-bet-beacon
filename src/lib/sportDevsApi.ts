@@ -107,15 +107,23 @@ const rateLimitConfig = {
 };
 
 export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 2): Promise<any> {
-  // Check rate limiting
-  const now = Date.now();
-  if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
-      rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
-    return null;
-  }
-  
-  rateLimitConfig.currentCalls++;
-  rateLimitConfig.lastCallTime = now;
+  let retryCount = 0;
+  const maxAttempts = maxRetries + 1;
+
+  while (retryCount < maxAttempts) {
+    // Check rate limiting
+    const now = Date.now();
+    if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
+        rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
+      // Wait with exponential backoff before retrying
+      const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      retryCount++;
+      continue;
+    }
+    
+    rateLimitConfig.currentCalls++;
+    rateLimitConfig.lastCallTime = now;
   
   console.log(`SportDevs API Request: ${url}`);
   
@@ -171,8 +179,16 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
     }
   }
   rateLimitConfig.currentCalls--;
-  console.log(`Failed to fetch after ${maxRetries} attempts, returning null`);
-  return null;
+    if (retryCount >= maxAttempts - 1) {
+      console.log(`Failed to fetch after ${maxAttempts} attempts, returning empty response`);
+      return [];
+    }
+    retryCount++;
+    // Wait before retrying
+    const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  return [];
 }
 
 /**
