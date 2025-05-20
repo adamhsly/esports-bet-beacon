@@ -18,6 +18,8 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import TeamPlayerStatsVisualizer from '@/components/TeamPlayerStatsVisualizer';
+import MatchLineupTable from '@/components/MatchLineupTable';
+import { Player } from '@/components/MatchCard';
 
 interface MatchDetails {
   id: string;
@@ -32,6 +34,8 @@ interface MatchDetails {
     hash_image?: string | null;
   }[];
   bestOf?: number;
+  homeTeamPlayers?: Player[];
+  awayTeamPlayers?: Player[];
 }
 
 const MatchDetailsPage = () => {

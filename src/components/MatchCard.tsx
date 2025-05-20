@@ -14,6 +14,15 @@ export interface TeamInfo {
   hash_image?: string | null;
 }
 
+export interface Player {
+  name: string;
+  position: string;
+  hash_image: string;
+  short_name: string;
+  country_name: string;
+  date_of_birth: string;
+}
+
 export interface MatchInfo {
   id: string;
   teams: [TeamInfo, TeamInfo];
@@ -24,6 +33,8 @@ export interface MatchInfo {
   class_name?: string;
   esportType: string;
   bestOf: number;
+  homeTeamPlayers?: Player[];
+  awayTeamPlayers?: Player[];
 }
 
 interface MatchCardProps {
@@ -31,7 +42,7 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { id, teams, startTime, tournament, tournament_name, season_name, class_name, bestOf } = match;
+  const { id, teams, startTime, tournament, tournament_name, season_name, class_name, bestOf, homeTeamPlayers, awayTeamPlayers } = match;
   const matchDate = new Date(startTime);
 
   return (
