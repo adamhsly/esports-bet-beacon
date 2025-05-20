@@ -1,4 +1,3 @@
-
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { BookmakerOdds, Market } from '@/components/OddsTable';
 import { 
@@ -166,16 +165,9 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 8000)));
     }
   }
+  
   rateLimitConfig.currentCalls--;
-    if (retryCount >= maxAttempts - 1) {
-      console.log(`Failed to fetch after ${maxAttempts} attempts, returning empty response`);
-      return [];
-    }
-    retryCount++;
-    // Wait before retrying
-    const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
-    await new Promise(resolve => setTimeout(resolve, delay));
-  }
+  console.log(`Failed to fetch after ${maxAttempts} attempts, returning empty response`);
   return [];
 }
 
