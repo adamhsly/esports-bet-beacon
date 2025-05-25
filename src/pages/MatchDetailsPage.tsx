@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -47,13 +46,19 @@ const MatchDetailsPage = () => {
   const { data: matchDetails, isLoading, error } = useQuery({
     queryKey: ['match', matchId],
     queryFn: async () => {
+      console.log(`=== MATCH DETAILS PAGE DEBUG ===`);
       console.log(`Fetching match details for ID: ${matchId}`);
       try {
         // Using only SportDevs API
         if (matchId) {
           const match = await fetchMatchById(matchId);
           if (match) {
-            console.log("Match data successfully retrieved from SportDevs:", match);
+            console.log("=== Match data successfully retrieved ===");
+            console.log("Match teams:", match.teams);
+            console.log("Home team players:", match.homeTeamPlayers?.length || 0);
+            console.log("Away team players:", match.awayTeamPlayers?.length || 0);
+            console.log("Full match data:", match);
+            
             return {
               ...match,
               twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
@@ -368,12 +373,25 @@ const MatchDetailsPage = () => {
 
             {/* Lineup Section */}
             {matchDetails.teams && matchDetails.teams.length >= 2 && (
-              <MatchLineupTable 
-                homeTeamPlayers={matchDetails.homeTeamPlayers || []}
-                awayTeamPlayers={matchDetails.awayTeamPlayers || []}
-                homeTeamName={matchDetails.teams[0].name}
-                awayTeamName={matchDetails.teams[1].name}
-              />
+              <>
+                <div style={{ padding: '10px', background: '#333', margin: '10px 0', borderRadius: '5px' }}>
+                  <strong>DEBUG - Match Lineup Data:</strong><br/>
+                  Home Team: {matchDetails.teams[0]?.name} (ID: {matchDetails.teams[0]?.id})<br/>
+                  Away Team: {matchDetails.teams[1]?.name} (ID: {matchDetails.teams[1]?.id})<br/>
+                  Home Players: {matchDetails.homeTeamPlayers?.length || 0}<br/>
+                  Away Players: {matchDetails.awayTeamPlayers?.length || 0}<br/>
+                  {matchDetails.homeTeamPlayers?.length > 0 && (
+                    <div>Sample Home Player: {JSON.stringify(matchDetails.homeTeamPlayers[0], null, 2)}</div>
+                  )}
+                </div>
+                
+                <MatchLineupTable 
+                  homeTeamPlayers={matchDetails.homeTeamPlayers || []}
+                  awayTeamPlayers={matchDetails.awayTeamPlayers || []}
+                  homeTeamName={matchDetails.teams[0].name}
+                  awayTeamName={matchDetails.teams[1].name}
+                />
+              </>
             )}
             
             {matchDetails.teams && matchDetails.teams.length >= 2 && (

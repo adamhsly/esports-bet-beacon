@@ -330,19 +330,36 @@ async function _fetchTeamById(teamId: string) {
  */
 async function _fetchPlayersByTeamId(teamId: string) {
   try {
-    console.log(`SportDevs API: Fetching players for team ID: ${teamId}`);
+    console.log(`=== DEBUG: fetchPlayersByTeamId called with teamId: ${teamId} ===`);
+    console.log(`TeamId type: ${typeof teamId}, value: "${teamId}"`);
     
-    // Use the correct endpoint format from the pseudocode
-    const players = await fetchFromSportDevs(
-      `${WEB_URL}/players-by-team?team_id=eq.${teamId}`,
-      getApiKey()
-    );
-    console.log(`SportDevs API: Received ${players.length} players for team ID: ${teamId}`);
-    console.log(`SportDevs API: Raw player data:`, players);
-    return players;
+    // Validate teamId
+    if (!teamId || teamId === 'undefined' || teamId === 'null') {
+      console.log(`Invalid teamId: ${teamId}, returning empty array`);
+      return [];
+    }
+    
+    // Use the exact endpoint format from your pseudocode
+    const url = `${WEB_URL}/players-by-team?team_id=eq.${teamId}`;
+    console.log(`Making API call to: ${url}`);
+    console.log(`Using API key: ${getApiKey()}`);
+    
+    const players = await fetchFromSportDevs(url, getApiKey());
+    
+    console.log(`=== API Response Debug ===`);
+    console.log(`Response type: ${typeof players}`);
+    console.log(`Response is array: ${Array.isArray(players)}`);
+    console.log(`Response length: ${players?.length || 'N/A'}`);
+    console.log(`Full response:`, JSON.stringify(players, null, 2));
+    
+    if (players && players.length > 0) {
+      console.log(`Sample player data:`, players[0]);
+    }
+    
+    return players || [];
     
   } catch (error) {
-    console.error("Error fetching players by team ID:", error);
+    console.error(`=== ERROR in fetchPlayersByTeamId for team ${teamId} ===`, error);
     return []; // Return empty array instead of throwing
   }
 }
@@ -699,6 +716,10 @@ function mapGameSlugToEsportType(gameSlug: string): string {
 
 // Helper function to transform match data to our app's format
 async function transformMatchData(match: any, esportType: string): Promise<MatchInfo> {
+  console.log(`=== DEBUG: transformMatchData called ===`);
+  console.log(`Match ID: ${match.id}`);
+  console.log(`Match data:`, JSON.stringify(match, null, 2));
+  
   // Extract team data, ensuring we have 2 teams
   let teams: TeamInfo[] = [];
   
@@ -756,27 +777,43 @@ async function transformMatchData(match: any, esportType: string): Promise<Match
   let bestOf = match.format?.best_of || 3;
   
   // Log team data to help debug
-  console.log(`transformMatchData: Processed teams for match ${match.id}:`, teams);
+  console.log(`=== Team Data Debug ===`);
+  console.log(`Team 1: ID=${teams[0]?.id}, Name=${teams[0]?.name}`);
+  console.log(`Team 2: ID=${teams[1]?.id}, Name=${teams[1]?.name}`);
   
   // Fetch players for both teams only if team IDs are available and valid
   let homeTeamPlayers = [];
   let awayTeamPlayers = [];
   
+  console.log(`=== Starting Player Fetch ===`);
+  
   if (teams[0]?.id && teams[0].id !== 'unknown') {
     try {
+      console.log(`Fetching players for home team: ${teams[0].id} (${teams[0].name})`);
       homeTeamPlayers = await fetchPlayersByTeamId(teams[0].id);
+      console.log(`Home team players result: ${homeTeamPlayers.length} players`);
     } catch (error) {
       console.error(`Failed to fetch players for home team ${teams[0].id}:`, error);
     }
+  } else {
+    console.log(`Skipping home team player fetch - invalid ID: ${teams[0]?.id}`);
   }
   
   if (teams[1]?.id && teams[1].id !== 'unknown') {
     try {
+      console.log(`Fetching players for away team: ${teams[1].id} (${teams[1].name})`);
       awayTeamPlayers = await fetchPlayersByTeamId(teams[1].id);
+      console.log(`Away team players result: ${awayTeamPlayers.length} players`);
     } catch (error) {
       console.error(`Failed to fetch players for away team ${teams[1].id}:`, error);
     }
+  } else {
+    console.log(`Skipping away team player fetch - invalid ID: ${teams[1]?.id}`);
   }
+
+  console.log(`=== Final Player Data ===`);
+  console.log(`Home team players: ${homeTeamPlayers.length}`);
+  console.log(`Away team players: ${awayTeamPlayers.length}`);
 
   return {
     id: match.id,
