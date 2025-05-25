@@ -100,26 +100,25 @@ const mapEsportTypeToGameId = (esportType: string): string => {
 // Rate limiting configuration
 const rateLimitConfig = {
   lastCallTime: 0,
-  minIntervalMs: 2000, // Minimum 2 seconds between calls
-  maxConcurrent: 2,
+  minIntervalMs: 1000, // Reduced to 1 second for better debugging
+  maxConcurrent: 3,
   currentCalls: 0
 };
 
 export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries: number = 1): Promise<any> {
-  console.log(`SportDevs API Request: ${url}`);
+  console.log(`🔗 SportDevs API Request: ${url}`);
   
-  const timeout = 5000; // 5 second timeout
+  const timeout = 8000; // Increased timeout to 8 seconds
   let attempts = 0;
   const maxAttempts = maxRetries + 1;
   
   while (attempts < maxAttempts) {
     try {
-      // Check rate limiting
+      // Check rate limiting with more lenient rules for debugging
       const now = Date.now();
-      if (now - rateLimitConfig.lastCallTime < rateLimitConfig.minIntervalMs || 
-          rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
-        console.log('Rate limit reached, skipping request');
-        return [];
+      if (rateLimitConfig.currentCalls >= rateLimitConfig.maxConcurrent) {
+        console.log('⚠️ Rate limit reached, waiting...');
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       rateLimitConfig.currentCalls++;
@@ -135,11 +134,13 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
       
-      // Use Bearer token format for WEB_URL endpoints, x-api-key for BASE_URL endpoints
+      // Use Bearer token format for WEB_URL endpoints
       if (url.startsWith(WEB_URL)) {
         headers['Authorization'] = `Bearer ${apiKey}`;
+        console.log(`🔑 Using Bearer token for URL: ${url}`);
       } else {
         headers['x-api-key'] = apiKey;
+        console.log(`🔑 Using x-api-key for URL: ${url}`);
       }
       
       const response = await fetch(url, { 
@@ -148,26 +149,29 @@ export async function fetchFromSportDevs(url: string, apiKey: string, maxRetries
       }).finally(() => clearTimeout(timeoutId));
       
       if (!response.ok) {
-        console.error(`SportDevs API error ${response.status}`);
+        console.error(`❌ SportDevs API error ${response.status} for ${url}`);
+        console.error(`Response text: ${await response.text()}`);
+        rateLimitConfig.currentCalls--;
         return [];
       }
       
       const data = await response.json();
-      console.log(`SportDevs API Response: ${url} - Received data successfully`);
+      console.log(`✅ SportDevs API Success: ${url} - Received ${Array.isArray(data) ? data.length : 'non-array'} items`);
+      rateLimitConfig.currentCalls--;
       return data;
     } catch (error) {
-      if (attempts === maxRetries) {
+      console.error(`❌ Attempt ${attempts}/${maxAttempts} failed for ${url}:`, error);
+      if (attempts >= maxAttempts) {
         rateLimitConfig.currentCalls--;
         throw error;
       }
-      console.error(`Attempt ${attempts}/${maxRetries} failed:`, error);
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 8000)));
+      await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 4000)));
     }
   }
   
   rateLimitConfig.currentCalls--;
-  console.log(`Failed to fetch after ${maxAttempts} attempts, returning empty response`);
+  console.log(`❌ Failed to fetch after ${maxAttempts} attempts: ${url}`);
   return [];
 }
 
@@ -326,43 +330,58 @@ async function _fetchTeamById(teamId: string) {
 }
 
 /**
- * Raw function to fetch players by team ID
+ * Raw function to fetch players by team ID - ENHANCED WITH DEBUGGING
  */
 async function _fetchPlayersByTeamId(teamId: string) {
+  console.log(`🔍 ===== ENHANCED PLAYER FETCH DEBUG =====`);
+  console.log(`🎯 Team ID: "${teamId}" (type: ${typeof teamId})`);
+  
   try {
-    console.log(`=== DEBUG: fetchPlayersByTeamId called with teamId: ${teamId} ===`);
-    console.log(`TeamId type: ${typeof teamId}, value: "${teamId}"`);
-    
-    // Validate teamId
-    if (!teamId || teamId === 'undefined' || teamId === 'null') {
-      console.log(`Invalid teamId: ${teamId}, returning empty array`);
+    // Validate teamId more thoroughly
+    if (!teamId || teamId === 'undefined' || teamId === 'null' || teamId.trim() === '') {
+      console.log(`❌ Invalid teamId: "${teamId}", returning empty array`);
       return [];
     }
     
-    // Use the exact endpoint format from your pseudocode
-    const url = `${WEB_URL}/players-by-team?team_id=eq.${teamId}`;
-    console.log(`Making API call to: ${url}`);
-    console.log(`Using API key: ${getApiKey()}`);
+    // Clean the teamId
+    const cleanTeamId = teamId.toString().trim();
+    console.log(`🧹 Cleaned Team ID: "${cleanTeamId}"`);
+    
+    // Use the exact endpoint format that works in your pseudocode
+    const url = `${WEB_URL}/players-by-team?team_id=eq.${cleanTeamId}`;
+    console.log(`🌐 Making API call to: ${url}`);
+    console.log(`🔑 Using API key: ${getApiKey()}`);
     
     const players = await fetchFromSportDevs(url, getApiKey());
     
-    console.log(`=== API Response Debug for Team ${teamId} ===`);
-    console.log(`Response type: ${typeof players}`);
-    console.log(`Response is array: ${Array.isArray(players)}`);
-    console.log(`Response length: ${players?.length || 'N/A'}`);
-    console.log(`Full response:`, JSON.stringify(players, null, 2));
+    console.log(`📊 ===== API RESPONSE ANALYSIS =====`);
+    console.log(`📦 Response type: ${typeof players}`);
+    console.log(`📊 Is array: ${Array.isArray(players)}`);
+    console.log(`📈 Length: ${players?.length || 'N/A'}`);
     
-    if (players && players.length > 0) {
-      console.log(`✅ Found ${players.length} players for team ${teamId}`);
-      console.log(`Sample player data:`, players[0]);
+    if (players && Array.isArray(players)) {
+      console.log(`✅ Successfully retrieved ${players.length} players for team ${cleanTeamId}`);
+      
+      if (players.length > 0) {
+        console.log(`👤 Sample player structure:`, JSON.stringify(players[0], null, 2));
+        
+        // Log all player names for debugging
+        console.log(`👥 Player names: ${players.map(p => p.full_name || p.name || 'Unknown').join(', ')}`);
+      } else {
+        console.log(`⚠️ No players found for team ${cleanTeamId} - this may be legitimate`);
+      }
+      
       return players;
     } else {
-      console.log(`⚠️ No players found for team ${teamId} - this may be legitimate`);
+      console.error(`❌ Invalid response format for team ${cleanTeamId}:`, players);
       return [];
     }
     
   } catch (error) {
-    console.error(`=== ERROR in fetchPlayersByTeamId for team ${teamId} ===`, error);
+    console.error(`💥 ===== ERROR in fetchPlayersByTeamId =====`);
+    console.error(`🎯 Team ID: ${teamId}`);
+    console.error(`❌ Error details:`, error);
+    console.error(`📊 Error stack:`, error?.stack);
     return []; // Return empty array instead of throwing
   }
 }
@@ -598,20 +617,18 @@ async function _fetchMatchOdds(matchId: string): Promise<{
   }
 }
 
-// Clear the player cache specifically before applying caching
-export const fetchPlayersByTeamId = (() => {
-  // Clear any existing player cache entries
-  memoryCache.invalidatePattern(/^team-players-/);
-  console.log('🧹 Cleared player cache entries');
-  
-  return createCachedFunction(
-    _fetchPlayersByTeamId,
-    (teamId) => `team-players-${teamId}`,
-    CACHE_TTL.TEAM
-  );
-})();
+// Clear the player cache completely and forcefully before applying caching
+console.log('🧹 ===== CLEARING PLAYER CACHE =====');
+memoryCache.clear(); // Clear entire cache
+console.log('✅ Cache cleared completely');
 
-// Apply caching to the API call functions
+// Apply caching to the API call functions with fresh cache
+export const fetchPlayersByTeamId = createCachedFunction(
+  _fetchPlayersByTeamId,
+  (teamId) => `team-players-${teamId}`,
+  CACHE_TTL.PLAYER
+);
+
 export const fetchUpcomingMatches = createCachedFunction(
   _fetchUpcomingMatches,
   (esportType) => `upcoming-matches-${esportType}`,
@@ -724,11 +741,11 @@ function mapGameSlugToEsportType(gameSlug: string): string {
   return mapping[gameSlug] || "csgo";
 }
 
-// Helper function to transform match data to our app's format
+// Helper function to transform match data to our app's format - ENHANCED
 async function transformMatchData(match: any, esportType: string): Promise<MatchInfo> {
-  console.log(`=== DEBUG: transformMatchData called ===`);
-  console.log(`Match ID: ${match.id}`);
-  console.log(`Match data:`, JSON.stringify(match, null, 2));
+  console.log(`🔄 ===== TRANSFORM MATCH DATA DEBUG =====`);
+  console.log(`🆔 Match ID: ${match.id}`);
+  console.log(`📋 Match data keys: ${Object.keys(match).join(', ')}`);
   
   // Extract team data, ensuring we have 2 teams
   let teams: TeamInfo[] = [];
@@ -787,54 +804,57 @@ async function transformMatchData(match: any, esportType: string): Promise<Match
   let bestOf = match.format?.best_of || 3;
   
   // Log team data to help debug
-  console.log(`=== Team Data Debug ===`);
-  console.log(`Team 1: ID=${teams[0]?.id}, Name=${teams[0]?.name}`);
-  console.log(`Team 2: ID=${teams[1]?.id}, Name=${teams[1]?.name}`);
+  console.log(`👥 ===== TEAM DATA DEBUG =====`);
+  console.log(`🏠 Team 1: ID="${teams[0]?.id}", Name="${teams[0]?.name}"`);
+  console.log(`✈️ Team 2: ID="${teams[1]?.id}", Name="${teams[1]?.name}"`);
   
-  // Fetch players for both teams with improved error handling
+  // Fetch players for both teams with enhanced error handling
   let homeTeamPlayers = [];
   let awayTeamPlayers = [];
   
-  console.log(`=== Starting Player Fetch for Match ${match.id} ===`);
+  console.log(`🚀 ===== STARTING ENHANCED PLAYER FETCH =====`);
+  console.log(`🆔 Match ID: ${match.id}`);
   
-  // Home team players
-  if (teams[0]?.id && teams[0].id !== 'unknown') {
+  // Home team players with individual error handling
+  if (teams[0]?.id && teams[0].id !== 'unknown' && teams[0].id.trim() !== '') {
     try {
-      console.log(`🔍 Fetching players for home team: ${teams[0].id} (${teams[0].name})`);
+      console.log(`🏠 Fetching players for HOME team: "${teams[0].id}" (${teams[0].name})`);
       homeTeamPlayers = await fetchPlayersByTeamId(teams[0].id);
-      console.log(`✅ Home team ${teams[0].name}: ${homeTeamPlayers.length} players retrieved`);
+      console.log(`✅ HOME team ${teams[0].name}: ${homeTeamPlayers.length} players retrieved`);
       if (homeTeamPlayers.length > 0) {
-        console.log(`Sample home player:`, homeTeamPlayers[0]);
+        console.log(`👤 Sample home player:`, homeTeamPlayers[0]);
       }
     } catch (error) {
-      console.error(`❌ Failed to fetch players for home team ${teams[0].id} (${teams[0].name}):`, error);
+      console.error(`❌ FAILED to fetch players for HOME team ${teams[0].id} (${teams[0].name}):`, error);
       homeTeamPlayers = [];
     }
   } else {
-    console.log(`⏩ Skipping home team player fetch - invalid ID: ${teams[0]?.id}`);
+    console.log(`⏩ SKIPPING home team player fetch - invalid/missing ID: "${teams[0]?.id}"`);
   }
   
-  // Away team players
-  if (teams[1]?.id && teams[1].id !== 'unknown') {
+  // Away team players with individual error handling
+  if (teams[1]?.id && teams[1].id !== 'unknown' && teams[1].id.trim() !== '') {
     try {
-      console.log(`🔍 Fetching players for away team: ${teams[1].id} (${teams[1].name})`);
+      console.log(`✈️ Fetching players for AWAY team: "${teams[1].id}" (${teams[1].name})`);
       awayTeamPlayers = await fetchPlayersByTeamId(teams[1].id);
-      console.log(`✅ Away team ${teams[1].name}: ${awayTeamPlayers.length} players retrieved`);
+      console.log(`✅ AWAY team ${teams[1].name}: ${awayTeamPlayers.length} players retrieved`);
       if (awayTeamPlayers.length > 0) {
-        console.log(`Sample away player:`, awayTeamPlayers[0]);
+        console.log(`👤 Sample away player:`, awayTeamPlayers[0]);
       }
     } catch (error) {
-      console.error(`❌ Failed to fetch players for away team ${teams[1].id} (${teams[1].name}):`, error);
+      console.error(`❌ FAILED to fetch players for AWAY team ${teams[1].id} (${teams[1].name}):`, error);
       awayTeamPlayers = [];
     }
   } else {
-    console.log(`⏩ Skipping away team player fetch - invalid ID: ${teams[1]?.id}`);
+    console.log(`⏩ SKIPPING away team player fetch - invalid/missing ID: "${teams[1]?.id}"`);
   }
 
-  console.log(`=== Final Player Fetch Summary for Match ${match.id} ===`);
-  console.log(`🏠 Home team (${teams[0]?.name}): ${homeTeamPlayers.length} players`);
-  console.log(`✈️ Away team (${teams[1]?.name}): ${awayTeamPlayers.length} players`);
-  console.log(`📊 Total players retrieved: ${homeTeamPlayers.length + awayTeamPlayers.length}`);
+  console.log(`📊 ===== FINAL PLAYER FETCH SUMMARY =====`);
+  console.log(`🆔 Match ID: ${match.id}`);
+  console.log(`🏠 HOME team (${teams[0]?.name}): ${homeTeamPlayers.length} players`);
+  console.log(`✈️ AWAY team (${teams[1]?.name}): ${awayTeamPlayers.length} players`);
+  console.log(`📈 TOTAL players retrieved: ${homeTeamPlayers.length + awayTeamPlayers.length}`);
+  console.log(`🎯 SUCCESS RATE: ${(homeTeamPlayers.length > 0 ? 1 : 0) + (awayTeamPlayers.length > 0 ? 1 : 0)}/2 teams`);
 
   return {
     id: match.id,
