@@ -30,6 +30,13 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
   homeTeamName,
   awayTeamName
 }) => {
+  console.log('MatchLineupTable: Rendering with data:', {
+    homeTeamPlayers: homeTeamPlayers?.length || 0,
+    awayTeamPlayers: awayTeamPlayers?.length || 0,
+    homeTeamName,
+    awayTeamName
+  });
+
   const renderPlayerRow = (player: Player, index: number) => {
     // Get player name from available fields
     const playerName = player.full_name || player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
@@ -65,11 +72,7 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
     );
   };
 
-  // Don't render if no players for either team
-  if (!homeTeamPlayers?.length && !awayTeamPlayers?.length) {
-    return null;
-  }
-
+  // Always render the component, even if no data
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden mb-8">
       <div className="p-4 border-b border-theme-gray-medium">
@@ -117,9 +120,9 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
           </div>
         )}
         
-        {!homeTeamPlayers?.length && !awayTeamPlayers?.length && (
+        {(!homeTeamPlayers?.length && !awayTeamPlayers?.length) && (
           <div className="text-center py-8 text-gray-400">
-            <p>No player lineup information available for this match.</p>
+            <p>Loading player lineup information...</p>
           </div>
         )}
       </div>

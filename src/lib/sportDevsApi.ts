@@ -332,12 +332,13 @@ async function _fetchPlayersByTeamId(teamId: string) {
   try {
     console.log(`SportDevs API: Fetching players for team ID: ${teamId}`);
     
-    // Use the correct endpoint from the pseudocode
+    // Use the correct endpoint format from the pseudocode
     const players = await fetchFromSportDevs(
       `${WEB_URL}/players-by-team?team_id=eq.${teamId}`,
       getApiKey()
     );
     console.log(`SportDevs API: Received ${players.length} players for team ID: ${teamId}`);
+    console.log(`SportDevs API: Raw player data:`, players);
     return players;
     
   } catch (error) {
