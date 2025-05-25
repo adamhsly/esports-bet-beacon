@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, AlertCircle } from 'lucide-react';
 
 interface Player {
   full_name?: string;
@@ -72,7 +71,15 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
     );
   };
 
-  // Always render the component, even if no data
+  const renderNoDataMessage = (teamName: string) => (
+    <div className="text-center py-4 text-gray-400 bg-theme-gray-medium/20 rounded-lg">
+      <AlertCircle className="h-5 w-5 mx-auto mb-2 text-gray-500" />
+      <p>No player data available for {teamName}</p>
+    </div>
+  );
+
+  const hasAnyData = (homeTeamPlayers?.length || 0) > 0 || (awayTeamPlayers?.length || 0) > 0;
+
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden mb-8">
       <div className="p-4 border-b border-theme-gray-medium">
@@ -82,9 +89,10 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
         </h2>
       </div>
       <div className="p-4">
-        {homeTeamPlayers?.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-md font-medium mb-3 text-white">{homeTeamName}</h3>
+        {/* Home Team Section */}
+        <div className="mb-6">
+          <h3 className="text-md font-medium mb-3 text-white">{homeTeamName}</h3>
+          {homeTeamPlayers?.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -98,12 +106,15 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
                 {homeTeamPlayers.map(renderPlayerRow)}
               </TableBody>
             </Table>
-          </div>
-        )}
+          ) : (
+            renderNoDataMessage(homeTeamName)
+          )}
+        </div>
         
-        {awayTeamPlayers?.length > 0 && (
-          <div>
-            <h3 className="text-md font-medium mb-3 text-white">{awayTeamName}</h3>
+        {/* Away Team Section */}
+        <div>
+          <h3 className="text-md font-medium mb-3 text-white">{awayTeamName}</h3>
+          {awayTeamPlayers?.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -117,10 +128,13 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
                 {awayTeamPlayers.map(renderPlayerRow)}
               </TableBody>
             </Table>
-          </div>
-        )}
+          ) : (
+            renderNoDataMessage(awayTeamName)
+          )}
+        </div>
         
-        {(!homeTeamPlayers?.length && !awayTeamPlayers?.length) && (
+        {/* Show loading message only if no data at all */}
+        {!hasAnyData && (
           <div className="text-center py-8 text-gray-400">
             <p>Loading player lineup information...</p>
           </div>

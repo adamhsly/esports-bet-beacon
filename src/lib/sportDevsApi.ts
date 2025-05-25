@@ -346,17 +346,20 @@ async function _fetchPlayersByTeamId(teamId: string) {
     
     const players = await fetchFromSportDevs(url, getApiKey());
     
-    console.log(`=== API Response Debug ===`);
+    console.log(`=== API Response Debug for Team ${teamId} ===`);
     console.log(`Response type: ${typeof players}`);
     console.log(`Response is array: ${Array.isArray(players)}`);
     console.log(`Response length: ${players?.length || 'N/A'}`);
     console.log(`Full response:`, JSON.stringify(players, null, 2));
     
     if (players && players.length > 0) {
+      console.log(`✅ Found ${players.length} players for team ${teamId}`);
       console.log(`Sample player data:`, players[0]);
+      return players;
+    } else {
+      console.log(`⚠️ No players found for team ${teamId} - this may be legitimate`);
+      return [];
     }
-    
-    return players || [];
     
   } catch (error) {
     console.error(`=== ERROR in fetchPlayersByTeamId for team ${teamId} ===`, error);
@@ -595,6 +598,19 @@ async function _fetchMatchOdds(matchId: string): Promise<{
   }
 }
 
+// Clear the player cache specifically before applying caching
+export const fetchPlayersByTeamId = (() => {
+  // Clear any existing player cache entries
+  memoryCache.invalidatePattern(/^team-players-/);
+  console.log('🧹 Cleared player cache entries');
+  
+  return createCachedFunction(
+    _fetchPlayersByTeamId,
+    (teamId) => `team-players-${teamId}`,
+    CACHE_TTL.TEAM
+  );
+})();
+
 // Apply caching to the API call functions
 export const fetchUpcomingMatches = createCachedFunction(
   _fetchUpcomingMatches,
@@ -629,12 +645,6 @@ export const fetchMatchStatistics = createCachedFunction(
 export const fetchTeamById = createCachedFunction(
   _fetchTeamById,
   (teamId) => `team-${teamId}`,
-  CACHE_TTL.TEAM
-);
-
-export const fetchPlayersByTeamId = createCachedFunction(
-  _fetchPlayersByTeamId,
-  (teamId) => `team-players-${teamId}`,
   CACHE_TTL.TEAM
 );
 
@@ -781,39 +791,50 @@ async function transformMatchData(match: any, esportType: string): Promise<Match
   console.log(`Team 1: ID=${teams[0]?.id}, Name=${teams[0]?.name}`);
   console.log(`Team 2: ID=${teams[1]?.id}, Name=${teams[1]?.name}`);
   
-  // Fetch players for both teams only if team IDs are available and valid
+  // Fetch players for both teams with improved error handling
   let homeTeamPlayers = [];
   let awayTeamPlayers = [];
   
-  console.log(`=== Starting Player Fetch ===`);
+  console.log(`=== Starting Player Fetch for Match ${match.id} ===`);
   
+  // Home team players
   if (teams[0]?.id && teams[0].id !== 'unknown') {
     try {
-      console.log(`Fetching players for home team: ${teams[0].id} (${teams[0].name})`);
+      console.log(`🔍 Fetching players for home team: ${teams[0].id} (${teams[0].name})`);
       homeTeamPlayers = await fetchPlayersByTeamId(teams[0].id);
-      console.log(`Home team players result: ${homeTeamPlayers.length} players`);
+      console.log(`✅ Home team ${teams[0].name}: ${homeTeamPlayers.length} players retrieved`);
+      if (homeTeamPlayers.length > 0) {
+        console.log(`Sample home player:`, homeTeamPlayers[0]);
+      }
     } catch (error) {
-      console.error(`Failed to fetch players for home team ${teams[0].id}:`, error);
+      console.error(`❌ Failed to fetch players for home team ${teams[0].id} (${teams[0].name}):`, error);
+      homeTeamPlayers = [];
     }
   } else {
-    console.log(`Skipping home team player fetch - invalid ID: ${teams[0]?.id}`);
+    console.log(`⏩ Skipping home team player fetch - invalid ID: ${teams[0]?.id}`);
   }
   
+  // Away team players
   if (teams[1]?.id && teams[1].id !== 'unknown') {
     try {
-      console.log(`Fetching players for away team: ${teams[1].id} (${teams[1].name})`);
+      console.log(`🔍 Fetching players for away team: ${teams[1].id} (${teams[1].name})`);
       awayTeamPlayers = await fetchPlayersByTeamId(teams[1].id);
-      console.log(`Away team players result: ${awayTeamPlayers.length} players`);
+      console.log(`✅ Away team ${teams[1].name}: ${awayTeamPlayers.length} players retrieved`);
+      if (awayTeamPlayers.length > 0) {
+        console.log(`Sample away player:`, awayTeamPlayers[0]);
+      }
     } catch (error) {
-      console.error(`Failed to fetch players for away team ${teams[1].id}:`, error);
+      console.error(`❌ Failed to fetch players for away team ${teams[1].id} (${teams[1].name}):`, error);
+      awayTeamPlayers = [];
     }
   } else {
-    console.log(`Skipping away team player fetch - invalid ID: ${teams[1]?.id}`);
+    console.log(`⏩ Skipping away team player fetch - invalid ID: ${teams[1]?.id}`);
   }
 
-  console.log(`=== Final Player Data ===`);
-  console.log(`Home team players: ${homeTeamPlayers.length}`);
-  console.log(`Away team players: ${awayTeamPlayers.length}`);
+  console.log(`=== Final Player Fetch Summary for Match ${match.id} ===`);
+  console.log(`🏠 Home team (${teams[0]?.name}): ${homeTeamPlayers.length} players`);
+  console.log(`✈️ Away team (${teams[1]?.name}): ${awayTeamPlayers.length} players`);
+  console.log(`📊 Total players retrieved: ${homeTeamPlayers.length + awayTeamPlayers.length}`);
 
   return {
     id: match.id,
