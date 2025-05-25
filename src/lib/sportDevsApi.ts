@@ -332,8 +332,9 @@ async function _fetchPlayersByTeamId(teamId: string) {
   try {
     console.log(`SportDevs API: Fetching players for team ID: ${teamId}`);
     
+    // Use the correct endpoint from the pseudocode
     const players = await fetchFromSportDevs(
-      `${WEB_URL}/players?team_id=eq.${teamId}`,
+      `${WEB_URL}/players-by-team?team_id=eq.${teamId}`,
       getApiKey()
     );
     console.log(`SportDevs API: Received ${players.length} players for team ID: ${teamId}`);
@@ -341,7 +342,7 @@ async function _fetchPlayersByTeamId(teamId: string) {
     
   } catch (error) {
     console.error("Error fetching players by team ID:", error);
-    throw error;
+    return []; // Return empty array instead of throwing
   }
 }
 
@@ -756,9 +757,25 @@ async function transformMatchData(match: any, esportType: string): Promise<Match
   // Log team data to help debug
   console.log(`transformMatchData: Processed teams for match ${match.id}:`, teams);
   
-  // Fetch players for both teams
-  const homeTeamPlayers = teams[0]?.id ? await fetchPlayersByTeamId(teams[0].id) : [];
-  const awayTeamPlayers = teams[1]?.id ? await fetchPlayersByTeamId(teams[1].id) : [];
+  // Fetch players for both teams only if team IDs are available and valid
+  let homeTeamPlayers = [];
+  let awayTeamPlayers = [];
+  
+  if (teams[0]?.id && teams[0].id !== 'unknown') {
+    try {
+      homeTeamPlayers = await fetchPlayersByTeamId(teams[0].id);
+    } catch (error) {
+      console.error(`Failed to fetch players for home team ${teams[0].id}:`, error);
+    }
+  }
+  
+  if (teams[1]?.id && teams[1].id !== 'unknown') {
+    try {
+      awayTeamPlayers = await fetchPlayersByTeamId(teams[1].id);
+    } catch (error) {
+      console.error(`Failed to fetch players for away team ${teams[1].id}:`, error);
+    }
+  }
 
   return {
     id: match.id,

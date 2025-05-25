@@ -3,15 +3,18 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Users } from 'lucide-react';
-import { format } from 'date-fns';
 
 interface Player {
-  name: string;
-  position: string;
-  hash_image: string;
-  short_name: string;
-  country_name: string;
-  date_of_birth: string;
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  country?: string;
+  name?: string;
+  position?: string;
+  hash_image?: string;
+  short_name?: string;
+  country_name?: string;
+  date_of_birth?: string;
 }
 
 interface MatchLineupTableProps {
@@ -27,31 +30,45 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
   homeTeamName,
   awayTeamName
 }) => {
-  const renderPlayerRow = (player: Player) => (
-    <TableRow key={player.name}>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <img 
-            src={player.hash_image ? `https://images.sportdevs.com/${player.hash_image}.png` : '/placeholder.svg'} 
-            alt={player.name} 
-            className="w-8 h-8 rounded-full"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder.svg';
-            }}
-          />
-          <div>
-            <div className="font-medium">{player.name}</div>
-            <div className="text-sm text-gray-500">{player.short_name}</div>
+  const renderPlayerRow = (player: Player, index: number) => {
+    // Get player name from available fields
+    const playerName = player.full_name || player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+    const playerCountry = player.country || player.country_name || 'Unknown';
+    const playerImage = player.hash_image ? `https://images.sportdevs.com/${player.hash_image}.png` : '/placeholder.svg';
+    
+    return (
+      <TableRow key={`${playerName}-${index}`}>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <img 
+              src={playerImage}
+              alt={playerName} 
+              className="w-8 h-8 rounded-full"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+            <div>
+              <div className="font-medium">{playerName}</div>
+              {player.short_name && (
+                <div className="text-sm text-gray-500">{player.short_name}</div>
+              )}
+            </div>
           </div>
-        </div>
-      </TableCell>
-      <TableCell>{player.position}</TableCell>
-      <TableCell>{player.country_name}</TableCell>
-      <TableCell>
-        {player.date_of_birth ? format(new Date(player.date_of_birth), 'MMM d, yyyy') : 'N/A'}
-      </TableCell>
-    </TableRow>
-  );
+        </TableCell>
+        <TableCell>{player.position || 'N/A'}</TableCell>
+        <TableCell>{playerCountry}</TableCell>
+        <TableCell>
+          {player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  // Don't render if no players for either team
+  if (!homeTeamPlayers?.length && !awayTeamPlayers?.length) {
+    return null;
+  }
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden mb-8">
@@ -62,39 +79,49 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
         </h2>
       </div>
       <div className="p-4">
-        <div className="mb-6">
-          <h3 className="text-md font-medium mb-3">{homeTeamName}</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Player</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Date of Birth</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {homeTeamPlayers.map(renderPlayerRow)}
-            </TableBody>
-          </Table>
-        </div>
+        {homeTeamPlayers?.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-md font-medium mb-3 text-white">{homeTeamName}</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-400">Player</TableHead>
+                  <TableHead className="text-gray-400">Position</TableHead>
+                  <TableHead className="text-gray-400">Country</TableHead>
+                  <TableHead className="text-gray-400">Date of Birth</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {homeTeamPlayers.map(renderPlayerRow)}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         
-        <div>
-          <h3 className="text-md font-medium mb-3">{awayTeamName}</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Player</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Date of Birth</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {awayTeamPlayers.map(renderPlayerRow)}
-            </TableBody>
-          </Table>
-        </div>
+        {awayTeamPlayers?.length > 0 && (
+          <div>
+            <h3 className="text-md font-medium mb-3 text-white">{awayTeamName}</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-400">Player</TableHead>
+                  <TableHead className="text-gray-400">Position</TableHead>
+                  <TableHead className="text-gray-400">Country</TableHead>
+                  <TableHead className="text-gray-400">Date of Birth</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {awayTeamPlayers.map(renderPlayerRow)}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        
+        {!homeTeamPlayers?.length && !awayTeamPlayers?.length && (
+          <div className="text-center py-8 text-gray-400">
+            <p>No player lineup information available for this match.</p>
+          </div>
+        )}
       </div>
     </Card>
   );
