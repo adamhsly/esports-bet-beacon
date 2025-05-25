@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo, TeamInfo } from '@/components/MatchCard';
@@ -13,6 +13,7 @@ import SEOContentBlock from '@/components/SEOContentBlock';
 
 const EsportPage: React.FC = () => {
   const { esportId = 'csgo' } = useParams<{ esportId: string }>();
+  const navigate = useNavigate();
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<MatchInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,11 @@ const EsportPage: React.FC = () => {
     esportIdRef.current = esportId;
     apiKeyRef.current = sportDevsApiKey;
   }, [esportId, sportDevsApiKey]);
+
+  // Handle esport navigation change
+  const handleEsportChange = (newEsportId: string) => {
+    navigate(`/esports/${newEsportId}`);
+  };
   
   const fetchMatches = async (status: 'live' | 'upcoming', esportType: string) => {
     // Generate cache key
@@ -75,6 +81,10 @@ const EsportPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      // Clear existing matches when esport changes
+      setLiveMatches([]);
+      setUpcomingMatches([]);
+      
       try {
         console.log(`EsportPage: Loading matches for ${esportId}`);
         
@@ -134,21 +144,54 @@ const EsportPage: React.FC = () => {
     return [team1, team2];
   };
   
-  // Process the raw match data into our app's format
+  // Process the raw match data into our app's format with proper filtering
   const processMatchData = (matches: any[], esportType: string): MatchInfo[] => {
     // Filter matches based on the selected esport type
     const filteredMatches = matches.filter(match => {
+      // First check if videogame slug matches
       if (match.videogame?.slug) {
-        return match.videogame.slug.includes(esportType.toLowerCase());
+        const gameSlug = match.videogame.slug.toLowerCase();
+        switch (esportType) {
+          case 'csgo':
+            return gameSlug.includes('cs') || gameSlug.includes('counter-strike');
+          case 'lol':
+            return gameSlug.includes('league') || gameSlug.includes('lol');
+          case 'dota2':
+            return gameSlug.includes('dota');
+          case 'valorant':
+            return gameSlug.includes('valorant');
+          case 'overwatch':
+            return gameSlug.includes('overwatch');
+          case 'rocketleague':
+            return gameSlug.includes('rocket') || gameSlug.includes('rl');
+          default:
+            return false;
+        }
       }
+      
+      // Fallback to class_name matching
       if (match.class_name) {
         const className = match.class_name.toLowerCase();
-        if (esportType === 'csgo' && (className.includes('cs') || className.includes('counter'))) return true;
-        if (esportType === 'lol' && (className.includes('league') || className.includes('lol'))) return true;
-        if (esportType === 'dota2' && className.includes('dota')) return true;
-        if (esportType === 'valorant' && className.includes('valorant')) return true;
+        switch (esportType) {
+          case 'csgo':
+            return className.includes('cs') || className.includes('counter');
+          case 'lol':
+            return className.includes('league') || className.includes('lol');
+          case 'dota2':
+            return className.includes('dota');
+          case 'valorant':
+            return className.includes('valorant');
+          case 'overwatch':
+            return className.includes('overwatch');
+          case 'rocketleague':
+            return className.includes('rocket');
+          default:
+            return false;
+        }
       }
-      return true;
+      
+      // If no game info available, exclude from results
+      return false;
     });
     
     return filteredMatches.map(match => {
@@ -303,7 +346,7 @@ const EsportPage: React.FC = () => {
           <span className="highlight-gradient">{esportId.toUpperCase()}</span> Betting Odds
         </h1>
         
-        <EsportsNavigation activeEsport={esportId} />
+        <EsportsNavigation activeEsport={esportId} onEsportChange={handleEsportChange} />
         
         {loading ? (
           <div className="flex justify-center items-center py-20">
