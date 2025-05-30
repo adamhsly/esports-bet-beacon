@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
-import { Users, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Users, AlertCircle, CheckCircle, XCircle, Bug } from 'lucide-react';
 
 interface Player {
   full_name?: string;
@@ -30,17 +30,17 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
   homeTeamName,
   awayTeamName
 }) => {
-  console.log('🏟️ MatchLineupTable: Rendering with enhanced debugging:', {
-    homeTeamPlayers: homeTeamPlayers?.length || 0,
-    awayTeamPlayers: awayTeamPlayers?.length || 0,
+  console.log('🏟️ ===== MATCH LINEUP TABLE RENDER =====');
+  console.log('Props received:', {
     homeTeamName,
     awayTeamName,
-    homePlayersData: homeTeamPlayers?.slice(0, 2), // Log first 2 players for debugging
-    awayPlayersData: awayTeamPlayers?.slice(0, 2)
+    homeTeamPlayersCount: homeTeamPlayers?.length || 0,
+    awayTeamPlayersCount: awayTeamPlayers?.length || 0,
+    homePlayersPreview: homeTeamPlayers?.slice(0, 2),
+    awayPlayersPreview: awayTeamPlayers?.slice(0, 2)
   });
 
   const renderPlayerRow = (player: Player, index: number) => {
-    // Get player name from available fields
     const playerName = player.full_name || player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
     const playerCountry = player.country || player.country_name || 'Unknown';
     const playerImage = player.hash_image ? `https://images.sportdevs.com/${player.hash_image}.png` : '/placeholder.svg';
@@ -112,11 +112,25 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
             <Users className="h-5 w-5 mr-2 text-theme-purple" />
             Team Lineups
           </h2>
-          <div className="text-sm text-gray-400">
-            Data available: {hasHomeData ? 1 : 0} + {hasAwayData ? 1 : 0} / 2 teams
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-400">
+              Data: {hasHomeData ? 1 : 0} + {hasAwayData ? 1 : 0} / 2 teams
+            </div>
+            <Bug className="h-4 w-4 text-yellow-500" title="Debug mode active" />
           </div>
         </div>
       </div>
+      
+      {/* Debug Information Panel */}
+      <div className="p-4 bg-gray-800/50 border-b border-theme-gray-medium">
+        <div className="text-xs text-gray-400 space-y-1">
+          <div><strong>DEBUG INFO:</strong></div>
+          <div>Home Team: {homeTeamName} ({homeTeamPlayers?.length || 0} players)</div>
+          <div>Away Team: {awayTeamName} ({awayTeamPlayers?.length || 0} players)</div>
+          <div>Props Status: {hasAnyData ? 'Data Available' : 'No Data'}</div>
+        </div>
+      </div>
+      
       <div className="p-4">
         {/* Home Team Section */}
         <div className="mb-6">
@@ -174,6 +188,7 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
             <AlertCircle className="h-6 w-6 mx-auto mb-2 text-yellow-500" />
             <p className="font-medium">No player lineup information available</p>
             <p className="text-sm mt-1">Player data may not be available for this match</p>
+            <p className="text-xs mt-2 text-yellow-400">Check console logs for detailed debugging information</p>
           </div>
         )}
       </div>

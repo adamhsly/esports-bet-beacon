@@ -330,27 +330,31 @@ async function _fetchTeamById(teamId: string) {
 }
 
 /**
- * Raw function to fetch players by team ID - ENHANCED WITH DEBUGGING
+ * Raw function to fetch players by team ID - ENHANCED DEBUG VERSION
  */
-async function _fetchPlayersByTeamId(teamId: string) {
-  console.log(`🔍 ===== ENHANCED PLAYER FETCH DEBUG =====`);
-  console.log(`🎯 Team ID: "${teamId}" (type: ${typeof teamId})`);
+async function _fetchPlayersByTeamId(teamId: string | number) {
+  console.log(`🔍 ===== PLAYER FETCH DEBUG START =====`);
+  console.log(`🎯 Input Team ID: "${teamId}" (type: ${typeof teamId})`);
   
   try {
-    // Validate teamId more thoroughly
-    if (!teamId || teamId === 'undefined' || teamId === 'null' || teamId.trim() === '') {
-      console.log(`❌ Invalid teamId: "${teamId}", returning empty array`);
+    // Convert to string and validate
+    const cleanTeamId = String(teamId).trim();
+    console.log(`🧹 Cleaned Team ID: "${cleanTeamId}"`);
+    
+    if (!cleanTeamId || cleanTeamId === 'undefined' || cleanTeamId === 'null' || cleanTeamId === '') {
+      console.log(`❌ Invalid teamId after cleaning: "${cleanTeamId}", returning empty array`);
       return [];
     }
     
-    // Clean the teamId
-    const cleanTeamId = teamId.toString().trim();
-    console.log(`🧹 Cleaned Team ID: "${cleanTeamId}"`);
+    // Test with your specific team ID
+    if (cleanTeamId === '348641') {
+      console.log(`🎯 ===== SPECIAL DEBUG FOR TEAM 348641 (G2 Ares) =====`);
+    }
     
-    // Use the exact endpoint format that works in your pseudocode
+    // Use the exact endpoint format that works
     const url = `${WEB_URL}/players-by-team?team_id=eq.${cleanTeamId}`;
-    console.log(`🌐 Making API call to: ${url}`);
-    console.log(`🔑 Using API key: ${getApiKey()}`);
+    console.log(`🌐 API URL: ${url}`);
+    console.log(`🔑 API Key: ${getApiKey()}`);
     
     const players = await fetchFromSportDevs(url, getApiKey());
     
@@ -359,21 +363,13 @@ async function _fetchPlayersByTeamId(teamId: string) {
     console.log(`📊 Is array: ${Array.isArray(players)}`);
     console.log(`📈 Length: ${players?.length || 'N/A'}`);
     
-    if (players && Array.isArray(players)) {
-      console.log(`✅ Successfully retrieved ${players.length} players for team ${cleanTeamId}`);
-      
-      if (players.length > 0) {
-        console.log(`👤 Sample player structure:`, JSON.stringify(players[0], null, 2));
-        
-        // Log all player names for debugging
-        console.log(`👥 Player names: ${players.map(p => p.full_name || p.name || 'Unknown').join(', ')}`);
-      } else {
-        console.log(`⚠️ No players found for team ${cleanTeamId} - this may be legitimate`);
-      }
-      
+    if (players && Array.isArray(players) && players.length > 0) {
+      console.log(`✅ SUCCESS: Retrieved ${players.length} players for team ${cleanTeamId}`);
+      console.log(`👤 First player structure:`, JSON.stringify(players[0], null, 2));
+      console.log(`👥 All player names: ${players.map(p => p.full_name || p.name || 'Unknown').join(', ')}`);
       return players;
     } else {
-      console.error(`❌ Invalid response format for team ${cleanTeamId}:`, players);
+      console.log(`⚠️ No players found for team ${cleanTeamId} - API returned valid response but empty data`);
       return [];
     }
     
@@ -381,8 +377,7 @@ async function _fetchPlayersByTeamId(teamId: string) {
     console.error(`💥 ===== ERROR in fetchPlayersByTeamId =====`);
     console.error(`🎯 Team ID: ${teamId}`);
     console.error(`❌ Error details:`, error);
-    console.error(`📊 Error stack:`, error?.stack);
-    return []; // Return empty array instead of throwing
+    return [];
   }
 }
 
@@ -618,7 +613,7 @@ async function _fetchMatchOdds(matchId: string): Promise<{
 }
 
 // Clear the player cache completely and forcefully before applying caching
-console.log('🧹 ===== CLEARING PLAYER CACHE =====');
+console.log('🧹 ===== CLEARING PLAYER CACHE FORCEFULLY =====');
 memoryCache.clear(); // Clear entire cache
 console.log('✅ Cache cleared completely');
 
@@ -741,26 +736,37 @@ function mapGameSlugToEsportType(gameSlug: string): string {
   return mapping[gameSlug] || "csgo";
 }
 
-// Helper function to transform match data to our app's format - ENHANCED
+// Helper function to transform match data to our app's format - ENHANCED TEAM ID DEBUG
 async function transformMatchData(match: any, esportType: string): Promise<MatchInfo> {
   console.log(`🔄 ===== TRANSFORM MATCH DATA DEBUG =====`);
   console.log(`🆔 Match ID: ${match.id}`);
-  console.log(`📋 Match data keys: ${Object.keys(match).join(', ')}`);
+  console.log(`📋 Raw match data:`, JSON.stringify(match, null, 2));
   
-  // Extract team data, ensuring we have 2 teams
+  // Extract team data with enhanced debugging
   let teams: TeamInfo[] = [];
   
   // First try to get teams from direct opponents data
   if (match.opponents && match.opponents.length > 0) {
-    teams = match.opponents.slice(0, 2).map((team: any) => ({
-      name: team.name,
-      id: team.id,
-      hash_image: team.hash_image,
-      logo: team.image_url || '/placeholder.svg'
-    }));
+    console.log(`👥 Using opponents data (${match.opponents.length} teams)`);
+    teams = match.opponents.slice(0, 2).map((team: any, index: number) => {
+      console.log(`Team ${index + 1} from opponents:`, {
+        id: team.id,
+        name: team.name,
+        hash_image: team.hash_image
+      });
+      return {
+        name: team.name,
+        id: team.id,
+        hash_image: team.hash_image,
+        logo: team.image_url || '/placeholder.svg'
+      };
+    });
   }
   // Then try home_team and away_team
   else if (match.home_team_name && match.away_team_name) {
+    console.log(`🏠 Using home/away team data`);
+    console.log(`Home team: ID=${match.home_team_id}, Name=${match.home_team_name}`);
+    console.log(`Away team: ID=${match.away_team_id}, Name=${match.away_team_name}`);
     teams = [
       { 
         name: match.home_team_name, 
@@ -782,6 +788,7 @@ async function transformMatchData(match: any, esportType: string): Promise<Match
   }
   // Then try to extract from name as last resort
   else if (match.name && match.name.includes(' vs ')) {
+    console.log(`📝 Using match name parsing: ${match.name}`);
     const [team1Name, team2Name] = match.name.split(' vs ').map((t: string) => t.trim());
     teams = [
       { name: team1Name, logo: '/placeholder.svg' },
@@ -797,63 +804,67 @@ async function transformMatchData(match: any, esportType: string): Promise<Match
     });
   }
   
+  console.log(`👥 ===== FINAL TEAM DATA =====`);
+  console.log(`🏠 Team 1: ID="${teams[0]?.id}", Name="${teams[0]?.name}"`);
+  console.log(`✈️ Team 2: ID="${teams[1]?.id}", Name="${teams[1]?.name}"`);
+  
   // Determine the tournament name
   const tournamentName = match.tournament?.name || match.serie?.name || match.tournament_name || match.league_name || "Unknown Tournament";
   
   // Determine the best of format
   let bestOf = match.format?.best_of || 3;
   
-  // Log team data to help debug
-  console.log(`👥 ===== TEAM DATA DEBUG =====`);
-  console.log(`🏠 Team 1: ID="${teams[0]?.id}", Name="${teams[0]?.name}"`);
-  console.log(`✈️ Team 2: ID="${teams[1]?.id}", Name="${teams[1]?.name}"`);
-  
-  // Fetch players for both teams with enhanced error handling
+  // Fetch players for both teams with enhanced debugging
   let homeTeamPlayers = [];
   let awayTeamPlayers = [];
   
-  console.log(`🚀 ===== STARTING ENHANCED PLAYER FETCH =====`);
-  console.log(`🆔 Match ID: ${match.id}`);
+  console.log(`🚀 ===== STARTING PLAYER FETCH PROCESS =====`);
   
-  // Home team players with individual error handling
-  if (teams[0]?.id && teams[0].id !== 'unknown' && teams[0].id.trim() !== '') {
+  // Home team players
+  if (teams[0]?.id && teams[0].id !== 'unknown' && String(teams[0].id).trim() !== '') {
     try {
-      console.log(`🏠 Fetching players for HOME team: "${teams[0].id}" (${teams[0].name})`);
+      console.log(`🏠 ===== FETCHING HOME TEAM PLAYERS =====`);
+      console.log(`Team ID: "${teams[0].id}" | Team Name: "${teams[0].name}"`);
+      
       homeTeamPlayers = await fetchPlayersByTeamId(teams[0].id);
-      console.log(`✅ HOME team ${teams[0].name}: ${homeTeamPlayers.length} players retrieved`);
+      
+      console.log(`✅ HOME TEAM RESULT: ${homeTeamPlayers.length} players for ${teams[0].name}`);
       if (homeTeamPlayers.length > 0) {
         console.log(`👤 Sample home player:`, homeTeamPlayers[0]);
       }
     } catch (error) {
-      console.error(`❌ FAILED to fetch players for HOME team ${teams[0].id} (${teams[0].name}):`, error);
+      console.error(`❌ HOME TEAM ERROR for ${teams[0].id} (${teams[0].name}):`, error);
       homeTeamPlayers = [];
     }
   } else {
-    console.log(`⏩ SKIPPING home team player fetch - invalid/missing ID: "${teams[0]?.id}"`);
+    console.log(`⏩ SKIPPING home team - no valid ID: "${teams[0]?.id}"`);
   }
   
-  // Away team players with individual error handling
-  if (teams[1]?.id && teams[1].id !== 'unknown' && teams[1].id.trim() !== '') {
+  // Away team players
+  if (teams[1]?.id && teams[1].id !== 'unknown' && String(teams[1].id).trim() !== '') {
     try {
-      console.log(`✈️ Fetching players for AWAY team: "${teams[1].id}" (${teams[1].name})`);
+      console.log(`✈️ ===== FETCHING AWAY TEAM PLAYERS =====`);
+      console.log(`Team ID: "${teams[1].id}" | Team Name: "${teams[1].name}"`);
+      
       awayTeamPlayers = await fetchPlayersByTeamId(teams[1].id);
-      console.log(`✅ AWAY team ${teams[1].name}: ${awayTeamPlayers.length} players retrieved`);
+      
+      console.log(`✅ AWAY TEAM RESULT: ${awayTeamPlayers.length} players for ${teams[1].name}`);
       if (awayTeamPlayers.length > 0) {
         console.log(`👤 Sample away player:`, awayTeamPlayers[0]);
       }
     } catch (error) {
-      console.error(`❌ FAILED to fetch players for AWAY team ${teams[1].id} (${teams[1].name}):`, error);
+      console.error(`❌ AWAY TEAM ERROR for ${teams[1].id} (${teams[1].name}):`, error);
       awayTeamPlayers = [];
     }
   } else {
-    console.log(`⏩ SKIPPING away team player fetch - invalid/missing ID: "${teams[1]?.id}"`);
+    console.log(`⏩ SKIPPING away team - no valid ID: "${teams[1]?.id}"`);
   }
 
-  console.log(`📊 ===== FINAL PLAYER FETCH SUMMARY =====`);
+  console.log(`📊 ===== FINAL PLAYER SUMMARY =====`);
   console.log(`🆔 Match ID: ${match.id}`);
-  console.log(`🏠 HOME team (${teams[0]?.name}): ${homeTeamPlayers.length} players`);
-  console.log(`✈️ AWAY team (${teams[1]?.name}): ${awayTeamPlayers.length} players`);
-  console.log(`📈 TOTAL players retrieved: ${homeTeamPlayers.length + awayTeamPlayers.length}`);
+  console.log(`🏠 HOME (${teams[0]?.name}): ${homeTeamPlayers.length} players`);
+  console.log(`✈️ AWAY (${teams[1]?.name}): ${awayTeamPlayers.length} players`);
+  console.log(`📈 TOTAL: ${homeTeamPlayers.length + awayTeamPlayers.length} players`);
   console.log(`🎯 SUCCESS RATE: ${(homeTeamPlayers.length > 0 ? 1 : 0) + (awayTeamPlayers.length > 0 ? 1 : 0)}/2 teams`);
 
   return {
