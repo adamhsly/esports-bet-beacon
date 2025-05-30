@@ -116,7 +116,7 @@ const MatchLineupTable: React.FC<MatchLineupTableProps> = ({
             <div className="text-sm text-gray-400">
               Data: {hasHomeData ? 1 : 0} + {hasAwayData ? 1 : 0} / 2 teams
             </div>
-            <Bug className="h-4 w-4 text-yellow-500" title="Debug mode active" />
+            <Bug className="h-4 w-4 text-yellow-500" />
           </div>
         </div>
       </div>
