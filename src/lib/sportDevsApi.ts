@@ -330,7 +330,7 @@ async function _fetchTeamById(teamId: string) {
 }
 
 /**
- * Raw function to fetch players by team ID - ENHANCED DEBUG VERSION
+ * Raw function to fetch players by team ID - FIXED TO EXTRACT PLAYERS ARRAY
  */
 async function _fetchPlayersByTeamId(teamId: string | number) {
   console.log(`🔍 ===== PLAYER FETCH DEBUG START =====`);
@@ -347,8 +347,8 @@ async function _fetchPlayersByTeamId(teamId: string | number) {
     }
     
     // Test with your specific team ID
-    if (cleanTeamId === '348641') {
-      console.log(`🎯 ===== SPECIAL DEBUG FOR TEAM 348641 (G2 Ares) =====`);
+    if (cleanTeamId === '38773') {
+      console.log(`🎯 ===== SPECIAL DEBUG FOR TEAM 38773 (Nemiga) =====`);
     }
     
     // Use the exact endpoint format that works
@@ -356,20 +356,32 @@ async function _fetchPlayersByTeamId(teamId: string | number) {
     console.log(`🌐 API URL: ${url}`);
     console.log(`🔑 API Key: ${getApiKey()}`);
     
-    const players = await fetchFromSportDevs(url, getApiKey());
+    const response = await fetchFromSportDevs(url, getApiKey());
     
     console.log(`📊 ===== API RESPONSE ANALYSIS =====`);
-    console.log(`📦 Response type: ${typeof players}`);
-    console.log(`📊 Is array: ${Array.isArray(players)}`);
-    console.log(`📈 Length: ${players?.length || 'N/A'}`);
+    console.log(`📦 Response type: ${typeof response}`);
+    console.log(`📊 Is array: ${Array.isArray(response)}`);
+    console.log(`📈 Length: ${response?.length || 'N/A'}`);
+    console.log(`🔍 Raw response structure:`, JSON.stringify(response, null, 2));
     
-    if (players && Array.isArray(players) && players.length > 0) {
-      console.log(`✅ SUCCESS: Retrieved ${players.length} players for team ${cleanTeamId}`);
-      console.log(`👤 First player structure:`, JSON.stringify(players[0], null, 2));
-      console.log(`👥 All player names: ${players.map(p => p.full_name || p.name || 'Unknown').join(', ')}`);
-      return players;
+    // NEW: Extract players array from the nested response structure
+    if (response && Array.isArray(response) && response.length > 0) {
+      const teamData = response[0]; // Get the first (and usually only) team object
+      
+      console.log(`🏢 Team data structure:`, JSON.stringify(teamData, null, 2));
+      
+      if (teamData && teamData.players && Array.isArray(teamData.players)) {
+        const players = teamData.players;
+        console.log(`✅ SUCCESS: Extracted ${players.length} players from nested structure for team ${cleanTeamId}`);
+        console.log(`👤 First player structure:`, JSON.stringify(players[0], null, 2));
+        console.log(`👥 All player names: ${players.map(p => p.name || p.full_name || 'Unknown').join(', ')}`);
+        return players;
+      } else {
+        console.log(`⚠️ Team data found but no players array - teamData.players:`, teamData?.players);
+        return [];
+      }
     } else {
-      console.log(`⚠️ No players found for team ${cleanTeamId} - API returned valid response but empty data`);
+      console.log(`⚠️ No team data found for team ${cleanTeamId} - API returned empty or invalid response`);
       return [];
     }
     
