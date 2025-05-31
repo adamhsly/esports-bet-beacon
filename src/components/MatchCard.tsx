@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight, Users, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
@@ -35,6 +36,13 @@ export interface MatchInfo {
   bestOf: number;
   homeTeamPlayers?: Player[];
   awayTeamPlayers?: Player[];
+  source?: 'professional' | 'amateur';
+  faceitData?: {
+    region?: string;
+    competitionType?: string;
+    organizedBy?: string;
+    calculateElo?: boolean;
+  };
 }
 
 interface MatchCardProps {
@@ -42,20 +50,38 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { id, teams, startTime, tournament, tournament_name, season_name, class_name, bestOf, homeTeamPlayers, awayTeamPlayers } = match;
+  const { id, teams, startTime, tournament, tournament_name, season_name, class_name, bestOf, source, faceitData } = match;
   const matchDate = new Date(startTime);
+  const isAmateur = source === 'amateur';
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
       <div className="p-4">
         <div className="flex justify-between items-center mb-3">
           <div className="flex flex-col">
-            <span className="text-sm text-gray-400">{tournament_name || tournament}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm text-gray-400">{tournament_name || tournament}</span>
+              {isAmateur && (
+                <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
+                  <Users size={12} className="mr-1" />
+                  FACEIT
+                </Badge>
+              )}
+              {!isAmateur && (
+                <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+                  <Trophy size={12} className="mr-1" />
+                  PRO
+                </Badge>
+              )}
+            </div>
             {season_name && (
               <span className="text-xs text-gray-500">{season_name}</span>
             )}
             {class_name && (
               <span className="text-xs text-gray-500">{class_name}</span>
+            )}
+            {isAmateur && faceitData?.region && (
+              <span className="text-xs text-orange-400">{faceitData.region}</span>
             )}
           </div>
           <Badge className="bg-theme-purple">

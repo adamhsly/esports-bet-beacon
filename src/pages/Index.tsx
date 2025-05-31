@@ -10,20 +10,26 @@ import Footer from '@/components/Footer';
 import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
 import { fetchLiveMatches, fetchUpcomingMatches } from '@/lib/sportDevsApi';
+import { fetchFaceitLiveMatches, fetchFaceitUpcomingMatches } from '@/lib/faceitApi';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowRight, Trophy } from 'lucide-react';
+import { Loader2, ArrowRight, Trophy, Users } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 import SEOContentBlock from '@/components/SEOContentBlock';
+import Badge from '@/components/Badge';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<MatchInfo[]>([]);
+  const [faceitLiveMatches, setFaceitLiveMatches] = useState<MatchInfo[]>([]);
+  const [faceitUpcomingMatches, setFaceitUpcomingMatches] = useState<MatchInfo[]>([]);
   const [loadingLive, setLoadingLive] = useState(true);
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
+  const [loadingFaceitLive, setLoadingFaceitLive] = useState(true);
+  const [loadingFaceitUpcoming, setLoadingFaceitUpcoming] = useState(true);
   const { toast } = useToast();
   
-  // Fetch live matches and refresh every 30 seconds (increased from 10 for optimization)
+  // Fetch live matches and refresh every 30 seconds
   useEffect(() => {
     async function loadLiveMatches() {
       try {
@@ -31,7 +37,6 @@ const Index = () => {
         setLiveMatches(csgoMatches);
       } catch (error) {
         console.error('Error loading live matches:', error);
-        // Use mock data if API fails
         const mockMatches = getTodayMatches('csgo');
         setLiveMatches(mockMatches.slice(0, 3));
       } finally {
@@ -40,10 +45,30 @@ const Index = () => {
     }
     
     loadLiveMatches();
-    
-    // Set up polling every 30 seconds (increased from 10 to reduce API calls)
     const interval = setInterval(() => {
       loadLiveMatches();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch FACEIT live matches
+  useEffect(() => {
+    async function loadFaceitLiveMatches() {
+      try {
+        const faceitMatches = await fetchFaceitLiveMatches();
+        setFaceitLiveMatches(faceitMatches);
+      } catch (error) {
+        console.error('Error loading FACEIT live matches:', error);
+        setFaceitLiveMatches([]);
+      } finally {
+        setLoadingFaceitLive(false);
+      }
+    }
+    
+    loadFaceitLiveMatches();
+    const interval = setInterval(() => {
+      loadFaceitLiveMatches();
     }, 30000);
     
     return () => clearInterval(interval);
@@ -54,10 +79,9 @@ const Index = () => {
     async function loadUpcomingMatches() {
       try {
         const csgoMatches = await fetchUpcomingMatches('csgo');
-        setUpcomingMatches(csgoMatches.slice(0, 3)); // Get just 3 for homepage
+        setUpcomingMatches(csgoMatches.slice(0, 3));
       } catch (error) {
         console.error('Error loading upcoming matches:', error);
-        // Use mock data if API fails
         const mockMatches = getUpcomingMatches('csgo');
         setUpcomingMatches(mockMatches.slice(0, 3));
       } finally {
@@ -66,6 +90,23 @@ const Index = () => {
     }
     
     loadUpcomingMatches();
+  }, []);
+
+  // Fetch FACEIT upcoming matches
+  useEffect(() => {
+    async function loadFaceitUpcomingMatches() {
+      try {
+        const faceitMatches = await fetchFaceitUpcomingMatches();
+        setFaceitUpcomingMatches(faceitMatches);
+      } catch (error) {
+        console.error('Error loading FACEIT upcoming matches:', error);
+        setFaceitUpcomingMatches([]);
+      } finally {
+        setLoadingFaceitUpcoming(false);
+      }
+    }
+    
+    loadFaceitUpcomingMatches();
   }, []);
 
   const homepageSEOContent = {
@@ -85,11 +126,12 @@ const Index = () => {
         <Hero />
         
         <div className="container mx-auto px-4 py-12">
-          {/* Live Matches */}
-          <div className="mb-12">
+          {/* Live Matches - Professional */}
+          <div className="mb-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming">
-                <span className="highlight-gradient">Live</span> Matches
+              <h2 className="text-2xl font-bold font-gaming flex items-center">
+                <Trophy className="h-6 w-6 mr-2 text-blue-400" />
+                <span className="highlight-gradient">Live</span> Pro Matches
               </h2>
               <Button asChild variant="ghost" className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
                 <Link to="/esports/csgo">
@@ -111,16 +153,47 @@ const Index = () => {
               </div>
             ) : (
               <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400">No live matches at the moment. Check back later!</p>
+                <p className="text-gray-400">No live pro matches at the moment.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Live Matches - FACEIT Amateur */}
+          <div className="mb-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold font-gaming flex items-center">
+                <Users className="h-6 w-6 mr-2 text-orange-400" />
+                <span className="highlight-gradient">Live</span> Amateur Matches
+                <Badge variant="outline" className="ml-3 bg-orange-500/20 text-orange-400 border-orange-400/30">
+                  FACEIT
+                </Badge>
+              </h2>
+            </div>
+            
+            {loadingFaceitLive ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-400 mr-2" />
+                <span>Loading FACEIT matches...</span>
+              </div>
+            ) : faceitLiveMatches.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {faceitLiveMatches.slice(0, 3).map(match => (
+                  <MatchCard key={match.id} match={match} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
+                <p className="text-gray-400">No live FACEIT matches at the moment.</p>
               </div>
             )}
           </div>
           
-          {/* Upcoming Matches */}
-          <div className="mb-10">
+          {/* Upcoming Matches - Professional */}
+          <div className="mb-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming">
-                <span className="highlight-gradient">Upcoming</span> Matches
+              <h2 className="text-2xl font-bold font-gaming flex items-center">
+                <Trophy className="h-6 w-6 mr-2 text-blue-400" />
+                <span className="highlight-gradient">Upcoming</span> Pro Matches
               </h2>
               <Button asChild variant="ghost" className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
                 <Link to="/esports/csgo">
@@ -142,7 +215,37 @@ const Index = () => {
               </div>
             ) : (
               <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400">No upcoming matches at the moment. Check back later!</p>
+                <p className="text-gray-400">No upcoming pro matches at the moment.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Upcoming Matches - FACEIT Amateur */}
+          <div className="mb-10">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold font-gaming flex items-center">
+                <Users className="h-6 w-6 mr-2 text-orange-400" />
+                <span className="highlight-gradient">Upcoming</span> Amateur Matches
+                <Badge variant="outline" className="ml-3 bg-orange-500/20 text-orange-400 border-orange-400/30">
+                  FACEIT
+                </Badge>
+              </h2>
+            </div>
+            
+            {loadingFaceitUpcoming ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-400 mr-2" />
+                <span>Loading FACEIT matches...</span>
+              </div>
+            ) : faceitUpcomingMatches.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {faceitUpcomingMatches.slice(0, 3).map(match => (
+                  <MatchCard key={match.id} match={match} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
+                <p className="text-gray-400">No upcoming FACEIT matches at the moment.</p>
               </div>
             )}
           </div>
