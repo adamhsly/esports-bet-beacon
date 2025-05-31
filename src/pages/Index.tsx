@@ -16,7 +16,7 @@ import { Loader2, ArrowRight, Trophy, Users } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 import SEOContentBlock from '@/components/SEOContentBlock';
-import Badge from '@/components/Badge';
+import { Badge } from '@/components/ui/badge';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
