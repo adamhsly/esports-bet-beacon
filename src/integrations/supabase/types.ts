@@ -9,7 +9,117 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      faceit_matches: {
+        Row: {
+          calculate_elo: boolean | null
+          competition_name: string | null
+          competition_type: string | null
+          configured_at: string | null
+          created_at: string
+          faceit_data: Json | null
+          finished_at: string | null
+          game: string
+          id: string
+          match_id: string
+          organized_by: string | null
+          raw_data: Json | null
+          region: string | null
+          started_at: string | null
+          status: string
+          teams: Json
+          updated_at: string
+          version: number | null
+          voting: Json | null
+        }
+        Insert: {
+          calculate_elo?: boolean | null
+          competition_name?: string | null
+          competition_type?: string | null
+          configured_at?: string | null
+          created_at?: string
+          faceit_data?: Json | null
+          finished_at?: string | null
+          game?: string
+          id?: string
+          match_id: string
+          organized_by?: string | null
+          raw_data?: Json | null
+          region?: string | null
+          started_at?: string | null
+          status: string
+          teams: Json
+          updated_at?: string
+          version?: number | null
+          voting?: Json | null
+        }
+        Update: {
+          calculate_elo?: boolean | null
+          competition_name?: string | null
+          competition_type?: string | null
+          configured_at?: string | null
+          created_at?: string
+          faceit_data?: Json | null
+          finished_at?: string | null
+          game?: string
+          id?: string
+          match_id?: string
+          organized_by?: string | null
+          raw_data?: Json | null
+          region?: string | null
+          started_at?: string | null
+          status?: string
+          teams?: Json
+          updated_at?: string
+          version?: number | null
+          voting?: Json | null
+        }
+        Relationships: []
+      }
+      faceit_sync_logs: {
+        Row: {
+          completed_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          matches_added: number | null
+          matches_processed: number | null
+          matches_updated: number | null
+          metadata: Json | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          matches_added?: number | null
+          matches_processed?: number | null
+          matches_updated?: number | null
+          metadata?: Json | null
+          started_at?: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          matches_added?: number | null
+          matches_processed?: number | null
+          matches_updated?: number | null
+          metadata?: Json | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

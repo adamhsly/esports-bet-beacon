@@ -17,6 +17,7 @@ import SearchableNavbar from '@/components/SearchableNavbar';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
+import { fetchSupabaseFaceitLiveMatches, fetchSupabaseFaceitUpcomingMatches } from '@/lib/supabaseFaceitApi';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
@@ -28,6 +29,9 @@ const Index = () => {
   const [loadingFaceitLive, setLoadingFaceitLive] = useState(true);
   const [loadingFaceitUpcoming, setLoadingFaceitUpcoming] = useState(true);
   const { toast } = useToast();
+  
+  // Import the new Supabase API functions
+  const { fetchSupabaseFaceitLiveMatches, fetchSupabaseFaceitUpcomingMatches } = await import('@/lib/supabaseFaceitApi');
   
   // Fetch live matches and refresh every 30 seconds
   useEffect(() => {
@@ -52,11 +56,11 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch FACEIT live matches
+  // Fetch FACEIT live matches from Supabase
   useEffect(() => {
     async function loadFaceitLiveMatches() {
       try {
-        const faceitMatches = await fetchFaceitLiveMatches();
+        const faceitMatches = await fetchSupabaseFaceitLiveMatches();
         setFaceitLiveMatches(faceitMatches);
       } catch (error) {
         console.error('Error loading FACEIT live matches:', error);
@@ -92,11 +96,11 @@ const Index = () => {
     loadUpcomingMatches();
   }, []);
 
-  // Fetch FACEIT upcoming matches
+  // Fetch FACEIT upcoming matches from Supabase
   useEffect(() => {
     async function loadFaceitUpcomingMatches() {
       try {
-        const faceitMatches = await fetchFaceitUpcomingMatches();
+        const faceitMatches = await fetchSupabaseFaceitUpcomingMatches();
         setFaceitUpcomingMatches(faceitMatches);
       } catch (error) {
         console.error('Error loading FACEIT upcoming matches:', error);
