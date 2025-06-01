@@ -30,9 +30,6 @@ const Index = () => {
   const [loadingFaceitUpcoming, setLoadingFaceitUpcoming] = useState(true);
   const { toast } = useToast();
   
-  // Import the new Supabase API functions
-  const { fetchSupabaseFaceitLiveMatches, fetchSupabaseFaceitUpcomingMatches } = await import('@/lib/supabaseFaceitApi');
-  
   // Fetch live matches and refresh every 30 seconds
   useEffect(() => {
     async function loadLiveMatches() {
