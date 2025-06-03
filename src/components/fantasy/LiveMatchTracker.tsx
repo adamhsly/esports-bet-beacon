@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +36,14 @@ interface PlayerPerformance {
 
 interface LiveMatchTrackerProps {
   tournamentId: string;
+}
+
+interface RealtimePayload {
+  new?: {
+    session_id?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
 }
 
 export const LiveMatchTracker: React.FC<LiveMatchTrackerProps> = ({ tournamentId }) => {
@@ -109,7 +116,7 @@ export const LiveMatchTracker: React.FC<LiveMatchTrackerProps> = ({ tournamentId
           schema: 'public',
           table: 'live_player_performance'
         },
-        (payload) => {
+        (payload: RealtimePayload) => {
           console.log('Real-time player performance update:', payload);
           if (selectedSession && payload.new?.session_id === selectedSession.id) {
             fetchPlayerPerformances(selectedSession.id);
@@ -123,7 +130,7 @@ export const LiveMatchTracker: React.FC<LiveMatchTrackerProps> = ({ tournamentId
           schema: 'public',
           table: 'fantasy_live_sessions'
         },
-        (payload) => {
+        (payload: RealtimePayload) => {
           console.log('Real-time session update:', payload);
           fetchLiveSessions();
         }
