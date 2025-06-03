@@ -120,6 +120,272 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_teams: {
+        Row: {
+          active_lineup: Json
+          bench_lineup: Json
+          created_at: string
+          formation: string
+          id: string
+          is_active: boolean | null
+          salary_cap: number | null
+          salary_used: number | null
+          team_name: string
+          tournament_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_lineup?: Json
+          bench_lineup?: Json
+          created_at?: string
+          formation?: string
+          id?: string
+          is_active?: boolean | null
+          salary_cap?: number | null
+          salary_used?: number | null
+          team_name: string
+          tournament_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_lineup?: Json
+          bench_lineup?: Json
+          created_at?: string
+          formation?: string
+          id?: string
+          is_active?: boolean | null
+          salary_cap?: number | null
+          salary_used?: number | null
+          team_name?: string
+          tournament_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nft_cards: {
+        Row: {
+          card_id: string
+          contract_address: string | null
+          created_at: string
+          game: string
+          id: string
+          image_url: string | null
+          metadata: Json
+          minted_at: string | null
+          owner_wallet: string | null
+          player_id: string
+          player_name: string
+          player_type: string
+          position: string
+          rarity: string
+          stats: Json
+          team_name: string | null
+          token_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          card_id: string
+          contract_address?: string | null
+          created_at?: string
+          game?: string
+          id?: string
+          image_url?: string | null
+          metadata?: Json
+          minted_at?: string | null
+          owner_wallet?: string | null
+          player_id: string
+          player_name: string
+          player_type: string
+          position: string
+          rarity: string
+          stats?: Json
+          team_name?: string | null
+          token_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          card_id?: string
+          contract_address?: string | null
+          created_at?: string
+          game?: string
+          id?: string
+          image_url?: string | null
+          metadata?: Json
+          minted_at?: string | null
+          owner_wallet?: string | null
+          player_id?: string
+          player_name?: string
+          player_type?: string
+          position?: string
+          rarity?: string
+          stats?: Json
+          team_name?: string | null
+          token_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pack_purchases: {
+        Row: {
+          cards_received: Json
+          created_at: string
+          id: string
+          opened_at: string | null
+          pack_price: number
+          pack_type: string
+          payment_method: string
+          transaction_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          cards_received?: Json
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          pack_price: number
+          pack_type: string
+          payment_method: string
+          transaction_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          cards_received?: Json
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          pack_price?: number
+          pack_type?: string
+          payment_method?: string
+          transaction_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          current_participants: number | null
+          end_time: string
+          entry_fee: number | null
+          id: string
+          max_participants: number | null
+          prize_pool: number | null
+          scoring_rules: Json
+          start_time: string
+          status: string
+          tournament_name: string
+          tournament_rules: Json
+          tournament_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number | null
+          end_time: string
+          entry_fee?: number | null
+          id?: string
+          max_participants?: number | null
+          prize_pool?: number | null
+          scoring_rules?: Json
+          start_time: string
+          status?: string
+          tournament_name: string
+          tournament_rules?: Json
+          tournament_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number | null
+          end_time?: string
+          entry_fee?: number | null
+          id?: string
+          max_participants?: number | null
+          prize_pool?: number | null
+          scoring_rules?: Json
+          start_time?: string
+          status?: string
+          tournament_name?: string
+          tournament_rules?: Json
+          tournament_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_card_collections: {
+        Row: {
+          acquired_at: string
+          acquired_method: string | null
+          card_id: string
+          id: string
+          quantity: number | null
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          acquired_method?: string | null
+          card_id: string
+          id?: string
+          quantity?: number | null
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          acquired_method?: string | null
+          card_id?: string
+          id?: string
+          quantity?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_card_collections_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "nft_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_wallets: {
+        Row: {
+          blockchain: string
+          connected_at: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          last_used_at: string | null
+          user_id: string
+          wallet_address: string
+          wallet_type: string
+        }
+        Insert: {
+          blockchain?: string
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          last_used_at?: string | null
+          user_id: string
+          wallet_address: string
+          wallet_type: string
+        }
+        Update: {
+          blockchain?: string
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          last_used_at?: string | null
+          user_id?: string
+          wallet_address?: string
+          wallet_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
