@@ -6,9 +6,13 @@ import Footer from '@/components/Footer';
 import { FantasyTeamBuilder } from '@/components/fantasy/FantasyTeamBuilder';
 import { TournamentCreator } from '@/components/fantasy/TournamentCreator';
 import { FantasyLeaderboard } from '@/components/fantasy/FantasyLeaderboard';
-import { Users, Trophy, Target, BarChart3 } from 'lucide-react';
+import { LiveMatchTracker } from '@/components/fantasy/LiveMatchTracker';
+import { Users, Trophy, Target, BarChart3, Zap } from 'lucide-react';
 
 const FantasyPage: React.FC = () => {
+  // Using a demo tournament ID for now - in a real app this would come from context or URL params
+  const demoTournamentId = "demo-tournament-1";
+
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
@@ -19,15 +23,19 @@ const FantasyPage: React.FC = () => {
           </h1>
           <p className="text-gray-300 max-w-2xl">
             Build your dream CS2 team using your NFT player cards. Compete in fantasy tournaments 
-            and leagues with real match performance scoring.
+            and leagues with real match performance scoring and live updates.
           </p>
         </div>
 
         <Tabs defaultValue="team-builder" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="team-builder" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Team Builder
+            </TabsTrigger>
+            <TabsTrigger value="live-matches" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Live Matches
             </TabsTrigger>
             <TabsTrigger value="tournaments" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
@@ -45,6 +53,10 @@ const FantasyPage: React.FC = () => {
 
           <TabsContent value="team-builder">
             <FantasyTeamBuilder />
+          </TabsContent>
+
+          <TabsContent value="live-matches">
+            <LiveMatchTracker tournamentId={demoTournamentId} />
           </TabsContent>
 
           <TabsContent value="tournaments">

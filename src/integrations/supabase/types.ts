@@ -239,6 +239,50 @@ export type Database = {
           },
         ]
       }
+      fantasy_live_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          scoring_config: Json
+          session_end: string | null
+          session_start: string
+          status: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          scoring_config?: Json
+          session_end?: string | null
+          session_start?: string
+          status?: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          scoring_config?: Json
+          session_end?: string | null
+          session_start?: string
+          status?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_live_sessions_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fantasy_match_scores: {
         Row: {
           created_at: string | null
@@ -343,6 +387,116 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      live_fantasy_scores: {
+        Row: {
+          created_at: string
+          current_total_score: number
+          fantasy_team_id: string
+          id: string
+          last_calculated: string
+          position_scores: Json
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_total_score?: number
+          fantasy_team_id: string
+          id?: string
+          last_calculated?: string
+          position_scores?: Json
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_total_score?: number
+          fantasy_team_id?: string
+          id?: string
+          last_calculated?: string
+          position_scores?: Json
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_fantasy_scores_fantasy_team_id_fkey"
+            columns: ["fantasy_team_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_fantasy_scores_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_player_performance: {
+        Row: {
+          clutch_rounds: number
+          created_at: string
+          current_adr: number
+          current_assists: number
+          current_deaths: number
+          current_kills: number
+          fantasy_points: number
+          id: string
+          last_updated: string
+          mvp_rounds: number
+          player_id: string
+          player_name: string
+          session_id: string
+          team_name: string | null
+        }
+        Insert: {
+          clutch_rounds?: number
+          created_at?: string
+          current_adr?: number
+          current_assists?: number
+          current_deaths?: number
+          current_kills?: number
+          fantasy_points?: number
+          id?: string
+          last_updated?: string
+          mvp_rounds?: number
+          player_id: string
+          player_name: string
+          session_id: string
+          team_name?: string | null
+        }
+        Update: {
+          clutch_rounds?: number
+          created_at?: string
+          current_adr?: number
+          current_assists?: number
+          current_deaths?: number
+          current_kills?: number
+          fantasy_points?: number
+          id?: string
+          last_updated?: string
+          mvp_rounds?: number
+          player_id?: string
+          player_name?: string
+          session_id?: string
+          team_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_player_performance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nft_cards: {
         Row: {
@@ -630,7 +784,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_fantasy_points: {
+        Args: {
+          kills: number
+          deaths: number
+          assists: number
+          adr: number
+          mvp_rounds: number
+          clutch_rounds: number
+          scoring_config: Json
+        }
+        Returns: number
+      }
     }
     Enums: {
       cs2_position: "IGL" | "AWPer" | "Entry Fragger" | "Support" | "Lurker"
