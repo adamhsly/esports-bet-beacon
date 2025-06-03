@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Index from '@/pages/Index';
 import EsportPage from '@/pages/EsportPage';
 import MatchDetailsPage from '@/pages/MatchDetailsPage';
@@ -10,14 +12,16 @@ import NewsPage from '@/pages/NewsPage';
 import NotFound from '@/pages/NotFound';
 import TournamentsPage from '@/pages/TournamentsPage';
 import TournamentDetailPage from '@/pages/TournamentDetailPage';
-import { QueryClient } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Web3Provider } from '@/contexts/Web3Context';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
 
+// Create a client instance
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Web3Provider>
           <Toaster />
@@ -38,7 +42,7 @@ function App() {
           </div>
         </Web3Provider>
       </BrowserRouter>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 

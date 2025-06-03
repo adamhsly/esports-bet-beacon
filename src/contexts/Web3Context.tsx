@@ -90,7 +90,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
       // Simulate wallet connection based on type
       switch (walletType) {
         case 'metamask':
-          if (typeof window.ethereum !== 'undefined') {
+          if (typeof window !== 'undefined' && window.ethereum) {
             const accounts = await window.ethereum.request({ 
               method: 'eth_requestAccounts' 
             });
