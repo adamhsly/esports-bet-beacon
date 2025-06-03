@@ -12,6 +12,7 @@ import NewsPage from '@/pages/NewsPage';
 import NotFound from '@/pages/NotFound';
 import TournamentsPage from '@/pages/TournamentsPage';
 import TournamentDetailPage from '@/pages/TournamentDetailPage';
+import CardsPage from '@/pages/CardsPage';
 import { Toaster } from '@/components/ui/toaster';
 import { Web3Provider } from '@/contexts/Web3Context';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
@@ -29,6 +30,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/web3-profile" element={<Web3ProfilePage />} />
+              <Route path="/cards" element={<CardsPage />} />
               <Route path="/esports/:game" element={<EsportPage />} />
               <Route path="/match/:id" element={<MatchDetailsPage />} />
               <Route path="/team/:teamId" element={<TeamDetailPage />} />

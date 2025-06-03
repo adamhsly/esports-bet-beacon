@@ -9,6 +9,80 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      card_templates: {
+        Row: {
+          created_at: string
+          game: string
+          id: string
+          min_performance_threshold: Json
+          rarity: string
+          stat_multipliers: Json
+          template_name: string
+          visual_properties: Json
+        }
+        Insert: {
+          created_at?: string
+          game?: string
+          id?: string
+          min_performance_threshold?: Json
+          rarity: string
+          stat_multipliers?: Json
+          template_name: string
+          visual_properties?: Json
+        }
+        Update: {
+          created_at?: string
+          game?: string
+          id?: string
+          min_performance_threshold?: Json
+          rarity?: string
+          stat_multipliers?: Json
+          template_name?: string
+          visual_properties?: Json
+        }
+        Relationships: []
+      }
+      card_transactions: {
+        Row: {
+          card_id: string
+          created_at: string
+          from_user_id: string | null
+          id: string
+          price: number | null
+          to_user_id: string | null
+          transaction_hash: string | null
+          transaction_type: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          price?: number | null
+          to_user_id?: string | null
+          transaction_hash?: string | null
+          transaction_type: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          price?: number | null
+          to_user_id?: string | null
+          transaction_hash?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_transactions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "nft_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faceit_matches: {
         Row: {
           calculate_elo: boolean | null
@@ -233,7 +307,9 @@ export type Database = {
           cards_received: Json
           created_at: string
           id: string
+          is_opened: boolean | null
           opened_at: string | null
+          pack_contents: Json | null
           pack_price: number
           pack_type: string
           payment_method: string
@@ -244,7 +320,9 @@ export type Database = {
           cards_received?: Json
           created_at?: string
           id?: string
+          is_opened?: boolean | null
           opened_at?: string | null
+          pack_contents?: Json | null
           pack_price: number
           pack_type: string
           payment_method: string
@@ -255,12 +333,56 @@ export type Database = {
           cards_received?: Json
           created_at?: string
           id?: string
+          is_opened?: boolean | null
           opened_at?: string | null
+          pack_contents?: Json | null
           pack_price?: number
           pack_type?: string
           payment_method?: string
           transaction_hash?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      player_data: {
+        Row: {
+          created_at: string
+          game: string
+          id: string
+          last_synced_at: string
+          performance_metrics: Json
+          player_id: string
+          player_name: string
+          position: string | null
+          stats: Json
+          team_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          game?: string
+          id?: string
+          last_synced_at?: string
+          performance_metrics?: Json
+          player_id: string
+          player_name: string
+          position?: string | null
+          stats?: Json
+          team_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          game?: string
+          id?: string
+          last_synced_at?: string
+          performance_metrics?: Json
+          player_id?: string
+          player_name?: string
+          position?: string | null
+          stats?: Json
+          team_name?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
