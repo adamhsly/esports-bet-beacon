@@ -131,6 +131,23 @@ export const PackStore: React.FC = () => {
       // Generate cards for the pack
       const cards = generateMockCards(packType, pack.cardCount);
 
+      // Convert cards to plain JSON objects for database storage
+      const cardsJson = cards.map(card => ({
+        id: card.id,
+        card_id: card.card_id,
+        player_id: card.player_id,
+        player_name: card.player_name,
+        player_type: card.player_type,
+        position: card.position,
+        team_name: card.team_name,
+        game: card.game,
+        rarity: card.rarity,
+        stats: card.stats,
+        metadata: card.metadata,
+        created_at: card.created_at,
+        updated_at: card.updated_at,
+      }));
+
       // Create pack purchase record
       const { data, error } = await supabase
         .from('pack_purchases')
@@ -139,7 +156,7 @@ export const PackStore: React.FC = () => {
           pack_type: packType,
           pack_price: pack.price,
           payment_method: 'credits',
-          cards_received: cards,
+          cards_received: cardsJson,
           is_opened: false,
         })
         .select()
