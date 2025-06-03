@@ -194,17 +194,114 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_league_participants: {
+        Row: {
+          current_rank: number | null
+          current_score: number | null
+          fantasy_team_id: string | null
+          id: string
+          joined_at: string | null
+          tournament_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          current_rank?: number | null
+          current_score?: number | null
+          fantasy_team_id?: string | null
+          id?: string
+          joined_at?: string | null
+          tournament_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          current_rank?: number | null
+          current_score?: number | null
+          fantasy_team_id?: string | null
+          id?: string
+          joined_at?: string | null
+          tournament_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_league_participants_fantasy_team_id_fkey"
+            columns: ["fantasy_team_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fantasy_league_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fantasy_match_scores: {
+        Row: {
+          created_at: string | null
+          fantasy_team_id: string | null
+          id: string
+          match_date: string | null
+          match_id: string
+          player_card_id: string | null
+          player_performance: Json | null
+          points_earned: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          fantasy_team_id?: string | null
+          id?: string
+          match_date?: string | null
+          match_id: string
+          player_card_id?: string | null
+          player_performance?: Json | null
+          points_earned?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          fantasy_team_id?: string | null
+          id?: string
+          match_date?: string | null
+          match_id?: string
+          player_card_id?: string | null
+          player_performance?: Json | null
+          points_earned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_match_scores_fantasy_team_id_fkey"
+            columns: ["fantasy_team_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fantasy_match_scores_player_card_id_fkey"
+            columns: ["player_card_id"]
+            isOneToOne: false
+            referencedRelation: "nft_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fantasy_teams: {
         Row: {
           active_lineup: Json
           bench_lineup: Json
           created_at: string
           formation: string
+          formation_positions: Json | null
           id: string
           is_active: boolean | null
+          performance_score: number | null
           salary_cap: number | null
           salary_used: number | null
+          team_chemistry_bonus: number | null
           team_name: string
+          total_team_value: number | null
           tournament_id: string | null
           updated_at: string
           user_id: string
@@ -214,11 +311,15 @@ export type Database = {
           bench_lineup?: Json
           created_at?: string
           formation?: string
+          formation_positions?: Json | null
           id?: string
           is_active?: boolean | null
+          performance_score?: number | null
           salary_cap?: number | null
           salary_used?: number | null
+          team_chemistry_bonus?: number | null
           team_name: string
+          total_team_value?: number | null
           tournament_id?: string | null
           updated_at?: string
           user_id: string
@@ -228,11 +329,15 @@ export type Database = {
           bench_lineup?: Json
           created_at?: string
           formation?: string
+          formation_positions?: Json | null
           id?: string
           is_active?: boolean | null
+          performance_score?: number | null
           salary_cap?: number | null
           salary_used?: number | null
+          team_chemistry_bonus?: number | null
           team_name?: string
+          total_team_value?: number | null
           tournament_id?: string | null
           updated_at?: string
           user_id?: string
@@ -389,13 +494,17 @@ export type Database = {
       tournaments: {
         Row: {
           created_at: string
+          created_by_user_id: string | null
           current_participants: number | null
           end_time: string
           entry_fee: number | null
           id: string
+          is_fantasy_league: boolean | null
+          league_type: string | null
           max_participants: number | null
           prize_pool: number | null
           scoring_rules: Json
+          scoring_system: Json | null
           start_time: string
           status: string
           tournament_name: string
@@ -405,13 +514,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by_user_id?: string | null
           current_participants?: number | null
           end_time: string
           entry_fee?: number | null
           id?: string
+          is_fantasy_league?: boolean | null
+          league_type?: string | null
           max_participants?: number | null
           prize_pool?: number | null
           scoring_rules?: Json
+          scoring_system?: Json | null
           start_time: string
           status?: string
           tournament_name: string
@@ -421,13 +534,17 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by_user_id?: string | null
           current_participants?: number | null
           end_time?: string
           entry_fee?: number | null
           id?: string
+          is_fantasy_league?: boolean | null
+          league_type?: string | null
           max_participants?: number | null
           prize_pool?: number | null
           scoring_rules?: Json
+          scoring_system?: Json | null
           start_time?: string
           status?: string
           tournament_name?: string
@@ -516,7 +633,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      cs2_position: "IGL" | "AWPer" | "Entry Fragger" | "Support" | "Lurker"
+      tournament_status: "upcoming" | "active" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -631,6 +749,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      cs2_position: ["IGL", "AWPer", "Entry Fragger", "Support", "Lurker"],
+      tournament_status: ["upcoming", "active", "completed", "cancelled"],
+    },
   },
 } as const

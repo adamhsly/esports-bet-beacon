@@ -1,49 +1,53 @@
 
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Index from '@/pages/Index';
-import EsportPage from '@/pages/EsportPage';
-import MatchDetailsPage from '@/pages/MatchDetailsPage';
-import TeamDetailPage from '@/pages/TeamDetailPage';
-import PlayerDetailPage from '@/pages/PlayerDetailPage';
-import TeamsPage from '@/pages/TeamsPage';
-import NewsPage from '@/pages/NewsPage';
-import NotFound from '@/pages/NotFound';
-import TournamentsPage from '@/pages/TournamentsPage';
-import TournamentDetailPage from '@/pages/TournamentDetailPage';
-import CardsPage from '@/pages/CardsPage';
-import { Toaster } from '@/components/ui/toaster';
-import { Web3Provider } from '@/contexts/Web3Context';
-import Web3ProfilePage from '@/pages/Web3ProfilePage';
+import Index from './pages/Index';
+import TeamsPage from './pages/TeamsPage';
+import TeamDetailPage from './pages/TeamDetailPage';
+import PlayerDetailPage from './pages/PlayerDetailPage';
+import TournamentsPage from './pages/TournamentsPage';
+import TournamentDetailPage from './pages/TournamentDetailPage';
+import NewsPage from './pages/NewsPage';
+import MatchDetailsPage from './pages/MatchDetailsPage';
+import EsportPage from './pages/EsportPage';
+import CardsPage from './pages/CardsPage';
+import FantasyPage from './pages/FantasyPage';
+import Web3ProfilePage from './pages/Web3ProfilePage';
+import NotFound from './pages/NotFound';
+import { Toaster } from './components/ui/toaster';
+import { ApiKeyProvider } from './components/ApiKeyProvider';
+import { Web3Provider } from './contexts/Web3Context';
+import './App.css';
 
-// Create a client instance
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <ApiKeyProvider>
         <Web3Provider>
-          <Toaster />
-          <div className="min-h-screen bg-theme-gray-darkest text-white">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/web3-profile" element={<Web3ProfilePage />} />
-              <Route path="/cards" element={<CardsPage />} />
-              <Route path="/esports/:game" element={<EsportPage />} />
-              <Route path="/match/:id" element={<MatchDetailsPage />} />
-              <Route path="/team/:teamId" element={<TeamDetailPage />} />
-              <Route path="/player/:playerId" element={<PlayerDetailPage />} />
-              <Route path="/teams" element={<TeamsPage />} />
-              <Route path="/news" element={<NewsPage />} />
-              <Route path="/tournaments" element={<TournamentsPage />} />
-              <Route path="/tournament/:id" element={<TournamentDetailPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
+          <Router>
+            <div className="min-h-screen bg-theme-black text-white">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/cards" element={<CardsPage />} />
+                <Route path="/fantasy" element={<FantasyPage />} />
+                <Route path="/teams" element={<TeamsPage />} />
+                <Route path="/team/:teamId" element={<TeamDetailPage />} />
+                <Route path="/player/:playerId" element={<PlayerDetailPage />} />
+                <Route path="/tournaments" element={<TournamentsPage />} />
+                <Route path="/tournament/:tournamentId" element={<TournamentDetailPage />} />
+                <Route path="/news" element={<NewsPage />} />
+                <Route path="/match/:matchId" element={<MatchDetailsPage />} />
+                <Route path="/esport/:esportType" element={<EsportPage />} />
+                <Route path="/profile" element={<Web3ProfilePage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+            </div>
+          </Router>
         </Web3Provider>
-      </BrowserRouter>
+      </ApiKeyProvider>
     </QueryClientProvider>
   );
 }

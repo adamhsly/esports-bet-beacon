@@ -1,56 +1,60 @@
-
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
+import WalletConnector from './WalletConnector';
 
-const esportsTypes = [
-  { id: 'csgo', name: 'CS:GO', icon: '🎯' },
-  { id: 'lol', name: 'League of Legends', icon: '🏆' },
-  { id: 'dota2', name: 'Dota 2', icon: '🛡️' },
-  { id: 'valorant', name: 'Valorant', icon: '🔫' },
-  { id: 'overwatch', name: 'Overwatch', icon: '🦸' },
-  { id: 'rocketleague', name: 'Rocket League', icon: '🚗' },
-];
-
-interface EsportsNavigationProps {
-  activeEsport?: string;
-  onEsportChange?: (esportId: string) => void;
-}
-
-const EsportsNavigation: React.FC<EsportsNavigationProps> = ({ 
-  activeEsport = 'csgo',
-  onEsportChange 
-}) => {
-  const handleEsportChange = (value: string) => {
-    if (onEsportChange) {
-      onEsportChange(value);
-    }
-  };
-
+const EsportsNavigation = () => {
   return (
-    <div className="w-full overflow-auto pb-2 mb-6">
-      <Tabs 
-        defaultValue={activeEsport} 
-        className="w-full"
-        onValueChange={handleEsportChange}
-      >
-        <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 overflow-x-auto">
-          {esportsTypes.map((esport) => (
-            <TabsTrigger
-              key={esport.id}
-              value={esport.id}
-              className={cn(
-                "py-2 px-4 whitespace-nowrap",
-                "data-[state=active]:bg-theme-purple data-[state=active]:text-white"
-              )}
+    <nav className="bg-theme-gray-dark border-b border-theme-gray-medium">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-8">
+            <Link 
+              to="/" 
+              className="text-theme-purple font-bold text-xl hover:text-theme-purple-light transition-colors"
             >
-              <span className="mr-2">{esport.icon}</span>
-              {esport.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-    </div>
+              EsportsHub
+            </Link>
+            
+            <div className="hidden md:flex items-center space-x-6">
+              <Link 
+                to="/teams" 
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Teams
+              </Link>
+              <Link 
+                to="/tournaments" 
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Tournaments
+              </Link>
+              <Link 
+                to="/cards" 
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Cards
+              </Link>
+              <Link 
+                to="/fantasy" 
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Fantasy
+              </Link>
+              <Link 
+                to="/news" 
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                News
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <WalletConnector />
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 };
 
