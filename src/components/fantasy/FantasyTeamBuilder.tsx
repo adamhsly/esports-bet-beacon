@@ -10,7 +10,6 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Trophy, DollarSign, Star } from 'lucide-react';
-import { PlayerCard } from '@/components/cards/PlayerCard';
 
 interface FantasyCard {
   id: string;
@@ -75,8 +74,8 @@ export const FantasyTeamBuilder: React.FC = () => {
 
     let bonus = 0;
     Object.values(teamCounts).forEach(count => {
-      if (count >= 2) bonus += count * 5; // 5 points per teammate
-      if (count >= 3) bonus += count * 5; // Additional 5 points for 3+ teammates
+      if (count >= 2) bonus += count * 5;
+      if (count >= 3) bonus += count * 5;
     });
 
     return bonus;
@@ -97,7 +96,6 @@ export const FantasyTeamBuilder: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch user's card collection
       const { data: collection, error } = await supabase
         .from('user_card_collections')
         .select(`
@@ -116,12 +114,10 @@ export const FantasyTeamBuilder: React.FC = () => {
 
       if (error) throw error;
 
-      // Transform cards and calculate values based on stats and rarity
       const cards: FantasyCard[] = collection?.map(item => {
         const card = item.nft_cards;
         if (!card) return null;
 
-        // Calculate card value based on stats and rarity
         const baseValue = calculateCardValue(card.stats, card.rarity);
         
         return {
@@ -157,7 +153,6 @@ export const FantasyTeamBuilder: React.FC = () => {
 
     let baseValue = Math.round((kdRatio * 15000) + (adr * 200) + (matches * 10));
 
-    // Rarity multipliers
     const rarityMultipliers = {
       common: 1.0,
       rare: 1.3,
@@ -177,18 +172,15 @@ export const FantasyTeamBuilder: React.FC = () => {
     const draggedCard = availableCards.find(card => card.id === result.draggableId);
     if (!draggedCard) return;
 
-    // Check if dropping into a position slot
     if (destination.droppableId.startsWith('position-')) {
       const positionId = destination.droppableId.replace('position-', '');
       const position = CS2_POSITIONS.find(p => p.id === positionId);
       
       if (position && (draggedCard.position === position.position || draggedCard.position === 'Player')) {
-        // Check budget constraint
         const currentValue = calculateTeamValue();
         const newValue = currentValue + draggedCard.value - (selectedCards[positionId]?.value || 0);
         
         if (newValue <= SALARY_CAP) {
-          // Move existing card back to available if any
           if (selectedCards[positionId]) {
             setAvailableCards(prev => [...prev, selectedCards[positionId]!]);
           }
@@ -215,7 +207,6 @@ export const FantasyTeamBuilder: React.FC = () => {
       }
     }
 
-    // Check if dropping into bench
     if (destination.droppableId === 'bench' && benchCards.length < 3) {
       const newValue = calculateTeamValue() + draggedCard.value;
       if (newValue <= SALARY_CAP) {
@@ -273,6 +264,12 @@ export const FantasyTeamBuilder: React.FC = () => {
         value: card.value
       }));
 
+      // Convert selectedCards to a serializable format
+      const formationPositionsData: { [key: string]: string | null } = {};
+      Object.entries(selectedCards).forEach(([position, card]) => {
+        formationPositionsData[position] = card ? card.id : null;
+      });
+
       const { error } = await supabase
         .from('fantasy_teams')
         .insert({
@@ -281,7 +278,7 @@ export const FantasyTeamBuilder: React.FC = () => {
           formation: '5-0',
           active_lineup: activeLineup,
           bench_lineup: benchLineup,
-          formation_positions: selectedCards,
+          formation_positions: formationPositionsData,
           team_chemistry_bonus: calculateChemistryBonus(),
           total_team_value: calculateTeamValue(),
           salary_used: calculateTeamValue(),
@@ -295,7 +292,6 @@ export const FantasyTeamBuilder: React.FC = () => {
         description: "Your fantasy team has been saved",
       });
 
-      // Reset form
       setTeamName('');
       setSelectedCards({
         igl: null,
@@ -428,7 +424,6 @@ export const FantasyTeamBuilder: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Bench */}
                 <div>
                   <h4 className="font-medium mb-2">Bench (0-3 players)</h4>
                   <Droppable droppableId="bench">

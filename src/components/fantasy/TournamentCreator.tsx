@@ -115,20 +115,23 @@ export const TournamentCreator: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Convert ScoringRules to a plain object that can be serialized as JSON
+      const scoringRulesData: { [key: string]: number } = {
+        kills: scoringRules.kills,
+        deaths: scoringRules.deaths,
+        assists: scoringRules.assists,
+        adr_multiplier: scoringRules.adr_multiplier,
+        mvp_bonus: scoringRules.mvp_bonus,
+        clutch_bonus: scoringRules.clutch_bonus,
+      };
+
       const { data, error } = await supabase
         .from('tournaments')
         .insert({
           ...tournamentData,
           created_by_user_id: user.id,
-          scoring_rules: {
-            kills: scoringRules.kills,
-            deaths: scoringRules.deaths,
-            assists: scoringRules.assists,
-            adr_multiplier: scoringRules.adr_multiplier,
-            mvp_bonus: scoringRules.mvp_bonus,
-            clutch_bonus: scoringRules.clutch_bonus,
-          },
-          scoring_system: scoringRules,
+          scoring_rules: scoringRulesData,
+          scoring_system: scoringRulesData,
           status: 'upcoming',
         })
         .select()

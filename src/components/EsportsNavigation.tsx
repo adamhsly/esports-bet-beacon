@@ -1,8 +1,17 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WalletConnector from './WalletConnector';
 
-const EsportsNavigation = () => {
+interface EsportsNavigationProps {
+  activeEsport?: string;
+  onEsportChange?: (newEsportId: string) => void;
+}
+
+const EsportsNavigation: React.FC<EsportsNavigationProps> = ({ 
+  activeEsport, 
+  onEsportChange 
+}) => {
   return (
     <nav className="bg-theme-gray-dark border-b border-theme-gray-medium">
       <div className="container mx-auto px-4">

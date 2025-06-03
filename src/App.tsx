@@ -15,7 +15,7 @@ import FantasyPage from './pages/FantasyPage';
 import Web3ProfilePage from './pages/Web3ProfilePage';
 import NotFound from './pages/NotFound';
 import { Toaster } from './components/ui/toaster';
-import { ApiKeyProvider } from './components/ApiKeyProvider';
+import ApiKeyProvider from './components/ApiKeyProvider';
 import { Web3Provider } from './contexts/Web3Context';
 import './App.css';
 
