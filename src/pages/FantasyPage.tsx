@@ -7,7 +7,8 @@ import { FantasyTeamBuilder } from '@/components/fantasy/FantasyTeamBuilder';
 import { TournamentCreator } from '@/components/fantasy/TournamentCreator';
 import { FantasyLeaderboard } from '@/components/fantasy/FantasyLeaderboard';
 import { LiveMatchTracker } from '@/components/fantasy/LiveMatchTracker';
-import { Users, Trophy, Target, BarChart3, Zap } from 'lucide-react';
+import { SocialPage } from '@/components/fantasy/SocialPage';
+import { Users, Trophy, Target, BarChart3, Zap, Globe } from 'lucide-react';
 
 const FantasyPage: React.FC = () => {
   // Using a demo tournament ID for now - in a real app this would come from context or URL params
@@ -28,7 +29,7 @@ const FantasyPage: React.FC = () => {
         </div>
 
         <Tabs defaultValue="team-builder" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="team-builder" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Team Builder
@@ -44,6 +45,10 @@ const FantasyPage: React.FC = () => {
             <TabsTrigger value="leaderboards" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Leaderboards
+            </TabsTrigger>
+            <TabsTrigger value="social" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Social
             </TabsTrigger>
             <TabsTrigger value="my-teams" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
@@ -68,6 +73,10 @@ const FantasyPage: React.FC = () => {
 
           <TabsContent value="leaderboards">
             <FantasyLeaderboard />
+          </TabsContent>
+
+          <TabsContent value="social">
+            <SocialPage />
           </TabsContent>
 
           <TabsContent value="my-teams">
