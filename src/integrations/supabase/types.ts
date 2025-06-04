@@ -645,6 +645,66 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          username: string | null
+          welcome_pack_claimed: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          username?: string | null
+          welcome_pack_claimed?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          username?: string | null
+          welcome_pack_claimed?: boolean | null
+        }
+        Relationships: []
+      }
+      starter_pack_config: {
+        Row: {
+          card_count: number
+          created_at: string
+          game: string
+          id: string
+          is_active: boolean | null
+          pack_name: string
+          player_list: Json
+          updated_at: string
+        }
+        Insert: {
+          card_count?: number
+          created_at?: string
+          game?: string
+          id?: string
+          is_active?: boolean | null
+          pack_name: string
+          player_list?: Json
+          updated_at?: string
+        }
+        Update: {
+          card_count?: number
+          created_at?: string
+          game?: string
+          id?: string
+          is_active?: boolean | null
+          pack_name?: string
+          player_list?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           created_at: string

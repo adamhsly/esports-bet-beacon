@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -18,6 +19,8 @@ import NotFound from './pages/NotFound';
 import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import WelcomePackModal from './components/WelcomePackModal';
+import { useWelcomePack } from './hooks/useWelcomePack';
 
 import ApiKeyProvider from './components/ApiKeyProvider';
 import { Toaster } from './components/ui/toaster';
@@ -34,42 +37,65 @@ const queryClient = new QueryClient({
   }
 });
 
+function AppContent() {
+  const {
+    showWelcomeModal,
+    setShowWelcomeModal,
+    welcomeCards,
+    packName
+  } = useWelcomePack();
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/esports/:gameId?" element={<EsportPage />} />
+        <Route path="/matches/:matchId" element={<MatchDetailsPage />} />
+        <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/teams/:teamId" element={<TeamDetailPage />} />
+        <Route path="/players/:playerId" element={<PlayerDetailPage />} />
+        <Route path="/tournaments" element={<TournamentsPage />} />
+        <Route path="/tournaments/:tournamentId" element={<TournamentDetailPage />} />
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/fantasy" element={
+          <ProtectedRoute>
+            <FantasyPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/cards" element={<CardsPage />} />
+        <Route path="/advanced-cards" element={
+          <ProtectedRoute>
+            <AdvancedCardsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Web3ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      
+      <WelcomePackModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        cards={welcomeCards}
+        packName={packName}
+      />
+      
+      <Toaster />
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="esports-ui-theme">
         <AuthProvider>
           <ApiKeyProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/esports/:gameId?" element={<EsportPage />} />
-              <Route path="/matches/:matchId" element={<MatchDetailsPage />} />
-              <Route path="/teams" element={<TeamsPage />} />
-              <Route path="/teams/:teamId" element={<TeamDetailPage />} />
-              <Route path="/players/:playerId" element={<PlayerDetailPage />} />
-              <Route path="/tournaments" element={<TournamentsPage />} />
-              <Route path="/tournaments/:tournamentId" element={<TournamentDetailPage />} />
-              <Route path="/news" element={<NewsPage />} />
-              <Route path="/fantasy" element={
-                <ProtectedRoute>
-                  <FantasyPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/cards" element={<CardsPage />} />
-              <Route path="/advanced-cards" element={
-                <ProtectedRoute>
-                  <AdvancedCardsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Web3ProfilePage />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
+            <AppContent />
           </ApiKeyProvider>
         </AuthProvider>
       </ThemeProvider>
