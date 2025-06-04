@@ -68,47 +68,28 @@ export const PrivateLeagueCreator: React.FC<PrivateLeagueCreatorProps> = ({ onLe
         return;
       }
 
-      const { data, error } = await supabase
-        .from('fantasy_leagues')
-        .insert({
-          league_name: formData.league_name,
-          league_description: formData.league_description,
-          league_type: formData.league_type,
-          created_by_user_id: user.id,
-          max_participants: formData.max_participants,
-          entry_fee: formData.entry_fee,
-          season_start: formData.season_start,
-          season_end: formData.season_end,
-          scoring_config: formData.scoring_config,
-          league_settings: {
-            allow_trades: true,
-            trade_deadline: formData.season_end,
-            playoff_teams: Math.min(6, Math.floor(formData.max_participants / 2))
-          }
-        })
-        .select()
-        .single();
+      // For demo purposes, create a mock league object
+      const mockLeague = {
+        id: 'demo-created-' + Date.now(),
+        league_name: formData.league_name,
+        league_description: formData.league_description,
+        league_type: formData.league_type,
+        created_by_user_id: user.id,
+        max_participants: formData.max_participants,
+        entry_fee: formData.entry_fee,
+        season_start: formData.season_start,
+        season_end: formData.season_end,
+        scoring_config: formData.scoring_config,
+        invite_code: Math.random().toString(36).substr(2, 8).toUpperCase(),
+        created_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-
-      // Join the creator to their own league
-      const { error: participantError } = await supabase
-        .from('fantasy_league_participants')
-        .insert({
-          league_id: data.id,
-          user_id: user.id,
-          current_rank: 1,
-          current_score: 0
-        });
-
-      if (participantError) throw participantError;
-
-      setCreatedLeague(data);
-      onLeagueCreated?.(data.id);
+      setCreatedLeague(mockLeague);
+      onLeagueCreated?.(mockLeague.id);
 
       toast({
         title: "League Created!",
-        description: `${data.league_name} has been created successfully. Invite code: ${data.invite_code}`,
+        description: `${mockLeague.league_name} has been created successfully. Invite code: ${mockLeague.invite_code}`,
       });
 
     } catch (error) {
