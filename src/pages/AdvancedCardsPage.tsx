@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Package, CreditCard, Evolution, Zap, Users, Gift, StarIcon } from 'lucide-react';
+import { ArrowLeft, Package, CreditCard, TrendingUp, Zap, Users, Gift, StarIcon } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { CardCollection } from '@/components/cards/CardCollection';
@@ -15,23 +14,6 @@ import { AdvancedPackStore } from '@/components/cards/AdvancedPackStore';
 import { PlayerCard as PlayerCardType } from '@/types/card';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
-// Define a new icon component for Evolution since it doesn't exist in lucide-react
-const Evolution = () => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <path d="M4 6h16M4 18h10M4 12h6M17 12l-3-3m0 6l3-3" />
-  </svg>
-);
 
 const AdvancedCardsPage: React.FC = () => {
   const { data: cards = [] } = useQuery({
@@ -148,8 +130,8 @@ const AdvancedCardsPage: React.FC = () => {
                 value="evolution" 
                 className="data-[state=active]:bg-theme-accent data-[state=active]:text-white"
               >
-                <Evolution />
-                <span className="ml-2">Evolution</span>
+                <TrendingUp className="mr-2" size={16} />
+                Evolution
               </TabsTrigger>
               <TabsTrigger 
                 value="trading" 

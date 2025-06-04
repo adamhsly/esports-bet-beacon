@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlayerCard } from './PlayerCard';
 import { PlayerCard as PlayerCardType } from '@/types/card';
-import { Gallery, Star, Trophy, Share2, Heart, Eye } from 'lucide-react';
+import { Image, Star, Trophy, Share2, Heart, Eye } from 'lucide-react';
 
 interface CardShowcaseProps {
   cards: PlayerCardType[];
@@ -103,7 +102,7 @@ export const CardShowcase: React.FC<CardShowcaseProps> = ({ cards }) => {
       <Tabs defaultValue="showcase">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="showcase">
-            <Gallery className="mr-2" size={16} />
+            <Image className="mr-2" size={16} />
             Showcase
           </TabsTrigger>
           <TabsTrigger value="achievements">
