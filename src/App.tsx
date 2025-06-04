@@ -1,4 +1,5 @@
 
+
 import { Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -19,6 +20,7 @@ import NotFound from './pages/NotFound';
 import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { Web3Provider } from './contexts/Web3Context';
 import WelcomePackModal from './components/WelcomePackModal';
 import { useWelcomePack } from './hooks/useWelcomePack';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -97,9 +99,11 @@ function App() {
       <ThemeProvider defaultTheme="dark" storageKey="esports-ui-theme">
         <ToastProvider>
           <AuthProvider>
-            <ApiKeyProvider>
-              <AppContent />
-            </ApiKeyProvider>
+            <Web3Provider>
+              <ApiKeyProvider>
+                <AppContent />
+              </ApiKeyProvider>
+            </Web3Provider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
@@ -108,3 +112,4 @@ function App() {
 }
 
 export default App;
+
