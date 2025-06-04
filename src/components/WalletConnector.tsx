@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -7,8 +6,12 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import { Wallet, ChevronDown, ExternalLink } from 'lucide-react';
 
 const WalletConnector: React.FC = () => {
+  console.log('WalletConnector component rendering - about to call useWeb3');
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { isConnected, currentWallet, userWallets, connectWallet, disconnectWallet, switchWallet, isLoading } = useWeb3();
+
+  console.log('WalletConnector - useWeb3 called successfully, isConnected:', isConnected);
 
   const handleConnect = async (walletType: string) => {
     const success = await connectWallet(walletType);

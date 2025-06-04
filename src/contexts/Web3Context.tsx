@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -23,10 +22,13 @@ interface Web3ContextType {
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
 export const useWeb3 = () => {
+  console.log('useWeb3 hook called');
   const context = useContext(Web3Context);
   if (context === undefined) {
+    console.error('useWeb3 must be used within a Web3Provider - context is undefined');
     throw new Error('useWeb3 must be used within a Web3Provider');
   }
+  console.log('useWeb3 hook - context found successfully');
   return context;
 };
 
@@ -35,6 +37,7 @@ interface Web3ProviderProps {
 }
 
 export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
+  console.log('Web3Provider rendering');
   const [isConnected, setIsConnected] = useState(false);
   const [currentWallet, setCurrentWallet] = useState<WalletInfo | null>(null);
   const [userWallets, setUserWallets] = useState<WalletInfo[]>([]);
@@ -214,6 +217,8 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
     switchWallet,
     isLoading,
   };
+
+  console.log('Web3Provider providing context value:', { isConnected, currentWallet: !!currentWallet });
 
   return (
     <Web3Context.Provider value={value}>

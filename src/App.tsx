@@ -42,6 +42,7 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
+  console.log('AppContent rendering - Web3Provider should be available');
   const {
     showWelcomeModal,
     setShowWelcomeModal,
@@ -94,6 +95,7 @@ function AppContent() {
 }
 
 function App() {
+  console.log('App component rendering - setting up providers');
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="esports-ui-theme">
