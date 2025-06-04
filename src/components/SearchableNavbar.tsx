@@ -1,8 +1,11 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import SearchBar from './SearchBar';
+import UserMenu from './UserMenu';
 import { Menu, X, Search as SearchIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import WalletConnector from './WalletConnector';
 
 interface SearchableNavbarProps {
@@ -12,6 +15,7 @@ interface SearchableNavbarProps {
 const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, loading } = useAuth();
   
   return (
     <nav className="bg-theme-gray-dark border-b border-theme-gray-medium sticky top-0 z-50">
@@ -35,6 +39,16 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               <Link to="/teams" className="text-gray-300 hover:text-white">
                 Teams
               </Link>
+              {user && (
+                <>
+                  <Link to="/fantasy" className="text-gray-300 hover:text-white">
+                    Fantasy
+                  </Link>
+                  <Link to="/advanced-cards" className="text-gray-300 hover:text-white">
+                    Cards
+                  </Link>
+                </>
+              )}
             </div>
           </div>
           
@@ -46,15 +60,26 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               </div>
             )}
             
-            <Button variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
-              Sign In
-            </Button>
-            
-            <Button className="bg-theme-purple hover:bg-theme-purple/90">
-              Sign Up
-            </Button>
-            
-            <WalletConnector />
+            {!loading && (
+              user ? (
+                <div className="flex items-center space-x-3">
+                  <UserMenu />
+                  <WalletConnector />
+                </div>
+              ) : (
+                <>
+                  <Button asChild variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                  
+                  <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
+                    <Link to="/auth">Sign Up</Link>
+                  </Button>
+                  
+                  <WalletConnector />
+                </>
+              )
+            )}
           </div>
           
           {/* Mobile menu button */}
@@ -122,19 +147,45 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
                   Teams
                 </Link>
                 
-                <div className="pt-2 flex flex-col space-y-2">
-                  <Button variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
-                    Sign In
-                  </Button>
-                  
-                  <Button className="bg-theme-purple hover:bg-theme-purple/90">
-                    Sign Up
-                  </Button>
-                </div>
+                {user && (
+                  <>
+                    <Link 
+                      to="/fantasy" 
+                      className="text-white hover:text-theme-purple py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Fantasy
+                    </Link>
+                    <Link 
+                      to="/advanced-cards" 
+                      className="text-white hover:text-theme-purple py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Cards
+                    </Link>
+                  </>
+                )}
+                
+                {!loading && !user && (
+                  <div className="pt-2 flex flex-col space-y-2">
+                    <Button asChild variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
+                      <Link to="/auth">Sign In</Link>
+                    </Button>
+                    
+                    <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
+                      <Link to="/auth">Sign Up</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
               
               <div className="px-3 py-2">
                 <WalletConnector />
+                {user && (
+                  <div className="mt-2">
+                    <UserMenu />
+                  </div>
+                )}
               </div>
             </div>
           </div>
