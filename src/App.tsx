@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -24,6 +25,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 import ApiKeyProvider from './components/ApiKeyProvider';
 import { Toaster } from './components/ui/toaster';
+import { ToastProvider } from './components/ui/toast-provider';
 import { ThemeProvider } from './providers/theme-provider';
 
 import './App.css';
@@ -93,11 +95,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="esports-ui-theme">
-        <AuthProvider>
-          <ApiKeyProvider>
-            <AppContent />
-          </ApiKeyProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <ApiKeyProvider>
+              <AppContent />
+            </ApiKeyProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
