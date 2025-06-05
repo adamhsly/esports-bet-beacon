@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,11 +29,11 @@ interface FormationPosition {
 }
 
 const CS2_POSITIONS: FormationPosition[] = [
-  { id: 'igl', name: 'In-Game Leader', position: 'IGL', required: true },
-  { id: 'awper', name: 'AWPer', position: 'AWPer', required: true },
-  { id: 'entry', name: 'Entry Fragger', position: 'Entry Fragger', required: true },
-  { id: 'support', name: 'Support', position: 'Support', required: true },
-  { id: 'lurker', name: 'Lurker', position: 'Lurker', required: true },
+  { id: 'igl', name: 'In-Game Leader', position: 'IGL', required: false },
+  { id: 'awper', name: 'AWPer', position: 'AWPer', required: false },
+  { id: 'entry', name: 'Entry Fragger', position: 'Entry Fragger', required: false },
+  { id: 'support', name: 'Support', position: 'Support', required: false },
+  { id: 'lurker', name: 'Lurker', position: 'Lurker', required: false },
 ];
 
 const SALARY_CAP = 100000;
@@ -82,9 +81,13 @@ export const FantasyTeamBuilder: React.FC = () => {
   };
 
   const isValidTeam = () => {
-    const hasAllPositions = CS2_POSITIONS.every(pos => selectedCards[pos.id] !== null);
+    const hasAtLeastOnePlayer = Object.values(selectedCards).some(card => card !== null);
     const withinBudget = calculateTeamValue() <= SALARY_CAP;
-    return hasAllPositions && withinBudget && teamName.trim().length > 0;
+    return hasAtLeastOnePlayer && withinBudget && teamName.trim().length > 0;
+  };
+
+  const getActivePlayerCount = () => {
+    return Object.values(selectedCards).filter(card => card !== null).length;
   };
 
   useEffect(() => {
@@ -275,7 +278,7 @@ export const FantasyTeamBuilder: React.FC = () => {
         .insert({
           user_id: user.id,
           team_name: teamName,
-          formation: '5-0',
+          formation: `${getActivePlayerCount()}-0`,
           active_lineup: activeLineup,
           bench_lineup: benchLineup,
           formation_positions: formationPositionsData,
@@ -289,7 +292,7 @@ export const FantasyTeamBuilder: React.FC = () => {
 
       toast({
         title: "Success!",
-        description: "Your fantasy team has been saved",
+        description: `Your fantasy team with ${getActivePlayerCount()} player${getActivePlayerCount() !== 1 ? 's' : ''} has been saved`,
       });
 
       setTeamName('');
@@ -351,6 +354,13 @@ export const FantasyTeamBuilder: React.FC = () => {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Active Players</span>
+                    <Badge variant="outline">
+                      {getActivePlayerCount()}/5
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Salary Cap</span>
                     <Badge variant={calculateTeamValue() > SALARY_CAP ? "destructive" : "secondary"}>
                       ${calculateTeamValue().toLocaleString()} / ${SALARY_CAP.toLocaleString()}
@@ -371,13 +381,19 @@ export const FantasyTeamBuilder: React.FC = () => {
                   disabled={!isValidTeam() || saving}
                   className="w-full"
                 >
-                  {saving ? "Saving..." : "Save Team"}
+                  {saving ? "Saving..." : `Save Team (${getActivePlayerCount()} player${getActivePlayerCount() !== 1 ? 's' : ''})`}
                 </Button>
+                
+                {getActivePlayerCount() === 0 && teamName.trim().length > 0 && (
+                  <p className="text-sm text-orange-500">
+                    Add at least 1 player to save your team
+                  </p>
+                )}
               </div>
 
               {/* Formation */}
               <div className="space-y-4">
-                <h3 className="font-semibold">Formation (5-0)</h3>
+                <h3 className="font-semibold">Formation ({getActivePlayerCount()}-0)</h3>
                 <div className="space-y-2">
                   {CS2_POSITIONS.map(position => (
                     <Droppable key={position.id} droppableId={`position-${position.id}`}>
@@ -392,7 +408,7 @@ export const FantasyTeamBuilder: React.FC = () => {
                           `}
                         >
                           <div className="text-xs font-medium text-gray-600 mb-2">
-                            {position.name}
+                            {position.name} (Optional)
                           </div>
                           {selectedCards[position.id] ? (
                             <div className="flex items-center justify-between">
