@@ -104,6 +104,15 @@ export const TournamentCreator: React.FC = () => {
       return false;
     }
 
+    if (tournamentData.max_participants < 2) {
+      toast({
+        title: "Validation Error",
+        description: "Tournament must allow at least 2 participants",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -113,9 +122,16 @@ export const TournamentCreator: React.FC = () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to create a tournament",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Convert ScoringRules to a plain object that can be serialized as JSON
+      // Convert ScoringRules to a plain object for JSON storage
       const scoringRulesData: { [key: string]: number } = {
         kills: scoringRules.kills,
         deaths: scoringRules.deaths,
@@ -125,23 +141,47 @@ export const TournamentCreator: React.FC = () => {
         clutch_bonus: scoringRules.clutch_bonus,
       };
 
+      console.log('Creating tournament with data:', {
+        ...tournamentData,
+        created_by_user_id: user.id,
+        scoring_rules: scoringRulesData,
+        scoring_system: scoringRulesData,
+        status: 'upcoming',
+        current_participants: 0,
+      });
+
       const { data, error } = await supabase
         .from('tournaments')
         .insert({
-          ...tournamentData,
-          created_by_user_id: user.id,
+          tournament_name: tournamentData.tournament_name,
+          tournament_type: tournamentData.tournament_type,
+          league_type: tournamentData.league_type,
+          is_fantasy_league: tournamentData.is_fantasy_league,
+          max_participants: tournamentData.max_participants,
+          current_participants: 0,
+          entry_fee: tournamentData.entry_fee,
+          prize_pool: tournamentData.prize_pool,
+          start_time: tournamentData.start_time,
+          end_time: tournamentData.end_time,
+          tournament_rules: tournamentData.tournament_rules,
           scoring_rules: scoringRulesData,
           scoring_system: scoringRulesData,
+          created_by_user_id: user.id,
           status: 'upcoming',
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Tournament creation error:', error);
+        throw error;
+      }
+
+      console.log('Tournament created successfully:', data);
 
       toast({
         title: "Success!",
-        description: "Tournament created successfully",
+        description: `Tournament "${tournamentData.tournament_name}" created successfully`,
       });
 
       // Reset form
@@ -163,11 +203,20 @@ export const TournamentCreator: React.FC = () => {
         }
       });
 
+      setScoringRules({
+        kills: 2,
+        deaths: -1,
+        assists: 1,
+        adr_multiplier: 0.1,
+        mvp_bonus: 5,
+        clutch_bonus: 3,
+      });
+
     } catch (error) {
       console.error('Error creating tournament:', error);
       toast({
         title: "Error",
-        description: "Failed to create tournament",
+        description: "Failed to create tournament. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -219,7 +268,7 @@ export const TournamentCreator: React.FC = () => {
               id="participants"
               type="number"
               value={tournamentData.max_participants}
-              onChange={(e) => handleInputChange('max_participants', parseInt(e.target.value))}
+              onChange={(e) => handleInputChange('max_participants', parseInt(e.target.value) || 0)}
               min="2"
               max="1000"
             />
@@ -231,7 +280,7 @@ export const TournamentCreator: React.FC = () => {
               id="entry_fee"
               type="number"
               value={tournamentData.entry_fee}
-              onChange={(e) => handleInputChange('entry_fee', parseInt(e.target.value))}
+              onChange={(e) => handleInputChange('entry_fee', parseInt(e.target.value) || 0)}
               min="0"
             />
           </div>
@@ -267,7 +316,7 @@ export const TournamentCreator: React.FC = () => {
                 id="kills"
                 type="number"
                 value={scoringRules.kills}
-                onChange={(e) => handleScoringChange('kills', parseFloat(e.target.value))}
+                onChange={(e) => handleScoringChange('kills', parseFloat(e.target.value) || 0)}
               />
             </div>
 
@@ -277,7 +326,7 @@ export const TournamentCreator: React.FC = () => {
                 id="deaths"
                 type="number"
                 value={scoringRules.deaths}
-                onChange={(e) => handleScoringChange('deaths', parseFloat(e.target.value))}
+                onChange={(e) => handleScoringChange('deaths', parseFloat(e.target.value) || 0)}
               />
             </div>
 
@@ -287,7 +336,7 @@ export const TournamentCreator: React.FC = () => {
                 id="assists"
                 type="number"
                 value={scoringRules.assists}
-                onChange={(e) => handleScoringChange('assists', parseFloat(e.target.value))}
+                onChange={(e) => handleScoringChange('assists', parseFloat(e.target.value) || 0)}
               />
             </div>
 
@@ -298,7 +347,7 @@ export const TournamentCreator: React.FC = () => {
                 type="number"
                 step="0.01"
                 value={scoringRules.adr_multiplier}
-                onChange={(e) => handleScoringChange('adr_multiplier', parseFloat(e.target.value))}
+                onChange={(e) => handleScoringChange('adr_multiplier', parseFloat(e.target.value) || 0)}
               />
             </div>
 
@@ -308,7 +357,7 @@ export const TournamentCreator: React.FC = () => {
                 id="mvp"
                 type="number"
                 value={scoringRules.mvp_bonus}
-                onChange={(e) => handleScoringChange('mvp_bonus', parseFloat(e.target.value))}
+                onChange={(e) => handleScoringChange('mvp_bonus', parseFloat(e.target.value) || 0)}
               />
             </div>
 
@@ -318,7 +367,7 @@ export const TournamentCreator: React.FC = () => {
                 id="clutch"
                 type="number"
                 value={scoringRules.clutch_bonus}
-                onChange={(e) => handleScoringChange('clutch_bonus', parseFloat(e.target.value))}
+                onChange={(e) => handleScoringChange('clutch_bonus', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
@@ -346,7 +395,7 @@ export const TournamentCreator: React.FC = () => {
                   id="max_teams"
                   type="number"
                   value={tournamentData.tournament_rules.max_teams_per_user}
-                  onChange={(e) => handleRulesChange('max_teams_per_user', parseInt(e.target.value))}
+                  onChange={(e) => handleRulesChange('max_teams_per_user', parseInt(e.target.value) || 1)}
                   min="1"
                   max="10"
                 />
