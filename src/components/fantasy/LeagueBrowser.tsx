@@ -22,7 +22,6 @@ interface Tournament {
   start_time: string;
   end_time: string;
   scoring_config?: any;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -53,7 +52,6 @@ export const LeagueBrowser: React.FC = () => {
 
       if (publicError) {
         console.error('Error fetching public tournaments:', publicError);
-        // Fall back to demo data if there's an error
         setPublicTournaments([]);
       } else {
         setPublicTournaments(publicData || []);
@@ -129,11 +127,20 @@ export const LeagueBrowser: React.FC = () => {
 
       if (participantError) throw participantError;
 
+      // Get current participant count and increment it
+      const { data: tournament, error: fetchError } = await supabase
+        .from('tournaments')
+        .select('current_participants')
+        .eq('id', tournamentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       // Update participant count
       const { error: updateError } = await supabase
         .from('tournaments')
         .update({ 
-          current_participants: supabase.raw('current_participants + 1')
+          current_participants: (tournament.current_participants || 0) + 1
         })
         .eq('id', tournamentId);
 
