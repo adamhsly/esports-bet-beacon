@@ -13,8 +13,8 @@ interface FantasyTeam {
   id: string;
   team_name: string;
   formation: string;
-  active_lineup: any[];
-  bench_lineup: any[];
+  active_lineup: any;
+  bench_lineup: any;
   total_team_value: number;
   team_chemistry_bonus: number;
   created_at: string;
@@ -227,113 +227,118 @@ export const MyTeamsList: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {teams.map(team => (
-          <Card key={team.id} className="hover:bg-theme-gray-dark/50 transition-colors">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{team.team_name}</CardTitle>
-                {team.tournament_id && (
-                  <Badge variant="secondary">
-                    <Trophy className="h-3 w-3 mr-1" />
-                    Entered
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Formation:</span>
-                  <Badge variant="outline">{team.formation}</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span>Players:</span>
-                  <span>{team.active_lineup.length} active, {team.bench_lineup.length} bench</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span>Team Value:</span>
-                  <span>${team.total_team_value?.toLocaleString() || 0}</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span>Chemistry:</span>
-                  <span>+{team.team_chemistry_bonus || 0}</span>
-                </div>
-                
-                <div className="text-xs text-gray-500">
-                  Created: {new Date(team.created_at).toLocaleDateString()}
-                </div>
-
-                <div className="flex gap-2 mt-4">
-                  {!team.tournament_id && (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => setSelectedTeam(team)}
-                        >
-                          <Play className="h-4 w-4 mr-1" />
-                          Enter Tournament
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Enter "{team.team_name}" into Tournament</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-sm font-medium">Select Tournament:</label>
-                            <Select 
-                              value={selectedTournament} 
-                              onValueChange={setSelectedTournament}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="Choose a tournament..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tournaments.map(tournament => (
-                                  <SelectItem key={tournament.id} value={tournament.id}>
-                                    <div className="flex items-center gap-2">
-                                      <span>{tournament.tournament_name}</span>
-                                      <Badge variant="outline" className="text-xs">
-                                        {tournament.current_participants}/{tournament.max_participants}
-                                      </Badge>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              onClick={enterTournament}
-                              disabled={!selectedTournament || enteringTournament}
-                              className="flex-1"
-                            >
-                              {enteringTournament ? "Entering..." : "Enter Tournament"}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+        {teams.map(team => {
+          const activeLineup = Array.isArray(team.active_lineup) ? team.active_lineup : [];
+          const benchLineup = Array.isArray(team.bench_lineup) ? team.bench_lineup : [];
+          
+          return (
+            <Card key={team.id} className="hover:bg-theme-gray-dark/50 transition-colors">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{team.team_name}</CardTitle>
+                  {team.tournament_id && (
+                    <Badge variant="secondary">
+                      <Trophy className="h-3 w-3 mr-1" />
+                      Entered
+                    </Badge>
                   )}
-                  
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteTeam(team.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Formation:</span>
+                    <Badge variant="outline">{team.formation}</Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Players:</span>
+                    <span>{activeLineup.length} active, {benchLineup.length} bench</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Team Value:</span>
+                    <span>${team.total_team_value?.toLocaleString() || 0}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Chemistry:</span>
+                    <span>+{team.team_chemistry_bonus || 0}</span>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500">
+                    Created: {new Date(team.created_at).toLocaleDateString()}
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    {!team.tournament_id && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => setSelectedTeam(team)}
+                          >
+                            <Play className="h-4 w-4 mr-1" />
+                            Enter Tournament
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Enter "{team.team_name}" into Tournament</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium">Select Tournament:</label>
+                              <Select 
+                                value={selectedTournament} 
+                                onValueChange={setSelectedTournament}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Choose a tournament..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {tournaments.map(tournament => (
+                                    <SelectItem key={tournament.id} value={tournament.id}>
+                                      <div className="flex items-center gap-2">
+                                        <span>{tournament.tournament_name}</span>
+                                        <Badge variant="outline" className="text-xs">
+                                          {tournament.current_participants}/{tournament.max_participants}
+                                        </Badge>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={enterTournament}
+                                disabled={!selectedTournament || enteringTournament}
+                                className="flex-1"
+                              >
+                                {enteringTournament ? "Entering..." : "Enter Tournament"}
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteTeam(team.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
