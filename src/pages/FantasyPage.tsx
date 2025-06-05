@@ -5,9 +5,11 @@ import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { FantasyTeamBuilder } from '@/components/fantasy/FantasyTeamBuilder';
 import { TournamentCreator } from '@/components/fantasy/TournamentCreator';
+import { LeagueBrowser } from '@/components/fantasy/LeagueBrowser';
 import { FantasyLeaderboard } from '@/components/fantasy/FantasyLeaderboard';
 import { LiveMatchTracker } from '@/components/fantasy/LiveMatchTracker';
 import { SocialPage } from '@/components/fantasy/SocialPage';
+import { MyTeamsList } from '@/components/fantasy/MyTeamsList';
 import { Users, Trophy, Target, BarChart3, Zap, Globe } from 'lucide-react';
 
 const FantasyPage: React.FC = () => {
@@ -67,7 +69,7 @@ const FantasyPage: React.FC = () => {
           <TabsContent value="tournaments">
             <div className="space-y-6">
               <TournamentCreator />
-              {/* Tournament browser will be added later */}
+              <LeagueBrowser />
             </div>
           </TabsContent>
 
@@ -80,12 +82,7 @@ const FantasyPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="my-teams">
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold mb-4">My Fantasy Teams</h3>
-              <p className="text-gray-500">
-                Your saved fantasy teams will appear here. Create your first team in the Team Builder!
-              </p>
-            </div>
+            <MyTeamsList />
           </TabsContent>
         </Tabs>
       </div>
