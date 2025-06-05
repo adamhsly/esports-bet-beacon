@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ interface Tournament {
   id: string;
   tournament_name: string;
   tournament_rules?: any;
-  league_type: 'public' | 'private' | 'invite_only';
+  league_type: string; // Changed from union type to string to match Supabase
   created_by_user_id: string;
   max_participants: number;
   current_participants: number;
