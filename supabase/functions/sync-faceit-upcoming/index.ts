@@ -86,7 +86,8 @@ serve(async (req) => {
 
     console.log('🔄 Starting FACEIT upcoming matches sync...');
 
-    const response = await fetch('https://open.faceit.com/data/v4/matches?game=cs2&status=upcoming&limit=50', {
+    // Use correct status parameter - FACEIT API uses 'SCHEDULED' not 'upcoming'
+    const response = await fetch('https://open.faceit.com/data/v4/matches?game=cs2&status=SCHEDULED&limit=50', {
       headers: {
         'Authorization': `Bearer ${faceitApiKey}`,
         'Content-Type': 'application/json'
@@ -94,7 +95,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`FACEIT API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('FACEIT API error response:', errorText);
+      throw new Error(`FACEIT API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data: FaceitResponse = await response.json();
@@ -103,6 +106,7 @@ serve(async (req) => {
     for (const match of data.items) {
       processed++;
       
+      // Convert status to our database format
       const matchData = {
         match_id: match.match_id,
         game: match.game,
@@ -110,7 +114,7 @@ serve(async (req) => {
         competition_name: match.competition_name,
         competition_type: match.competition_type,
         organized_by: match.organized_by,
-        status: match.status,
+        status: 'upcoming', // Convert SCHEDULED to upcoming for our database
         started_at: match.started_at ? new Date(match.started_at).toISOString() : null,
         finished_at: match.finished_at ? new Date(match.finished_at).toISOString() : null,
         configured_at: match.configured_at ? new Date(match.configured_at).toISOString() : null,
@@ -148,10 +152,15 @@ serve(async (req) => {
           .eq('match_id', match.match_id)
           .single();
 
-        if (existingMatch && existingMatch.created_at === existingMatch.updated_at) {
-          added++;
-        } else {
-          updated++;
+        if (existingMatch) {
+          const createdAt = new Date(existingMatch.created_at).getTime();
+          const updatedAt = new Date(existingMatch.updated_at).getTime();
+          
+          if (Math.abs(createdAt - updatedAt) < 1000) { // Within 1 second = new insert
+            added++;
+          } else {
+            updated++;
+          }
         }
       }
     }

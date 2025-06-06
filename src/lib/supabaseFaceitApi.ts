@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { MatchInfo } from "@/components/MatchCard";
 
@@ -45,10 +44,20 @@ export async function fetchSupabaseFaceitLiveMatches(): Promise<MatchInfo[]> {
       .eq('status', 'ongoing')
       .eq('game', 'cs2')
       .order('started_at', { ascending: false })
-      .limit(10);
+      .limit(20);
 
     if (error) {
       console.error('❌ Error fetching live matches from Supabase:', error);
+      return [];
+    }
+
+    console.log(`📊 Raw FACEIT live matches from DB:`, data?.length || 0);
+    
+    if (!data || data.length === 0) {
+      console.log('📝 No live matches found in database. This could mean:');
+      console.log('   - No matches are currently live');
+      console.log('   - The sync functions haven\'t run yet');
+      console.log('   - The FACEIT API sync is failing');
       return [];
     }
 
@@ -71,10 +80,20 @@ export async function fetchSupabaseFaceitUpcomingMatches(): Promise<MatchInfo[]>
       .eq('status', 'upcoming')
       .eq('game', 'cs2')
       .order('started_at', { ascending: true })
-      .limit(10);
+      .limit(20);
 
     if (error) {
       console.error('❌ Error fetching upcoming matches from Supabase:', error);
+      return [];
+    }
+
+    console.log(`📊 Raw FACEIT upcoming matches from DB:`, data?.length || 0);
+    
+    if (!data || data.length === 0) {
+      console.log('📝 No upcoming matches found in database. This could mean:');
+      console.log('   - No matches are scheduled');
+      console.log('   - The sync functions haven\'t run yet');
+      console.log('   - The FACEIT API sync is failing');
       return [];
     }
 
@@ -127,8 +146,9 @@ export async function fetchSupabaseFaceitMatchDetails(matchId: string): Promise<
   }
 }
 
-// Manual sync trigger functions
+// Manual sync trigger functions with improved error handling
 export async function triggerFaceitLiveSync(): Promise<boolean> {
+  console.log('🔴 Triggering FACEIT live sync...');
   try {
     const { data, error } = await supabase.functions.invoke('sync-faceit-live');
     
@@ -138,7 +158,7 @@ export async function triggerFaceitLiveSync(): Promise<boolean> {
     }
 
     console.log('✅ Live sync triggered successfully:', data);
-    return data.success;
+    return data?.success || false;
   } catch (error) {
     console.error('❌ Error in triggerFaceitLiveSync:', error);
     return false;
@@ -146,6 +166,7 @@ export async function triggerFaceitLiveSync(): Promise<boolean> {
 }
 
 export async function triggerFaceitUpcomingSync(): Promise<boolean> {
+  console.log('📅 Triggering FACEIT upcoming sync...');
   try {
     const { data, error } = await supabase.functions.invoke('sync-faceit-upcoming');
     
@@ -155,9 +176,28 @@ export async function triggerFaceitUpcomingSync(): Promise<boolean> {
     }
 
     console.log('✅ Upcoming sync triggered successfully:', data);
-    return data.success;
+    return data?.success || false;
   } catch (error) {
     console.error('❌ Error in triggerFaceitUpcomingSync:', error);
+    return false;
+  }
+}
+
+// New function to set up automatic syncing
+export async function setupFaceitCronJobs(): Promise<boolean> {
+  console.log('🕒 Setting up FACEIT cron jobs...');
+  try {
+    const { data, error } = await supabase.functions.invoke('setup-faceit-cron');
+    
+    if (error) {
+      console.error('❌ Error setting up cron jobs:', error);
+      return false;
+    }
+
+    console.log('✅ Cron jobs set up successfully:', data);
+    return data?.success || false;
+  } catch (error) {
+    console.error('❌ Error in setupFaceitCronJobs:', error);
     return false;
   }
 }

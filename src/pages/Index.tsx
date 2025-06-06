@@ -18,6 +18,7 @@ import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitLiveMatches, fetchSupabaseFaceitUpcomingMatches } from '@/lib/supabaseFaceitApi';
+import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
@@ -57,7 +58,9 @@ const Index = () => {
   useEffect(() => {
     async function loadFaceitLiveMatches() {
       try {
+        console.log('🔴 Loading FACEIT live matches...');
         const faceitMatches = await fetchSupabaseFaceitLiveMatches();
+        console.log('📊 FACEIT live matches loaded:', faceitMatches.length);
         setFaceitLiveMatches(faceitMatches);
       } catch (error) {
         console.error('Error loading FACEIT live matches:', error);
@@ -97,7 +100,9 @@ const Index = () => {
   useEffect(() => {
     async function loadFaceitUpcomingMatches() {
       try {
+        console.log('📅 Loading FACEIT upcoming matches...');
         const faceitMatches = await fetchSupabaseFaceitUpcomingMatches();
+        console.log('📊 FACEIT upcoming matches loaded:', faceitMatches.length);
         setFaceitUpcomingMatches(faceitMatches);
       } catch (error) {
         console.error('Error loading FACEIT upcoming matches:', error);
@@ -169,6 +174,7 @@ const Index = () => {
                   FACEIT
                 </Badge>
               </h2>
+              <FaceitSyncButtons />
             </div>
             
             {loadingFaceitLive ? (
@@ -178,13 +184,16 @@ const Index = () => {
               </div>
             ) : faceitLiveMatches.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {faceitLiveMatches.slice(0, 3).map(match => (
+                {faceitLiveMatches.slice(0, 6).map(match => (
                   <MatchCard key={match.id} match={match} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400">No live FACEIT matches at the moment.</p>
+                <p className="text-gray-400 mb-4">No live FACEIT matches at the moment.</p>
+                <p className="text-sm text-gray-500">
+                  Try clicking "Sync Live" to refresh match data from FACEIT API.
+                </p>
               </div>
             )}
           </div>
@@ -240,13 +249,16 @@ const Index = () => {
               </div>
             ) : faceitUpcomingMatches.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {faceitUpcomingMatches.slice(0, 3).map(match => (
+                {faceitUpcomingMatches.slice(0, 6).map(match => (
                   <MatchCard key={match.id} match={match} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400">No upcoming FACEIT matches at the moment.</p>
+                <p className="text-gray-400 mb-4">No upcoming FACEIT matches at the moment.</p>
+                <p className="text-sm text-gray-500">
+                  Try clicking "Sync Upcoming" to refresh match data from FACEIT API.
+                </p>
               </div>
             )}
           </div>
