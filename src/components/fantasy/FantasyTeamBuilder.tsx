@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, Trophy, DollarSign, Star } from 'lucide-react';
 import { FormationView } from './FormationView';
 import { CardCollectionView } from './CardCollectionView';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FantasyCard {
   id: string;
@@ -38,6 +38,7 @@ export const FantasyTeamBuilder: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const calculateTeamValue = () => {
     return Object.values(selectedCards).reduce((total, card) => {
@@ -301,19 +302,19 @@ export const FantasyTeamBuilder: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Team Configuration Header */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <Users className="h-4 w-4 md:h-5 md:w-5" />
             Fantasy Team Builder
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div>
-              <Label htmlFor="teamName">Team Name</Label>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+            <div className="md:col-span-4 lg:col-span-1">
+              <Label htmlFor="teamName" className="text-sm">Team Name</Label>
               <Input
                 id="teamName"
                 value={teamName}
@@ -326,7 +327,7 @@ export const FantasyTeamBuilder: React.FC = () => {
             <div className="flex flex-col justify-end">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium">Players</span>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-xs">
                   {getActivePlayerCount()}/5
                 </Badge>
               </div>
@@ -335,7 +336,7 @@ export const FantasyTeamBuilder: React.FC = () => {
             <div className="flex flex-col justify-end">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium">Budget</span>
-                <Badge variant={calculateTeamValue() > SALARY_CAP ? "destructive" : "secondary"}>
+                <Badge variant={calculateTeamValue() > SALARY_CAP ? "destructive" : "secondary"} className="text-xs">
                   ${getSalaryRemaining().toLocaleString()} left
                 </Badge>
               </div>
@@ -344,7 +345,7 @@ export const FantasyTeamBuilder: React.FC = () => {
             <div className="flex flex-col justify-end">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium">Chemistry</span>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-xs">
                   <Star className="h-3 w-3 mr-1" />
                   +{calculateChemistryBonus()}
                 </Badge>
@@ -368,23 +369,27 @@ export const FantasyTeamBuilder: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Split Pane Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[700px]">
-        {/* Left Pane - Formation View */}
-        <FormationView
-          selectedCards={selectedCards}
-          onPositionSelect={handlePositionSelect}
-          onRemovePlayer={handleRemovePlayer}
-          selectedPosition={selectedPosition}
-        />
+      {/* Mobile-First Layout */}
+      <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'lg:grid-cols-2 gap-6'} ${isMobile ? 'h-auto' : 'h-[700px]'}`}>
+        {/* Formation View */}
+        <div className={isMobile ? 'order-1' : ''}>
+          <FormationView
+            selectedCards={selectedCards}
+            onPositionSelect={handlePositionSelect}
+            onRemovePlayer={handleRemovePlayer}
+            selectedPosition={selectedPosition}
+          />
+        </div>
 
-        {/* Right Pane - Card Collection */}
-        <CardCollectionView
-          availableCards={availableCards}
-          selectedPosition={selectedPosition}
-          onCardSelect={handleCardSelect}
-          salaryRemaining={getSalaryRemaining()}
-        />
+        {/* Card Collection */}
+        <div className={isMobile ? 'order-2' : ''}>
+          <CardCollectionView
+            availableCards={availableCards}
+            selectedPosition={selectedPosition}
+            onCardSelect={handleCardSelect}
+            salaryRemaining={getSalaryRemaining()}
+          />
+        </div>
       </div>
     </div>
   );

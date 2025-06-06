@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FantasyCard {
   id: string;
@@ -37,13 +38,20 @@ export const CardCollectionView: React.FC<CardCollectionViewProps> = ({
   onCardSelect,
   salaryRemaining
 }) => {
+  const isMobile = useIsMobile();
+
   const getFilteredCards = () => {
     if (!selectedPosition) return availableCards;
     
     const allowedPositions = POSITION_MAPPINGS[selectedPosition as keyof typeof POSITION_MAPPINGS] || [];
-    return availableCards.filter(card => 
-      allowedPositions.includes(card.position) && card.value <= salaryRemaining
-    );
+    return availableCards.filter(card => {
+      // Allow cards with specific positions or generic "Player" position
+      const positionMatches = allowedPositions.includes(card.position) || 
+                             card.position === 'Player' || 
+                             !card.position || 
+                             card.position.trim() === '';
+      return positionMatches && card.value <= salaryRemaining;
+    });
   };
 
   const getRarityColor = (rarity: string) => {
@@ -59,22 +67,22 @@ export const CardCollectionView: React.FC<CardCollectionViewProps> = ({
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
+      <CardHeader className="pb-3 md:pb-6">
+        <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+          <Users className="h-4 w-4 md:h-5 md:w-5" />
           Available Cards
           {selectedPosition && (
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="ml-2 text-xs">
               {selectedPosition.toUpperCase()} Position
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {filteredCards.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">
+          <div className="text-center py-6 md:py-8">
+            <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-gray-400" />
+            <p className="text-gray-500 text-sm md:text-base">
               {selectedPosition 
                 ? `No cards available for ${selectedPosition.toUpperCase()} position within budget`
                 : 'No cards available'
@@ -82,7 +90,7 @@ export const CardCollectionView: React.FC<CardCollectionViewProps> = ({
             </p>
           </div>
         ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+          <div className={`space-y-2 md:space-y-3 ${isMobile ? 'max-h-[400px]' : 'max-h-[600px]'} overflow-y-auto`}>
             {filteredCards.map((card) => {
               const canAfford = card.value <= salaryRemaining;
               
@@ -90,7 +98,7 @@ export const CardCollectionView: React.FC<CardCollectionViewProps> = ({
                 <div
                   key={card.id}
                   className={`
-                    p-4 border-2 rounded-lg cursor-pointer transition-all
+                    p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all
                     ${getRarityColor(card.rarity)}
                     ${canAfford 
                       ? 'hover:shadow-md hover:scale-[1.02]' 
@@ -100,15 +108,15 @@ export const CardCollectionView: React.FC<CardCollectionViewProps> = ({
                   onClick={() => canAfford && onCardSelect(card)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm mb-1 truncate">
                         {card.player_name}
                       </div>
-                      <div className="text-xs text-gray-600 mb-2">
-                        {card.team_name} • {card.position}
+                      <div className="text-xs text-gray-600 mb-2 truncate">
+                        {card.team_name} • {card.position || 'Player'}
                       </div>
                       
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <Badge 
                           variant="outline" 
                           className="text-xs"
@@ -124,14 +132,14 @@ export const CardCollectionView: React.FC<CardCollectionViewProps> = ({
                       </div>
                     </div>
                     
-                    <div className="text-right">
+                    <div className="text-right ml-2">
                       <div className={`text-sm font-bold ${canAfford ? 'text-green-600' : 'text-red-500'}`}>
                         ${card.value.toLocaleString()}
                       </div>
                       {selectedPosition && (
                         <Button
                           size="sm"
-                          className="mt-2"
+                          className="mt-2 text-xs px-2 py-1 h-auto"
                           disabled={!canAfford}
                         >
                           {canAfford ? 'Select' : 'Too Expensive'}

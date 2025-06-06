@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FantasyCard {
   id: string;
@@ -32,11 +33,11 @@ interface FormationViewProps {
 }
 
 const CS2_POSITIONS: FormationPosition[] = [
-  { id: 'igl', name: 'IGL', position: 'IGL', required: false, gridPosition: 'col-span-2 row-start-1' },
-  { id: 'awper', name: 'AWPer', position: 'AWPer', required: false, gridPosition: 'col-span-2 row-start-2' },
-  { id: 'entry', name: 'Entry', position: 'Entry Fragger', required: false, gridPosition: 'col-span-2 row-start-3' },
-  { id: 'support', name: 'Support', position: 'Support', required: false, gridPosition: 'col-span-2 row-start-4' },
-  { id: 'lurker', name: 'Lurker', position: 'Lurker', required: false, gridPosition: 'col-span-2 row-start-5' },
+  { id: 'igl', name: 'IGL', position: 'IGL', required: false, gridPosition: 'col-span-1' },
+  { id: 'awper', name: 'AWPer', position: 'AWPer', required: false, gridPosition: 'col-span-1' },
+  { id: 'entry', name: 'Entry', position: 'Entry Fragger', required: false, gridPosition: 'col-span-1' },
+  { id: 'support', name: 'Support', position: 'Support', required: false, gridPosition: 'col-span-1' },
+  { id: 'lurker', name: 'Lurker', position: 'Lurker', required: false, gridPosition: 'col-span-1' },
 ];
 
 export const FormationView: React.FC<FormationViewProps> = ({
@@ -45,6 +46,8 @@ export const FormationView: React.FC<FormationViewProps> = ({
   onRemovePlayer,
   selectedPosition
 }) => {
+  const isMobile = useIsMobile();
+
   const getRarityColor = (rarity: string) => {
     switch (rarity.toLowerCase()) {
       case 'legendary': return 'bg-yellow-500';
@@ -56,10 +59,10 @@ export const FormationView: React.FC<FormationViewProps> = ({
 
   return (
     <Card className="h-full">
-      <CardContent className="p-6">
-        <h3 className="text-xl font-bold mb-6 text-center">Team Formation</h3>
+      <CardContent className="p-4 md:p-6">
+        <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 text-center">Team Formation</h3>
         
-        <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+        <div className={`grid gap-3 md:gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} max-w-md mx-auto`}>
           {CS2_POSITIONS.map((position) => {
             const player = selectedCards[position.id];
             const isSelected = selectedPosition === position.id;
@@ -67,12 +70,12 @@ export const FormationView: React.FC<FormationViewProps> = ({
             return (
               <div
                 key={position.id}
-                className={`${position.gridPosition} relative`}
+                className={`${isMobile ? 'w-full' : position.gridPosition} relative`}
               >
                 <div
                   onClick={() => onPositionSelect(position.id)}
                   className={`
-                    min-h-[120px] p-4 border-2 rounded-lg cursor-pointer transition-all
+                    min-h-[100px] md:min-h-[120px] p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all
                     ${isSelected 
                       ? 'border-theme-purple bg-theme-purple/10' 
                       : 'border-gray-300 hover:border-theme-purple/50'
@@ -86,7 +89,7 @@ export const FormationView: React.FC<FormationViewProps> = ({
                     </div>
                     
                     {player ? (
-                      <div className="space-y-2">
+                      <div className="space-y-1 md:space-y-2">
                         <div className="font-semibold text-sm">
                           {player.player_name}
                         </div>
@@ -116,8 +119,8 @@ export const FormationView: React.FC<FormationViewProps> = ({
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-400 mt-4">
-                        Click to select<br/>{position.position}
+                      <div className="text-xs text-gray-400 mt-2 md:mt-4">
+                        Tap to select<br/>{position.position}
                       </div>
                     )}
                   </div>
@@ -127,8 +130,8 @@ export const FormationView: React.FC<FormationViewProps> = ({
           })}
         </div>
         
-        <div className="mt-6 text-center text-sm text-gray-500">
-          Click on a position to select players
+        <div className="mt-4 md:mt-6 text-center text-sm text-gray-500">
+          {isMobile ? 'Tap' : 'Click'} on a position to select players
         </div>
       </CardContent>
     </Card>
