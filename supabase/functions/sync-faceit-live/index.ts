@@ -86,8 +86,8 @@ serve(async (req) => {
 
     console.log('🔴 Starting FACEIT live matches sync...');
 
-    // Use correct status parameter - FACEIT API uses 'ONGOING' not 'ongoing'
-    const response = await fetch('https://open.faceit.com/data/v4/matches?game=cs2&status=ONGOING&limit=50', {
+    // Use correct FACEIT API endpoint - removed game parameter and used correct status
+    const response = await fetch('https://open.faceit.com/data/v4/matches?status=ONGOING&limit=50', {
       headers: {
         'Authorization': `Bearer ${faceitApiKey}`,
         'Content-Type': 'application/json'
@@ -103,7 +103,13 @@ serve(async (req) => {
     const data: FaceitResponse = await response.json();
     console.log(`📥 Retrieved ${data.items.length} live matches from FACEIT`);
 
-    for (const match of data.items) {
+    // Filter for CS:GO/CS2 matches after fetching
+    const cs2Matches = data.items.filter(match => 
+      match.game === 'cs2' || match.game === 'csgo'
+    );
+    console.log(`🎮 Found ${cs2Matches.length} CS:GO/CS2 matches out of ${data.items.length} total`);
+
+    for (const match of cs2Matches) {
       processed++;
       
       // Convert status to lowercase for our database
@@ -114,7 +120,7 @@ serve(async (req) => {
         competition_name: match.competition_name,
         competition_type: match.competition_type,
         organized_by: match.organized_by,
-        status: match.status.toLowerCase(), // Convert ONGOING to ongoing
+        status: 'ongoing', // Always set to ongoing for live matches
         started_at: match.started_at ? new Date(match.started_at).toISOString() : null,
         finished_at: match.finished_at ? new Date(match.finished_at).toISOString() : null,
         configured_at: match.configured_at ? new Date(match.configured_at).toISOString() : null,
@@ -179,7 +185,7 @@ serve(async (req) => {
           matches_processed: processed,
           matches_added: added,
           matches_updated: updated,
-          metadata: { total_available: data.items.length }
+          metadata: { total_available: data.items.length, cs2_matches: cs2Matches.length }
         })
         .eq('id', logEntry.id);
     }
@@ -190,7 +196,9 @@ serve(async (req) => {
         processed,
         added,
         updated,
-        duration_ms: duration
+        duration_ms: duration,
+        total_matches: data.items.length,
+        cs2_matches: cs2Matches.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
