@@ -52,6 +52,16 @@ serve(async (req) => {
       )
     }
 
+    // Check if user has a connected wallet
+    const { data: userWallet } = await supabaseClient
+      .from('user_wallets')
+      .select('wallet_address, wallet_type')
+      .eq('user_id', user_id)
+      .eq('is_primary', true)
+      .single()
+
+    const hasConnectedWallet = !!userWallet
+
     // Get starter pack configuration
     const { data: starterPack, error: packError } = await supabaseClient
       .from('starter_pack_config')
@@ -95,15 +105,25 @@ serve(async (req) => {
         if (cardResponse?.success && cardResponse?.card) {
           generatedCards.push(cardResponse.card)
           
-          // Add card to user's collection
+          // Add card to user's collection with minting status
           await supabaseClient
             .from('user_card_collections')
             .insert({
               user_id: user_id,
               card_id: cardResponse.card.id,
               acquired_method: 'welcome_pack',
-              quantity: 1
+              quantity: 1,
+              is_minted: false,
+              mint_status: hasConnectedWallet ? 'pending' : 'pending'
             })
+
+          // Update the card's blockchain status
+          await supabaseClient
+            .from('nft_cards')
+            .update({
+              blockchain_status: 'database'
+            })
+            .eq('id', cardResponse.card.id)
         }
       } catch (error) {
         console.error(`Failed to generate card for ${player.player_name}:`, error)
@@ -139,12 +159,41 @@ serve(async (req) => {
 
     console.log(`Successfully generated ${generatedCards.length} cards for welcome pack`)
 
+    // If user has a wallet, trigger minting process
+    if (hasConnectedWallet) {
+      console.log('User has connected wallet, initiating minting process')
+      
+      // Create minting request
+      await supabaseClient
+        .from('card_minting_requests')
+        .insert({
+          user_id: user_id,
+          card_ids: generatedCards.map(card => card.id),
+          wallet_address: userWallet.wallet_address,
+          request_status: 'pending'
+        })
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          cards_generated: generatedCards.length,
+          cards: generatedCards,
+          pack_name: starterPack.pack_name,
+          minting_initiated: true,
+          wallet_address: userWallet.wallet_address
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         cards_generated: generatedCards.length,
         cards: generatedCards,
-        pack_name: starterPack.pack_name
+        pack_name: starterPack.pack_name,
+        minting_initiated: false,
+        message: 'Cards created in database. Connect a wallet to mint as NFTs.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

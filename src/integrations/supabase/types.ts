@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      card_minting_requests: {
+        Row: {
+          card_ids: string[]
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          request_status: string | null
+          requested_at: string | null
+          transaction_hashes: string[] | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          card_ids: string[]
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          request_status?: string | null
+          requested_at?: string | null
+          transaction_hashes?: string[] | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          card_ids?: string[]
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          request_status?: string | null
+          requested_at?: string | null
+          transaction_hashes?: string[] | null
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       card_templates: {
         Row: {
           created_at: string
@@ -500,13 +536,17 @@ export type Database = {
       }
       nft_cards: {
         Row: {
+          block_number: number | null
+          blockchain_status: string | null
           card_id: string
           contract_address: string | null
           created_at: string
           game: string
+          gas_used: number | null
           id: string
           image_url: string | null
           metadata: Json
+          mint_transaction_hash: string | null
           minted_at: string | null
           owner_wallet: string | null
           player_id: string
@@ -520,13 +560,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          block_number?: number | null
+          blockchain_status?: string | null
           card_id: string
           contract_address?: string | null
           created_at?: string
           game?: string
+          gas_used?: number | null
           id?: string
           image_url?: string | null
           metadata?: Json
+          mint_transaction_hash?: string | null
           minted_at?: string | null
           owner_wallet?: string | null
           player_id: string
@@ -540,13 +584,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          block_number?: number | null
+          blockchain_status?: string | null
           card_id?: string
           contract_address?: string | null
           created_at?: string
           game?: string
+          gas_used?: number | null
           id?: string
           image_url?: string | null
           metadata?: Json
+          mint_transaction_hash?: string | null
           minted_at?: string | null
           owner_wallet?: string | null
           player_id?: string
@@ -774,6 +822,10 @@ export type Database = {
           acquired_method: string | null
           card_id: string
           id: string
+          is_minted: boolean | null
+          mint_status: string | null
+          mint_transaction_hash: string | null
+          minted_at: string | null
           quantity: number | null
           user_id: string
         }
@@ -782,6 +834,10 @@ export type Database = {
           acquired_method?: string | null
           card_id: string
           id?: string
+          is_minted?: boolean | null
+          mint_status?: string | null
+          mint_transaction_hash?: string | null
+          minted_at?: string | null
           quantity?: number | null
           user_id: string
         }
@@ -790,6 +846,10 @@ export type Database = {
           acquired_method?: string | null
           card_id?: string
           id?: string
+          is_minted?: boolean | null
+          mint_status?: string | null
+          mint_transaction_hash?: string | null
+          minted_at?: string | null
           quantity?: number | null
           user_id?: string
         }

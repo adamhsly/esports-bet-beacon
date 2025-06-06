@@ -1,172 +1,269 @@
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { PlayerCard } from './PlayerCard';
-import { CardDetailsModal } from './CardDetailsModal';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlayerCard as PlayerCardType } from '@/types/card';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Filter } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { useCardMinting } from '@/hooks/useCardMinting';
+import { useWalletConnection } from '@/hooks/useWalletConnection';
+import { CardMintingStatus } from './CardMintingStatus';
+import { PlayerCard } from '@/types/card';
+import { Users, Coins } from 'lucide-react';
+
+interface ExtendedPlayerCard extends PlayerCard {
+  is_minted?: boolean;
+  mint_status?: 'pending' | 'minting' | 'minted' | 'failed';
+  mint_transaction_hash?: string;
+  blockchain_status?: string;
+}
 
 export const CardCollection: React.FC = () => {
-  const [selectedCard, setSelectedCard] = useState<PlayerCardType | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [rarityFilter, setRarityFilter] = useState<string>('all');
-  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { mintCards, isProcessing, canMint } = useCardMinting();
+  const { isConnected } = useWalletConnection();
+  const [cards, setCards] = useState<ExtendedPlayerCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCards, setSelectedCards] = useState<string[]>([]);
 
-  const { data: cards = [], isLoading } = useQuery({
-    queryKey: ['user-cards'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+  const fetchUserCards = async () => {
+    if (!user) return;
 
-      // Get user's wallet addresses
-      const { data: wallets } = await supabase
-        .from('user_wallets')
-        .select('wallet_address')
+    try {
+      const { data: collection, error } = await supabase
+        .from('user_card_collections')
+        .select(`
+          *,
+          nft_cards (
+            id,
+            player_name,
+            team_name,
+            position,
+            rarity,
+            stats,
+            metadata,
+            game,
+            blockchain_status,
+            mint_transaction_hash,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('user_id', user.id);
-
-      if (!wallets || wallets.length === 0) return [];
-
-      const walletAddresses = wallets.map(w => w.wallet_address);
-
-      // Get cards owned by user's wallets
-      const { data: cards, error } = await supabase
-        .from('nft_cards')
-        .select('*')
-        .in('owner_wallet', walletAddresses)
-        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching cards:', error);
-        return [];
+        toast({
+          title: "Error",
+          description: "Failed to load your card collection",
+          variant: "destructive",
+        });
+        return;
       }
 
-      return cards as PlayerCardType[];
-    },
-  });
+      const userCards: ExtendedPlayerCard[] = collection?.map(item => {
+        const card = item.nft_cards;
+        if (!card) return null;
 
-  // Filter cards based on search and filters
-  const filteredCards = cards.filter(card => {
-    const matchesSearch = card.player_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (card.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    const matchesRarity = rarityFilter === 'all' || card.rarity === rarityFilter;
-    const matchesTeam = teamFilter === 'all' || card.team_name === teamFilter;
-    
-    return matchesSearch && matchesRarity && matchesTeam;
-  });
+        return {
+          ...card,
+          card_id: card.id,
+          player_id: `${card.player_name}_${card.team_name}`,
+          player_type: 'Professional',
+          owner_wallet: null,
+          token_id: null,
+          is_minted: item.is_minted,
+          mint_status: item.mint_status,
+          mint_transaction_hash: item.mint_transaction_hash,
+          blockchain_status: card.blockchain_status
+        };
+      }).filter(Boolean) as ExtendedPlayerCard[];
 
-  // Get unique teams for filter
-  const uniqueTeams = [...new Set(cards.map(card => card.team_name).filter(Boolean))];
+      setCards(userCards);
+    } catch (error) {
+      console.error('Error in fetchUserCards:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your cards",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (isLoading) {
+  useEffect(() => {
+    fetchUserCards();
+  }, [user]);
+
+  const handleCardSelection = (cardId: string, checked: boolean) => {
+    setSelectedCards(prev => 
+      checked 
+        ? [...prev, cardId]
+        : prev.filter(id => id !== cardId)
+    );
+  };
+
+  const handleBatchMint = async () => {
+    if (selectedCards.length === 0) {
+      toast({
+        title: "No Cards Selected",
+        description: "Please select cards to mint",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const success = await mintCards(selectedCards);
+    if (success) {
+      setSelectedCards([]);
+      // Refresh the cards to show updated status
+      setTimeout(() => {
+        fetchUserCards();
+      }, 1000);
+    }
+  };
+
+  const handleSingleCardMint = async (cardId: string) => {
+    const success = await mintCards([cardId]);
+    if (success) {
+      // Refresh the cards to show updated status
+      setTimeout(() => {
+        fetchUserCards();
+      }, 1000);
+    }
+  };
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity.toLowerCase()) {
+      case 'legendary': return 'border-yellow-500 bg-yellow-500/10';
+      case 'epic': return 'border-purple-500 bg-purple-500/10';
+      case 'rare': return 'border-blue-500 bg-blue-500/10';
+      default: return 'border-gray-300 bg-gray-50';
+    }
+  };
+
+  const unmintedCards = cards.filter(card => !card.is_minted);
+  const mintedCards = cards.filter(card => card.is_minted);
+
+  if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-64 bg-theme-gray-dark rounded-lg animate-pulse" />
-        ))}
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-purple"></div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-          <Input
-            placeholder="Search players or teams..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-theme-gray-dark border-theme-gray text-white"
-          />
-        </div>
-        
-        <Select value={rarityFilter} onValueChange={setRarityFilter}>
-          <SelectTrigger className="w-40 bg-theme-gray-dark border-theme-gray text-white">
-            <Filter size={16} className="mr-2" />
-            <SelectValue placeholder="Rarity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Rarities</SelectItem>
-            <SelectItem value="common">Common</SelectItem>
-            <SelectItem value="rare">Rare</SelectItem>
-            <SelectItem value="epic">Epic</SelectItem>
-            <SelectItem value="legendary">Legendary</SelectItem>
-          </SelectContent>
-        </Select>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            My Card Collection
+            <Badge variant="outline" className="ml-auto">
+              {cards.length} cards
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Batch minting controls */}
+          {isConnected && unmintedCards.length > 0 && (
+            <div className="mb-6 p-4 border rounded-lg bg-blue-50">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="font-medium">Mint Cards as NFTs</h3>
+                  <p className="text-sm text-gray-600">
+                    Select cards to mint as NFTs on the blockchain
+                  </p>
+                </div>
+                <Button
+                  onClick={handleBatchMint}
+                  disabled={selectedCards.length === 0 || isProcessing}
+                  className="flex items-center gap-2"
+                >
+                  <Coins className="h-4 w-4" />
+                  Mint Selected ({selectedCards.length})
+                </Button>
+              </div>
+            </div>
+          )}
 
-        <Select value={teamFilter} onValueChange={setTeamFilter}>
-          <SelectTrigger className="w-40 bg-theme-gray-dark border-theme-gray text-white">
-            <SelectValue placeholder="Team" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Teams</SelectItem>
-            {uniqueTeams.map(team => (
-              <SelectItem key={team} value={team!}>{team}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          {cards.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-500">No cards in your collection yet</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Start by claiming your welcome pack or purchasing card packs
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cards.map((card) => (
+                <div
+                  key={card.id}
+                  className={`p-4 border-2 rounded-lg ${getRarityColor(card.rarity)}`}
+                >
+                  {/* Selection checkbox for unminted cards */}
+                  {isConnected && !card.is_minted && (
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Checkbox
+                        id={`card-${card.id}`}
+                        checked={selectedCards.includes(card.id)}
+                        onCheckedChange={(checked) => 
+                          handleCardSelection(card.id, checked as boolean)
+                        }
+                      />
+                      <label 
+                        htmlFor={`card-${card.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Select for minting
+                      </label>
+                    </div>
+                  )}
 
-      {/* Collection Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-theme-gray-dark p-4 rounded-lg">
-          <div className="text-2xl font-bold text-white">{cards.length}</div>
-          <div className="text-gray-400">Total Cards</div>
-        </div>
-        <div className="bg-theme-gray-dark p-4 rounded-lg">
-          <div className="text-2xl font-bold text-yellow-400">
-            {cards.filter(c => c.rarity === 'legendary').length}
-          </div>
-          <div className="text-gray-400">Legendary</div>
-        </div>
-        <div className="bg-theme-gray-dark p-4 rounded-lg">
-          <div className="text-2xl font-bold text-purple-400">
-            {cards.filter(c => c.rarity === 'epic').length}
-          </div>
-          <div className="text-gray-400">Epic</div>
-        </div>
-        <div className="bg-theme-gray-dark p-4 rounded-lg">
-          <div className="text-2xl font-bold text-blue-400">
-            {cards.filter(c => c.rarity === 'rare').length}
-          </div>
-          <div className="text-gray-400">Rare</div>
-        </div>
-      </div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="font-semibold text-lg">{card.player_name}</div>
+                      <div className="text-sm text-gray-600">
+                        {card.team_name} • {card.position}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{card.rarity}</Badge>
+                      <Badge variant="secondary">{card.game.toUpperCase()}</Badge>
+                    </div>
 
-      {/* Cards Grid */}
-      {filteredCards.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredCards.map((card) => (
-            <PlayerCard
-              key={card.id}
-              card={card}
-              onClick={() => setSelectedCard(card)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg">
-            {cards.length === 0 ? 'No cards in your collection yet' : 'No cards match your filters'}
-          </div>
-          <div className="text-gray-500 mt-2">
-            {cards.length === 0 ? 'Purchase some packs to get started!' : 'Try adjusting your search or filters'}
-          </div>
-        </div>
-      )}
+                    {card.stats && (
+                      <div className="text-xs text-gray-500">
+                        KD: {card.stats.kd_ratio || 'N/A'} | 
+                        ADR: {card.stats.adr || 'N/A'}
+                      </div>
+                    )}
 
-      {/* Card Details Modal */}
-      {selectedCard && (
-        <CardDetailsModal
-          card={selectedCard}
-          isOpen={!!selectedCard}
-          onClose={() => setSelectedCard(null)}
-        />
-      )}
+                    <CardMintingStatus
+                      isNFT={card.blockchain_status !== 'database'}
+                      isMinted={card.is_minted || false}
+                      mintStatus={card.mint_status || 'pending'}
+                      transactionHash={card.mint_transaction_hash}
+                      onMint={() => handleSingleCardMint(card.id)}
+                      canMint={canMint}
+                      showMintButton={!selectedCards.length}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

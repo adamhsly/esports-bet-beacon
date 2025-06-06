@@ -3,15 +3,18 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWalletConnection } from './useWalletConnection';
 import { PlayerCard } from '@/types/card';
 
 export const useWelcomePack = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isConnected, walletAddress } = useWalletConnection();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeCards, setWelcomeCards] = useState<PlayerCard[]>([]);
   const [packName, setPackName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [mintingInitiated, setMintingInitiated] = useState(false);
 
   const claimWelcomePack = async () => {
     if (!user || isProcessing) return;
@@ -38,16 +41,23 @@ export const useWelcomePack = () => {
       if (data?.success) {
         setWelcomeCards(data.cards || []);
         setPackName(data.pack_name || 'Welcome Pack');
+        setMintingInitiated(data.minting_initiated || false);
         setShowWelcomeModal(true);
         
-        toast({
-          title: "Welcome Pack Received!",
-          description: `You received ${data.cards_generated} cards to start your collection!`,
-        });
+        if (data.minting_initiated) {
+          toast({
+            title: "Welcome Pack Received!",
+            description: `You received ${data.cards_generated} cards and NFT minting has been initiated!`,
+          });
+        } else {
+          toast({
+            title: "Welcome Pack Received!",
+            description: `You received ${data.cards_generated} cards! Connect a wallet to mint them as NFTs.`,
+          });
+        }
       } else {
         console.error('Welcome pack response error:', data);
         if (data?.error === 'Welcome pack already claimed') {
-          // User already has their welcome pack, no need to show error
           return;
         }
         
@@ -84,7 +94,6 @@ export const useWelcomePack = () => {
         return;
       }
 
-      // If user hasn't claimed their welcome pack, automatically claim it
       if (!profile?.welcome_pack_claimed) {
         console.log('User has not claimed welcome pack, auto-claiming...');
         await claimWelcomePack();
@@ -96,7 +105,6 @@ export const useWelcomePack = () => {
 
   useEffect(() => {
     if (user) {
-      // Small delay to ensure user is fully authenticated
       const timer = setTimeout(() => {
         checkWelcomePackStatus();
       }, 1000);
@@ -111,6 +119,7 @@ export const useWelcomePack = () => {
     welcomeCards,
     packName,
     isProcessing,
+    mintingInitiated,
     claimWelcomePack
   };
 };
