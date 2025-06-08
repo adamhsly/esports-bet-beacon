@@ -720,6 +720,243 @@ export type Database = {
         }
         Relationships: []
       }
+      sportdevs_matches: {
+        Row: {
+          best_of: number | null
+          created_at: string
+          esport_type: string
+          id: string
+          last_synced_at: string
+          match_id: string
+          raw_data: Json | null
+          start_time: string
+          status: string
+          teams: Json
+          tournament_id: string | null
+          tournament_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          best_of?: number | null
+          created_at?: string
+          esport_type: string
+          id?: string
+          last_synced_at?: string
+          match_id: string
+          raw_data?: Json | null
+          start_time: string
+          status?: string
+          teams: Json
+          tournament_id?: string | null
+          tournament_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          best_of?: number | null
+          created_at?: string
+          esport_type?: string
+          id?: string
+          last_synced_at?: string
+          match_id?: string
+          raw_data?: Json | null
+          start_time?: string
+          status?: string
+          teams?: Json
+          tournament_id?: string | null
+          tournament_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sportdevs_players: {
+        Row: {
+          created_at: string
+          esport_type: string
+          hash_image: string | null
+          id: string
+          image_url: string | null
+          last_synced_at: string
+          name: string
+          player_id: string
+          position: string | null
+          raw_data: Json | null
+          stats: Json | null
+          team_id: string | null
+          team_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          esport_type: string
+          hash_image?: string | null
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string
+          name: string
+          player_id: string
+          position?: string | null
+          raw_data?: Json | null
+          stats?: Json | null
+          team_id?: string | null
+          team_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          esport_type?: string
+          hash_image?: string | null
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string
+          name?: string
+          player_id?: string
+          position?: string | null
+          raw_data?: Json | null
+          stats?: Json | null
+          team_id?: string | null
+          team_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sportdevs_sync_logs: {
+        Row: {
+          completed_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          esport_type: string | null
+          id: string
+          metadata: Json | null
+          records_added: number | null
+          records_processed: number | null
+          records_updated: number | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          esport_type?: string | null
+          id?: string
+          metadata?: Json | null
+          records_added?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          esport_type?: string | null
+          id?: string
+          metadata?: Json | null
+          records_added?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: []
+      }
+      sportdevs_teams: {
+        Row: {
+          created_at: string
+          esport_type: string
+          hash_image: string | null
+          id: string
+          last_synced_at: string
+          logo_url: string | null
+          name: string
+          players_data: Json | null
+          raw_data: Json | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          esport_type: string
+          hash_image?: string | null
+          id?: string
+          last_synced_at?: string
+          logo_url?: string | null
+          name: string
+          players_data?: Json | null
+          raw_data?: Json | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          esport_type?: string
+          hash_image?: string | null
+          id?: string
+          last_synced_at?: string
+          logo_url?: string | null
+          name?: string
+          players_data?: Json | null
+          raw_data?: Json | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sportdevs_tournaments: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          esport_type: string
+          hash_image: string | null
+          id: string
+          image_url: string | null
+          last_synced_at: string
+          name: string
+          raw_data: Json | null
+          start_date: string | null
+          status: string | null
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          esport_type: string
+          hash_image?: string | null
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string
+          name: string
+          raw_data?: Json | null
+          start_date?: string | null
+          status?: string | null
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          esport_type?: string
+          hash_image?: string | null
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string
+          name?: string
+          raw_data?: Json | null
+          start_date?: string | null
+          status?: string | null
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       starter_pack_config: {
         Row: {
           card_count: number

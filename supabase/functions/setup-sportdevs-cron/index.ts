@@ -18,7 +18,7 @@ serve(async (req) => {
   )
 
   try {
-    console.log('🕒 Setting up FACEIT cron jobs...');
+    console.log('⚙️ Setting up SportDevs cron jobs...');
     
     const projectRef = Deno.env.get('SUPABASE_URL')?.split('//')[1]?.split('.')[0];
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -35,42 +35,7 @@ serve(async (req) => {
       `
     });
 
-    // Schedule live matches sync every 2 minutes
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'faceit-live-sync',
-          '*/2 * * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-faceit-live',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    // Schedule upcoming matches sync every 10 minutes
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'faceit-upcoming-sync',
-          '*/10 * * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-faceit-upcoming',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    // Add SportDevs cron jobs as well
-    // Schedule SportDevs upcoming matches sync every 15 minutes
+    // Schedule upcoming matches sync every 15 minutes
     await supabase.rpc('sql', {
       query: `
         SELECT cron.schedule(
@@ -87,7 +52,7 @@ serve(async (req) => {
       `
     });
 
-    // Schedule SportDevs teams sync every 2 hours
+    // Schedule teams sync every 2 hours
     await supabase.rpc('sql', {
       query: `
         SELECT cron.schedule(
@@ -104,7 +69,7 @@ serve(async (req) => {
       `
     });
 
-    // Schedule SportDevs tournaments sync every 6 hours
+    // Schedule tournaments sync every 6 hours
     await supabase.rpc('sql', {
       query: `
         SELECT cron.schedule(
@@ -121,25 +86,23 @@ serve(async (req) => {
       `
     });
 
-    console.log('✅ FACEIT and SportDevs cron jobs set up successfully');
+    console.log('✅ SportDevs cron jobs set up successfully');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'FACEIT and SportDevs cron jobs configured successfully',
+        message: 'SportDevs cron jobs configured successfully',
         schedules: {
-          faceit_live: 'Every 2 minutes',
-          faceit_upcoming: 'Every 10 minutes',
-          sportdevs_upcoming_matches: 'Every 15 minutes',
-          sportdevs_teams: 'Every 2 hours',
-          sportdevs_tournaments: 'Every 6 hours'
+          upcoming_matches: 'Every 15 minutes',
+          teams: 'Every 2 hours',
+          tournaments: 'Every 6 hours'
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Error setting up cron jobs:', error);
+    console.error('❌ Error setting up SportDevs cron jobs:', error);
     
     return new Response(
       JSON.stringify({ 
