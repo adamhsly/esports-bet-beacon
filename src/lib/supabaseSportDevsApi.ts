@@ -57,17 +57,17 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
         // Transform database data to MatchInfo format
         const transformedMatches = await Promise.all(
           dbMatches.map(async (match) => {
-            // Extract team data from stored JSON
-            const teams = match.teams || {};
+            // Safely extract team data from stored JSON
+            const teamsData = match.teams as any;
             const team1: TeamInfo = {
-              name: teams.team1?.name || 'TBD',
-              id: teams.team1?.id,
-              logo: teams.team1?.logo || '/placeholder.svg'
+              name: teamsData?.team1?.name || 'TBD',
+              id: teamsData?.team1?.id,
+              logo: teamsData?.team1?.logo || '/placeholder.svg'
             };
             const team2: TeamInfo = {
-              name: teams.team2?.name || 'TBD', 
-              id: teams.team2?.id,
-              logo: teams.team2?.logo || '/placeholder.svg'
+              name: teamsData?.team2?.name || 'TBD', 
+              id: teamsData?.team2?.id,
+              logo: teamsData?.team2?.logo || '/placeholder.svg'
             };
 
             // Fetch players for teams if we have team IDs
@@ -87,7 +87,7 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
 
             return {
               id: match.match_id,
-              teams: [team1, team2],
+              teams: [team1, team2] as [TeamInfo, TeamInfo],
               startTime: match.start_time,
               tournament: match.tournament_name || 'Unknown Tournament',
               esportType: match.esport_type,
@@ -139,13 +139,14 @@ export async function fetchTeamById(teamId: string) {
         console.log(`✅ Using fresh database team data`);
         
         // Transform database data to expected format
+        const rawData = team.raw_data as any || {};
         return {
           id: team.team_id,
           name: team.name,
           image_url: team.logo_url,
           hash_image: team.hash_image,
           players: team.players_data || [],
-          ...team.raw_data
+          ...rawData
         };
       }
     }
@@ -183,10 +184,11 @@ export async function fetchPlayersByTeamId(teamId: string | number) {
     // Check if data is fresh
     if (dbTeams && dbTeams.length > 0) {
       const team = dbTeams[0];
+      const playersData = team.players_data as any[];
       
-      if (!isDataStale(team.last_synced_at, CACHE_TTL.TEAMS) && team.players_data) {
-        console.log(`✅ Using fresh database players data (${team.players_data.length} players)`);
-        return team.players_data;
+      if (!isDataStale(team.last_synced_at, CACHE_TTL.TEAMS) && playersData && Array.isArray(playersData)) {
+        console.log(`✅ Using fresh database players data (${playersData.length} players)`);
+        return playersData;
       }
     }
 
@@ -227,6 +229,7 @@ export async function fetchTournamentById(tournamentId: string) {
         console.log(`✅ Using fresh database tournament data`);
         
         // Transform database data to expected format
+        const rawData = tournament.raw_data as any || {};
         return {
           id: tournament.tournament_id,
           name: tournament.name,
@@ -235,7 +238,7 @@ export async function fetchTournamentById(tournamentId: string) {
           end_date: tournament.end_date,
           image_url: tournament.image_url,
           hash_image: tournament.hash_image,
-          ...tournament.raw_data
+          ...rawData
         };
       }
     }
