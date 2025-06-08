@@ -99,11 +99,16 @@ serve(async (req) => {
       throw new Error('FACEIT_API_KEY not found in secrets');
     }
 
-    console.log('🔄 Starting FACEIT upcoming matches sync (championship-based)...');
+    console.log('🔄 Starting FACEIT upcoming matches sync (ongoing championships only)...');
 
-    // Step 1: Fetch ALL CS2 championships (removed limit)
-    console.log('📋 Fetching ALL CS2 championships...');
-    const championshipsResponse = await fetch('https://open.faceit.com/data/v4/championships?game=cs2', {
+    // Step 1: Fetch ONLY ongoing CS2 championships
+    console.log('📋 Fetching ongoing CS2 championships...');
+    const championshipsUrl = new URL('https://open.faceit.com/data/v4/championships');
+    championshipsUrl.searchParams.set('game', 'cs2');
+    championshipsUrl.searchParams.set('type', 'ongoing');
+    // Removed limit to get all ongoing championships
+
+    const championshipsResponse = await fetch(championshipsUrl.toString(), {
       headers: {
         'Authorization': `Bearer ${faceitApiKey}`,
         'Content-Type': 'application/json'
@@ -117,34 +122,20 @@ serve(async (req) => {
     }
 
     const championshipsData: FaceitChampionshipsResponse = await championshipsResponse.json();
-    console.log(`📋 Retrieved ${championshipsData.items.length} total championships`);
+    console.log(`📋 Retrieved ${championshipsData.items.length} ongoing championships`);
 
-    // Debug: Log championship statuses and types
-    const championshipStatuses = new Set();
-    const championshipTypes = new Set();
+    // Debug: Log championship details
     championshipsData.items.forEach(champ => {
-      championshipStatuses.add(champ.status);
-      championshipTypes.add(champ.type);
+      console.log(`🏆 Championship: ${champ.name} (${champ.championship_id}) - Status: ${champ.status}, Type: ${champ.type}`);
     });
-    console.log(`📊 Championship statuses found: ${Array.from(championshipStatuses).join(', ')}`);
-    console.log(`📊 Championship types found: ${Array.from(championshipTypes).join(', ')}`);
-
-    // Filter for active/scheduled championships
-    const relevantChampionships = championshipsData.items.filter(champ => 
-      champ.status.toLowerCase() === 'ongoing' || 
-      champ.status.toLowerCase() === 'active' || 
-      champ.status.toLowerCase() === 'scheduled' ||
-      champ.status.toLowerCase() === 'upcoming'
-    );
-    console.log(`🎯 Filtered to ${relevantChampionships.length} relevant championships`);
 
     const allUpcomingMatches: FaceitMatch[] = [];
     const allMatchStatuses = new Set();
 
-    // Step 2: For each relevant championship, fetch matches
-    for (const championship of relevantChampionships) {
+    // Step 2: For each ongoing championship, fetch ALL matches
+    for (const championship of championshipsData.items) {
       championshipsProcessed++;
-      console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id}) - Status: ${championship.status}`);
+      console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id})`);
 
       try {
         const matchesResponse = await fetch(`https://open.faceit.com/data/v4/championships/${championship.championship_id}/matches`, {
@@ -162,38 +153,29 @@ serve(async (req) => {
         const matchesData: FaceitMatchesResponse = await matchesResponse.json();
         console.log(`🎮 Found ${matchesData.items.length} total matches in ${championship.name}`);
 
-        // Debug: Collect all match statuses
+        // Debug: Log all match statuses we encounter
         matchesData.items.forEach(match => {
           allMatchStatuses.add(match.status);
+          const teams = match.teams ? `${match.teams.faction1.name} vs ${match.teams.faction2.name}` : 'N/A';
+          console.log(`  • ${match.match_id} | ${match.status} | ${teams}`);
         });
 
-        // Broader filtering for upcoming matches
+        // Filter for upcoming/scheduled matches only
         const upcomingMatches = matchesData.items.filter(match => {
           const status = match.status.toLowerCase();
-          const isScheduledStatus = status === 'scheduled' || status === 'ready' || status === 'upcoming' || status === 'configured';
+          const isUpcomingStatus = status === 'scheduled' || status === 'ready' || status === 'upcoming' || status === 'configured';
           const notStarted = !match.started_at || new Date(match.started_at) > new Date();
           const notFinished = !match.finished_at;
           const isCS = match.game === 'cs2' || match.game === 'csgo';
           
-          console.log(`🔍 Match ${match.match_id}: status=${match.status}, started=${!!match.started_at}, finished=${!!match.finished_at}, game=${match.game}`);
-          
-          return isCS && isScheduledStatus && notStarted && notFinished;
+          return isCS && isUpcomingStatus && notStarted && notFinished;
         });
 
         console.log(`📅 Found ${upcomingMatches.length} upcoming matches in ${championship.name}`);
-        if (upcomingMatches.length > 0) {
-          console.log(`✨ Upcoming matches details:`, upcomingMatches.map(m => ({
-            id: m.match_id,
-            status: m.status,
-            started: m.started_at,
-            teams: `${m.teams.faction1.name} vs ${m.teams.faction2.name}`
-          })));
-        }
-        
         allUpcomingMatches.push(...upcomingMatches);
 
         // Add delay between requests to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
       } catch (error) {
         console.error(`❌ Error processing championship ${championship.championship_id}:`, error);
@@ -269,7 +251,7 @@ serve(async (req) => {
 
     const duration = Date.now() - startTime;
     console.log(`✅ Upcoming sync completed: ${processed} processed, ${added} added, ${updated} updated in ${duration}ms`);
-    console.log(`📊 Championships processed: ${championshipsProcessed} out of ${relevantChampionships.length} relevant`);
+    console.log(`📊 Championships processed: ${championshipsProcessed} ongoing championships`);
 
     // Update log entry with success
     if (logEntry) {
@@ -284,10 +266,8 @@ serve(async (req) => {
           matches_updated: updated,
           metadata: { 
             championships_processed: championshipsProcessed,
-            total_championships: championshipsData.items.length,
-            relevant_championships: relevantChampionships.length,
+            ongoing_championships: championshipsData.items.length,
             upcoming_matches_found: allUpcomingMatches.length,
-            championship_statuses: Array.from(championshipStatuses),
             match_statuses: Array.from(allMatchStatuses)
           }
         })
@@ -302,10 +282,9 @@ serve(async (req) => {
         updated,
         duration_ms: duration,
         championships_processed: championshipsProcessed,
-        relevant_championships: relevantChampionships.length,
+        ongoing_championships: championshipsData.items.length,
         upcoming_matches_found: allUpcomingMatches.length,
         debug_info: {
-          championship_statuses: Array.from(championshipStatuses),
           match_statuses: Array.from(allMatchStatuses)
         }
       }),
