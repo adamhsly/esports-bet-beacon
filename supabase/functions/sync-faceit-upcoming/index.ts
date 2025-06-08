@@ -101,9 +101,9 @@ serve(async (req) => {
 
     console.log('🔄 Starting FACEIT upcoming matches sync (championship-based)...');
 
-    // Step 1: Fetch CS2 championships
-    console.log('📋 Fetching CS2 championships...');
-    const championshipsResponse = await fetch('https://open.faceit.com/data/v4/championships?game=cs2&limit=20', {
+    // Step 1: Fetch ALL CS2 championships (removed limit)
+    console.log('📋 Fetching ALL CS2 championships...');
+    const championshipsResponse = await fetch('https://open.faceit.com/data/v4/championships?game=cs2', {
       headers: {
         'Authorization': `Bearer ${faceitApiKey}`,
         'Content-Type': 'application/json'
@@ -117,17 +117,37 @@ serve(async (req) => {
     }
 
     const championshipsData: FaceitChampionshipsResponse = await championshipsResponse.json();
-    console.log(`📋 Retrieved ${championshipsData.items.length} championships`);
+    console.log(`📋 Retrieved ${championshipsData.items.length} total championships`);
+
+    // Debug: Log championship statuses and types
+    const championshipStatuses = new Set();
+    const championshipTypes = new Set();
+    championshipsData.items.forEach(champ => {
+      championshipStatuses.add(champ.status);
+      championshipTypes.add(champ.type);
+    });
+    console.log(`📊 Championship statuses found: ${Array.from(championshipStatuses).join(', ')}`);
+    console.log(`📊 Championship types found: ${Array.from(championshipTypes).join(', ')}`);
+
+    // Filter for active/scheduled championships
+    const relevantChampionships = championshipsData.items.filter(champ => 
+      champ.status.toLowerCase() === 'ongoing' || 
+      champ.status.toLowerCase() === 'active' || 
+      champ.status.toLowerCase() === 'scheduled' ||
+      champ.status.toLowerCase() === 'upcoming'
+    );
+    console.log(`🎯 Filtered to ${relevantChampionships.length} relevant championships`);
 
     const allUpcomingMatches: FaceitMatch[] = [];
+    const allMatchStatuses = new Set();
 
-    // Step 2: For each championship, fetch matches
-    for (const championship of championshipsData.items) {
+    // Step 2: For each relevant championship, fetch matches
+    for (const championship of relevantChampionships) {
       championshipsProcessed++;
-      console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id})`);
+      console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id}) - Status: ${championship.status}`);
 
       try {
-        const matchesResponse = await fetch(`https://open.faceit.com/data/v4/championships/${championship.championship_id}/matches?limit=50`, {
+        const matchesResponse = await fetch(`https://open.faceit.com/data/v4/championships/${championship.championship_id}/matches`, {
           headers: {
             'Authorization': `Bearer ${faceitApiKey}`,
             'Content-Type': 'application/json'
@@ -136,33 +156,52 @@ serve(async (req) => {
 
         if (!matchesResponse.ok) {
           console.error(`❌ Error fetching matches for championship ${championship.championship_id}: ${matchesResponse.status}`);
-          continue; // Skip this championship and continue with others
+          continue;
         }
 
         const matchesData: FaceitMatchesResponse = await matchesResponse.json();
-        console.log(`🎮 Found ${matchesData.items.length} matches in ${championship.name}`);
+        console.log(`🎮 Found ${matchesData.items.length} total matches in ${championship.name}`);
 
-        // Filter for upcoming matches (status SCHEDULED or similar, and not started yet)
+        // Debug: Collect all match statuses
+        matchesData.items.forEach(match => {
+          allMatchStatuses.add(match.status);
+        });
+
+        // Broader filtering for upcoming matches
         const upcomingMatches = matchesData.items.filter(match => {
-          const isScheduled = match.status.toLowerCase() === 'scheduled' || match.status.toLowerCase() === 'ready';
+          const status = match.status.toLowerCase();
+          const isScheduledStatus = status === 'scheduled' || status === 'ready' || status === 'upcoming' || status === 'configured';
           const notStarted = !match.started_at || new Date(match.started_at) > new Date();
           const notFinished = !match.finished_at;
+          const isCS = match.game === 'cs2' || match.game === 'csgo';
           
-          return (match.game === 'cs2' || match.game === 'csgo') && isScheduled && notStarted && notFinished;
+          console.log(`🔍 Match ${match.match_id}: status=${match.status}, started=${!!match.started_at}, finished=${!!match.finished_at}, game=${match.game}`);
+          
+          return isCS && isScheduledStatus && notStarted && notFinished;
         });
 
         console.log(`📅 Found ${upcomingMatches.length} upcoming matches in ${championship.name}`);
+        if (upcomingMatches.length > 0) {
+          console.log(`✨ Upcoming matches details:`, upcomingMatches.map(m => ({
+            id: m.match_id,
+            status: m.status,
+            started: m.started_at,
+            teams: `${m.teams.faction1.name} vs ${m.teams.faction2.name}`
+          })));
+        }
+        
         allUpcomingMatches.push(...upcomingMatches);
 
-        // Add small delay between requests to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Add delay between requests to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 200));
 
       } catch (error) {
         console.error(`❌ Error processing championship ${championship.championship_id}:`, error);
-        continue; // Continue with next championship
+        continue;
       }
     }
 
+    console.log(`📊 All match statuses found: ${Array.from(allMatchStatuses).join(', ')}`);
     console.log(`🎯 Total upcoming matches found across all championships: ${allUpcomingMatches.length}`);
 
     // Step 3: Process and store matches
@@ -176,7 +215,7 @@ serve(async (req) => {
         competition_name: match.competition_name,
         competition_type: match.competition_type,
         organized_by: match.organized_by,
-        status: 'upcoming', // Set to upcoming for scheduled matches
+        status: 'upcoming',
         started_at: match.started_at ? new Date(match.started_at).toISOString() : null,
         finished_at: match.finished_at ? new Date(match.finished_at).toISOString() : null,
         configured_at: match.configured_at ? new Date(match.configured_at).toISOString() : null,
@@ -193,6 +232,8 @@ serve(async (req) => {
         raw_data: match
       };
 
+      console.log(`💾 Storing match: ${match.match_id} - ${match.teams.faction1.name} vs ${match.teams.faction2.name}`);
+
       const { error, data: upsertResult } = await supabase
         .from('faceit_matches')
         .upsert(matchData, { 
@@ -207,7 +248,6 @@ serve(async (req) => {
       }
 
       if (upsertResult && upsertResult.length > 0) {
-        // Check if this was an insert or update
         const { data: existingMatch } = await supabase
           .from('faceit_matches')
           .select('created_at, updated_at')
@@ -218,7 +258,7 @@ serve(async (req) => {
           const createdAt = new Date(existingMatch.created_at).getTime();
           const updatedAt = new Date(existingMatch.updated_at).getTime();
           
-          if (Math.abs(createdAt - updatedAt) < 1000) { // Within 1 second = new insert
+          if (Math.abs(createdAt - updatedAt) < 1000) {
             added++;
           } else {
             updated++;
@@ -229,7 +269,7 @@ serve(async (req) => {
 
     const duration = Date.now() - startTime;
     console.log(`✅ Upcoming sync completed: ${processed} processed, ${added} added, ${updated} updated in ${duration}ms`);
-    console.log(`📊 Championships processed: ${championshipsProcessed}`);
+    console.log(`📊 Championships processed: ${championshipsProcessed} out of ${relevantChampionships.length} relevant`);
 
     // Update log entry with success
     if (logEntry) {
@@ -245,7 +285,10 @@ serve(async (req) => {
           metadata: { 
             championships_processed: championshipsProcessed,
             total_championships: championshipsData.items.length,
-            upcoming_matches_found: allUpcomingMatches.length 
+            relevant_championships: relevantChampionships.length,
+            upcoming_matches_found: allUpcomingMatches.length,
+            championship_statuses: Array.from(championshipStatuses),
+            match_statuses: Array.from(allMatchStatuses)
           }
         })
         .eq('id', logEntry.id);
@@ -259,7 +302,12 @@ serve(async (req) => {
         updated,
         duration_ms: duration,
         championships_processed: championshipsProcessed,
-        upcoming_matches_found: allUpcomingMatches.length
+        relevant_championships: relevantChampionships.length,
+        upcoming_matches_found: allUpcomingMatches.length,
+        debug_info: {
+          championship_statuses: Array.from(championshipStatuses),
+          match_statuses: Array.from(allMatchStatuses)
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -268,7 +316,6 @@ serve(async (req) => {
     const duration = Date.now() - startTime;
     console.error('❌ FACEIT upcoming sync failed:', error);
 
-    // Update log entry with error
     if (logEntry) {
       await supabase
         .from('faceit_sync_logs')
