@@ -19,6 +19,10 @@ import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitLiveMatches, fetchSupabaseFaceitUpcomingMatches } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
+import { DateMatchPicker } from '@/components/DateMatchPicker';
+import { filterMatchesByDate, getMatchCountsByDate, formatMatchDate } from '@/utils/dateMatchUtils';
+import { fetchSupabaseFaceitMatchesByDate, fetchSupabaseFaceitAllMatches } from '@/lib/supabaseFaceitApi';
+import { startOfDay } from 'date-fns';
 
 const Index = () => {
   const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
@@ -29,6 +33,12 @@ const Index = () => {
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
   const [loadingFaceitLive, setLoadingFaceitLive] = useState(true);
   const [loadingFaceitUpcoming, setLoadingFaceitUpcoming] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dateFilteredFaceitLive, setDateFilteredFaceitLive] = useState<MatchInfo[]>([]);
+  const [dateFilteredFaceitUpcoming, setDateFilteredFaceitUpcoming] = useState<MatchInfo[]>([]);
+  const [allFaceitMatches, setAllFaceitMatches] = useState<MatchInfo[]>([]);
+  const [faceitMatchCounts, setFaceitMatchCounts] = useState<Record<string, number>>({});
+  const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const { toast } = useToast();
   
   // Fetch live matches and refresh every 30 seconds
@@ -115,6 +125,46 @@ const Index = () => {
     loadFaceitUpcomingMatches();
   }, []);
 
+  // Load all FACEIT matches for counting
+  useEffect(() => {
+    async function loadAllFaceitMatches() {
+      try {
+        const allMatches = await fetchSupabaseFaceitAllMatches();
+        setAllFaceitMatches(allMatches);
+        setFaceitMatchCounts(getMatchCountsByDate(allMatches));
+      } catch (error) {
+        console.error('Error loading all FACEIT matches:', error);
+      }
+    }
+    
+    loadAllFaceitMatches();
+  }, []);
+
+  // Load date-filtered FACEIT matches
+  useEffect(() => {
+    async function loadDateFilteredMatches() {
+      setLoadingDateFiltered(true);
+      try {
+        console.log('🗓️ Loading matches for selected date:', selectedDate.toDateString());
+        const { live, upcoming } = await fetchSupabaseFaceitMatchesByDate(selectedDate);
+        setDateFilteredFaceitLive(live);
+        setDateFilteredFaceitUpcoming(upcoming);
+      } catch (error) {
+        console.error('Error loading date-filtered matches:', error);
+        setDateFilteredFaceitLive([]);
+        setDateFilteredFaceitUpcoming([]);
+      } finally {
+        setLoadingDateFiltered(false);
+      }
+    }
+    
+    loadDateFilteredMatches();
+  }, [selectedDate]);
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(startOfDay(date));
+  };
+
   const homepageSEOContent = {
     title: "Your Ultimate Esports Betting & Stats Platform",
     paragraphs: [
@@ -164,37 +214,76 @@ const Index = () => {
             )}
           </div>
 
-          {/* Live Matches - FACEIT Amateur */}
+          {/* FACEIT Matches with Date Picker */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold font-gaming flex items-center">
                 <Users className="h-6 w-6 mr-2 text-orange-400" />
-                <span className="highlight-gradient">Live</span> Amateur Matches
+                <span className="highlight-gradient">FACEIT</span> Matches
                 <Badge variant="outline" className="ml-3 bg-orange-500/20 text-orange-400 border-orange-400/30">
-                  FACEIT
+                  Amateur
                 </Badge>
               </h2>
               <FaceitSyncButtons />
             </div>
-            
-            {loadingFaceitLive ? (
+
+            <DateMatchPicker
+              selectedDate={selectedDate}
+              onDateSelect={handleDateSelect}
+              matchCounts={faceitMatchCounts}
+            />
+
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-gray-300">
+                Matches for {formatMatchDate(selectedDate)}
+              </h3>
+            </div>
+
+            {loadingDateFiltered ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-orange-400 mr-2" />
-                <span>Loading FACEIT matches...</span>
-              </div>
-            ) : faceitLiveMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {faceitLiveMatches.slice(0, 6).map(match => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
+                <span>Loading matches for selected date...</span>
               </div>
             ) : (
-              <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400 mb-4">No live FACEIT matches at the moment.</p>
-                <p className="text-sm text-gray-500">
-                  Try clicking "Sync Live" to refresh match data from FACEIT API.
-                </p>
-              </div>
+              <>
+                {/* Live Matches for Selected Date */}
+                {dateFilteredFaceitLive.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-md font-semibold text-orange-400 mb-4 flex items-center">
+                      🔴 Live Now ({dateFilteredFaceitLive.length})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {dateFilteredFaceitLive.map(match => (
+                        <MatchCard key={match.id} match={match} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upcoming Matches for Selected Date */}
+                {dateFilteredFaceitUpcoming.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-md font-semibold text-orange-400 mb-4 flex items-center">
+                      📅 Upcoming ({dateFilteredFaceitUpcoming.length})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {dateFilteredFaceitUpcoming.map(match => (
+                        <MatchCard key={match.id} match={match} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Matches State */}
+                {dateFilteredFaceitLive.length === 0 && dateFilteredFaceitUpcoming.length === 0 && (
+                  <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
+                    <p className="text-gray-400 mb-4">No FACEIT matches scheduled for {formatMatchDate(selectedDate)}.</p>
+                    <p className="text-sm text-gray-500">
+                      Try selecting a different date or clicking "Sync Live" / "Sync Upcoming" to refresh match data.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
           
@@ -374,3 +463,5 @@ const Index = () => {
 };
 
 export default Index;
+
+</edits_to_apply>

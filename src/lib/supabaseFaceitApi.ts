@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { MatchInfo } from "@/components/MatchCard";
 
@@ -120,6 +119,87 @@ export async function fetchSupabaseFaceitUpcomingMatches(): Promise<MatchInfo[]>
     return matches;
   } catch (error) {
     console.error('❌ Error in fetchSupabaseFaceitUpcomingMatches:', error);
+    return [];
+  }
+}
+
+export async function fetchSupabaseFaceitMatchesByDate(selectedDate: Date): Promise<{ live: MatchInfo[], upcoming: MatchInfo[] }> {
+  console.log(`📅 Fetching FACEIT matches for date: ${selectedDate.toISOString()}`);
+  
+  try {
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Fetch live matches for the selected date
+    const { data: liveData, error: liveError } = await supabase
+      .from('faceit_matches')
+      .select('*')
+      .eq('status', 'ongoing')
+      .eq('game', 'cs2')
+      .gte('started_at', startOfDay.toISOString())
+      .lte('started_at', endOfDay.toISOString())
+      .order('started_at', { ascending: false })
+      .limit(50);
+
+    // Fetch upcoming matches for the selected date
+    const { data: upcomingData, error: upcomingError } = await supabase
+      .from('faceit_matches')
+      .select('*')
+      .eq('status', 'upcoming')
+      .eq('game', 'cs2')
+      .gte('scheduled_at', startOfDay.toISOString())
+      .lte('scheduled_at', endOfDay.toISOString())
+      .order('scheduled_at', { ascending: true })
+      .limit(50);
+
+    if (liveError) {
+      console.error('❌ Error fetching live matches by date:', liveError);
+    }
+    
+    if (upcomingError) {
+      console.error('❌ Error fetching upcoming matches by date:', upcomingError);
+    }
+
+    const liveMatches = (liveData || []).map(transformDatabaseMatch);
+    const upcomingMatches = (upcomingData || []).map(transformDatabaseMatch);
+
+    console.log(`✅ Retrieved ${liveMatches.length} live and ${upcomingMatches.length} upcoming matches for ${selectedDate.toDateString()}`);
+    
+    return {
+      live: liveMatches,
+      upcoming: upcomingMatches
+    };
+  } catch (error) {
+    console.error('❌ Error in fetchSupabaseFaceitMatchesByDate:', error);
+    return { live: [], upcoming: [] };
+  }
+}
+
+export async function fetchSupabaseFaceitAllMatches(): Promise<MatchInfo[]> {
+  console.log('📊 Fetching all FACEIT matches for date counting...');
+  
+  try {
+    const { data, error } = await supabase
+      .from('faceit_matches')
+      .select('*')
+      .eq('game', 'cs2')
+      .in('status', ['ongoing', 'upcoming'])
+      .order('scheduled_at', { ascending: true })
+      .limit(200);
+
+    if (error) {
+      console.error('❌ Error fetching all matches:', error);
+      return [];
+    }
+
+    const matches = (data || []).map(transformDatabaseMatch);
+    console.log(`✅ Retrieved ${matches.length} total matches for counting`);
+    return matches;
+  } catch (error) {
+    console.error('❌ Error in fetchSupabaseFaceitAllMatches:', error);
     return [];
   }
 }
