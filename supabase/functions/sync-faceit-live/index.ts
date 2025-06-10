@@ -106,7 +106,6 @@ serve(async (req) => {
     const championshipsUrl = new URL('https://open.faceit.com/data/v4/championships');
     championshipsUrl.searchParams.set('game', 'cs2');
     championshipsUrl.searchParams.set('type', 'ongoing');
-    // Removed limit to get all ongoing championships
 
     const championshipsResponse = await fetch(championshipsUrl.toString(), {
       headers: {
@@ -197,6 +196,7 @@ serve(async (req) => {
         organized_by: match.organized_by,
         status: 'ongoing',
         started_at: match.started_at ? new Date(match.started_at).toISOString() : null,
+        scheduled_at: match.scheduled_at ? new Date(match.scheduled_at).toISOString() : null,
         finished_at: match.finished_at ? new Date(match.finished_at).toISOString() : null,
         configured_at: match.configured_at ? new Date(match.configured_at).toISOString() : null,
         calculate_elo: match.calculate_elo,

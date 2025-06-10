@@ -134,6 +134,7 @@ export type Database = {
           organized_by: string | null
           raw_data: Json | null
           region: string | null
+          scheduled_at: string | null
           started_at: string | null
           status: string
           teams: Json
@@ -155,6 +156,7 @@ export type Database = {
           organized_by?: string | null
           raw_data?: Json | null
           region?: string | null
+          scheduled_at?: string | null
           started_at?: string | null
           status: string
           teams: Json
@@ -176,6 +178,7 @@ export type Database = {
           organized_by?: string | null
           raw_data?: Json | null
           region?: string | null
+          scheduled_at?: string | null
           started_at?: string | null
           status?: string
           teams?: Json

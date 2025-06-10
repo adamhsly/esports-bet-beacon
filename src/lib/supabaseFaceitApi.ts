@@ -1,8 +1,26 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { MatchInfo } from "@/components/MatchCard";
 
 // Transform database match to MatchInfo format
 function transformDatabaseMatch(dbMatch: any): MatchInfo {
+  // Choose the appropriate time field based on match status and availability
+  let startTime: string;
+  
+  if (dbMatch.status === 'upcoming' && dbMatch.scheduled_at) {
+    // For upcoming matches, use scheduled_at if available
+    startTime = dbMatch.scheduled_at;
+  } else if (dbMatch.started_at) {
+    // For live/finished matches, use started_at if available
+    startTime = dbMatch.started_at;
+  } else if (dbMatch.scheduled_at) {
+    // Fallback to scheduled_at if started_at is not available
+    startTime = dbMatch.scheduled_at;
+  } else {
+    // Final fallback to current time (should rarely happen now)
+    startTime = new Date().toISOString();
+  }
+
   return {
     id: `faceit_${dbMatch.match_id}`,
     teams: [
@@ -17,7 +35,7 @@ function transformDatabaseMatch(dbMatch: any): MatchInfo {
         id: `faceit_team_${dbMatch.match_id}_2`
       }
     ],
-    startTime: dbMatch.started_at || new Date().toISOString(),
+    startTime,
     tournament: dbMatch.competition_name || 'FACEIT Match',
     tournament_name: dbMatch.competition_name,
     season_name: dbMatch.competition_type,
