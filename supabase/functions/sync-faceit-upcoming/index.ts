@@ -23,9 +23,10 @@ interface FaceitMatch {
   competition_type: string;
   organized_by: string;
   status: string;
-  started_at: string;
-  finished_at?: string;
-  configured_at: string;
+  started_at: string | number;
+  scheduled_at?: string | number;
+  finished_at?: string | number;
+  configured_at: string | number;
   calculate_elo: boolean;
   version: number;
   teams: {
@@ -65,6 +66,27 @@ interface FaceitMatchesResponse {
   items: FaceitMatch[];
   start: number;
   end: number;
+}
+
+// Helper function to convert Faceit timestamp (Unix seconds) to ISO string
+function convertFaceitTimestamp(timestamp: string | number | undefined): string | null {
+  if (!timestamp) return null;
+  
+  // If it's already a string that looks like an ISO date, return it
+  if (typeof timestamp === 'string' && timestamp.includes('T')) {
+    return timestamp;
+  }
+  
+  // Convert to number if it's a string
+  const unixSeconds = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
+  
+  // Check if it's a valid Unix timestamp (should be a reasonable number)
+  if (isNaN(unixSeconds) || unixSeconds <= 0) {
+    return null;
+  }
+  
+  // Convert from seconds to milliseconds and create ISO string
+  return new Date(unixSeconds * 1000).toISOString();
 }
 
 serve(async (req) => {
@@ -156,14 +178,15 @@ serve(async (req) => {
         matchesData.items.forEach(match => {
           allMatchStatuses.add(match.status);
           const teams = match.teams ? `${match.teams.faction1.name} vs ${match.teams.faction2.name}` : 'N/A';
-          console.log(`  • ${match.match_id} | ${match.status} | ${teams}`);
+          const scheduledTime = convertFaceitTimestamp(match.scheduled_at);
+          console.log(`  • ${match.match_id} | ${match.status} | ${teams} | Scheduled: ${scheduledTime}`);
         });
 
         // Filter for upcoming/scheduled matches only
         const upcomingMatches = matchesData.items.filter(match => {
           const status = match.status.toLowerCase();
           const isUpcomingStatus = status === 'scheduled' || status === 'ready' || status === 'upcoming' || status === 'configured';
-          const notStarted = !match.started_at || new Date(match.started_at) > new Date();
+          const notStarted = !match.started_at || new Date(convertFaceitTimestamp(match.started_at) || 0) > new Date();
           const notFinished = !match.finished_at;
           const isCS = match.game === 'cs2' || match.game === 'csgo';
           
@@ -197,10 +220,10 @@ serve(async (req) => {
         competition_type: match.competition_type,
         organized_by: match.organized_by,
         status: 'upcoming',
-        started_at: match.started_at ? new Date(match.started_at).toISOString() : null,
-        scheduled_at: match.scheduled_at ? new Date(match.scheduled_at).toISOString() : null,
-        finished_at: match.finished_at ? new Date(match.finished_at).toISOString() : null,
-        configured_at: match.configured_at ? new Date(match.configured_at).toISOString() : null,
+        started_at: convertFaceitTimestamp(match.started_at),
+        scheduled_at: convertFaceitTimestamp(match.scheduled_at),
+        finished_at: convertFaceitTimestamp(match.finished_at),
+        configured_at: convertFaceitTimestamp(match.configured_at),
         calculate_elo: match.calculate_elo,
         version: match.version,
         teams: match.teams,
@@ -214,7 +237,7 @@ serve(async (req) => {
         raw_data: match
       };
 
-      console.log(`💾 Storing match: ${match.match_id} - ${match.teams.faction1.name} vs ${match.teams.faction2.name}`);
+      console.log(`💾 Storing match: ${match.match_id} - ${match.teams.faction1.name} vs ${match.teams.faction2.name} | Scheduled: ${matchData.scheduled_at}`);
 
       const { error, data: upsertResult } = await supabase
         .from('faceit_matches')
