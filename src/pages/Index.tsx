@@ -10,119 +10,70 @@ import Footer from '@/components/Footer';
 import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
 import { fetchLiveMatches, fetchUpcomingMatches } from '@/lib/sportDevsApi';
-import { fetchFaceitLiveMatches, fetchFaceitUpcomingMatches } from '@/lib/faceitApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, Trophy, Users } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
-import { fetchSupabaseFaceitLiveMatches, fetchSupabaseFaceitUpcomingMatches } from '@/lib/supabaseFaceitApi';
+import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
-import { filterMatchesByDate, getMatchCountsByDate, formatMatchDate } from '@/utils/dateMatchUtils';
-import { fetchSupabaseFaceitMatchesByDate, fetchSupabaseFaceitAllMatches } from '@/lib/supabaseFaceitApi';
+import { getMatchCountsByDate, formatMatchDate } from '@/utils/dateMatchUtils';
 import { startOfDay } from 'date-fns';
 
 const Index = () => {
-  const [liveMatches, setLiveMatches] = useState<MatchInfo[]>([]);
-  const [upcomingMatches, setUpcomingMatches] = useState<MatchInfo[]>([]);
-  const [faceitLiveMatches, setFaceitLiveMatches] = useState<MatchInfo[]>([]);
-  const [faceitUpcomingMatches, setFaceitUpcomingMatches] = useState<MatchInfo[]>([]);
-  const [loadingLive, setLoadingLive] = useState(true);
-  const [loadingUpcoming, setLoadingUpcoming] = useState(true);
-  const [loadingFaceitLive, setLoadingFaceitLive] = useState(true);
-  const [loadingFaceitUpcoming, setLoadingFaceitUpcoming] = useState(true);
+  const [proLiveMatches, setProLiveMatches] = useState<MatchInfo[]>([]);
+  const [proUpcomingMatches, setProUpcomingMatches] = useState<MatchInfo[]>([]);
+  const [loadingProLive, setLoadingProLive] = useState(true);
+  const [loadingProUpcoming, setLoadingProUpcoming] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [dateFilteredFaceitLive, setDateFilteredFaceitLive] = useState<MatchInfo[]>([]);
-  const [dateFilteredFaceitUpcoming, setDateFilteredFaceitUpcoming] = useState<MatchInfo[]>([]);
+  const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
+  const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
   const [allFaceitMatches, setAllFaceitMatches] = useState<MatchInfo[]>([]);
   const [faceitMatchCounts, setFaceitMatchCounts] = useState<Record<string, number>>({});
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const { toast } = useToast();
   
-  // Fetch live matches and refresh every 30 seconds
+  // Fetch professional live matches and refresh every 30 seconds
   useEffect(() => {
-    async function loadLiveMatches() {
+    async function loadProLiveMatches() {
       try {
         const csgoMatches = await fetchLiveMatches('csgo');
-        setLiveMatches(csgoMatches);
+        setProLiveMatches(csgoMatches);
       } catch (error) {
-        console.error('Error loading live matches:', error);
+        console.error('Error loading pro live matches:', error);
         const mockMatches = getTodayMatches('csgo');
-        setLiveMatches(mockMatches.slice(0, 3));
+        setProLiveMatches(mockMatches.slice(0, 3));
       } finally {
-        setLoadingLive(false);
+        setLoadingProLive(false);
       }
     }
     
-    loadLiveMatches();
+    loadProLiveMatches();
     const interval = setInterval(() => {
-      loadLiveMatches();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch FACEIT live matches from Supabase
-  useEffect(() => {
-    async function loadFaceitLiveMatches() {
-      try {
-        console.log('🔴 Loading FACEIT live matches...');
-        const faceitMatches = await fetchSupabaseFaceitLiveMatches();
-        console.log('📊 FACEIT live matches loaded:', faceitMatches.length);
-        setFaceitLiveMatches(faceitMatches);
-      } catch (error) {
-        console.error('Error loading FACEIT live matches:', error);
-        setFaceitLiveMatches([]);
-      } finally {
-        setLoadingFaceitLive(false);
-      }
-    }
-    
-    loadFaceitLiveMatches();
-    const interval = setInterval(() => {
-      loadFaceitLiveMatches();
+      loadProLiveMatches();
     }, 30000);
     
     return () => clearInterval(interval);
   }, []);
   
-  // Fetch upcoming matches
+  // Fetch professional upcoming matches
   useEffect(() => {
-    async function loadUpcomingMatches() {
+    async function loadProUpcomingMatches() {
       try {
         const csgoMatches = await fetchUpcomingMatches('csgo');
-        setUpcomingMatches(csgoMatches.slice(0, 3));
+        setProUpcomingMatches(csgoMatches.slice(0, 3));
       } catch (error) {
-        console.error('Error loading upcoming matches:', error);
+        console.error('Error loading pro upcoming matches:', error);
         const mockMatches = getUpcomingMatches('csgo');
-        setUpcomingMatches(mockMatches.slice(0, 3));
+        setProUpcomingMatches(mockMatches.slice(0, 3));
       } finally {
-        setLoadingUpcoming(false);
+        setLoadingProUpcoming(false);
       }
     }
     
-    loadUpcomingMatches();
-  }, []);
-
-  // Fetch FACEIT upcoming matches from Supabase
-  useEffect(() => {
-    async function loadFaceitUpcomingMatches() {
-      try {
-        console.log('📅 Loading FACEIT upcoming matches...');
-        const faceitMatches = await fetchSupabaseFaceitUpcomingMatches();
-        console.log('📊 FACEIT upcoming matches loaded:', faceitMatches.length);
-        setFaceitUpcomingMatches(faceitMatches);
-      } catch (error) {
-        console.error('Error loading FACEIT upcoming matches:', error);
-        setFaceitUpcomingMatches([]);
-      } finally {
-        setLoadingFaceitUpcoming(false);
-      }
-    }
-    
-    loadFaceitUpcomingMatches();
+    loadProUpcomingMatches();
   }, []);
 
   // Load all FACEIT matches for counting
@@ -140,26 +91,53 @@ const Index = () => {
     loadAllFaceitMatches();
   }, []);
 
-  // Load date-filtered FACEIT matches
+  // Load date-filtered matches (combining FACEIT and professional)
   useEffect(() => {
     async function loadDateFilteredMatches() {
       setLoadingDateFiltered(true);
       try {
         console.log('🗓️ Loading matches for selected date:', selectedDate.toDateString());
-        const { live, upcoming } = await fetchSupabaseFaceitMatchesByDate(selectedDate);
-        setDateFilteredFaceitLive(live);
-        setDateFilteredFaceitUpcoming(upcoming);
+        
+        // Fetch FACEIT matches for the selected date
+        const { live: faceitLive, upcoming: faceitUpcoming } = await fetchSupabaseFaceitMatchesByDate(selectedDate);
+        
+        // Filter professional matches for the selected date
+        const selectedDateStart = startOfDay(selectedDate);
+        const selectedDateEnd = new Date(selectedDateStart);
+        selectedDateEnd.setHours(23, 59, 59, 999);
+        
+        const filteredProLive = proLiveMatches.filter(match => {
+          const matchDate = new Date(match.startTime);
+          return matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
+        });
+        
+        const filteredProUpcoming = proUpcomingMatches.filter(match => {
+          const matchDate = new Date(match.startTime);
+          return matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
+        });
+        
+        // Combine and sort matches
+        const allLiveMatches = [...faceitLive, ...filteredProLive].sort((a, b) => 
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+        
+        const allUpcomingMatches = [...faceitUpcoming, ...filteredProUpcoming].sort((a, b) => 
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+        
+        setDateFilteredLiveMatches(allLiveMatches);
+        setDateFilteredUpcomingMatches(allUpcomingMatches);
       } catch (error) {
         console.error('Error loading date-filtered matches:', error);
-        setDateFilteredFaceitLive([]);
-        setDateFilteredFaceitUpcoming([]);
+        setDateFilteredLiveMatches([]);
+        setDateFilteredUpcomingMatches([]);
       } finally {
         setLoadingDateFiltered(false);
       }
     }
     
     loadDateFilteredMatches();
-  }, [selectedDate]);
+  }, [selectedDate, proLiveMatches, proUpcomingMatches]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(startOfDay(date));
@@ -182,47 +160,22 @@ const Index = () => {
         <Hero />
         
         <div className="container mx-auto px-4 py-12">
-          {/* Live Matches - Professional */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming flex items-center">
-                <Trophy className="h-6 w-6 mr-2 text-blue-400" />
-                <span className="highlight-gradient">Live</span> Pro Matches
-              </h2>
-              <Button asChild variant="ghost" className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
-                <Link to="/esports/csgo">
-                  View All <ArrowRight size={16} className="ml-1" />
-                </Link>
-              </Button>
-            </div>
-            
-            {loadingLive ? (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
-                <span>Loading live matches...</span>
-              </div>
-            ) : liveMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {liveMatches.slice(0, 3).map(match => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400">No live pro matches at the moment.</p>
-              </div>
-            )}
-          </div>
-
-          {/* FACEIT Matches with Date Picker */}
+          {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold font-gaming flex items-center">
-                <Users className="h-6 w-6 mr-2 text-orange-400" />
-                <span className="highlight-gradient">FACEIT</span> Matches
-                <Badge variant="outline" className="ml-3 bg-orange-500/20 text-orange-400 border-orange-400/30">
-                  Amateur
-                </Badge>
+                <Trophy className="h-6 w-6 mr-2 text-blue-400" />
+                <span className="highlight-gradient">Esports</span> Matches
+                <div className="flex gap-2 ml-3">
+                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+                    <Trophy size={12} className="mr-1" />
+                    PRO
+                  </Badge>
+                  <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
+                    <Users size={12} className="mr-1" />
+                    AMATEUR
+                  </Badge>
+                </div>
               </h2>
               <FaceitSyncButtons />
             </div>
@@ -241,19 +194,19 @@ const Index = () => {
 
             {loadingDateFiltered ? (
               <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-orange-400 mr-2" />
+                <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
                 <span>Loading matches for selected date...</span>
               </div>
             ) : (
               <>
                 {/* Live Matches for Selected Date */}
-                {dateFilteredFaceitLive.length > 0 && (
+                {dateFilteredLiveMatches.length > 0 && (
                   <div className="mb-8">
-                    <h4 className="text-md font-semibold text-orange-400 mb-4 flex items-center">
-                      🔴 Live Now ({dateFilteredFaceitLive.length})
+                    <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
+                      🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {dateFilteredFaceitLive.map(match => (
+                      {dateFilteredLiveMatches.map(match => (
                         <MatchCard key={match.id} match={match} />
                       ))}
                     </div>
@@ -261,13 +214,13 @@ const Index = () => {
                 )}
 
                 {/* Upcoming Matches for Selected Date */}
-                {dateFilteredFaceitUpcoming.length > 0 && (
+                {dateFilteredUpcomingMatches.length > 0 && (
                   <div className="mb-8">
-                    <h4 className="text-md font-semibold text-orange-400 mb-4 flex items-center">
-                      📅 Upcoming ({dateFilteredFaceitUpcoming.length})
+                    <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
+                      📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {dateFilteredFaceitUpcoming.map(match => (
+                      {dateFilteredUpcomingMatches.map(match => (
                         <MatchCard key={match.id} match={match} />
                       ))}
                     </div>
@@ -275,80 +228,15 @@ const Index = () => {
                 )}
 
                 {/* No Matches State */}
-                {dateFilteredFaceitLive.length === 0 && dateFilteredFaceitUpcoming.length === 0 && (
+                {dateFilteredLiveMatches.length === 0 && dateFilteredUpcomingMatches.length === 0 && (
                   <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                    <p className="text-gray-400 mb-4">No FACEIT matches scheduled for {formatMatchDate(selectedDate)}.</p>
+                    <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
                     <p className="text-sm text-gray-500">
                       Try selecting a different date or clicking "Sync Live" / "Sync Upcoming" to refresh match data.
                     </p>
                   </div>
                 )}
               </>
-            )}
-          </div>
-          
-          {/* Upcoming Matches - Professional */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming flex items-center">
-                <Trophy className="h-6 w-6 mr-2 text-blue-400" />
-                <span className="highlight-gradient">Upcoming</span> Pro Matches
-              </h2>
-              <Button asChild variant="ghost" className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
-                <Link to="/esports/csgo">
-                  View All <ArrowRight size={16} className="ml-1" />
-                </Link>
-              </Button>
-            </div>
-            
-            {loadingUpcoming ? (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
-                <span>Loading upcoming matches...</span>
-              </div>
-            ) : upcomingMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {upcomingMatches.map(match => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400">No upcoming pro matches at the moment.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Upcoming Matches - FACEIT Amateur */}
-          <div className="mb-10">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming flex items-center">
-                <Users className="h-6 w-6 mr-2 text-orange-400" />
-                <span className="highlight-gradient">Upcoming</span> Amateur Matches
-                <Badge variant="outline" className="ml-3 bg-orange-500/20 text-orange-400 border-orange-400/30">
-                  FACEIT
-                </Badge>
-              </h2>
-            </div>
-            
-            {loadingFaceitUpcoming ? (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-orange-400 mr-2" />
-                <span>Loading FACEIT matches...</span>
-              </div>
-            ) : faceitUpcomingMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {faceitUpcomingMatches.slice(0, 6).map(match => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
-                <p className="text-gray-400 mb-4">No upcoming FACEIT matches at the moment.</p>
-                <p className="text-sm text-gray-500">
-                  Try clicking "Sync Upcoming" to refresh match data from FACEIT API.
-                </p>
-              </div>
             )}
           </div>
           
