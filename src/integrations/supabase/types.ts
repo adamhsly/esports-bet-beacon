@@ -651,6 +651,225 @@ export type Database = {
         }
         Relationships: []
       }
+      pandascore_matches: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          esport_type: string
+          id: string
+          last_synced_at: string
+          league_id: string | null
+          league_name: string | null
+          match_id: string
+          match_type: string | null
+          number_of_games: number | null
+          raw_data: Json | null
+          serie_id: string | null
+          serie_name: string | null
+          start_time: string
+          status: string
+          teams: Json
+          tournament_id: string | null
+          tournament_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          esport_type: string
+          id?: string
+          last_synced_at?: string
+          league_id?: string | null
+          league_name?: string | null
+          match_id: string
+          match_type?: string | null
+          number_of_games?: number | null
+          raw_data?: Json | null
+          serie_id?: string | null
+          serie_name?: string | null
+          start_time: string
+          status?: string
+          teams?: Json
+          tournament_id?: string | null
+          tournament_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          esport_type?: string
+          id?: string
+          last_synced_at?: string
+          league_id?: string | null
+          league_name?: string | null
+          match_id?: string
+          match_type?: string | null
+          number_of_games?: number | null
+          raw_data?: Json | null
+          serie_id?: string | null
+          serie_name?: string | null
+          start_time?: string
+          status?: string
+          teams?: Json
+          tournament_id?: string | null
+          tournament_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pandascore_sync_logs: {
+        Row: {
+          completed_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          esport_type: string | null
+          id: string
+          metadata: Json | null
+          records_added: number | null
+          records_processed: number | null
+          records_updated: number | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          esport_type?: string | null
+          id?: string
+          metadata?: Json | null
+          records_added?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          esport_type?: string | null
+          id?: string
+          metadata?: Json | null
+          records_added?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: []
+      }
+      pandascore_teams: {
+        Row: {
+          acronym: string | null
+          created_at: string
+          esport_type: string
+          id: string
+          last_synced_at: string
+          logo_url: string | null
+          name: string
+          players_data: Json | null
+          raw_data: Json | null
+          slug: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          acronym?: string | null
+          created_at?: string
+          esport_type: string
+          id?: string
+          last_synced_at?: string
+          logo_url?: string | null
+          name: string
+          players_data?: Json | null
+          raw_data?: Json | null
+          slug?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          acronym?: string | null
+          created_at?: string
+          esport_type?: string
+          id?: string
+          last_synced_at?: string
+          logo_url?: string | null
+          name?: string
+          players_data?: Json | null
+          raw_data?: Json | null
+          slug?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pandascore_tournaments: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          esport_type: string
+          id: string
+          image_url: string | null
+          last_synced_at: string
+          league_id: string | null
+          league_name: string | null
+          name: string
+          raw_data: Json | null
+          serie_id: string | null
+          serie_name: string | null
+          slug: string | null
+          start_date: string | null
+          status: string | null
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          esport_type: string
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string
+          league_id?: string | null
+          league_name?: string | null
+          name: string
+          raw_data?: Json | null
+          serie_id?: string | null
+          serie_name?: string | null
+          slug?: string | null
+          start_date?: string | null
+          status?: string | null
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          esport_type?: string
+          id?: string
+          image_url?: string | null
+          last_synced_at?: string
+          league_id?: string | null
+          league_name?: string | null
+          name?: string
+          raw_data?: Json | null
+          serie_id?: string | null
+          serie_name?: string | null
+          slug?: string | null
+          start_date?: string | null
+          status?: string | null
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       player_data: {
         Row: {
           created_at: string
