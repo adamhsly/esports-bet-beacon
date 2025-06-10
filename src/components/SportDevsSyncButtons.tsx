@@ -50,47 +50,56 @@ export const SportDevsSyncButtons = () => {
   };
 
   return (
-    <div className="flex flex-wrap gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-      <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-semibold">SportDevs Sync Controls</h3>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => handleSync('Upcoming Matches', 'sync-sportdevs-upcoming-matches')}
-            disabled={syncing['matches']}
-            variant="outline"
-            size="sm"
-          >
-            {syncing['matches'] ? 'Syncing...' : 'Sync Upcoming Matches'}
-          </Button>
-          
-          <Button
-            onClick={() => handleSync('Teams', 'sync-sportdevs-teams')}
-            disabled={syncing['teams']}
-            variant="outline"
-            size="sm"
-          >
-            {syncing['teams'] ? 'Syncing...' : 'Sync Teams'}
-          </Button>
-          
-          <Button
-            onClick={() => handleSync('Tournaments', 'sync-sportdevs-tournaments')}
-            disabled={syncing['tournaments']}
-            variant="outline"
-            size="sm"
-          >
-            {syncing['tournaments'] ? 'Syncing...' : 'Sync Tournaments'}
-          </Button>
-          
-          <Button
-            onClick={handleSetupCron}
-            disabled={syncing['cron']}
-            variant="default"
-            size="sm"
-          >
-            {syncing['cron'] ? 'Setting up...' : 'Setup Cron Jobs'}
-          </Button>
-        </div>
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <Button
+        onClick={() => handleSync('Live Matches', 'sync-sportdevs-live')}
+        disabled={syncing['live']}
+        variant="outline"
+        size="sm"
+        className="text-red-400 border-red-400/30 hover:bg-red-500/20"
+      >
+        {syncing['live'] ? 'Syncing...' : 'Sync Live Pro'}
+      </Button>
+      
+      <Button
+        onClick={() => handleSync('Upcoming Matches', 'sync-sportdevs-upcoming-matches')}
+        disabled={syncing['upcoming']}
+        variant="outline"
+        size="sm"
+        className="text-blue-400 border-blue-400/30 hover:bg-blue-500/20"
+      >
+        {syncing['upcoming'] ? 'Syncing...' : 'Sync Upcoming Pro'}
+      </Button>
+      
+      <Button
+        onClick={() => handleSync('Teams', 'sync-sportdevs-teams')}
+        disabled={syncing['teams']}
+        variant="outline"
+        size="sm"
+        className="text-green-400 border-green-400/30 hover:bg-green-500/20"
+      >
+        {syncing['teams'] ? 'Syncing...' : 'Sync Teams'}
+      </Button>
+      
+      <Button
+        onClick={() => handleSync('Tournaments', 'sync-sportdevs-tournaments')}
+        disabled={syncing['tournaments']}
+        variant="outline"
+        size="sm"
+        className="text-purple-400 border-purple-400/30 hover:bg-purple-500/20"
+      >
+        {syncing['tournaments'] ? 'Syncing...' : 'Sync Tournaments'}
+      </Button>
+      
+      <Button
+        onClick={handleSetupCron}
+        disabled={syncing['cron']}
+        variant="default"
+        size="sm"
+        className="bg-theme-purple hover:bg-theme-purple/90"
+      >
+        {syncing['cron'] ? 'Setting up...' : 'Setup Cron Jobs'}
+      </Button>
     </div>
   );
 };

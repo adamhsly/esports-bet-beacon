@@ -9,119 +9,165 @@ import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
 import EsportsNavigation from '@/components/EsportsNavigation';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
-import { fetchLiveMatches, fetchUpcomingMatches } from '@/lib/sportDevsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, Trophy, Users } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
-import { getTodayMatches, getUpcomingMatches } from '@/lib/mockData';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
+import { SportDevsSyncButtons } from '@/components/SportDevsSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { getMatchCountsByDate, formatMatchDate } from '@/utils/dateMatchUtils';
 import { startOfDay } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const [proLiveMatches, setProLiveMatches] = useState<MatchInfo[]>([]);
-  const [proUpcomingMatches, setProUpcomingMatches] = useState<MatchInfo[]>([]);
-  const [loadingProLive, setLoadingProLive] = useState(true);
-  const [loadingProUpcoming, setLoadingProUpcoming] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
-  const [allFaceitMatches, setAllFaceitMatches] = useState<MatchInfo[]>([]);
-  const [faceitMatchCounts, setFaceitMatchCounts] = useState<Record<string, number>>({});
+  const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
+  const [matchCounts, setMatchCounts] = useState<Record<string, number>>({});
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const { toast } = useToast();
   
-  // Fetch professional live matches and refresh every 30 seconds
+  // Load all matches for counting (both FACEIT and SportDevs)
   useEffect(() => {
-    async function loadProLiveMatches() {
+    async function loadAllMatches() {
       try {
-        const csgoMatches = await fetchLiveMatches('csgo');
-        setProLiveMatches(csgoMatches);
+        // Fetch FACEIT matches
+        const faceitMatches = await fetchSupabaseFaceitAllMatches();
+        
+        // Fetch SportDevs matches
+        const { data: sportdevsMatches, error } = await supabase
+          .from('sportdevs_matches')
+          .select('*')
+          .in('status', ['live', 'scheduled'])
+          .order('start_time', { ascending: true })
+          .limit(200);
+
+        if (error) {
+          console.error('Error loading SportDevs matches:', error);
+        }
+
+        // Transform SportDevs matches to MatchInfo format
+        const transformedSportDevs = (sportdevsMatches || []).map(match => ({
+          id: `sportdevs_${match.match_id}`,
+          teams: [
+            {
+              name: match.teams.team1.name,
+              logo: match.teams.team1.logo || '/placeholder.svg',
+              id: `sportdevs_team_${match.match_id}_1`
+            },
+            {
+              name: match.teams.team2.name,
+              logo: match.teams.team2.logo || '/placeholder.svg',
+              id: `sportdevs_team_${match.match_id}_2`
+            }
+          ],
+          startTime: match.start_time,
+          tournament: match.tournament_name || 'Professional Match',
+          esportType: match.esport_type,
+          bestOf: match.best_of || 3,
+          source: 'professional' as const
+        }));
+
+        const combinedMatches = [...faceitMatches, ...transformedSportDevs];
+        setAllMatches(combinedMatches);
+        setMatchCounts(getMatchCountsByDate(combinedMatches));
       } catch (error) {
-        console.error('Error loading pro live matches:', error);
-        const mockMatches = getTodayMatches('csgo');
-        setProLiveMatches(mockMatches.slice(0, 3));
-      } finally {
-        setLoadingProLive(false);
+        console.error('Error loading all matches:', error);
       }
     }
     
-    loadProLiveMatches();
-    const interval = setInterval(() => {
-      loadProLiveMatches();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  // Fetch professional upcoming matches
-  useEffect(() => {
-    async function loadProUpcomingMatches() {
-      try {
-        const csgoMatches = await fetchUpcomingMatches('csgo');
-        setProUpcomingMatches(csgoMatches.slice(0, 3));
-      } catch (error) {
-        console.error('Error loading pro upcoming matches:', error);
-        const mockMatches = getUpcomingMatches('csgo');
-        setProUpcomingMatches(mockMatches.slice(0, 3));
-      } finally {
-        setLoadingProUpcoming(false);
-      }
-    }
-    
-    loadProUpcomingMatches();
+    loadAllMatches();
   }, []);
 
-  // Load all FACEIT matches for counting
-  useEffect(() => {
-    async function loadAllFaceitMatches() {
-      try {
-        const allMatches = await fetchSupabaseFaceitAllMatches();
-        setAllFaceitMatches(allMatches);
-        setFaceitMatchCounts(getMatchCountsByDate(allMatches));
-      } catch (error) {
-        console.error('Error loading all FACEIT matches:', error);
-      }
-    }
-    
-    loadAllFaceitMatches();
-  }, []);
-
-  // Load date-filtered matches (combining FACEIT and professional)
+  // Load date-filtered matches (combining FACEIT and SportDevs)
   useEffect(() => {
     async function loadDateFilteredMatches() {
       setLoadingDateFiltered(true);
       try {
         console.log('🗓️ Loading matches for selected date:', selectedDate.toDateString());
         
-        // Fetch FACEIT matches for the selected date
-        const { live: faceitLive, upcoming: faceitUpcoming } = await fetchSupabaseFaceitMatchesByDate(selectedDate);
-        
-        // Filter professional matches for the selected date
         const selectedDateStart = startOfDay(selectedDate);
         const selectedDateEnd = new Date(selectedDateStart);
         selectedDateEnd.setHours(23, 59, 59, 999);
         
-        const filteredProLive = proLiveMatches.filter(match => {
-          const matchDate = new Date(match.startTime);
-          return matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
-        });
+        // Fetch FACEIT matches for the selected date
+        const { live: faceitLive, upcoming: faceitUpcoming } = await fetchSupabaseFaceitMatchesByDate(selectedDate);
         
-        const filteredProUpcoming = proUpcomingMatches.filter(match => {
-          const matchDate = new Date(match.startTime);
-          return matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
-        });
+        // Fetch SportDevs matches for the selected date
+        const { data: sportdevsLive, error: liveError } = await supabase
+          .from('sportdevs_matches')
+          .select('*')
+          .eq('status', 'live')
+          .gte('start_time', selectedDateStart.toISOString())
+          .lte('start_time', selectedDateEnd.toISOString())
+          .order('start_time', { ascending: false })
+          .limit(50);
+
+        const { data: sportdevsUpcoming, error: upcomingError } = await supabase
+          .from('sportdevs_matches')
+          .select('*')
+          .eq('status', 'scheduled')
+          .gte('start_time', selectedDateStart.toISOString())
+          .lte('start_time', selectedDateEnd.toISOString())
+          .order('start_time', { ascending: true })
+          .limit(50);
+
+        if (liveError) console.error('Error fetching live SportDevs matches:', liveError);
+        if (upcomingError) console.error('Error fetching upcoming SportDevs matches:', upcomingError);
+
+        // Transform SportDevs matches
+        const transformedLiveSportDevs = (sportdevsLive || []).map(match => ({
+          id: `sportdevs_${match.match_id}`,
+          teams: [
+            {
+              name: match.teams.team1.name,
+              logo: match.teams.team1.logo || '/placeholder.svg',
+              id: `sportdevs_team_${match.match_id}_1`
+            },
+            {
+              name: match.teams.team2.name,
+              logo: match.teams.team2.logo || '/placeholder.svg',
+              id: `sportdevs_team_${match.match_id}_2`
+            }
+          ],
+          startTime: match.start_time,
+          tournament: match.tournament_name || 'Professional Match',
+          esportType: match.esport_type,
+          bestOf: match.best_of || 3,
+          source: 'professional' as const
+        }));
+
+        const transformedUpcomingSportDevs = (sportdevsUpcoming || []).map(match => ({
+          id: `sportdevs_${match.match_id}`,
+          teams: [
+            {
+              name: match.teams.team1.name,
+              logo: match.teams.team1.logo || '/placeholder.svg',
+              id: `sportdevs_team_${match.match_id}_1`
+            },
+            {
+              name: match.teams.team2.name,
+              logo: match.teams.team2.logo || '/placeholder.svg',
+              id: `sportdevs_team_${match.match_id}_2`
+            }
+          ],
+          startTime: match.start_time,
+          tournament: match.tournament_name || 'Professional Match',
+          esportType: match.esport_type,
+          bestOf: match.best_of || 3,
+          source: 'professional' as const
+        }));
         
         // Combine and sort matches
-        const allLiveMatches = [...faceitLive, ...filteredProLive].sort((a, b) => 
+        const allLiveMatches = [...faceitLive, ...transformedLiveSportDevs].sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         
-        const allUpcomingMatches = [...faceitUpcoming, ...filteredProUpcoming].sort((a, b) => 
+        const allUpcomingMatches = [...faceitUpcoming, ...transformedUpcomingSportDevs].sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         
@@ -137,7 +183,7 @@ const Index = () => {
     }
     
     loadDateFilteredMatches();
-  }, [selectedDate, proLiveMatches, proUpcomingMatches]);
+  }, [selectedDate]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(startOfDay(date));
@@ -177,13 +223,22 @@ const Index = () => {
                   </Badge>
                 </div>
               </h2>
-              <FaceitSyncButtons />
+              <div className="flex gap-4">
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs text-gray-400">FACEIT Sync</span>
+                  <FaceitSyncButtons />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs text-gray-400">Pro Sync</span>
+                  <SportDevsSyncButtons />
+                </div>
+              </div>
             </div>
 
             <DateMatchPicker
               selectedDate={selectedDate}
               onDateSelect={handleDateSelect}
-              matchCounts={faceitMatchCounts}
+              matchCounts={matchCounts}
             />
 
             <div className="mb-4">
@@ -232,7 +287,7 @@ const Index = () => {
                   <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
                     <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
                     <p className="text-sm text-gray-500">
-                      Try selecting a different date or clicking "Sync Live" / "Sync Upcoming" to refresh match data.
+                      Try selecting a different date or use the sync buttons above to refresh match data.
                     </p>
                   </div>
                 )}
