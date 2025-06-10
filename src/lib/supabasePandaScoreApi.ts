@@ -3,9 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { 
   fetchUpcomingMatches as apiUpcomingMatches,
-  fetchLiveMatches as apiLiveMatches,
-  fetchTeamById as apiTeamById,
-  fetchTournaments as apiTournaments
+  fetchLiveMatches as apiLiveMatches
 } from '@/lib/pandaScoreApi';
 
 // Cache TTL constants (in milliseconds)
@@ -179,8 +177,8 @@ export async function fetchTeamById(teamId: string, esportType: string) {
       .limit(1);
 
     if (error) {
-      console.error('Database error, falling back to API:', error);
-      return apiTeamById(teamId);
+      console.error('Database error for team fetch:', error);
+      return null;
     }
 
     // Check if data is fresh
@@ -204,12 +202,12 @@ export async function fetchTeamById(teamId: string, esportType: string) {
       }
     }
 
-    console.log('💡 Team data is stale or empty, falling back to API...');
-    return apiTeamById(teamId);
+    console.log('💡 Team data is stale or empty, no fallback available');
+    return null;
 
   } catch (error) {
-    console.error('Error in hybrid team fetch, falling back to API:', error);
-    return apiTeamById(teamId);
+    console.error('Error in hybrid team fetch:', error);
+    return null;
   }
 }
 
@@ -229,8 +227,8 @@ export async function fetchTournaments(esportType: string) {
       .limit(50);
 
     if (error) {
-      console.error('Database error, falling back to API:', error);
-      return apiTournaments(esportType);
+      console.error('Database error for tournaments fetch:', error);
+      return [];
     }
 
     // Check if data is fresh
@@ -269,12 +267,12 @@ export async function fetchTournaments(esportType: string) {
       }
     }
 
-    console.log('💡 Tournament data is stale or empty, falling back to API...');
-    return apiTournaments(esportType);
+    console.log('💡 Tournament data is stale or empty, returning empty array');
+    return [];
 
   } catch (error) {
-    console.error('Error in hybrid tournament fetch, falling back to API:', error);
-    return apiTournaments(esportType);
+    console.error('Error in hybrid tournament fetch:', error);
+    return [];
   }
 }
 
