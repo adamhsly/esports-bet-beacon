@@ -101,7 +101,77 @@ const Index = () => {
     loadAllMatches();
   }, []);
 
-  // Load date-filtered matches (combining FACEIT and SportDevs)
+  // Helper function to fetch professional matches directly from API as fallback
+  const fetchProfessionalMatchesDirect = async (status: 'live' | 'upcoming') => {
+    try {
+      const apiKey = "GsZ3ovnDw0umMvL5p7SfPA"; // Using the working API key
+      const statusParam = status === 'live' ? 'live' : 'upcoming';
+      const response = await fetch(`https://esports.sportdevs.com/matches?status_type=eq.${statusParam}&limit=20`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Error fetching ${status} matches from API:`, response.status);
+        return [];
+      }
+
+      const matches = await response.json();
+      
+      // Transform matches using the same logic as EsportPage
+      return matches.map((match: any) => {
+        let teams = [];
+        
+        if (match.opponents?.length > 0) {
+          teams = match.opponents.slice(0, 2).map((opponent: any) => ({
+            id: opponent.id || `team-${opponent.name || 'unknown'}`,
+            name: opponent.name || 'Unknown Team',
+            logo: opponent.hash_image ? `https://images.sportdevs.com/${opponent.hash_image}.png` : '/placeholder.svg'
+          }));
+        } else if (match.name) {
+          const parts = match.name.split(' vs ');
+          const team1 = parts[0]?.trim() || 'TBD';
+          const team2 = parts[1]?.trim() || 'TBD';
+          teams = [
+            { id: `team-${team1}`, name: team1, logo: '/placeholder.svg' },
+            { id: `team-${team2}`, name: team2, logo: '/placeholder.svg' }
+          ];
+        }
+        
+        while (teams.length < 2) {
+          teams.push({ id: 'unknown-team', name: 'Unknown Team', logo: '/placeholder.svg' });
+        }
+
+        // Determine esport type
+        let esportType = 'csgo';
+        if (match.videogame?.slug) {
+          const gameSlug = match.videogame.slug.toLowerCase();
+          if (gameSlug.includes('league') || gameSlug.includes('lol')) esportType = 'lol';
+          else if (gameSlug.includes('dota')) esportType = 'dota2';
+          else if (gameSlug.includes('valorant')) esportType = 'valorant';
+          else if (gameSlug.includes('overwatch')) esportType = 'overwatch';
+          else if (gameSlug.includes('rocket')) esportType = 'rocketleague';
+        }
+
+        return {
+          id: `direct_${match.id}`,
+          teams: [teams[0], teams[1]] as [any, any],
+          startTime: match.start_time || new Date().toISOString(),
+          tournament: match.league_name || match.tournament?.name || 'Professional Match',
+          esportType: esportType,
+          bestOf: match.format?.best_of || 1,
+          source: 'professional' as const
+        } satisfies MatchInfo;
+      });
+    } catch (error) {
+      console.error(`Error fetching ${status} matches directly:`, error);
+      return [];
+    }
+  };
+
+  // Load date-filtered matches (combining FACEIT and SportDevs with fallback)
   useEffect(() => {
     async function loadDateFilteredMatches() {
       setLoadingDateFiltered(true);
@@ -171,7 +241,7 @@ const Index = () => {
             teams: [
               {
                 name: teamsData.team1?.name || 'TBD',
-                logo: teamsData.team1?.logo || '/placeholder.svg',
+                logo: teamsData.team2?.logo || '/placeholder.svg',
                 id: `sportdevs_team_${match.match_id}_1`
               },
               {
@@ -188,12 +258,26 @@ const Index = () => {
           } satisfies MatchInfo;
         });
         
+        // Fallback: if no professional matches from database, fetch directly from API
+        let fallbackLive: MatchInfo[] = [];
+        let fallbackUpcoming: MatchInfo[] = [];
+        
+        if (transformedLiveSportDevs.length === 0) {
+          console.log('📡 No live professional matches in database, fetching directly from API...');
+          fallbackLive = await fetchProfessionalMatchesDirect('live');
+        }
+        
+        if (transformedUpcomingSportDevs.length === 0) {
+          console.log('📡 No upcoming professional matches in database, fetching directly from API...');
+          fallbackUpcoming = await fetchProfessionalMatchesDirect('upcoming');
+        }
+        
         // Combine and sort matches
-        const allLiveMatches = [...faceitLive, ...transformedLiveSportDevs].sort((a, b) => 
+        const allLiveMatches = [...faceitLive, ...transformedLiveSportDevs, ...fallbackLive].sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         
-        const allUpcomingMatches = [...faceitUpcoming, ...transformedUpcomingSportDevs].sort((a, b) => 
+        const allUpcomingMatches = [...faceitUpcoming, ...transformedUpcomingSportDevs, ...fallbackUpcoming].sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         

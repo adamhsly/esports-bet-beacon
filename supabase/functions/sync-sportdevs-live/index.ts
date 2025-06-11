@@ -7,9 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Supported esport types
-const ESPORT_TYPES = ['csgo', 'dota2', 'lol', 'valorant', 'overwatch', 'rl'];
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -42,121 +39,191 @@ serve(async (req) => {
       throw new Error('SPORTDEVS_API_KEY not found in environment variables');
     }
     
-    console.log('🔴 Starting SportDevs live matches sync with API key...');
+    console.log('🔴 Starting SportDevs live matches sync using working API endpoint...');
 
-    for (const esportType of ESPORT_TYPES) {
-      try {
-        console.log(`🎮 Syncing live matches for ${esportType}...`);
-        
-        // Use the v1 API endpoint with proper authentication
-        const url = `https://api.sportdevs.com/v1/esports/${esportType}/matches/live`;
-        console.log(`📡 Calling API: ${url}`);
-        
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+    // Use the working API endpoint from EsportPage
+    const url = 'https://esports.sportdevs.com/matches?status_type=eq.live&limit=50';
+    console.log(`📡 Calling API: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log(`📊 Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.error(`❌ Unauthorized: Check API key`);
+        throw new Error(`Unauthorized access. Please verify your API key.`);
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Error fetching live matches: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+    }
+
+    const matches = await response.json();
+    console.log(`📊 Found ${matches.length} live matches`);
+
+    for (const match of matches) {
+      totalProcessed++;
+      
+      // Extract team names from match name if opponents not available
+      const extractTeamNames = (matchName: string): [string, string] => {
+        if (!matchName || !matchName.includes(' vs ')) {
+          return ['N/A', 'N/A'];
+        }
+        const parts = matchName.split(' vs ');
+        const team1 = parts[0].trim();
+        const team2 = parts.length > 1 ? parts[1].trim() : 'N/A';
+        return [team1, team2];
+      };
+
+      // Transform match data using EsportPage logic
+      let teams = [];
+      
+      if (match.opponents?.length > 0) {
+        teams = match.opponents.slice(0, 2).map((opponent: any) => ({
+          id: opponent.id || `team-${opponent.name || 'unknown'}`,
+          name: opponent.name || 'Unknown Team',
+          logo: opponent.hash_image ? `https://images.sportdevs.com/${opponent.hash_image}.png` : '/placeholder.svg',
+          image_url: opponent.image_url || null,
+          hash_image: opponent.hash_image || null
+        }));
+      } else if (match.home_team_name && match.away_team_name) {
+        teams = [
+          {
+            id: match.home_team_id || `team-${match.home_team_name || 'unknown'}`,
+            name: match.home_team_name || 'Unknown Team',
+            logo: match.home_team_hash_image ? `https://images.sportdevs.com/${match.home_team_hash_image}.png` : '/placeholder.svg',
+            image_url: null,
+            hash_image: match.home_team_hash_image || null
+          },
+          {
+            id: match.away_team_id || `team-${match.away_team_name || 'unknown'}`,
+            name: match.away_team_name || 'Unknown Team',
+            logo: match.away_team_hash_image ? `https://images.sportdevs.com/${match.away_team_hash_image}.png` : '/placeholder.svg',
+            image_url: null,
+            hash_image: match.away_team_hash_image || null
           }
+        ];
+      } else if (match.name) {
+        const [team1Name, team2Name] = extractTeamNames(match.name);
+        teams = [
+          { 
+            name: team1Name, 
+            logo: '/placeholder.svg',
+            image_url: null,
+            hash_image: null,
+            id: `team-${team1Name}`
+          },
+          { 
+            name: team2Name, 
+            logo: '/placeholder.svg',
+            image_url: null,
+            hash_image: null,
+            id: `team-${team2Name}`
+          }
+        ];
+      }
+      
+      while (teams.length < 2) {
+        teams.push({
+          name: 'Unknown Team',
+          logo: '/placeholder.svg',
+          image_url: null,
+          hash_image: null,
+          id: 'unknown-team'
         });
+      }
 
-        console.log(`📊 Response status for ${esportType}: ${response.status}`);
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.error(`❌ Unauthorized for ${esportType}: Check API key`);
-            throw new Error(`Unauthorized access for ${esportType}. Please verify your API key.`);
-          } else if (response.status === 404) {
-            console.log(`ℹ️ No live matches endpoint for ${esportType} (404 - might be expected)`);
-            continue;
-          } else {
-            const errorText = await response.text();
-            console.error(`❌ Error fetching ${esportType} live matches: ${response.status} ${response.statusText} - ${errorText}`);
-            continue;
-          }
+      // Determine esport type from videogame or class_name
+      let esportType = 'csgo'; // default
+      if (match.videogame?.slug) {
+        const gameSlug = match.videogame.slug.toLowerCase();
+        if (gameSlug.includes('cs') || gameSlug.includes('counter-strike')) {
+          esportType = 'csgo';
+        } else if (gameSlug.includes('league') || gameSlug.includes('lol')) {
+          esportType = 'lol';
+        } else if (gameSlug.includes('dota')) {
+          esportType = 'dota2';
+        } else if (gameSlug.includes('valorant')) {
+          esportType = 'valorant';
+        } else if (gameSlug.includes('overwatch')) {
+          esportType = 'overwatch';
+        } else if (gameSlug.includes('rocket') || gameSlug.includes('rl')) {
+          esportType = 'rocketleague';
         }
-
-        const responseData = await response.json();
-        console.log(`📊 Raw response for ${esportType}:`, JSON.stringify(responseData, null, 2));
-
-        // Handle different response formats
-        let matches = [];
-        if (Array.isArray(responseData)) {
-          matches = responseData;
-        } else if (responseData.data && Array.isArray(responseData.data)) {
-          matches = responseData.data;
-        } else if (responseData.matches && Array.isArray(responseData.matches)) {
-          matches = responseData.matches;
-        } else {
-          console.log(`⚠️ Unexpected response format for ${esportType}:`, typeof responseData);
-          continue;
+      } else if (match.class_name) {
+        const className = match.class_name.toLowerCase();
+        if (className.includes('cs') || className.includes('counter')) {
+          esportType = 'csgo';
+        } else if (className.includes('league') || className.includes('lol')) {
+          esportType = 'lol';
+        } else if (className.includes('dota')) {
+          esportType = 'dota2';
+        } else if (className.includes('valorant')) {
+          esportType = 'valorant';
+        } else if (className.includes('overwatch')) {
+          esportType = 'overwatch';
+        } else if (className.includes('rocket')) {
+          esportType = 'rocketleague';
         }
+      }
 
-        console.log(`📊 Found ${matches.length} live matches for ${esportType}`);
-
-        for (const match of matches) {
-          totalProcessed++;
-          
-          // Transform match data with better error handling
-          const matchData = {
-            match_id: match.id || `${esportType}_${Date.now()}_${Math.random()}`,
-            teams: {
-              team1: {
-                id: match.opponents?.[0]?.id || match.team1?.id || match.home_team?.id,
-                name: match.opponents?.[0]?.name || match.team1?.name || match.home_team?.name || 'TBD',
-                logo: match.opponents?.[0]?.image_url || match.team1?.logo || match.home_team?.logo || '/placeholder.svg'
-              },
-              team2: {
-                id: match.opponents?.[1]?.id || match.team2?.id || match.away_team?.id,
-                name: match.opponents?.[1]?.name || match.team2?.name || match.away_team?.name || 'TBD', 
-                logo: match.opponents?.[1]?.image_url || match.team2?.logo || match.away_team?.logo || '/placeholder.svg'
-              }
-            },
-            start_time: match.start_time || match.scheduled_at || match.begin_at || new Date().toISOString(),
-            tournament_id: match.tournament?.id || match.league?.id || match.serie?.id,
-            tournament_name: match.tournament?.name || match.league?.name || match.serie?.name || match.competition?.name || 'Unknown Tournament',
-            status: 'live',
-            esport_type: esportType,
-            best_of: match.format?.best_of || match.best_of || match.number_of_games || 3,
-            raw_data: match,
-            last_synced_at: new Date().toISOString()
-          };
-
-          // Upsert match data
-          const { error, data: upsertResult } = await supabase
-            .from('sportdevs_matches')
-            .upsert(matchData, { 
-              onConflict: 'match_id',
-              ignoreDuplicates: false 
-            })
-            .select('id, created_at, updated_at');
-
-          if (error) {
-            console.error(`❌ Error upserting match ${matchData.match_id}:`, error);
-            continue;
+      const matchData = {
+        match_id: match.id || `sportdevs_${Date.now()}_${Math.random()}`,
+        teams: {
+          team1: {
+            id: teams[0].id,
+            name: teams[0].name,
+            logo: teams[0].logo
+          },
+          team2: {
+            id: teams[1].id,
+            name: teams[1].name,
+            logo: teams[1].logo
           }
+        },
+        start_time: match.start_time || new Date().toISOString(),
+        tournament_id: match.tournament?.id || match.league?.id || match.serie?.id,
+        tournament_name: match.league_name || match.tournament?.name || match.serie?.name || 'Unknown Tournament',
+        status: 'live',
+        esport_type: esportType,
+        best_of: match.format?.best_of || 1,
+        raw_data: match,
+        last_synced_at: new Date().toISOString()
+      };
 
-          if (upsertResult && upsertResult.length > 0) {
-            const record = upsertResult[0];
-            const createdAt = new Date(record.created_at).getTime();
-            const updatedAt = new Date(record.updated_at).getTime();
-            
-            if (Math.abs(createdAt - updatedAt) < 1000) {
-              totalAdded++;
-              console.log(`✅ Added new live match: ${matchData.match_id}`);
-            } else {
-              totalUpdated++;
-              console.log(`🔄 Updated live match: ${matchData.match_id}`);
-            }
-          }
-        }
+      // Upsert match data
+      const { error, data: upsertResult } = await supabase
+        .from('sportdevs_matches')
+        .upsert(matchData, { 
+          onConflict: 'match_id',
+          ignoreDuplicates: false 
+        })
+        .select('id, created_at, updated_at');
 
-        // Add delay between esport types to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-      } catch (error) {
-        console.error(`❌ Error processing ${esportType}:`, error);
+      if (error) {
+        console.error(`❌ Error upserting match ${matchData.match_id}:`, error);
         continue;
+      }
+
+      if (upsertResult && upsertResult.length > 0) {
+        const record = upsertResult[0];
+        const createdAt = new Date(record.created_at).getTime();
+        const updatedAt = new Date(record.updated_at).getTime();
+        
+        if (Math.abs(createdAt - updatedAt) < 1000) {
+          totalAdded++;
+          console.log(`✅ Added new live match: ${matchData.match_id}`);
+        } else {
+          totalUpdated++;
+          console.log(`🔄 Updated live match: ${matchData.match_id}`);
+        }
       }
     }
 
@@ -175,7 +242,7 @@ serve(async (req) => {
           records_added: totalAdded,
           records_updated: totalUpdated,
           metadata: { 
-            esports_synced: ESPORT_TYPES.length,
+            api_endpoint: url,
             api_key_used: !!apiKey
           }
         })
@@ -188,8 +255,7 @@ serve(async (req) => {
         processed: totalProcessed,
         added: totalAdded,
         updated: totalUpdated,
-        duration_ms: duration,
-        esports_synced: ESPORT_TYPES.length
+        duration_ms: duration
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

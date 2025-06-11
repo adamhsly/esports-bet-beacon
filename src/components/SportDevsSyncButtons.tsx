@@ -27,7 +27,7 @@ export const SportDevsSyncButtons = () => {
         console.log(`${syncType} sync result:`, data);
         if (data?.success) {
           if (data.processed === 0) {
-            toast.info(`${syncType} sync completed: No matches found. This may be normal if no live matches are currently available.`);
+            toast.info(`${syncType} sync completed: No matches found. Using working API endpoint now.`);
           } else {
             toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
           }
