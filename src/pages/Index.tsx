@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -67,7 +66,7 @@ const Index = () => {
 
         // Transform SportDevs matches to MatchInfo format
         const transformedSportDevs = (sportdevsMatches || []).map(match => {
-          const teamsData = match.teams as SportDevsTeamsData;
+          const teamsData = match.teams as unknown as SportDevsTeamsData;
           
           return {
             id: `sportdevs_${match.match_id}`,
@@ -140,7 +139,7 @@ const Index = () => {
 
         // Transform SportDevs matches
         const transformedLiveSportDevs = (sportdevsLive || []).map(match => {
-          const teamsData = match.teams as SportDevsTeamsData;
+          const teamsData = match.teams as unknown as SportDevsTeamsData;
           
           return {
             id: `sportdevs_${match.match_id}`,
@@ -165,7 +164,7 @@ const Index = () => {
         });
 
         const transformedUpcomingSportDevs = (sportdevsUpcoming || []).map(match => {
-          const teamsData = match.teams as SportDevsTeamsData;
+          const teamsData = match.teams as unknown as SportDevsTeamsData;
           
           return {
             id: `sportdevs_${match.match_id}`,
