@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Star } from 'lucide-react';
+import { User, Star, Users } from 'lucide-react';
 
 interface FaceitPlayer {
   player_id: string;
