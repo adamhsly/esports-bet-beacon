@@ -17,14 +17,20 @@ export const SportDevsSyncButtons = () => {
       if (error) {
         console.error(`${syncType} sync error:`, error);
         if (error.message?.includes('SPORTDEVS_API_KEY')) {
-          toast.error(`${syncType} sync failed: SportDevs API key not configured. Please add it in Supabase secrets.`);
+          toast.error(`${syncType} sync failed: SportDevs API key not configured. Please check your API key in Supabase secrets.`);
+        } else if (error.message?.includes('Unauthorized')) {
+          toast.error(`${syncType} sync failed: Invalid API key. Please verify your SportDevs API key.`);
         } else {
           toast.error(`${syncType} sync failed: ${error.message}`);
         }
       } else {
         console.log(`${syncType} sync result:`, data);
         if (data?.success) {
-          toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
+          if (data.processed === 0) {
+            toast.info(`${syncType} sync completed: No matches found. This may be normal if no live matches are currently available.`);
+          } else {
+            toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
+          }
         } else {
           toast.error(`${syncType} sync failed: ${data?.error || 'Unknown error'}`);
         }
