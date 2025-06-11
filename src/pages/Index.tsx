@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,20 @@ import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { getMatchCountsByDate, formatMatchDate } from '@/utils/dateMatchUtils';
 import { startOfDay } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define the expected structure of SportDevs teams data
+interface SportDevsTeamsData {
+  team1: {
+    id?: string;
+    name: string;
+    logo?: string;
+  };
+  team2: {
+    id?: string;
+    name: string;
+    logo?: string;
+  };
+}
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -51,26 +66,30 @@ const Index = () => {
         }
 
         // Transform SportDevs matches to MatchInfo format
-        const transformedSportDevs = (sportdevsMatches || []).map(match => ({
-          id: `sportdevs_${match.match_id}`,
-          teams: [
-            {
-              name: match.teams.team1.name,
-              logo: match.teams.team1.logo || '/placeholder.svg',
-              id: `sportdevs_team_${match.match_id}_1`
-            },
-            {
-              name: match.teams.team2.name,
-              logo: match.teams.team2.logo || '/placeholder.svg',
-              id: `sportdevs_team_${match.match_id}_2`
-            }
-          ],
-          startTime: match.start_time,
-          tournament: match.tournament_name || 'Professional Match',
-          esportType: match.esport_type,
-          bestOf: match.best_of || 3,
-          source: 'professional' as const
-        }));
+        const transformedSportDevs = (sportdevsMatches || []).map(match => {
+          const teamsData = match.teams as SportDevsTeamsData;
+          
+          return {
+            id: `sportdevs_${match.match_id}`,
+            teams: [
+              {
+                name: teamsData.team1?.name || 'TBD',
+                logo: teamsData.team1?.logo || '/placeholder.svg',
+                id: `sportdevs_team_${match.match_id}_1`
+              },
+              {
+                name: teamsData.team2?.name || 'TBD',
+                logo: teamsData.team2?.logo || '/placeholder.svg',
+                id: `sportdevs_team_${match.match_id}_2`
+              }
+            ] as [any, any], // Ensure it's treated as a tuple
+            startTime: match.start_time,
+            tournament: match.tournament_name || 'Professional Match',
+            esportType: match.esport_type,
+            bestOf: match.best_of || 3,
+            source: 'professional' as const
+          } satisfies MatchInfo;
+        });
 
         const combinedMatches = [...faceitMatches, ...transformedSportDevs];
         setAllMatches(combinedMatches);
@@ -120,47 +139,55 @@ const Index = () => {
         if (upcomingError) console.error('Error fetching upcoming SportDevs matches:', upcomingError);
 
         // Transform SportDevs matches
-        const transformedLiveSportDevs = (sportdevsLive || []).map(match => ({
-          id: `sportdevs_${match.match_id}`,
-          teams: [
-            {
-              name: match.teams.team1.name,
-              logo: match.teams.team1.logo || '/placeholder.svg',
-              id: `sportdevs_team_${match.match_id}_1`
-            },
-            {
-              name: match.teams.team2.name,
-              logo: match.teams.team2.logo || '/placeholder.svg',
-              id: `sportdevs_team_${match.match_id}_2`
-            }
-          ],
-          startTime: match.start_time,
-          tournament: match.tournament_name || 'Professional Match',
-          esportType: match.esport_type,
-          bestOf: match.best_of || 3,
-          source: 'professional' as const
-        }));
+        const transformedLiveSportDevs = (sportdevsLive || []).map(match => {
+          const teamsData = match.teams as SportDevsTeamsData;
+          
+          return {
+            id: `sportdevs_${match.match_id}`,
+            teams: [
+              {
+                name: teamsData.team1?.name || 'TBD',
+                logo: teamsData.team1?.logo || '/placeholder.svg',
+                id: `sportdevs_team_${match.match_id}_1`
+              },
+              {
+                name: teamsData.team2?.name || 'TBD',
+                logo: teamsData.team2?.logo || '/placeholder.svg',
+                id: `sportdevs_team_${match.match_id}_2`
+              }
+            ] as [any, any], // Ensure it's treated as a tuple
+            startTime: match.start_time,
+            tournament: match.tournament_name || 'Professional Match',
+            esportType: match.esport_type,
+            bestOf: match.best_of || 3,
+            source: 'professional' as const
+          } satisfies MatchInfo;
+        });
 
-        const transformedUpcomingSportDevs = (sportdevsUpcoming || []).map(match => ({
-          id: `sportdevs_${match.match_id}`,
-          teams: [
-            {
-              name: match.teams.team1.name,
-              logo: match.teams.team1.logo || '/placeholder.svg',
-              id: `sportdevs_team_${match.match_id}_1`
-            },
-            {
-              name: match.teams.team2.name,
-              logo: match.teams.team2.logo || '/placeholder.svg',
-              id: `sportdevs_team_${match.match_id}_2`
-            }
-          ],
-          startTime: match.start_time,
-          tournament: match.tournament_name || 'Professional Match',
-          esportType: match.esport_type,
-          bestOf: match.best_of || 3,
-          source: 'professional' as const
-        }));
+        const transformedUpcomingSportDevs = (sportdevsUpcoming || []).map(match => {
+          const teamsData = match.teams as SportDevsTeamsData;
+          
+          return {
+            id: `sportdevs_${match.match_id}`,
+            teams: [
+              {
+                name: teamsData.team1?.name || 'TBD',
+                logo: teamsData.team1?.logo || '/placeholder.svg',
+                id: `sportdevs_team_${match.match_id}_1`
+              },
+              {
+                name: teamsData.team2?.name || 'TBD',
+                logo: teamsData.team2?.logo || '/placeholder.svg',
+                id: `sportdevs_team_${match.match_id}_2`
+              }
+            ] as [any, any], // Ensure it's treated as a tuple
+            startTime: match.start_time,
+            tournament: match.tournament_name || 'Professional Match',
+            esportType: match.esport_type,
+            bestOf: match.best_of || 3,
+            source: 'professional' as const
+          } satisfies MatchInfo;
+        });
         
         // Combine and sort matches
         const allLiveMatches = [...faceitLive, ...transformedLiveSportDevs].sort((a, b) => 
