@@ -20,7 +20,7 @@ import { SportDevsSyncButtons } from '@/components/SportDevsSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
-import { startOfDay } from 'date-fns';
+import { startOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
 // Define the expected structure of SportDevs teams data
@@ -47,6 +47,9 @@ const Index = () => {
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const [loadingAllMatches, setLoadingAllMatches] = useState(true);
   const { toast } = useToast();
+  
+  // Check if selected date is today
+  const isSelectedDateToday = isToday(selectedDate);
   
   // Load all matches for counting (both FACEIT and SportDevs)
   useEffect(() => {
@@ -390,8 +393,8 @@ const Index = () => {
               </div>
             ) : (
               <>
-                {/* Live Matches for Selected Date */}
-                {dateFilteredLiveMatches.length > 0 && (
+                {/* Live Matches for Selected Date - Only show if today is selected */}
+                {isSelectedDateToday && dateFilteredLiveMatches.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
                       🔴 Live Now ({dateFilteredLiveMatches.length})
@@ -419,7 +422,7 @@ const Index = () => {
                 )}
 
                 {/* No Matches State */}
-                {dateFilteredLiveMatches.length === 0 && dateFilteredUpcomingMatches.length === 0 && (
+                {((!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && dateFilteredUpcomingMatches.length === 0) && (
                   <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
                     <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
                     <p className="text-sm text-gray-500">
@@ -542,3 +545,5 @@ const Index = () => {
 };
 
 export default Index;
+
+</edits_to_apply>
