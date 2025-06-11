@@ -3,14 +3,37 @@ import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
 
+// Helper function to map FACEIT statuses to display categories
+const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+  const lowerStatus = status.toLowerCase();
+  
+  // Live match statuses
+  if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
+    return 'live';
+  }
+  
+  // Upcoming match statuses
+  if (['upcoming', 'ready', 'scheduled', 'configured'].includes(lowerStatus)) {
+    return 'upcoming';
+  }
+  
+  // Finished match statuses
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+    return 'finished';
+  }
+  
+  return null;
+};
+
 export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
   try {
     console.log('🔄 Fetching all FACEIT matches from Supabase...');
     
+    // Use broader status filtering to include all relevant matches
     const { data: matches, error } = await supabase
       .from('faceit_matches')
       .select('*')
-      .in('status', ['READY', 'ONGOING', 'FINISHED'])
+      .in('status', ['upcoming', 'ongoing', 'finished', 'ready', 'scheduled', 'configured', 'running', 'live'])
       .order('scheduled_at', { ascending: true })
       .limit(500);
 
@@ -20,6 +43,15 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
     }
 
     console.log(`📊 Found ${matches?.length || 0} FACEIT matches in database`);
+    
+    // Log status distribution for debugging
+    if (matches && matches.length > 0) {
+      const statusCounts: Record<string, number> = {};
+      matches.forEach(match => {
+        statusCounts[match.status] = (statusCounts[match.status] || 0) + 1;
+      });
+      console.log('📊 FACEIT match status distribution:', statusCounts);
+    }
 
     return (matches || []).map(match => {
       const teams = match.teams as any;
@@ -92,6 +124,15 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
     }
 
     console.log(`📊 Found ${matches?.length || 0} FACEIT matches for ${date.toDateString()}`);
+    
+    // Log status distribution for debugging
+    if (matches && matches.length > 0) {
+      const statusCounts: Record<string, number> = {};
+      matches.forEach(match => {
+        statusCounts[match.status] = (statusCounts[match.status] || 0) + 1;
+      });
+      console.log('📊 FACEIT date-filtered status distribution:', statusCounts);
+    }
 
     const transformedMatches = (matches || []).map(match => {
       const teams = match.teams as any;
@@ -139,18 +180,30 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
       } satisfies MatchInfo;
     });
 
-    // Separate live and upcoming matches based on status
+    // Separate live and upcoming matches using correct status mapping
     const live = transformedMatches.filter(match => {
       const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
-      return matchRecord?.status === 'ONGOING';
+      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
+      return statusCategory === 'live';
     });
 
     const upcoming = transformedMatches.filter(match => {
       const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
-      return matchRecord?.status === 'READY';
+      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
+      return statusCategory === 'upcoming';
     });
 
-    console.log(`📊 Split into ${live.length} live and ${upcoming.length} upcoming FACEIT matches`);
+    console.log(`📊 FACEIT matches categorized: ${live.length} live, ${upcoming.length} upcoming`);
+    
+    // Log specific match details for debugging
+    if (matches && matches.length > 0) {
+      matches.forEach(match => {
+        const teams = match.teams as any;
+        const team1Name = teams.faction1?.name || teams.team1?.name || 'Team 1';
+        const team2Name = teams.faction2?.name || teams.team2?.name || 'Team 2';
+        console.log(`🎮 FACEIT Match: ${team1Name} vs ${team2Name} - Status: ${match.status} - Category: ${getFaceitStatusCategory(match.status)}`);
+      });
+    }
     
     return { live, upcoming };
   } catch (error) {

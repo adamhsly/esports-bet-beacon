@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -38,6 +37,28 @@ interface SportDevsTeamsData {
   };
 }
 
+// Helper function to map SportDevs statuses to display categories
+const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+  const lowerStatus = status.toLowerCase();
+  
+  // Live match statuses for SportDevs
+  if (['live', 'running', 'ongoing'].includes(lowerStatus)) {
+    return 'live';
+  }
+  
+  // Upcoming match statuses for SportDevs
+  if (['scheduled', 'upcoming', 'ready'].includes(lowerStatus)) {
+    return 'upcoming';
+  }
+  
+  // Finished match statuses for SportDevs
+  if (['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+    return 'finished';
+  }
+  
+  return null;
+};
+
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
@@ -63,11 +84,11 @@ const Index = () => {
         const faceitMatches = await fetchSupabaseFaceitAllMatches();
         console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches`);
         
-        // Fetch SportDevs matches
+        // Fetch SportDevs matches with broader status filtering
         const { data: sportdevsMatches, error } = await supabase
           .from('sportdevs_matches')
           .select('*')
-          .in('status', ['live', 'scheduled'])
+          .in('status', ['live', 'scheduled', 'upcoming', 'running', 'ongoing', 'ready'])
           .order('start_time', { ascending: true })
           .limit(200);
 
@@ -76,6 +97,15 @@ const Index = () => {
         }
 
         console.log(`📊 Loaded ${sportdevsMatches?.length || 0} SportDevs matches`);
+        
+        // Log SportDevs status distribution for debugging
+        if (sportdevsMatches && sportdevsMatches.length > 0) {
+          const statusCounts: Record<string, number> = {};
+          sportdevsMatches.forEach(match => {
+            statusCounts[match.status] = (statusCounts[match.status] || 0) + 1;
+          });
+          console.log('📊 SportDevs match status distribution:', statusCounts);
+        }
 
         // Transform SportDevs matches to MatchInfo format
         const transformedSportDevs = (sportdevsMatches || []).map(match => {
@@ -207,101 +237,102 @@ const Index = () => {
         // Fetch FACEIT matches for the selected date
         const { live: faceitLive, upcoming: faceitUpcoming } = await fetchSupabaseFaceitMatchesByDate(selectedDate);
         
-        // Fetch SportDevs matches for the selected date
-        const { data: sportdevsLive, error: liveError } = await supabase
+        // Fetch SportDevs matches for the selected date with proper status filtering
+        const { data: allSportdevsMatches, error } = await supabase
           .from('sportdevs_matches')
           .select('*')
-          .eq('status', 'live')
-          .gte('start_time', selectedDateStart.toISOString())
-          .lte('start_time', selectedDateEnd.toISOString())
-          .order('start_time', { ascending: false })
-          .limit(50);
-
-        const { data: sportdevsUpcoming, error: upcomingError } = await supabase
-          .from('sportdevs_matches')
-          .select('*')
-          .eq('status', 'scheduled')
           .gte('start_time', selectedDateStart.toISOString())
           .lte('start_time', selectedDateEnd.toISOString())
           .order('start_time', { ascending: true })
           .limit(50);
 
-        if (liveError) console.error('Error fetching live SportDevs matches:', liveError);
-        if (upcomingError) console.error('Error fetching upcoming SportDevs matches:', upcomingError);
+        if (error) {
+          console.error('Error fetching SportDevs matches:', error);
+        }
 
-        // Transform SportDevs matches
-        const transformedLiveSportDevs = (sportdevsLive || []).map(match => {
+        console.log(`📊 Found ${allSportdevsMatches?.length || 0} SportDevs matches for selected date`);
+        
+        // Log SportDevs status distribution for debugging
+        if (allSportdevsMatches && allSportdevsMatches.length > 0) {
+          const statusCounts: Record<string, number> = {};
+          allSportdevsMatches.forEach(match => {
+            statusCounts[match.status] = (statusCounts[match.status] || 0) + 1;
+          });
+          console.log('📊 SportDevs date-filtered status distribution:', statusCounts);
+        }
+
+        // Transform and categorize SportDevs matches
+        const transformedSportDevs = (allSportdevsMatches || []).map(match => {
           const teamsData = match.teams as unknown as SportDevsTeamsData;
           
           return {
-            id: `sportdevs_${match.match_id}`,
-            teams: [
-              {
-                name: teamsData.team1?.name || 'TBD',
-                logo: teamsData.team1?.logo || '/placeholder.svg',
-                id: `sportdevs_team_${match.match_id}_1`
-              },
-              {
-                name: teamsData.team2?.name || 'TBD',
-                logo: teamsData.team2?.logo || '/placeholder.svg',
-                id: `sportdevs_team_${match.match_id}_2`
-              }
-            ] as [any, any],
-            startTime: match.start_time,
-            tournament: match.tournament_name || 'Professional Match',
-            esportType: match.esport_type,
-            bestOf: match.best_of || 3,
-            source: 'professional' as const
-          } satisfies MatchInfo;
+            match: {
+              id: `sportdevs_${match.match_id}`,
+              teams: [
+                {
+                  name: teamsData.team1?.name || 'TBD',
+                  logo: teamsData.team1?.logo || '/placeholder.svg',
+                  id: `sportdevs_team_${match.match_id}_1`
+                },
+                {
+                  name: teamsData.team2?.name || 'TBD',
+                  logo: teamsData.team2?.logo || '/placeholder.svg',
+                  id: `sportdevs_team_${match.match_id}_2`
+                }
+              ] as [any, any],
+              startTime: match.start_time,
+              tournament: match.tournament_name || 'Professional Match',
+              esportType: match.esport_type,
+              bestOf: match.best_of || 3,
+              source: 'professional' as const
+            } satisfies MatchInfo,
+            originalStatus: match.status,
+            category: getSportDevsStatusCategory(match.status)
+          };
         });
 
-        const transformedUpcomingSportDevs = (sportdevsUpcoming || []).map(match => {
-          const teamsData = match.teams as unknown as SportDevsTeamsData;
+        // Separate SportDevs matches by category
+        const sportdevsLive = transformedSportDevs
+          .filter(item => item.category === 'live')
+          .map(item => item.match);
           
-          return {
-            id: `sportdevs_${match.match_id}`,
-            teams: [
-              {
-                name: teamsData.team1?.name || 'TBD',
-                logo: teamsData.team2?.logo || '/placeholder.svg',
-                id: `sportdevs_team_${match.match_id}_1`
-              },
-              {
-                name: teamsData.team2?.name || 'TBD',
-                logo: teamsData.team2?.logo || '/placeholder.svg',
-                id: `sportdevs_team_${match.match_id}_2`
-              }
-            ] as [any, any],
-            startTime: match.start_time,
-            tournament: match.tournament_name || 'Professional Match',
-            esportType: match.esport_type,
-            bestOf: match.best_of || 3,
-            source: 'professional' as const
-          } satisfies MatchInfo;
+        const sportdevsUpcoming = transformedSportDevs
+          .filter(item => item.category === 'upcoming')
+          .map(item => item.match);
+
+        console.log(`📊 SportDevs matches categorized: ${sportdevsLive.length} live, ${sportdevsUpcoming.length} upcoming`);
+
+        // Log specific SportDevs match details for debugging
+        transformedSportDevs.forEach(item => {
+          const team1Name = item.match.teams[0].name;
+          const team2Name = item.match.teams[1].name;
+          console.log(`🎮 SportDevs Match: ${team1Name} vs ${team2Name} - Status: ${item.originalStatus} - Category: ${item.category}`);
         });
         
         // Fallback: if no professional matches from database, fetch directly from API
         let fallbackLive: MatchInfo[] = [];
         let fallbackUpcoming: MatchInfo[] = [];
         
-        if (transformedLiveSportDevs.length === 0) {
+        if (sportdevsLive.length === 0) {
           console.log('📡 No live professional matches in database, fetching directly from API...');
           fallbackLive = await fetchProfessionalMatchesDirect('live');
         }
         
-        if (transformedUpcomingSportDevs.length === 0) {
+        if (sportdevsUpcoming.length === 0) {
           console.log('📡 No upcoming professional matches in database, fetching directly from API...');
           fallbackUpcoming = await fetchProfessionalMatchesDirect('upcoming');
         }
         
         // Combine and sort matches
-        const allLiveMatches = [...faceitLive, ...transformedLiveSportDevs, ...fallbackLive].sort((a, b) => 
+        const allLiveMatches = [...faceitLive, ...sportdevsLive, ...fallbackLive].sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         
-        const allUpcomingMatches = [...faceitUpcoming, ...transformedUpcomingSportDevs, ...fallbackUpcoming].sort((a, b) => 
+        const allUpcomingMatches = [...faceitUpcoming, ...sportdevsUpcoming, ...fallbackUpcoming].sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
+        
+        console.log(`📊 Final match counts: ${allLiveMatches.length} live, ${allUpcomingMatches.length} upcoming`);
         
         setDateFilteredLiveMatches(allLiveMatches);
         setDateFilteredUpcomingMatches(allUpcomingMatches);
