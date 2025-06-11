@@ -11,18 +11,27 @@ export const SportDevsSyncButtons = () => {
     setSyncing(prev => ({ ...prev, [syncType]: true }));
     
     try {
+      console.log(`🚀 Starting ${syncType} sync...`);
       const { data, error } = await supabase.functions.invoke(functionName);
       
       if (error) {
         console.error(`${syncType} sync error:`, error);
-        toast.error(`${syncType} sync failed: ${error.message}`);
+        if (error.message?.includes('SPORTDEVS_API_KEY')) {
+          toast.error(`${syncType} sync failed: SportDevs API key not configured. Please add it in Supabase secrets.`);
+        } else {
+          toast.error(`${syncType} sync failed: ${error.message}`);
+        }
       } else {
         console.log(`${syncType} sync result:`, data);
-        toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
+        if (data?.success) {
+          toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
+        } else {
+          toast.error(`${syncType} sync failed: ${data?.error || 'Unknown error'}`);
+        }
       }
     } catch (error) {
       console.error(`${syncType} sync error:`, error);
-      toast.error(`${syncType} sync failed`);
+      toast.error(`${syncType} sync failed: ${error.message || 'Network error'}`);
     } finally {
       setSyncing(prev => ({ ...prev, [syncType]: false }));
     }
