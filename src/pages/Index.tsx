@@ -18,7 +18,8 @@ import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate } from 
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { SportDevsSyncButtons } from '@/components/SportDevsSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
-import { getMatchCountsByDate, formatMatchDate } from '@/utils/dateMatchUtils';
+import { formatMatchDate } from '@/utils/dateMatchUtils';
+import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -42,15 +43,21 @@ const Index = () => {
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
   const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
   const [matchCounts, setMatchCounts] = useState<Record<string, number>>({});
+  const [detailedMatchCounts, setDetailedMatchCounts] = useState<Record<string, MatchCountBreakdown>>({});
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
+  const [loadingAllMatches, setLoadingAllMatches] = useState(true);
   const { toast } = useToast();
   
   // Load all matches for counting (both FACEIT and SportDevs)
   useEffect(() => {
     async function loadAllMatches() {
+      setLoadingAllMatches(true);
       try {
+        console.log('📊 Loading all matches for calendar counts...');
+        
         // Fetch FACEIT matches
         const faceitMatches = await fetchSupabaseFaceitAllMatches();
+        console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches`);
         
         // Fetch SportDevs matches
         const { data: sportdevsMatches, error } = await supabase
@@ -63,6 +70,8 @@ const Index = () => {
         if (error) {
           console.error('Error loading SportDevs matches:', error);
         }
+
+        console.log(`📊 Loaded ${sportdevsMatches?.length || 0} SportDevs matches`);
 
         // Transform SportDevs matches to MatchInfo format
         const transformedSportDevs = (sportdevsMatches || []).map(match => {
@@ -81,7 +90,7 @@ const Index = () => {
                 logo: teamsData.team2?.logo || '/placeholder.svg',
                 id: `sportdevs_team_${match.match_id}_2`
               }
-            ] as [any, any], // Ensure it's treated as a tuple
+            ] as [any, any],
             startTime: match.start_time,
             tournament: match.tournament_name || 'Professional Match',
             esportType: match.esport_type,
@@ -91,10 +100,19 @@ const Index = () => {
         });
 
         const combinedMatches = [...faceitMatches, ...transformedSportDevs];
+        console.log(`📊 Total combined matches: ${combinedMatches.length}`);
+        
         setAllMatches(combinedMatches);
-        setMatchCounts(getMatchCountsByDate(combinedMatches));
+        setMatchCounts(getTotalMatchCountsByDate(combinedMatches));
+        setDetailedMatchCounts(getDetailedMatchCountsByDate(combinedMatches));
       } catch (error) {
         console.error('Error loading all matches:', error);
+        // Fallback to empty state
+        setAllMatches([]);
+        setMatchCounts({});
+        setDetailedMatchCounts({});
+      } finally {
+        setLoadingAllMatches(false);
       }
     }
     
@@ -224,7 +242,7 @@ const Index = () => {
                 logo: teamsData.team2?.logo || '/placeholder.svg',
                 id: `sportdevs_team_${match.match_id}_2`
               }
-            ] as [any, any], // Ensure it's treated as a tuple
+            ] as [any, any],
             startTime: match.start_time,
             tournament: match.tournament_name || 'Professional Match',
             esportType: match.esport_type,
@@ -249,7 +267,7 @@ const Index = () => {
                 logo: teamsData.team2?.logo || '/placeholder.svg',
                 id: `sportdevs_team_${match.match_id}_2`
               }
-            ] as [any, any], // Ensure it's treated as a tuple
+            ] as [any, any],
             startTime: match.start_time,
             tournament: match.tournament_name || 'Professional Match',
             esportType: match.esport_type,
@@ -345,11 +363,19 @@ const Index = () => {
               </div>
             </div>
 
-            <DateMatchPicker
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              matchCounts={matchCounts}
-            />
+            {loadingAllMatches ? (
+              <div className="flex justify-center items-center py-4 mb-4">
+                <Loader2 className="h-6 w-6 animate-spin text-theme-purple mr-2" />
+                <span className="text-sm text-gray-400">Loading match counts...</span>
+              </div>
+            ) : (
+              <DateMatchPicker
+                selectedDate={selectedDate}
+                onDateSelect={handleDateSelect}
+                matchCounts={matchCounts}
+                detailedMatchCounts={detailedMatchCounts}
+              />
+            )}
 
             <div className="mb-4">
               <h3 className="text-lg font-medium text-gray-300">

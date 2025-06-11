@@ -2,19 +2,29 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, Users } from 'lucide-react';
 import { format, addDays, startOfDay, isSameDay, isToday } from 'date-fns';
+
+interface MatchCountBreakdown {
+  total: number;
+  professional: number;
+  amateur: number;
+  live: number;
+  upcoming: number;
+}
 
 interface DateMatchPickerProps {
   onDateSelect: (date: Date) => void;
   selectedDate: Date;
   matchCounts?: Record<string, number>;
+  detailedMatchCounts?: Record<string, MatchCountBreakdown>;
 }
 
 export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
   onDateSelect,
   selectedDate,
-  matchCounts = {}
+  matchCounts = {},
+  detailedMatchCounts = {}
 }) => {
   const [startDate, setStartDate] = useState(() => addDays(new Date(), -3));
   
@@ -32,6 +42,17 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
   const getMatchCount = (date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd');
     return matchCounts[dateKey] || 0;
+  };
+
+  const getDetailedMatchCount = (date: Date): MatchCountBreakdown => {
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return detailedMatchCounts[dateKey] || {
+      total: 0,
+      professional: 0,
+      amateur: 0,
+      live: 0,
+      upcoming: 0
+    };
   };
 
   return (
@@ -62,6 +83,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
         {dates.map((date) => {
           const isSelected = isSameDay(date, selectedDate);
           const matchCount = getMatchCount(date);
+          const detailedCount = getDetailedMatchCount(date);
           const isCurrentDay = isToday(date);
           
           return (
@@ -69,7 +91,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               key={date.toISOString()}
               onClick={() => onDateSelect(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[80px] h-20 rounded-lg border-2 transition-all
+                flex flex-col items-center justify-center min-w-[90px] h-24 rounded-lg border-2 transition-all relative group
                 ${isSelected 
                   ? 'border-theme-purple bg-theme-purple/20 text-theme-purple' 
                   : 'border-theme-gray-medium bg-theme-gray hover:border-theme-purple/50'
@@ -83,19 +105,51 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               <span className={`text-lg font-semibold ${isSelected ? 'text-theme-purple' : 'text-white'}`}>
                 {format(date, 'd')}
               </span>
+              
+              {/* Match count badges */}
               {matchCount > 0 && (
-                <Badge 
-                  variant="outline" 
-                  className={`
-                    text-xs mt-1 px-1.5 py-0.5 min-w-0
-                    ${isSelected 
-                      ? 'bg-theme-purple/30 text-theme-purple border-theme-purple/50' 
-                      : 'bg-orange-500/20 text-orange-400 border-orange-400/30'
-                    }
-                  `}
-                >
-                  {matchCount}
-                </Badge>
+                <div className="flex gap-1 mt-1">
+                  {detailedCount.professional > 0 && (
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        text-xs px-1 py-0.5 min-w-0 h-4 flex items-center
+                        ${isSelected 
+                          ? 'bg-blue-500/30 text-blue-300 border-blue-400/50' 
+                          : 'bg-blue-500/20 text-blue-400 border-blue-400/30'
+                        }
+                      `}
+                    >
+                      <Trophy size={8} className="mr-0.5" />
+                      {detailedCount.professional}
+                    </Badge>
+                  )}
+                  {detailedCount.amateur > 0 && (
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        text-xs px-1 py-0.5 min-w-0 h-4 flex items-center
+                        ${isSelected 
+                          ? 'bg-orange-500/30 text-orange-300 border-orange-400/50' 
+                          : 'bg-orange-500/20 text-orange-400 border-orange-400/30'
+                        }
+                      `}
+                    >
+                      <Users size={8} className="mr-0.5" />
+                      {detailedCount.amateur}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              {/* Tooltip */}
+              {matchCount > 0 && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  <div>Total: {detailedCount.total}</div>
+                  {detailedCount.professional > 0 && <div>Pro: {detailedCount.professional}</div>}
+                  {detailedCount.amateur > 0 && <div>Amateur: {detailedCount.amateur}</div>}
+                  {detailedCount.live > 0 && <div>Live: {detailedCount.live}</div>}
+                </div>
               )}
             </button>
           );
