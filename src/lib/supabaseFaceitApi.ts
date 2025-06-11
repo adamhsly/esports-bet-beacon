@@ -26,10 +26,17 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
-      if (match.raw_data?.best_of) {
-        bestOf = match.raw_data.best_of;
-      } else if (match.faceit_data?.best_of) {
-        bestOf = match.faceit_data.best_of;
+      if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+        const rawData = match.raw_data as any;
+        if (rawData.best_of) {
+          bestOf = rawData.best_of;
+        }
+      }
+      if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+        const faceitData = match.faceit_data as any;
+        if (faceitData.best_of) {
+          bestOf = faceitData.best_of;
+        }
       }
 
       return {
@@ -91,10 +98,17 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
-      if (match.raw_data?.best_of) {
-        bestOf = match.raw_data.best_of;
-      } else if (match.faceit_data?.best_of) {
-        bestOf = match.faceit_data.best_of;
+      if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+        const rawData = match.raw_data as any;
+        if (rawData.best_of) {
+          bestOf = rawData.best_of;
+        }
+      }
+      if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+        const faceitData = match.faceit_data as any;
+        if (faceitData.best_of) {
+          bestOf = faceitData.best_of;
+        }
       }
 
       return {
@@ -142,5 +156,39 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
   } catch (error) {
     console.error('Error in fetchSupabaseFaceitMatchesByDate:', error);
     return { live: [], upcoming: [] };
+  }
+};
+
+export const triggerFaceitLiveSync = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('sync-faceit-live');
+    
+    if (error) {
+      console.error('Error triggering FACEIT live sync:', error);
+      return false;
+    }
+
+    console.log('FACEIT live sync triggered successfully:', data);
+    return true;
+  } catch (error) {
+    console.error('Error in triggerFaceitLiveSync:', error);
+    return false;
+  }
+};
+
+export const triggerFaceitUpcomingSync = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('sync-faceit-upcoming');
+    
+    if (error) {
+      console.error('Error triggering FACEIT upcoming sync:', error);
+      return false;
+    }
+
+    console.log('FACEIT upcoming sync triggered successfully:', data);
+    return true;
+  } catch (error) {
+    console.error('Error in triggerFaceitUpcomingSync:', error);
+    return false;
   }
 };
