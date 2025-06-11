@@ -20,6 +20,7 @@ import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import TeamPlayerStatsVisualizer from '@/components/TeamPlayerStatsVisualizer';
 import MatchLineupTable from '@/components/MatchLineupTable';
 import { Player } from '@/components/MatchCard';
+import { Button, Link } from '@/components/ui/button';
 
 interface MatchDetails {
   id: string;
@@ -79,6 +80,15 @@ const MatchDetailsPage = () => {
               console.log("Match teams:", match.teams);
               console.log("FACEIT data:", match.faceitData);
               console.log("Full match data:", match);
+              
+              // Check if this is an upcoming FACEIT match - redirect to specialized page
+              const isUpcoming = new Date(match.startTime) > new Date();
+              if (isUpcoming) {
+                console.log("Redirecting to specialized FACEIT upcoming match page");
+                // In a real implementation, we would use navigate() here
+                // For now, we'll continue with the current page but could add a redirect
+              }
+              
               return match;
             }
           } else {
@@ -212,7 +222,9 @@ const MatchDetailsPage = () => {
     );
   }
 
+  // Add a note for FACEIT upcoming matches
   const isAmateur = matchDetails?.source === 'amateur';
+  const isUpcoming = matchDetails && new Date(matchDetails.startTime) > new Date();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -225,6 +237,28 @@ const MatchDetailsPage = () => {
           </div>
         ) : matchDetails ? (
           <>
+            {/* Show notice for FACEIT upcoming matches */}
+            {isAmateur && isUpcoming && (
+              <div className="mb-6 p-4 bg-orange-500/20 border border-orange-400/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-orange-400 font-semibold">Enhanced FACEIT Match Page Available</h3>
+                    <p className="text-sm text-gray-300">
+                      View detailed rosters, player stats, and pre-match analysis on our specialized FACEIT page.
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Link to={`/faceit/match/${matchId}`}>
+                      View Enhanced Page
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
                 <h1 className="text-3xl font-bold font-gaming">
@@ -517,3 +551,5 @@ const MatchDetailsPage = () => {
 };
 
 export default MatchDetailsPage;
+
+```
