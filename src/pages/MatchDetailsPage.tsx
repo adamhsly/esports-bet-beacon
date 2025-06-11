@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -20,7 +21,8 @@ import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import TeamPlayerStatsVisualizer from '@/components/TeamPlayerStatsVisualizer';
 import MatchLineupTable from '@/components/MatchLineupTable';
 import { Player } from '@/components/MatchCard';
-import { Button, Link } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 interface MatchDetails {
   id: string;
@@ -551,5 +553,3 @@ const MatchDetailsPage = () => {
 };
 
 export default MatchDetailsPage;
-
-```
