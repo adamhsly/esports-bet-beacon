@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -101,6 +102,17 @@ const validateRecentForm = (form: any): 'unknown' | 'poor' | 'average' | 'good' 
   return 'unknown';
 };
 
+// Helper function to safely convert Json to Record<string, any>
+const convertToMapStats = (jsonData: any): Record<string, any> => {
+  if (!jsonData) return {};
+  
+  if (typeof jsonData === 'object' && jsonData !== null && !Array.isArray(jsonData)) {
+    return jsonData as Record<string, any>;
+  }
+  
+  return {};
+};
+
 // New function to fetch enhanced player stats
 export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<EnhancedFaceitPlayer[]> => {
   try {
@@ -135,7 +147,7 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
       current_win_streak: player.current_win_streak,
       recent_results: convertToStringArray(player.recent_results),
       recent_form: validateRecentForm(player.recent_form),
-      map_stats: player.map_stats
+      map_stats: convertToMapStats(player.map_stats)
     }));
   } catch (error) {
     console.error('Error in fetchFaceitPlayerStats:', error);
