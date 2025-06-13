@@ -3,10 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import { Loader2, AlertTriangle, Zap } from 'lucide-react';
+import { Loader2, AlertTriangle, Zap, Users, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
@@ -44,6 +45,34 @@ const FaceitUpcomingMatchPage = () => {
     retry: 1
   });
 
+  // Check if we have enhanced player stats and count them
+  const getStatsStatus = () => {
+    if (!matchDetails) return { totalPlayers: 0, enhancedPlayers: 0, hasAnyEnhanced: false };
+    
+    let totalPlayers = 0;
+    let enhancedPlayers = 0;
+    
+    matchDetails.teams.forEach(team => {
+      if (team.roster) {
+        team.roster.forEach(player => {
+          totalPlayers++;
+          if (player.total_matches && player.total_matches > 0) {
+            enhancedPlayers++;
+          }
+        });
+      }
+    });
+    
+    return {
+      totalPlayers,
+      enhancedPlayers,
+      hasAnyEnhanced: enhancedPlayers > 0,
+      allEnhanced: enhancedPlayers === totalPlayers && totalPlayers > 0
+    };
+  };
+
+  const statsStatus = getStatsStatus();
+
   // Function to sync player stats for enhanced display
   const syncPlayerStats = async () => {
     if (!matchDetails) return;
@@ -63,28 +92,28 @@ const FaceitUpcomingMatchPage = () => {
         }
       });
 
-      console.log(`🔄 Syncing stats for ${playerIds.length} players...`);
+      console.log(`🔄 Syncing enhanced stats for ${playerIds.length} players...`);
       
       const success = await triggerFaceitPlayerStatsSync(playerIds);
       
       if (success) {
         toast({
-          title: "Success!",
-          description: `Started syncing enhanced stats for ${playerIds.length} players. Refresh in a few moments to see updated data.`,
+          title: "Sync Started!",
+          description: `Enhanced stats sync initiated for ${playerIds.length} players. Refreshing data in a few seconds...`,
         });
         
         // Refetch match details after a delay to get updated stats
         setTimeout(() => {
           refetch();
-        }, 3000);
+        }, 4000);
       } else {
         throw new Error('Failed to trigger player stats sync');
       }
     } catch (error) {
       console.error('❌ Error syncing player stats:', error);
       toast({
-        title: "Error",
-        description: "Failed to sync player stats. Please try again.",
+        title: "Sync Failed",
+        description: "Failed to sync enhanced player stats. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -135,12 +164,7 @@ const FaceitUpcomingMatchPage = () => {
     );
   }
 
-  // Check if we have enhanced player stats
-  const hasEnhancedStats = matchDetails.teams.some(team => 
-    team.roster?.some(player => player.faceit_elo && player.faceit_elo > 0)
-  );
-
-  console.log('🎯 Rendering match details with rosters:', matchDetails);
+  console.log('🎯 Rendering match details with stats status:', statsStatus);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -158,30 +182,63 @@ const FaceitUpcomingMatchPage = () => {
             </Alert>
           )}
 
-          {/* Enhanced Stats Alert */}
-          {!hasEnhancedStats && (
-            <Alert className="bg-blue-500/10 border-blue-500/30">
-              <Zap className="h-4 w-4" />
-              <AlertDescription className="text-blue-400 flex items-center justify-between">
-                <span>Enhanced player statistics not available. Sync player stats for detailed performance data.</span>
-                <Button 
-                  onClick={syncPlayerStats}
-                  disabled={isLoadingPlayerStats}
-                  size="sm"
-                  className="ml-4"
-                >
-                  {isLoadingPlayerStats ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Syncing...
-                    </>
+          {/* Enhanced Stats Status Card */}
+          {!statsStatus.allEnhanced && (
+            <Card className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5 text-blue-400" />
+                  <span>Enhanced Player Statistics</span>
+                </CardTitle>
+                <CardDescription>
+                  {statsStatus.enhancedPlayers === 0 ? (
+                    "No enhanced statistics available for players in this match"
                   ) : (
-                    <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Sync Stats
-                    </>
+                    `Enhanced stats available for ${statsStatus.enhancedPlayers} of ${statsStatus.totalPlayers} players`
                   )}
-                </Button>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-400">
+                      Enhanced stats include win rates, K/D ratios, recent form, match history, and detailed performance metrics.
+                    </p>
+                    {statsStatus.enhancedPlayers > 0 && (
+                      <p className="text-xs text-green-400">
+                        ✓ Partial enhanced data available
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={syncPlayerStats}
+                    disabled={isLoadingPlayerStats}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                  >
+                    {isLoadingPlayerStats ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Sync Enhanced Stats
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Success message when all players have enhanced stats */}
+          {statsStatus.allEnhanced && (
+            <Alert className="bg-green-500/10 border-green-500/30">
+              <TrendingUp className="h-4 w-4" />
+              <AlertDescription className="text-green-400">
+                ✓ Enhanced statistics available for all {statsStatus.totalPlayers} players in this match
               </AlertDescription>
             </Alert>
           )}
