@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -104,6 +103,7 @@ serve(async (req) => {
   let added = 0;
   let updated = 0;
   let championshipsProcessed = 0;
+  const playerIds = new Set<string>();
 
   // Log sync start
   const { data: logEntry } = await supabase
@@ -212,6 +212,18 @@ serve(async (req) => {
     for (const match of allUpcomingMatches) {
       processed++;
       
+      // Extract player IDs from match rosters
+      if (match.teams?.faction1?.roster) {
+        match.teams.faction1.roster.forEach(player => {
+          if (player.player_id) playerIds.add(player.player_id);
+        });
+      }
+      if (match.teams?.faction2?.roster) {
+        match.teams.faction2.roster.forEach(player => {
+          if (player.player_id) playerIds.add(player.player_id);
+        });
+      }
+      
       const matchData = {
         match_id: match.match_id,
         game: match.game,
@@ -272,6 +284,33 @@ serve(async (req) => {
       }
     }
 
+    // Step 4: Trigger enhanced player stats sync for collected player IDs
+    if (playerIds.size > 0) {
+      console.log(`🎮 Triggering enhanced player stats sync for ${playerIds.size} unique players...`);
+      
+      try {
+        const playerStatsResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/sync-faceit-player-stats`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            player_ids: Array.from(playerIds)
+          })
+        });
+
+        if (playerStatsResponse.ok) {
+          const statsResult = await playerStatsResponse.json();
+          console.log(`✅ Player stats sync completed:`, statsResult);
+        } else {
+          console.warn(`⚠️ Player stats sync failed: ${playerStatsResponse.status}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to trigger player stats sync:`, error);
+      }
+    }
+
     const duration = Date.now() - startTime;
     console.log(`✅ Upcoming sync completed: ${processed} processed, ${added} added, ${updated} updated in ${duration}ms`);
     console.log(`📊 Championships processed: ${championshipsProcessed} ongoing championships`);
@@ -291,7 +330,8 @@ serve(async (req) => {
             championships_processed: championshipsProcessed,
             ongoing_championships: championshipsData.items.length,
             upcoming_matches_found: allUpcomingMatches.length,
-            match_statuses: Array.from(allMatchStatuses)
+            match_statuses: Array.from(allMatchStatuses),
+            unique_players_found: playerIds.size
           }
         })
         .eq('id', logEntry.id);
@@ -307,6 +347,7 @@ serve(async (req) => {
         championships_processed: championshipsProcessed,
         ongoing_championships: championshipsData.items.length,
         upcoming_matches_found: allUpcomingMatches.length,
+        unique_players_found: playerIds.size,
         debug_info: {
           match_statuses: Array.from(allMatchStatuses)
         }

@@ -188,6 +188,150 @@ export type Database = {
         }
         Relationships: []
       }
+      faceit_player_match_stats: {
+        Row: {
+          assists: number | null
+          created_at: string | null
+          deaths: number | null
+          headshots: number | null
+          headshots_percent: number | null
+          id: string
+          kd_ratio: number | null
+          kills: number | null
+          map_name: string | null
+          match_date: string | null
+          match_id: string
+          match_result: string | null
+          mvps: number | null
+          player_id: string
+          player_name: string
+          team_name: string | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string | null
+          deaths?: number | null
+          headshots?: number | null
+          headshots_percent?: number | null
+          id?: string
+          kd_ratio?: number | null
+          kills?: number | null
+          map_name?: string | null
+          match_date?: string | null
+          match_id: string
+          match_result?: string | null
+          mvps?: number | null
+          player_id: string
+          player_name: string
+          team_name?: string | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string | null
+          deaths?: number | null
+          headshots?: number | null
+          headshots_percent?: number | null
+          id?: string
+          kd_ratio?: number | null
+          kills?: number | null
+          map_name?: string | null
+          match_date?: string | null
+          match_id?: string
+          match_result?: string | null
+          mvps?: number | null
+          player_id?: string
+          player_name?: string
+          team_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_faceit_match"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "faceit_matches"
+            referencedColumns: ["match_id"]
+          },
+          {
+            foreignKeyName: "fk_faceit_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "faceit_player_stats"
+            referencedColumns: ["player_id"]
+          },
+        ]
+      }
+      faceit_player_stats: {
+        Row: {
+          avatar: string | null
+          avg_headshots_percent: number | null
+          avg_kd_ratio: number | null
+          country: string | null
+          created_at: string | null
+          current_win_streak: number | null
+          faceit_elo: number | null
+          id: string
+          last_fetched_at: string | null
+          longest_win_streak: number | null
+          map_stats: Json | null
+          membership: string | null
+          nickname: string
+          player_id: string
+          recent_form: string | null
+          recent_results: Json | null
+          skill_level: number | null
+          total_matches: number | null
+          total_wins: number | null
+          updated_at: string | null
+          win_rate: number | null
+        }
+        Insert: {
+          avatar?: string | null
+          avg_headshots_percent?: number | null
+          avg_kd_ratio?: number | null
+          country?: string | null
+          created_at?: string | null
+          current_win_streak?: number | null
+          faceit_elo?: number | null
+          id?: string
+          last_fetched_at?: string | null
+          longest_win_streak?: number | null
+          map_stats?: Json | null
+          membership?: string | null
+          nickname: string
+          player_id: string
+          recent_form?: string | null
+          recent_results?: Json | null
+          skill_level?: number | null
+          total_matches?: number | null
+          total_wins?: number | null
+          updated_at?: string | null
+          win_rate?: number | null
+        }
+        Update: {
+          avatar?: string | null
+          avg_headshots_percent?: number | null
+          avg_kd_ratio?: number | null
+          country?: string | null
+          created_at?: string | null
+          current_win_streak?: number | null
+          faceit_elo?: number | null
+          id?: string
+          last_fetched_at?: string | null
+          longest_win_streak?: number | null
+          map_stats?: Json | null
+          membership?: string | null
+          nickname?: string
+          player_id?: string
+          recent_form?: string | null
+          recent_results?: Json | null
+          skill_level?: number | null
+          total_matches?: number | null
+          total_wins?: number | null
+          updated_at?: string | null
+          win_rate?: number | null
+        }
+        Relationships: []
+      }
       faceit_sync_logs: {
         Row: {
           completed_at: string | null
