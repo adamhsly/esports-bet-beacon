@@ -3,23 +3,23 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, BellOff, ExternalLink, Eye } from 'lucide-react';
+import { Bell, BellOff, ExternalLink, Eye, Clock } from 'lucide-react';
 
 interface FaceitMatchNotificationsProps {
   matchId: string;
   teams: Array<{ name: string }>;
   startTime: string;
+  status?: string;
 }
 
 export const FaceitMatchNotifications: React.FC<FaceitMatchNotificationsProps> = ({ 
-  matchId, teams, startTime 
+  matchId, teams, startTime, status = 'upcoming'
 }) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState(15); // minutes before
 
   const handleNotificationToggle = () => {
     setNotificationsEnabled(!notificationsEnabled);
-    // In a real implementation, this would set up browser notifications
     console.log(`Notifications ${!notificationsEnabled ? 'enabled' : 'disabled'} for match ${matchId}`);
   };
 
@@ -37,11 +37,14 @@ export const FaceitMatchNotifications: React.FC<FaceitMatchNotificationsProps> =
     return 'Starting soon';
   };
 
+  const isLive = status === 'live' || status === 'ongoing';
+  const isUpcoming = status === 'upcoming' || status === 'scheduled';
+
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-bold text-white flex items-center">
         <Bell className="h-5 w-5 mr-2 text-orange-400" />
-        Match Alerts & Links
+        Match Alerts & {isLive ? 'Live Access' : 'Information'}
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -51,23 +54,27 @@ export const FaceitMatchNotifications: React.FC<FaceitMatchNotificationsProps> =
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-white">Match Notifications</h4>
-                <p className="text-sm text-gray-400">Get notified when match goes live</p>
+                <p className="text-sm text-gray-400">
+                  {isLive ? 'Match is currently live!' : 'Get notified when match goes live'}
+                </p>
               </div>
-              <Button
-                variant={notificationsEnabled ? "default" : "outline"}
-                size="sm"
-                onClick={handleNotificationToggle}
-                className={notificationsEnabled ? "bg-orange-500 hover:bg-orange-600" : ""}
-              >
-                {notificationsEnabled ? (
-                  <Bell className="h-4 w-4" />
-                ) : (
-                  <BellOff className="h-4 w-4" />
-                )}
-              </Button>
+              {!isLive && (
+                <Button
+                  variant={notificationsEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleNotificationToggle}
+                  className={notificationsEnabled ? "bg-orange-500 hover:bg-orange-600" : ""}
+                >
+                  {notificationsEnabled ? (
+                    <Bell className="h-4 w-4" />
+                  ) : (
+                    <BellOff className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
             </div>
 
-            {notificationsEnabled && (
+            {!isLive && notificationsEnabled && (
               <div className="space-y-2">
                 <label className="text-sm text-gray-400">Remind me:</label>
                 <select 
@@ -85,51 +92,88 @@ export const FaceitMatchNotifications: React.FC<FaceitMatchNotificationsProps> =
 
             <div className="pt-2 border-t border-theme-gray-medium">
               <div className="text-sm">
-                <span className="text-gray-400">Match starts in: </span>
-                <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
-                  {getTimeUntilMatch()}
+                <span className="text-gray-400">
+                  {isLive ? 'Status: ' : 'Match starts in: '}
+                </span>
+                <Badge variant="outline" className={`${
+                  isLive 
+                    ? 'bg-green-500/20 text-green-400 border-green-400/30' 
+                    : 'bg-orange-500/20 text-orange-400 border-orange-400/30'
+                }`}>
+                  {isLive ? 'LIVE' : getTimeUntilMatch()}
                 </Badge>
               </div>
             </div>
           </div>
         </Card>
 
-        {/* FACEIT Links */}
+        {/* FACEIT Links - Only show room access when live */}
         <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4">
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-white">FACEIT Room</h4>
-              <p className="text-sm text-gray-400">Official match room and server info</p>
+              <h4 className="font-semibold text-white">
+                {isLive ? 'FACEIT Room Access' : 'Match Information'}
+              </h4>
+              <p className="text-sm text-gray-400">
+                {isLive 
+                  ? 'Access the live match room and spectate' 
+                  : 'Room access available when match goes live'
+                }
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full justify-between text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
-                onClick={() => window.open(`https://faceit.com/room/${matchId}`, '_blank')}
-              >
-                <span className="flex items-center">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View on FACEIT
-                </span>
-              </Button>
+              {isLive ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                    onClick={() => window.open(`https://faceit.com/room/${matchId}`, '_blank')}
+                  >
+                    <span className="flex items-center">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Live Room
+                    </span>
+                  </Button>
 
-              <Button
-                variant="outline"
-                className="w-full justify-between text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
-                disabled
-              >
-                <span className="flex items-center">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Spectate (Available when live)
-                </span>
-              </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
+                    onClick={() => window.open(`https://faceit.com/room/${matchId}`, '_blank')}
+                  >
+                    <span className="flex items-center">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Spectate Match
+                    </span>
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full justify-between text-gray-500 border-gray-500/30"
+                  disabled
+                >
+                  <span className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Room Access (Available when live)
+                  </span>
+                </Button>
+              )}
             </div>
 
             <div className="pt-2 border-t border-theme-gray-medium">
               <div className="text-xs text-gray-500">
-                <p>• Server info will be available 30 minutes before match</p>
-                <p>• Map veto starts 15 minutes before scheduled time</p>
+                {isLive ? (
+                  <>
+                    <p>• Match is currently live and accessible</p>
+                    <p>• Join as spectator or check match details</p>
+                  </>
+                ) : (
+                  <>
+                    <p>• Server info will be available 30 minutes before match</p>
+                    <p>• Map veto starts 15 minutes before scheduled time</p>
+                  </>
+                )}
               </div>
             </div>
           </div>

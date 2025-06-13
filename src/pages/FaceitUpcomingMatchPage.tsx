@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -284,6 +283,7 @@ const FaceitUpcomingMatchPage = () => {
                 matchId={matchDetails.id}
                 teams={matchDetails.teams}
                 startTime={matchDetails.startTime}
+                status={matchDetails.status}
               />
               <FaceitPreMatchStats 
                 teams={matchDetails.teams}
