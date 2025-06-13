@@ -11,6 +11,7 @@ import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader'
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
 import { FaceitPreMatchStats } from '@/components/match-details/FaceitPreMatchStats';
 import { FaceitMatchNotifications } from '@/components/match-details/FaceitMatchNotifications';
+import { FaceitPlayerLineupTable } from '@/components/match-details/FaceitPlayerLineupTable';
 import { fetchSupabaseFaceitMatchDetails } from '@/lib/supabaseFaceitApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -104,6 +105,9 @@ const FaceitUpcomingMatchPage = () => {
 
           {/* Match Header */}
           <FaceitMatchHeader match={matchDetails} />
+          
+          {/* Player Lineup Table - New Widget */}
+          <FaceitPlayerLineupTable teams={matchDetails.teams} />
           
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="w-full">
