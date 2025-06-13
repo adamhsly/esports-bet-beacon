@@ -8,6 +8,10 @@ interface FaceitPlayer {
   player_id: string;
   nickname: string;
   avatar?: string;
+  skill_level?: number;
+  membership?: string;
+  elo?: number;
+  games?: number;
 }
 
 interface FaceitPlayerRosterProps {
@@ -27,9 +31,12 @@ const getSkillLevelColor = (level: number): string => {
 };
 
 const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ player, teamName }) => {
-  // Generate mock skill level for demo (1-10)
-  const skillLevel = Math.floor(Math.random() * 10) + 1;
-  const membershipTier = ['Free', 'Plus', 'Premium'][Math.floor(Math.random() * 3)];
+  console.log('🎮 Rendering player card:', player);
+  
+  // Use real data if available, otherwise generate reasonable mock data
+  const skillLevel = player.skill_level || (Math.floor(Math.random() * 5) + 3); // 3-7 for amateurs
+  const membershipTier = player.membership || ['Free', 'Plus', 'Premium'][Math.floor(Math.random() * 3)];
+  const playerElo = player.elo || Math.floor(Math.random() * 1000) + 800; // 800-1800 for amateurs
   
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4 hover:border-orange-400/50 transition-colors">
@@ -45,17 +52,15 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
               }}
             />
-          ) : (
-            <User size={24} className="text-gray-400" />
-          )}
-          <User size={24} className="text-gray-400 hidden" />
+          ) : null}
+          <User size={24} className={`text-gray-400 ${player.avatar ? 'hidden' : ''}`} />
         </div>
         
         <div className="flex-1">
           <div className="font-bold text-white">{player.nickname}</div>
           <div className="text-sm text-gray-400">{teamName}</div>
           
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <Badge 
               variant="outline" 
               className={`${getSkillLevelColor(skillLevel)} border-current/30 bg-current/10`}
@@ -70,6 +75,13 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
             >
               {membershipTier}
             </Badge>
+            
+            <Badge 
+              variant="outline" 
+              className="text-purple-400 border-purple-400/30 bg-purple-400/10"
+            >
+              {playerElo} ELO
+            </Badge>
           </div>
         </div>
       </div>
@@ -78,6 +90,8 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
 };
 
 export const FaceitPlayerRoster: React.FC<FaceitPlayerRosterProps> = ({ teams }) => {
+  console.log('📋 Rendering FACEIT player roster:', teams);
+  
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-white flex items-center">
@@ -98,6 +112,9 @@ export const FaceitPlayerRoster: React.FC<FaceitPlayerRosterProps> = ({ teams })
                 }}
               />
               <h4 className="text-lg font-bold text-white">{team.name}</h4>
+              <Badge variant="outline" className="text-xs">
+                {team.roster?.length || 0} players
+              </Badge>
             </div>
             
             <div className="space-y-3">

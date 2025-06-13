@@ -10,6 +10,8 @@ interface FaceitPreMatchStatsProps {
     roster?: Array<{
       player_id: string;
       nickname: string;
+      skill_level?: number;
+      elo?: number;
     }>;
   }>;
   faceitData?: {
@@ -20,20 +22,41 @@ interface FaceitPreMatchStatsProps {
 }
 
 export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams, faceitData }) => {
-  // Generate mock statistics for demonstration
-  const generateTeamStats = (teamName: string) => ({
-    avgSkillLevel: (Math.random() * 4 + 6).toFixed(1), // 6.0 - 10.0
-    recentForm: Math.floor(Math.random() * 6) + 2, // 2-7 recent wins
-    membershipDistribution: {
-      free: Math.floor(Math.random() * 3),
-      plus: Math.floor(Math.random() * 3) + 1,
-      premium: Math.floor(Math.random() * 2) + 1
-    },
-    teamChemistry: Math.floor(Math.random() * 100) + 50 // 50-150 games together
-  });
+  console.log('📊 Rendering FACEIT pre-match stats for teams:', teams);
+  
+  // Calculate real statistics based on roster data
+  const generateTeamStats = (team: any) => {
+    const roster = team.roster || [];
+    
+    if (roster.length > 0) {
+      // Calculate real averages from roster data
+      const avgSkillLevel = roster.reduce((sum: number, player: any) => 
+        sum + (player.skill_level || 5), 0) / roster.length;
+      
+      const avgElo = roster.reduce((sum: number, player: any) => 
+        sum + (player.elo || 1000), 0) / roster.length;
+      
+      return {
+        avgSkillLevel: avgSkillLevel.toFixed(1),
+        avgElo: Math.round(avgElo),
+        rosterSize: roster.length,
+        recentForm: Math.floor(Math.random() * 6) + 2, // Still mock as we don't have match history
+        teamChemistry: Math.floor(Math.random() * 100) + 50
+      };
+    }
+    
+    // Fallback to reasonable mock data for amateur level
+    return {
+      avgSkillLevel: (Math.random() * 3 + 4).toFixed(1), // 4.0 - 7.0 for amateurs
+      avgElo: Math.floor(Math.random() * 800) + 800, // 800-1600 for amateurs
+      rosterSize: 5,
+      recentForm: Math.floor(Math.random() * 6) + 2,
+      teamChemistry: Math.floor(Math.random() * 100) + 50
+    };
+  };
 
-  const team1Stats = generateTeamStats(teams[0]?.name || 'Team 1');
-  const team2Stats = generateTeamStats(teams[1]?.name || 'Team 2');
+  const team1Stats = generateTeamStats(teams[0] || {});
+  const team2Stats = generateTeamStats(teams[1] || {});
 
   const StatCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4">
@@ -73,10 +96,12 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
           <div className="flex items-center justify-between mb-4">
             <div className="text-center flex-1">
               <div className="font-bold text-orange-400">{teams[0]?.name || 'Team 1'}</div>
+              <div className="text-xs text-gray-500">{team1Stats.rosterSize} players</div>
             </div>
             <div className="text-sm text-gray-400 px-4">VS</div>
             <div className="text-center flex-1">
               <div className="font-bold text-orange-400">{teams[1]?.name || 'Team 2'}</div>
+              <div className="text-xs text-gray-500">{team2Stats.rosterSize} players</div>
             </div>
           </div>
           
@@ -85,6 +110,13 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
             team1Value={team1Stats.avgSkillLevel}
             team2Value={team2Stats.avgSkillLevel}
             team1Better={parseFloat(team1Stats.avgSkillLevel) > parseFloat(team2Stats.avgSkillLevel)}
+          />
+          
+          <TeamComparison 
+            label="Average ELO" 
+            team1Value={team1Stats.avgElo.toString()}
+            team2Value={team2Stats.avgElo.toString()}
+            team1Better={team1Stats.avgElo > team2Stats.avgElo}
           />
           
           <TeamComparison 
@@ -108,10 +140,10 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
         <StatCard title="Match Importance" icon={<Award className="h-4 w-4 text-yellow-400" />}>
           <div className="space-y-2">
             <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-400/30">
-              League Match
+              {faceitData?.calculateElo ? 'ELO Ranked' : 'League Match'}
             </Badge>
             <p className="text-sm text-gray-400">
-              Standard league points at stake
+              {faceitData?.calculateElo ? 'ELO points at stake' : 'Standard league points at stake'}
             </p>
           </div>
         </StatCard>
@@ -141,7 +173,7 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
               Single map elimination
             </p>
             <div className="text-xs text-gray-500">
-              Map will be determined by veto process
+              Map determined by veto process
             </div>
           </div>
         </StatCard>

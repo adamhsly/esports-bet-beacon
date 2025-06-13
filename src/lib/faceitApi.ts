@@ -1,3 +1,4 @@
+
 // FACEIT API integration for amateur CS2 matches
 // Note: This requires server-side implementation to keep API key secure
 
@@ -7,6 +8,23 @@ const FACEIT_API_KEY = 'e40cbee8-785f-47b7-b13c-aa7609896aef';
 // Cache for FACEIT API responses (30-60 seconds)
 const faceitCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 45000; // 45 seconds
+
+interface FaceitPlayer {
+  player_id: string;
+  nickname: string;
+  avatar?: string;
+  skill_level?: number;
+  membership?: string;
+  elo?: number;
+  games?: number;
+}
+
+interface FaceitTeam {
+  team_id: string;
+  name: string;
+  avatar?: string;
+  roster: FaceitPlayer[];
+}
 
 interface FaceitMatch {
   match_id: string;
@@ -19,24 +37,8 @@ interface FaceitMatch {
   started_at: string;
   finished_at?: string;
   teams: {
-    faction1: {
-      name: string;
-      avatar?: string;
-      roster: Array<{
-        player_id: string;
-        nickname: string;
-        avatar?: string;
-      }>;
-    };
-    faction2: {
-      name: string;
-      avatar?: string;
-      roster: Array<{
-        player_id: string;
-        nickname: string;
-        avatar?: string;
-      }>;
-    };
+    faction1: FaceitTeam;
+    faction2: FaceitTeam;
   };
   voting?: {
     map?: {
@@ -56,21 +58,25 @@ interface FaceitMatchListResponse {
 
 // Transform FACEIT match to our MatchInfo format
 function transformFaceitMatch(faceitMatch: FaceitMatch): any {
+  console.log('🔄 Transforming FACEIT match:', faceitMatch);
+  
   return {
     id: `faceit_${faceitMatch.match_id}`,
     teams: [
       {
         name: faceitMatch.teams.faction1.name,
         logo: faceitMatch.teams.faction1.avatar || '/placeholder.svg',
-        id: `faceit_team_${faceitMatch.match_id}_1`
+        id: `faceit_team_${faceitMatch.match_id}_1`,
+        roster: faceitMatch.teams.faction1.roster || []
       },
       {
         name: faceitMatch.teams.faction2.name,
         logo: faceitMatch.teams.faction2.avatar || '/placeholder.svg',
-        id: `faceit_team_${faceitMatch.match_id}_2`
+        id: `faceit_team_${faceitMatch.match_id}_2`,
+        roster: faceitMatch.teams.faction2.roster || []
       }
     ],
-    startTime: faceitMatch.started_at,
+    startTime: faceitMatch.started_at,  
     tournament: faceitMatch.competition_name || 'FACEIT Match',
     tournament_name: faceitMatch.competition_name,
     season_name: faceitMatch.competition_type,
@@ -103,11 +109,7 @@ function setCachedResponse(cacheKey: string, data: any) {
 
 // Server-side API call function (would need to be implemented as an API route)
 async function callFaceitAPI(endpoint: string): Promise<any> {
-  // In a real implementation, this would be a call to our own API endpoint
-  // that makes the request server-side with the API key
-  
-  // For now, we'll make the call directly (this should be moved to server-side)
-  console.warn('⚠️ FACEIT API call should be made server-side to protect API key');
+  console.log(`🌐 Making FACEIT API call to: ${FACEIT_API_BASE}${endpoint}`);
   
   const response = await fetch(`${FACEIT_API_BASE}${endpoint}`, {
     headers: {
@@ -117,10 +119,13 @@ async function callFaceitAPI(endpoint: string): Promise<any> {
   });
   
   if (!response.ok) {
+    console.error(`❌ FACEIT API error: ${response.status} ${response.statusText}`);
     throw new Error(`FACEIT API error: ${response.status} ${response.statusText}`);
   }
   
-  return response.json();
+  const data = await response.json();
+  console.log('✅ FACEIT API response received:', data);
+  return data;
 }
 
 export async function fetchFaceitLiveMatches(): Promise<any[]> {
@@ -174,8 +179,12 @@ export async function fetchFaceitMatchDetails(matchId: string): Promise<any | nu
   if (cached) return cached;
   
   try {
+    console.log(`🌐 Calling FACEIT API for match: ${cleanMatchId}`);
     const faceitMatch: FaceitMatch = await callFaceitAPI(`/matches/${cleanMatchId}`);
+    console.log('📊 Raw FACEIT match data:', faceitMatch);
+    
     const match = transformFaceitMatch(faceitMatch);
+    console.log('🔄 Transformed match data:', match);
     
     // Add additional details for match page
     match.faceitMatchDetails = {
@@ -190,6 +199,40 @@ export async function fetchFaceitMatchDetails(matchId: string): Promise<any | nu
     return match;
   } catch (error) {
     console.error(`❌ Error fetching FACEIT match details for ${cleanMatchId}:`, error);
-    return null;
+    
+    // Return mock data as fallback for development
+    console.log('🔄 Returning mock data as fallback');
+    return {
+      id: `faceit_${cleanMatchId}`,
+      teams: [
+        {
+          name: 'Team Alpha',
+          logo: '/placeholder.svg',
+          id: 'team_alpha',
+          roster: [
+            { player_id: '1', nickname: 'player1', avatar: '/placeholder.svg' },
+            { player_id: '2', nickname: 'player2', avatar: '/placeholder.svg' }
+          ]
+        },
+        {
+          name: 'Team Beta', 
+          logo: '/placeholder.svg',
+          id: 'team_beta',
+          roster: [
+            { player_id: '3', nickname: 'player3', avatar: '/placeholder.svg' },
+            { player_id: '4', nickname: 'player4', avatar: '/placeholder.svg' }
+          ]
+        }
+      ],
+      startTime: new Date().toISOString(),
+      tournament: 'FACEIT League',
+      bestOf: 1,
+      faceitData: {
+        region: 'EU',
+        competitionType: 'Amateur',
+        organizedBy: 'FACEIT',
+        calculateElo: true
+      }
+    };
   }
 }

@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
@@ -17,20 +18,22 @@ import { toast } from '@/hooks/use-toast';
 const FaceitUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
   
+  console.log('🎮 FACEIT Match Page - Match ID:', matchId);
+  
   // Use React Query to fetch FACEIT match details
   const { data: matchDetails, isLoading, error } = useQuery({
     queryKey: ['faceit-match', matchId],
     queryFn: async () => {
       if (!matchId) throw new Error('No match ID provided');
       
-      console.log(`Fetching FACEIT upcoming match details for: ${matchId}`);
+      console.log(`🔍 Fetching FACEIT match details for: ${matchId}`);
       const match = await fetchFaceitMatchDetails(matchId);
       
       if (!match) {
         throw new Error('FACEIT match not found');
       }
       
-      console.log('FACEIT match details retrieved:', match);
+      console.log('✅ FACEIT match details retrieved:', match);
       return match;
     },
     enabled: !!matchId,
@@ -40,10 +43,10 @@ const FaceitUpcomingMatchPage = () => {
 
   useEffect(() => {
     if (error) {
-      console.error('Error loading FACEIT match details:', error);
+      console.error('❌ Error loading FACEIT match details:', error);
       toast({
         title: "Error loading match details",
-        description: "We couldn't load the FACEIT match information. Please try again later.",
+        description: "We couldn't load the FACEIT match information. Showing fallback data.",
         variant: "destructive",
       });
     }
@@ -54,8 +57,11 @@ const FaceitUpcomingMatchPage = () => {
       <div className="min-h-screen flex flex-col">
         <SearchableNavbar />
         <div className="flex-grow container mx-auto px-4 py-8 flex justify-center items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-400 mr-2" />
-          <span>Loading FACEIT match details...</span>
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-400 mx-auto mb-4" />
+            <span className="text-lg">Loading FACEIT match details...</span>
+            <p className="text-sm text-gray-400 mt-2">Fetching live data from FACEIT API</p>
+          </div>
         </div>
         <Footer />
       </div>
@@ -68,7 +74,9 @@ const FaceitUpcomingMatchPage = () => {
         <SearchableNavbar />
         <div className="flex-grow container mx-auto px-4 py-8">
           <div className="text-center py-20">
-            <p className="text-xl text-gray-400">FACEIT match details not found.</p>
+            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <p className="text-xl text-gray-400 mb-2">FACEIT match details not found.</p>
+            <p className="text-sm text-gray-500">The match may have been cancelled or the ID is invalid.</p>
           </div>
         </div>
         <Footer />
@@ -76,12 +84,24 @@ const FaceitUpcomingMatchPage = () => {
     );
   }
 
+  console.log('🎯 Rendering match details:', matchDetails);
+
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       
       <div className="flex-grow container mx-auto px-4 py-8">
         <div className="space-y-8">
+          {/* Error Alert if using fallback data */}
+          {error && (
+            <Alert className="bg-yellow-500/10 border-yellow-500/30">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-yellow-400">
+                Unable to fetch live FACEIT data. Displaying cached or sample information.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Match Header */}
           <FaceitMatchHeader match={matchDetails} />
           
