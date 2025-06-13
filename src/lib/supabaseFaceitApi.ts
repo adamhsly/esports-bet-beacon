@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -93,6 +92,15 @@ const convertToStringArray = (jsonData: any): string[] => {
   return [];
 };
 
+// Helper function to validate recent_form values
+const validateRecentForm = (form: any): 'unknown' | 'poor' | 'average' | 'good' | 'excellent' => {
+  const validForms = ['unknown', 'poor', 'average', 'good', 'excellent'] as const;
+  if (typeof form === 'string' && validForms.includes(form as any)) {
+    return form as 'unknown' | 'poor' | 'average' | 'good' | 'excellent';
+  }
+  return 'unknown';
+};
+
 // New function to fetch enhanced player stats
 export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<EnhancedFaceitPlayer[]> => {
   try {
@@ -126,7 +134,7 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
       longest_win_streak: player.longest_win_streak,
       current_win_streak: player.current_win_streak,
       recent_results: convertToStringArray(player.recent_results),
-      recent_form: player.recent_form,
+      recent_form: validateRecentForm(player.recent_form),
       map_stats: player.map_stats
     }));
   } catch (error) {
