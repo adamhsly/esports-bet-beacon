@@ -12,6 +12,7 @@ interface FaceitPreMatchStatsProps {
       nickname: string;
       skill_level?: number;
       elo?: number;
+      games?: number;
     }>;
   }>;
   faceitData?: {
@@ -22,36 +23,43 @@ interface FaceitPreMatchStatsProps {
 }
 
 export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams, faceitData }) => {
-  console.log('📊 Rendering FACEIT pre-match stats for teams:', teams);
+  console.log('📊 Rendering FACEIT pre-match stats with real roster data:', teams);
   
-  // Calculate real statistics based on roster data
+  // Calculate real statistics based on actual roster data
   const generateTeamStats = (team: any) => {
     const roster = team.roster || [];
     
     if (roster.length > 0) {
-      // Calculate real averages from roster data
-      const avgSkillLevel = roster.reduce((sum: number, player: any) => 
-        sum + (player.skill_level || 5), 0) / roster.length;
+      console.log(`📈 Calculating real stats for ${team.name} with ${roster.length} players:`, roster);
       
-      const avgElo = roster.reduce((sum: number, player: any) => 
-        sum + (player.elo || 1000), 0) / roster.length;
+      // Calculate real averages from roster data
+      const skillLevels = roster.map((player: any) => player.skill_level || 1);
+      const elos = roster.map((player: any) => player.elo || 800);
+      const gamesPlayed = roster.map((player: any) => player.games || 0);
+      
+      const avgSkillLevel = skillLevels.reduce((sum: number, level: number) => sum + level, 0) / skillLevels.length;
+      const avgElo = elos.reduce((sum: number, elo: number) => sum + elo, 0) / elos.length;
+      const totalGames = gamesPlayed.reduce((sum: number, games: number) => sum + games, 0);
+      
+      console.log(`✅ Real stats calculated: Avg Skill: ${avgSkillLevel.toFixed(1)}, Avg ELO: ${Math.round(avgElo)}, Total Games: ${totalGames}`);
       
       return {
         avgSkillLevel: avgSkillLevel.toFixed(1),
         avgElo: Math.round(avgElo),
         rosterSize: roster.length,
-        recentForm: Math.floor(Math.random() * 6) + 2, // Still mock as we don't have match history
-        teamChemistry: Math.floor(Math.random() * 100) + 50
+        totalGamesPlayed: totalGames,
+        teamExperience: Math.round(totalGames / roster.length) // Average games per player
       };
     }
     
-    // Fallback to reasonable mock data for amateur level
+    // Fallback for teams without roster data
+    console.log(`⚠️ No roster data for ${team.name}, using fallback values`);
     return {
-      avgSkillLevel: (Math.random() * 3 + 4).toFixed(1), // 4.0 - 7.0 for amateurs
-      avgElo: Math.floor(Math.random() * 800) + 800, // 800-1600 for amateurs
-      rosterSize: 5,
-      recentForm: Math.floor(Math.random() * 6) + 2,
-      teamChemistry: Math.floor(Math.random() * 100) + 50
+      avgSkillLevel: '3.0',
+      avgElo: 1000,
+      rosterSize: 0,
+      totalGamesPlayed: 0,
+      teamExperience: 0
     };
   };
 
@@ -120,17 +128,17 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
           />
           
           <TeamComparison 
-            label="Recent Form (Wins)" 
-            team1Value={`${team1Stats.recentForm}/10`}
-            team2Value={`${team2Stats.recentForm}/10`}
-            team1Better={team1Stats.recentForm > team2Stats.recentForm}
+            label="Team Experience" 
+            team1Value={`${team1Stats.teamExperience} avg games`}
+            team2Value={`${team2Stats.teamExperience} avg games`}
+            team1Better={team1Stats.teamExperience > team2Stats.teamExperience}
           />
           
           <TeamComparison 
-            label="Team Chemistry" 
-            team1Value={`${team1Stats.teamChemistry} games`}
-            team2Value={`${team2Stats.teamChemistry} games`}
-            team1Better={team1Stats.teamChemistry > team2Stats.teamChemistry}
+            label="Total Games Played" 
+            team1Value={team1Stats.totalGamesPlayed.toString()}
+            team2Value={team2Stats.totalGamesPlayed.toString()}
+            team1Better={team1Stats.totalGamesPlayed > team2Stats.totalGamesPlayed}
           />
         </div>
       </Card>

@@ -30,13 +30,25 @@ const getSkillLevelColor = (level: number): string => {
   return 'text-gray-400';
 };
 
+const getMembershipColor = (membership: string): string => {
+  switch (membership?.toLowerCase()) {
+    case 'premium':
+      return 'text-purple-400 border-purple-400/30 bg-purple-400/10';
+    case 'plus':
+      return 'text-blue-400 border-blue-400/30 bg-blue-400/10';
+    default:
+      return 'text-gray-400 border-gray-400/30 bg-gray-400/10';
+  }
+};
+
 const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ player, teamName }) => {
-  console.log('🎮 Rendering player card:', player);
+  console.log('🎮 Rendering player card with real data:', player);
   
-  // Use real data if available, otherwise generate reasonable mock data
-  const skillLevel = player.skill_level || (Math.floor(Math.random() * 5) + 3); // 3-7 for amateurs
-  const membershipTier = player.membership || ['Free', 'Plus', 'Premium'][Math.floor(Math.random() * 3)];
-  const playerElo = player.elo || Math.floor(Math.random() * 1000) + 800; // 800-1800 for amateurs
+  // Use real data from the database
+  const skillLevel = player.skill_level || 1;
+  const membershipTier = player.membership || 'free';
+  const playerElo = player.elo || 800;
+  const gamesPlayed = player.games || 0;
   
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4 hover:border-orange-400/50 transition-colors">
@@ -48,8 +60,10 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
               alt={player.nickname}
               className="w-full h-full object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.classList.remove('hidden');
               }}
             />
           ) : null}
@@ -71,9 +85,9 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
             
             <Badge 
               variant="outline" 
-              className="text-blue-400 border-blue-400/30 bg-blue-400/10"
+              className={getMembershipColor(membershipTier)}
             >
-              {membershipTier}
+              {membershipTier.charAt(0).toUpperCase() + membershipTier.slice(1)}
             </Badge>
             
             <Badge 
@@ -82,6 +96,15 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
             >
               {playerElo} ELO
             </Badge>
+            
+            {gamesPlayed > 0 && (
+              <Badge 
+                variant="outline" 
+                className="text-green-400 border-green-400/30 bg-green-400/10"
+              >
+                {gamesPlayed} games
+              </Badge>
+            )}
           </div>
         </div>
       </div>
@@ -90,7 +113,7 @@ const PlayerCard: React.FC<{ player: FaceitPlayer; teamName: string }> = ({ play
 };
 
 export const FaceitPlayerRoster: React.FC<FaceitPlayerRosterProps> = ({ teams }) => {
-  console.log('📋 Rendering FACEIT player roster:', teams);
+  console.log('📋 Rendering FACEIT player roster with real data:', teams);
   
   return (
     <div className="space-y-6">
@@ -131,7 +154,7 @@ export const FaceitPlayerRoster: React.FC<FaceitPlayerRosterProps> = ({ teams })
                   <div className="text-gray-400">
                     <User size={24} className="mx-auto mb-2" />
                     <p>Roster information not available</p>
-                    <p className="text-sm">Players will be revealed closer to match time</p>
+                    <p className="text-sm">Player data may not be synced yet</p>
                   </div>
                 </Card>
               )}

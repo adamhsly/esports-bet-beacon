@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -23,6 +22,116 @@ const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finishe
   }
   
   return null;
+};
+
+// New function to fetch specific match details with roster data
+export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<any | null> => {
+  try {
+    console.log(`🔍 Fetching FACEIT match details from database for: ${matchId}`);
+    
+    // Remove 'faceit_' prefix if present
+    const cleanMatchId = matchId.startsWith('faceit_') ? matchId.replace('faceit_', '') : matchId;
+    
+    const { data: match, error } = await supabase
+      .from('faceit_matches')
+      .select('*')
+      .eq('match_id', cleanMatchId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching FACEIT match details:', error);
+      return null;
+    }
+
+    if (!match) {
+      console.log(`No match found for ID: ${cleanMatchId}`);
+      return null;
+    }
+
+    console.log('📊 Raw match data from database:', match);
+    
+    // Extract roster data from raw_data
+    const rawData = match.raw_data as any;
+    const teams = match.teams as any;
+    
+    let team1Roster: any[] = [];
+    let team2Roster: any[] = [];
+    
+    // Extract rosters from raw_data if available
+    if (rawData && rawData.teams) {
+      if (rawData.teams.faction1 && rawData.teams.faction1.roster) {
+        team1Roster = rawData.teams.faction1.roster.map((player: any) => ({
+          player_id: player.player_id,
+          nickname: player.nickname,
+          avatar: player.avatar,
+          skill_level: player.game_skill_level,
+          membership: player.membership,
+          elo: player.faceit_elo,
+          games: player.games
+        }));
+      }
+      
+      if (rawData.teams.faction2 && rawData.teams.faction2.roster) {
+        team2Roster = rawData.teams.faction2.roster.map((player: any) => ({
+          player_id: player.player_id,
+          nickname: player.nickname,
+          avatar: player.avatar,
+          skill_level: player.game_skill_level,
+          membership: player.membership,
+          elo: player.faceit_elo,
+          games: player.games
+        }));
+      }
+    }
+    
+    console.log(`🎮 Extracted rosters: Team 1 (${team1Roster.length} players), Team 2 (${team2Roster.length} players)`);
+    
+    // Transform to expected format
+    const transformedMatch = {
+      id: `faceit_${match.match_id}`,
+      teams: [
+        {
+          name: teams.faction1?.name || teams.team1?.name || rawData?.teams?.faction1?.name || 'Team 1',
+          logo: teams.faction1?.avatar || teams.team1?.logo || rawData?.teams?.faction1?.avatar || '/placeholder.svg',
+          id: teams.faction1?.id || teams.team1?.id || `team1_${match.match_id}`,
+          roster: team1Roster
+        },
+        {
+          name: teams.faction2?.name || teams.team2?.name || rawData?.teams?.faction2?.name || 'Team 2',
+          logo: teams.faction2?.avatar || teams.team2?.logo || rawData?.teams?.faction2?.avatar || '/placeholder.svg',
+          id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`,
+          roster: team2Roster
+        }
+      ],
+      startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+      tournament: match.competition_name || 'FACEIT Match',
+      tournament_name: match.competition_name,
+      season_name: match.competition_type,
+      class_name: match.organized_by,
+      esportType: 'csgo',
+      bestOf: rawData?.best_of || match.faceit_data?.best_of || 1,
+      source: 'amateur' as const,
+      faceitData: {
+        region: match.region,
+        competitionType: match.competition_type,
+        organizedBy: match.organized_by,
+        calculateElo: match.calculate_elo
+      },
+      faceitMatchDetails: {
+        version: match.version,
+        configuredAt: match.configured_at,
+        finishedAt: match.finished_at,
+        voting: match.voting
+      }
+    };
+    
+    console.log('✅ Transformed match details:', transformedMatch);
+    return transformedMatch;
+    
+  } catch (error) {
+    console.error('Error in fetchSupabaseFaceitMatchDetails:', error);
+    return null;
+  }
 };
 
 export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {

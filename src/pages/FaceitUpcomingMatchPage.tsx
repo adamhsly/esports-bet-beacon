@@ -11,7 +11,7 @@ import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader'
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
 import { FaceitPreMatchStats } from '@/components/match-details/FaceitPreMatchStats';
 import { FaceitMatchNotifications } from '@/components/match-details/FaceitMatchNotifications';
-import { fetchFaceitMatchDetails } from '@/lib/faceitApi';
+import { fetchSupabaseFaceitMatchDetails } from '@/lib/supabaseFaceitApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
@@ -20,24 +20,24 @@ const FaceitUpcomingMatchPage = () => {
   
   console.log('🎮 FACEIT Match Page - Match ID:', matchId);
   
-  // Use React Query to fetch FACEIT match details
+  // Use React Query to fetch FACEIT match details from database
   const { data: matchDetails, isLoading, error } = useQuery({
-    queryKey: ['faceit-match', matchId],
+    queryKey: ['faceit-match-details', matchId],
     queryFn: async () => {
       if (!matchId) throw new Error('No match ID provided');
       
-      console.log(`🔍 Fetching FACEIT match details for: ${matchId}`);
-      const match = await fetchFaceitMatchDetails(matchId);
+      console.log(`🔍 Fetching FACEIT match details from database for: ${matchId}`);
+      const match = await fetchSupabaseFaceitMatchDetails(matchId);
       
       if (!match) {
-        throw new Error('FACEIT match not found');
+        throw new Error('FACEIT match not found in database');
       }
       
-      console.log('✅ FACEIT match details retrieved:', match);
+      console.log('✅ FACEIT match details retrieved from database:', match);
       return match;
     },
     enabled: !!matchId,
-    staleTime: 60000,
+    staleTime: 30000, // 30 seconds since we're fetching from our database
     retry: 1
   });
 
@@ -46,7 +46,7 @@ const FaceitUpcomingMatchPage = () => {
       console.error('❌ Error loading FACEIT match details:', error);
       toast({
         title: "Error loading match details",
-        description: "We couldn't load the FACEIT match information. Showing fallback data.",
+        description: "We couldn't load the FACEIT match information from the database.",
         variant: "destructive",
       });
     }
@@ -60,7 +60,7 @@ const FaceitUpcomingMatchPage = () => {
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-orange-400 mx-auto mb-4" />
             <span className="text-lg">Loading FACEIT match details...</span>
-            <p className="text-sm text-gray-400 mt-2">Fetching live data from FACEIT API</p>
+            <p className="text-sm text-gray-400 mt-2">Fetching data from database</p>
           </div>
         </div>
         <Footer />
@@ -76,7 +76,7 @@ const FaceitUpcomingMatchPage = () => {
           <div className="text-center py-20">
             <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
             <p className="text-xl text-gray-400 mb-2">FACEIT match details not found.</p>
-            <p className="text-sm text-gray-500">The match may have been cancelled or the ID is invalid.</p>
+            <p className="text-sm text-gray-500">The match may not be in our database or the ID is invalid.</p>
           </div>
         </div>
         <Footer />
@@ -84,7 +84,7 @@ const FaceitUpcomingMatchPage = () => {
     );
   }
 
-  console.log('🎯 Rendering match details:', matchDetails);
+  console.log('🎯 Rendering match details with rosters:', matchDetails);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -92,12 +92,12 @@ const FaceitUpcomingMatchPage = () => {
       
       <div className="flex-grow container mx-auto px-4 py-8">
         <div className="space-y-8">
-          {/* Error Alert if using fallback data */}
+          {/* Error Alert if there were issues */}
           {error && (
             <Alert className="bg-yellow-500/10 border-yellow-500/30">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-yellow-400">
-                Unable to fetch live FACEIT data. Displaying cached or sample information.
+                Some data may be incomplete. Displaying available information from our database.
               </AlertDescription>
             </Alert>
           )}
