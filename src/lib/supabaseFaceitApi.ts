@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -81,6 +82,17 @@ const extractPlayersFromRoster = (rosterData: any, teamName: string): any[] => {
   return [];
 };
 
+// Helper function to safely convert Json to string array
+const convertToStringArray = (jsonData: any): string[] => {
+  if (!jsonData) return [];
+  
+  if (Array.isArray(jsonData)) {
+    return jsonData.map(item => String(item));
+  }
+  
+  return [];
+};
+
 // New function to fetch enhanced player stats
 export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<EnhancedFaceitPlayer[]> => {
   try {
@@ -113,7 +125,7 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
       avg_headshots_percent: player.avg_headshots_percent,
       longest_win_streak: player.longest_win_streak,
       current_win_streak: player.current_win_streak,
-      recent_results: Array.isArray(player.recent_results) ? player.recent_results : [],
+      recent_results: convertToStringArray(player.recent_results),
       recent_form: player.recent_form,
       map_stats: player.map_stats
     }));
