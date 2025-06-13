@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Web3Provider } from '@/contexts/Web3Context';
 import Index from '@/pages/Index';
 import EsportPage from '@/pages/EsportPage';
 import TournamentsPage from '@/pages/TournamentsPage';
@@ -35,10 +35,12 @@ const queryClient = new QueryClient({
 const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <ToastProvider>
-        {children}
-        <Toaster />
-      </ToastProvider>
+      <Web3Provider>
+        <ToastProvider>
+          {children}
+          <Toaster />
+        </ToastProvider>
+      </Web3Provider>
     </AuthProvider>
   </QueryClientProvider>
 );
