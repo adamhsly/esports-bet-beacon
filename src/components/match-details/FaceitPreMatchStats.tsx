@@ -31,8 +31,8 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
     return team?.roster && team.roster.length > 0;
   };
 
-  const team1 = teams[0] || {};
-  const team2 = teams[1] || {};
+  const team1 = teams[0] || { name: 'Team 1' };
+  const team2 = teams[1] || { name: 'Team 2' };
   const hasTeam1Data = hasValidTeamData(team1);
   const hasTeam2Data = hasValidTeamData(team2);
   const hasBothTeamsData = hasTeam1Data && hasTeam2Data;
@@ -177,8 +177,8 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
             <div>
               <h4 className="font-semibold text-white mb-2">Limited Pre-Match Analysis</h4>
               <div className="text-sm text-gray-400 space-y-1">
-                {!hasTeam1Data && <p>• No roster data available for {team1.name || 'Team 1'}</p>}
-                {!hasTeam2Data && <p>• No roster data available for {team2.name || 'Team 2'}</p>}
+                {!hasTeam1Data && <p>• No roster data available for {team1.name}</p>}
+                {!hasTeam2Data && <p>• No roster data available for {team2.name}</p>}
                 <p>• Team comparison requires player statistics from both teams</p>
                 <p>• Enhanced analysis will be available once player data is synced</p>
               </div>
