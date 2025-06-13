@@ -109,7 +109,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       season_name: match.competition_type,
       class_name: match.organized_by,
       esportType: 'csgo',
-      bestOf: rawData?.best_of || match.faceit_data?.best_of || 1,
+      bestOf: rawData?.best_of || (rawData && typeof rawData === 'object' && 'best_of' in rawData ? (rawData as any).best_of : 1),
       source: 'amateur' as const,
       faceitData: {
         region: match.region,
