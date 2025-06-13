@@ -19,7 +19,7 @@ export interface EnhancedFaceitPlayer {
   longest_win_streak?: number;
   current_win_streak?: number;
   recent_results?: string[];
-  recent_form?: '&unknown' | 'poor' | 'average' | 'good' | 'excellent';
+  recent_form?: 'unknown' | 'poor' | 'average' | 'good' | 'excellent';
   map_stats?: Record<string, any>;
 }
 
@@ -113,7 +113,7 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
       avg_headshots_percent: player.avg_headshots_percent,
       longest_win_streak: player.longest_win_streak,
       current_win_streak: player.current_win_streak,
-      recent_results: player.recent_results,
+      recent_results: Array.isArray(player.recent_results) ? player.recent_results : [],
       recent_form: player.recent_form,
       map_stats: player.map_stats
     }));
