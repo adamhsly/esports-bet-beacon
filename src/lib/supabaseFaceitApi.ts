@@ -49,42 +49,88 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
     }
 
     console.log('📊 Raw match data from database:', match);
+    console.log('🎮 Raw data structure:', match.raw_data);
+    console.log('👥 Teams structure:', match.teams);
     
-    // Extract roster data from raw_data
+    // Extract roster data from raw_data with better error handling
     const rawData = match.raw_data as any;
     const teams = match.teams as any;
     
     let team1Roster: any[] = [];
     let team2Roster: any[] = [];
     
-    // Extract rosters from raw_data if available
-    if (rawData && rawData.teams) {
-      if (rawData.teams.faction1 && rawData.teams.faction1.roster) {
-        team1Roster = rawData.teams.faction1.roster.map((player: any) => ({
-          player_id: player.player_id,
-          nickname: player.nickname,
-          avatar: player.avatar,
-          skill_level: player.game_skill_level,
-          membership: player.membership,
-          elo: player.faceit_elo,
-          games: player.games
+    // Try multiple possible roster locations in the data
+    if (rawData) {
+      console.log('🔍 Searching for roster data in raw_data...');
+      
+      // Check teams.faction1/faction2 structure
+      if (rawData.teams) {
+        console.log('📋 Found teams in raw_data:', Object.keys(rawData.teams));
+        
+        if (rawData.teams.faction1?.roster) {
+          console.log(`👥 Found faction1 roster with ${rawData.teams.faction1.roster.length} players`);
+          team1Roster = rawData.teams.faction1.roster.map((player: any) => {
+            console.log('🎮 Processing faction1 player:', player);
+            return {
+              player_id: player.player_id || player.id,
+              nickname: player.nickname || player.name,
+              avatar: player.avatar || player.image_url,
+              skill_level: player.game_skill_level || player.skill_level || 1,
+              membership: player.membership || 'free',
+              elo: player.faceit_elo || player.elo || 800,
+              games: player.games || 0
+            };
+          });
+        }
+        
+        if (rawData.teams.faction2?.roster) {
+          console.log(`👥 Found faction2 roster with ${rawData.teams.faction2.roster.length} players`);
+          team2Roster = rawData.teams.faction2.roster.map((player: any) => {
+            console.log('🎮 Processing faction2 player:', player);
+            return {
+              player_id: player.player_id || player.id,
+              nickname: player.nickname || player.name,
+              avatar: player.avatar || player.image_url,
+              skill_level: player.game_skill_level || player.skill_level || 1,
+              membership: player.membership || 'free',
+              elo: player.faceit_elo || player.elo || 800,
+              games: player.games || 0
+            };
+          });
+        }
+      }
+      
+      // Fallback: Check if roster data is directly in teams structure
+      if (team1Roster.length === 0 && teams?.faction1?.roster) {
+        console.log('🔄 Fallback: checking teams.faction1.roster');
+        team1Roster = teams.faction1.roster.map((player: any) => ({
+          player_id: player.player_id || player.id,
+          nickname: player.nickname || player.name,
+          avatar: player.avatar || player.image_url,
+          skill_level: player.game_skill_level || player.skill_level || 1,
+          membership: player.membership || 'free',
+          elo: player.faceit_elo || player.elo || 800,
+          games: player.games || 0
         }));
       }
       
-      if (rawData.teams.faction2 && rawData.teams.faction2.roster) {
-        team2Roster = rawData.teams.faction2.roster.map((player: any) => ({
-          player_id: player.player_id,
-          nickname: player.nickname,
-          avatar: player.avatar,
-          skill_level: player.game_skill_level,
-          membership: player.membership,
-          elo: player.faceit_elo,
-          games: player.games
+      if (team2Roster.length === 0 && teams?.faction2?.roster) {
+        console.log('🔄 Fallback: checking teams.faction2.roster');
+        team2Roster = teams.faction2.roster.map((player: any) => ({
+          player_id: player.player_id || player.id,
+          nickname: player.nickname || player.name,
+          avatar: player.avatar || player.image_url,
+          skill_level: player.game_skill_level || player.skill_level || 1,
+          membership: player.membership || 'free',
+          elo: player.faceit_elo || player.elo || 800,
+          games: player.games || 0
         }));
       }
     }
     
-    console.log(`🎮 Extracted rosters: Team 1 (${team1Roster.length} players), Team 2 (${team2Roster.length} players)`);
+    console.log(`🎮 Final extracted rosters: Team 1 (${team1Roster.length} players), Team 2 (${team2Roster.length} players)`);
+    console.log('👥 Team 1 roster:', team1Roster);
+    console.log('👥 Team 2 roster:', team2Roster);
     
     // Transform to expected format
     const transformedMatch = {
@@ -125,7 +171,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       }
     };
     
-    console.log('✅ Transformed match details:', transformedMatch);
+    console.log('✅ Transformed match details with rosters:', transformedMatch);
     return transformedMatch;
     
   } catch (error) {
