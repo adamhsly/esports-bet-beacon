@@ -24,72 +24,43 @@ const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finishe
   return null;
 };
 
-// Helper function to extract and normalize player roster data
-const extractPlayerRoster = (rosterData: any[]): any[] => {
-  console.log('🎮 Processing roster array with length:', rosterData?.length);
-  console.log('🎮 Raw roster data:', JSON.stringify(rosterData, null, 2));
+// Simplified and direct roster extraction function
+const extractPlayersFromRoster = (rosterData: any, teamName: string): any[] => {
+  console.log(`🔍 Extracting players for ${teamName} from roster:`, rosterData);
   
-  if (!Array.isArray(rosterData)) {
-    console.log('⚠️ Roster data is not an array:', typeof rosterData, rosterData);
-    return [];
-  }
-
-  const processedRoster = rosterData.map((player: any, index: number) => {
-    console.log(`🎮 Processing player ${index + 1}:`, JSON.stringify(player, null, 2));
-    
-    // Handle the exact structure from the database
-    const processedPlayer = {
-      player_id: player.player_id || player.id || player.user_id || `player_${index}`,
-      nickname: player.nickname || player.name || player.username || `Player ${index + 1}`,
-      avatar: player.avatar || player.image_url || player.picture,
-      skill_level: player.game_skill_level || player.skill_level || player.faceit_level || 1,
-      membership: player.membership || player.faceit_subscription || 'free',
-      elo: player.faceit_elo || player.elo || player.rating || 800,
-      games: player.games || player.lifetime?.Matches || 0
-    };
-    
-    console.log(`✅ Processed player ${index + 1}:`, processedPlayer);
-    return processedPlayer;
-  });
-  
-  console.log(`🎯 Final processed roster (${processedRoster.length} players):`, processedRoster);
-  return processedRoster;
-};
-
-// Helper function to extract roster data from faction data
-const extractRosterFromFaction = (factionData: any, factionName: string): any[] => {
-  console.log(`🔍 Extracting roster for ${factionName} from faction data:`, JSON.stringify(factionData, null, 2));
-  
-  if (!factionData) {
-    console.log(`⚠️ No faction data provided for ${factionName}`);
+  if (!rosterData) {
+    console.log(`⚠️ No roster data for ${teamName}`);
     return [];
   }
   
-  // Direct roster access
-  if (Array.isArray(factionData.roster) && factionData.roster.length > 0) {
-    console.log(`✅ Found direct roster in ${factionName} with ${factionData.roster.length} players`);
-    return extractPlayerRoster(factionData.roster);
+  // Handle array of players directly
+  if (Array.isArray(rosterData)) {
+    console.log(`✅ Found array roster for ${teamName} with ${rosterData.length} players`);
+    
+    return rosterData.map((player: any, index: number) => {
+      console.log(`🎮 Processing player ${index + 1} for ${teamName}:`, player);
+      
+      // Map the database fields to expected component format
+      const processedPlayer = {
+        player_id: player.player_id || player.id || player.user_id || `player_${teamName}_${index}`,
+        nickname: player.nickname || player.name || player.username || `Player ${index + 1}`,
+        avatar: player.avatar || player.image_url || player.picture,
+        skill_level: player.game_skill_level || player.skill_level || player.faceit_level || 1,
+        membership: player.membership || player.faceit_subscription || 'free',
+        elo: player.faceit_elo || player.elo || player.rating || 800,
+        games: player.games || (player.lifetime && player.lifetime.Matches) || 0
+      };
+      
+      console.log(`✅ Processed player for ${teamName}:`, processedPlayer);
+      return processedPlayer;
+    });
   }
   
-  // Alternative paths for roster data
-  const possiblePaths = [
-    factionData.players,
-    factionData.members,
-    factionData.team_members
-  ];
-  
-  for (const rosterPath of possiblePaths) {
-    if (Array.isArray(rosterPath) && rosterPath.length > 0) {
-      console.log(`✅ Found roster in ${factionName} alternative path with ${rosterPath.length} players`);
-      return extractPlayerRoster(rosterPath);
-    }
-  }
-  
-  console.log(`⚠️ No roster found for ${factionName}`);
+  console.log(`⚠️ Roster for ${teamName} is not an array:`, typeof rosterData);
   return [];
 };
 
-// New function to fetch specific match details with roster data
+// New function to fetch specific match details with simplified roster extraction
 export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<any | null> => {
   try {
     console.log(`🔍 Fetching FACEIT match details from database for: ${matchId}`);
@@ -115,51 +86,50 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
 
     console.log('📊 Raw match data from database:', JSON.stringify(match, null, 2));
     
-    // Extract roster data with improved logic
-    const rawData = match.raw_data as any;
+    // Direct roster extraction from known database structure
     const teams = match.teams as any;
+    const rawData = match.raw_data as any;
+    
+    console.log('🔍 Teams structure:', teams);
+    console.log('🔍 Raw data structure:', rawData);
     
     let team1Roster: any[] = [];
     let team2Roster: any[] = [];
     
-    console.log('🔍 Starting roster extraction process...');
-    console.log('📋 Raw data teams structure:', rawData?.teams ? Object.keys(rawData.teams) : 'No raw_data.teams');
-    console.log('📋 Direct teams structure:', teams ? Object.keys(teams) : 'No teams');
-    
-    // Strategy 1: Extract from raw_data.teams structure
-    if (rawData?.teams?.faction1) {
-      console.log('🎯 Attempting extraction from raw_data.teams.faction1...');
-      team1Roster = extractRosterFromFaction(rawData.teams.faction1, 'raw_data.teams.faction1');
+    // Strategy 1: Extract directly from teams structure
+    if (teams?.faction1?.roster) {
+      console.log('🎯 Extracting from teams.faction1.roster...');
+      team1Roster = extractPlayersFromRoster(teams.faction1.roster, 'Team 1');
     }
     
-    if (rawData?.teams?.faction2) {
-      console.log('🎯 Attempting extraction from raw_data.teams.faction2...');
-      team2Roster = extractRosterFromFaction(rawData.teams.faction2, 'raw_data.teams.faction2');
+    if (teams?.faction2?.roster) {
+      console.log('🎯 Extracting from teams.faction2.roster...');
+      team2Roster = extractPlayersFromRoster(teams.faction2.roster, 'Team 2');
     }
     
-    // Strategy 2: Extract from direct teams structure if no roster found yet
-    if (team1Roster.length === 0 && teams?.faction1) {
-      console.log('🔄 Fallback: attempting extraction from teams.faction1...');
-      team1Roster = extractRosterFromFaction(teams.faction1, 'teams.faction1');
+    // Strategy 2: Extract from raw_data if teams didn't work
+    if (team1Roster.length === 0 && rawData?.teams?.faction1?.roster) {
+      console.log('🔄 Fallback: extracting from raw_data.teams.faction1.roster...');
+      team1Roster = extractPlayersFromRoster(rawData.teams.faction1.roster, 'Team 1');
     }
     
-    if (team2Roster.length === 0 && teams?.faction2) {
-      console.log('🔄 Fallback: attempting extraction from teams.faction2...');
-      team2Roster = extractRosterFromFaction(teams.faction2, 'teams.faction2');
+    if (team2Roster.length === 0 && rawData?.teams?.faction2?.roster) {
+      console.log('🔄 Fallback: extracting from raw_data.teams.faction2.roster...');
+      team2Roster = extractPlayersFromRoster(rawData.teams.faction2.roster, 'Team 2');
     }
     
     // Strategy 3: Alternative team naming (team1/team2)
-    if (team1Roster.length === 0 && rawData?.teams?.team1) {
-      console.log('🔄 Alternative: attempting extraction from raw_data.teams.team1...');
-      team1Roster = extractRosterFromFaction(rawData.teams.team1, 'raw_data.teams.team1');
+    if (team1Roster.length === 0 && teams?.team1?.roster) {
+      console.log('🔄 Alternative: extracting from teams.team1.roster...');
+      team1Roster = extractPlayersFromRoster(teams.team1.roster, 'Team 1');
     }
     
-    if (team2Roster.length === 0 && rawData?.teams?.team2) {
-      console.log('🔄 Alternative: attempting extraction from raw_data.teams.team2...');
-      team2Roster = extractRosterFromFaction(rawData.teams.team2, 'raw_data.teams.team2');
+    if (team2Roster.length === 0 && teams?.team2?.roster) {
+      console.log('🔄 Alternative: extracting from teams.team2.roster...');
+      team2Roster = extractPlayersFromRoster(teams.team2.roster, 'Team 2');
     }
     
-    console.log(`🎮 Final extraction results:`);
+    console.log(`🎮 Final roster extraction results:`);
     console.log(`   - Team 1: ${team1Roster.length} players`);
     console.log(`   - Team 2: ${team2Roster.length} players`);
     
@@ -213,11 +183,13 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       id: transformedMatch.id,
       team1: {
         name: transformedMatch.teams[0].name,
-        rosterCount: transformedMatch.teams[0].roster?.length || 0
+        rosterCount: transformedMatch.teams[0].roster?.length || 0,
+        players: transformedMatch.teams[0].roster?.map(p => p.nickname) || []
       },
       team2: {
         name: transformedMatch.teams[1].name,
-        rosterCount: transformedMatch.teams[1].roster?.length || 0
+        rosterCount: transformedMatch.teams[1].roster?.length || 0,
+        players: transformedMatch.teams[1].roster?.map(p => p.nickname) || []
       }
     });
     
@@ -228,8 +200,6 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
     return null;
   }
 };
-
-// ... keep existing code (fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate, triggerFaceitLiveSync, triggerFaceitUpcomingSync functions) the same ...
 
 export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
   try {
