@@ -1,4 +1,3 @@
-
 // FACEIT API integration for amateur CS2 matches
 // Note: This requires server-side implementation to keep API key secure
 
@@ -199,40 +198,6 @@ export async function fetchFaceitMatchDetails(matchId: string): Promise<any | nu
     return match;
   } catch (error) {
     console.error(`❌ Error fetching FACEIT match details for ${cleanMatchId}:`, error);
-    
-    // Return mock data as fallback for development
-    console.log('🔄 Returning mock data as fallback');
-    return {
-      id: `faceit_${cleanMatchId}`,
-      teams: [
-        {
-          name: 'Team Alpha',
-          logo: '/placeholder.svg',
-          id: 'team_alpha',
-          roster: [
-            { player_id: '1', nickname: 'player1', avatar: '/placeholder.svg' },
-            { player_id: '2', nickname: 'player2', avatar: '/placeholder.svg' }
-          ]
-        },
-        {
-          name: 'Team Beta', 
-          logo: '/placeholder.svg',
-          id: 'team_beta',
-          roster: [
-            { player_id: '3', nickname: 'player3', avatar: '/placeholder.svg' },
-            { player_id: '4', nickname: 'player4', avatar: '/placeholder.svg' }
-          ]
-        }
-      ],
-      startTime: new Date().toISOString(),
-      tournament: 'FACEIT League',
-      bestOf: 1,
-      faceitData: {
-        region: 'EU',
-        competitionType: 'Amateur',
-        organizedBy: 'FACEIT',
-        calculateElo: true
-      }
-    };
+    return null; // Return null instead of mock data
   }
 }

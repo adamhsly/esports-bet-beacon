@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Target, TrendingUp, Award, Flag } from 'lucide-react';
+import { Trophy, Target, TrendingUp, Award, Flag, User } from 'lucide-react';
 import { EnhancedFaceitPlayer } from '@/lib/supabaseFaceitApi';
 
 interface EnhancedFaceitPlayerCardProps {
@@ -43,6 +43,9 @@ export const EnhancedFaceitPlayerCard: React.FC<EnhancedFaceitPlayerCardProps> =
   player, 
   isCompact = false 
 }) => {
+  // Check if we have enhanced stats
+  const hasEnhancedStats = player.total_matches && player.total_matches > 0;
+  
   if (isCompact) {
     return (
       <div className="flex items-center space-x-3 p-2 bg-theme-gray-dark rounded-lg border border-theme-gray-medium">
@@ -50,6 +53,9 @@ export const EnhancedFaceitPlayerCard: React.FC<EnhancedFaceitPlayerCardProps> =
           src={player.avatar || '/placeholder.svg'} 
           alt={player.nickname}
           className="w-8 h-8 rounded-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder.svg';
+          }}
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">
@@ -66,13 +72,19 @@ export const EnhancedFaceitPlayerCard: React.FC<EnhancedFaceitPlayerCardProps> =
               LVL {player.skill_level || 0}
             </Badge>
             <span className="text-xs text-gray-400">{player.faceit_elo || 0} ELO</span>
-            {player.recent_form && player.recent_form !== 'unknown' && (
+            {hasEnhancedStats && player.recent_form && player.recent_form !== 'unknown' && (
               <Badge 
                 variant="outline" 
                 className={`text-xs px-1 py-0 ${getFormColor(player.recent_form)}`}
               >
                 {getFormIcon(player.recent_form)}
                 <span className="ml-1 capitalize">{player.recent_form}</span>
+              </Badge>
+            )}
+            {!hasEnhancedStats && (
+              <Badge variant="outline" className="text-xs px-1 py-0 bg-gray-600">
+                <User className="h-3 w-3 mr-1" />
+                Basic
               </Badge>
             )}
           </div>
@@ -88,6 +100,9 @@ export const EnhancedFaceitPlayerCard: React.FC<EnhancedFaceitPlayerCardProps> =
           src={player.avatar || '/placeholder.svg'} 
           alt={player.nickname}
           className="w-12 h-12 rounded-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder.svg';
+          }}
         />
         
         <div className="flex-1 space-y-3">
@@ -107,6 +122,12 @@ export const EnhancedFaceitPlayerCard: React.FC<EnhancedFaceitPlayerCardProps> =
                     {player.membership.toUpperCase()}
                   </Badge>
                 )}
+                {!hasEnhancedStats && (
+                  <Badge variant="outline" className="text-xs bg-gray-600">
+                    <User className="h-3 w-3 mr-1" />
+                    Basic Profile
+                  </Badge>
+                )}
               </div>
             </div>
             
@@ -121,67 +142,91 @@ export const EnhancedFaceitPlayerCard: React.FC<EnhancedFaceitPlayerCardProps> =
             </div>
           </div>
 
-          {/* Statistics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <div className="text-gray-400">Matches</div>
-              <div className="font-bold">{player.total_matches || 0}</div>
-            </div>
-            <div>
-              <div className="text-gray-400">Win Rate</div>
-              <div className="font-bold">{(player.win_rate || 0).toFixed(1)}%</div>
-              <Progress 
-                value={player.win_rate || 0} 
-                className="h-1 mt-1" 
-              />
-            </div>
-            <div>
-              <div className="text-gray-400">K/D Ratio</div>
-              <div className="font-bold">{(player.avg_kd_ratio || 0).toFixed(2)}</div>
-            </div>
-            <div>
-              <div className="text-gray-400">HS%</div>
-              <div className="font-bold">{(player.avg_headshots_percent || 0).toFixed(1)}%</div>
-            </div>
-          </div>
-
-          {/* Recent Form and Streaks */}
-          <div className="flex items-center justify-between pt-2 border-t border-theme-gray-medium">
-            <div className="flex items-center space-x-3">
-              {player.recent_form && player.recent_form !== 'unknown' && (
-                <Badge 
-                  variant="outline" 
-                  className={`${getFormColor(player.recent_form)}`}
-                >
-                  {getFormIcon(player.recent_form)}
-                  <span className="ml-1 capitalize">{player.recent_form} Form</span>
-                </Badge>
-              )}
-              
-              {player.current_win_streak && player.current_win_streak > 0 && (
-                <Badge variant="outline" className="bg-green-500/20 text-green-400">
-                  <Trophy className="h-3 w-3 mr-1" />
-                  {player.current_win_streak}W Streak
-                </Badge>
-              )}
-            </div>
-
-            {/* Recent Results */}
-            {player.recent_results && player.recent_results.length > 0 && (
-              <div className="flex space-x-1">
-                {player.recent_results.slice(0, 5).map((result, index) => (
-                  <div
-                    key={index}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      result === '1' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                    }`}
-                  >
-                    {result === '1' ? 'W' : 'L'}
-                  </div>
-                ))}
+          {/* Statistics Row - Show enhanced stats if available, basic stats otherwise */}
+          {hasEnhancedStats ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <div className="text-gray-400">Matches</div>
+                <div className="font-bold">{player.total_matches || 0}</div>
               </div>
-            )}
-          </div>
+              <div>
+                <div className="text-gray-400">Win Rate</div>
+                <div className="font-bold">{(player.win_rate || 0).toFixed(1)}%</div>
+                <Progress 
+                  value={player.win_rate || 0} 
+                  className="h-1 mt-1" 
+                />
+              </div>
+              <div>
+                <div className="text-gray-400">K/D Ratio</div>
+                <div className="font-bold">{(player.avg_kd_ratio || 0).toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-gray-400">HS%</div>
+                <div className="font-bold">{(player.avg_headshots_percent || 0).toFixed(1)}%</div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div className="text-gray-400">Skill Level</div>
+                <div className="font-bold">Level {player.skill_level || 0}</div>
+              </div>
+              <div>
+                <div className="text-gray-400">FACEIT ELO</div>
+                <div className="font-bold">{player.faceit_elo || 0} ELO</div>
+              </div>
+            </div>
+          )}
+
+          {/* Recent Form and Streaks - Only show if we have enhanced stats */}
+          {hasEnhancedStats && (
+            <div className="flex items-center justify-between pt-2 border-t border-theme-gray-medium">
+              <div className="flex items-center space-x-3">
+                {player.recent_form && player.recent_form !== 'unknown' && (
+                  <Badge 
+                    variant="outline" 
+                    className={`${getFormColor(player.recent_form)}`}
+                  >
+                    {getFormIcon(player.recent_form)}
+                    <span className="ml-1 capitalize">{player.recent_form} Form</span>
+                  </Badge>
+                )}
+                
+                {player.current_win_streak && player.current_win_streak > 0 && (
+                  <Badge variant="outline" className="bg-green-500/20 text-green-400">
+                    <Trophy className="h-3 w-3 mr-1" />
+                    {player.current_win_streak}W Streak
+                  </Badge>
+                )}
+              </div>
+
+              {/* Recent Results */}
+              {player.recent_results && player.recent_results.length > 0 && (
+                <div className="flex space-x-1">
+                  {player.recent_results.slice(0, 5).map((result, index) => (
+                    <div
+                      key={index}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        result === '1' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                      }`}
+                    >
+                      {result === '1' ? 'W' : 'L'}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Show message for basic profiles */}
+          {!hasEnhancedStats && (
+            <div className="pt-2 border-t border-theme-gray-medium">
+              <p className="text-xs text-gray-500">
+                Enhanced statistics not available. Basic FACEIT profile data shown.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </Card>
