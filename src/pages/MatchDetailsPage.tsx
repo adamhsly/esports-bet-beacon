@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { Card } from '@/components/ui/card';
@@ -57,12 +56,21 @@ interface MatchDetails {
 const MatchDetailsPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Determine if this is a FACEIT match
+  // Check if this is a FACEIT match and redirect if needed
   const isFaceitMatch = matchId?.startsWith('faceit_') || false;
   
-  // Use React Query to fetch match details
+  useEffect(() => {
+    if (isFaceitMatch && matchId) {
+      console.log('🔄 Redirecting FACEIT match to specialized page:', matchId);
+      navigate(`/faceit/match/${matchId}`, { replace: true });
+      return;
+    }
+  }, [matchId, isFaceitMatch, navigate]);
+  
+  // Use React Query to fetch match details - but skip for FACEIT matches since we're redirecting
   const { data: matchDetails, isLoading, error } = useQuery({
     queryKey: ['match', matchId],
     queryFn: async () => {
@@ -71,46 +79,23 @@ const MatchDetailsPage = () => {
       console.log(`Is FACEIT match: ${isFaceitMatch}`);
       
       try {
-        if (matchId) {
-          let match;
-          
-          if (isFaceitMatch) {
-            // Fetch from FACEIT API
-            match = await fetchFaceitMatchDetails(matchId);
-            if (match) {
-              console.log("=== FACEIT match data successfully retrieved ===");
-              console.log("Match teams:", match.teams);
-              console.log("FACEIT data:", match.faceitData);
-              console.log("Full match data:", match);
-              
-              // Check if this is an upcoming FACEIT match - redirect to specialized page
-              const isUpcoming = new Date(match.startTime) > new Date();
-              if (isUpcoming) {
-                console.log("Redirecting to specialized FACEIT upcoming match page");
-                // In a real implementation, we would use navigate() here
-                // For now, we'll continue with the current page but could add a redirect
-              }
-              
-              return match;
-            }
-          } else {
-            // Fetch from SportDevs API
-            match = await fetchMatchById(matchId);
-            if (match) {
-              console.log("=== SportDevs match data successfully retrieved ===");
-              console.log("Match teams:", match.teams);
-              console.log("Home team players:", match.homeTeamPlayers?.length || 0);
-              console.log("Away team players:", match.awayTeamPlayers?.length || 0);
-              console.log("Full match data:", match);
-              
-              return {
-                ...match,
-                source: 'professional' as const,
-                twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
-                              match.esportType === 'lol' ? 'lck' : 
-                              match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
-              };
-            }
+        if (matchId && !isFaceitMatch) {
+          // Only fetch from SportDevs API for non-FACEIT matches
+          const match = await fetchMatchById(matchId);
+          if (match) {
+            console.log("=== SportDevs match data successfully retrieved ===");
+            console.log("Match teams:", match.teams);
+            console.log("Home team players:", match.homeTeamPlayers?.length || 0);
+            console.log("Away team players:", match.awayTeamPlayers?.length || 0);
+            console.log("Full match data:", match);
+            
+            return {
+              ...match,
+              source: 'professional' as const,
+              twitchChannel: match.tournament?.toLowerCase().includes('esl') ? 'esl_dota2' : 
+                            match.esportType === 'lol' ? 'lck' : 
+                            match.esportType === 'csgo' ? 'esl_csgo' : 'dota2ti'
+            };
           }
         }
         throw new Error("Match not found");
@@ -128,35 +113,43 @@ const MatchDetailsPage = () => {
         const mockMatchDetails: MatchDetails = {
           id: currentMatchId,
           startTime: new Date().toISOString(),
-          tournament: isFaceitMatch ? 'FACEIT CS2 Match' : 'The International',
+          tournament: 'The International',
           esportType: 'csgo',
-          twitchChannel: isFaceitMatch ? undefined : 'esl_csgo',
-          bestOf: isFaceitMatch ? 1 : 3,
-          source: isFaceitMatch ? 'amateur' : 'professional',
+          twitchChannel: 'esl_csgo',
+          bestOf: 3,
+          source: 'professional',
           teams: [
             { name: teamNames[0], logo: '/placeholder.svg', id: `team${currentMatchId}-1` },
             { name: teamNames[1], logo: '/placeholder.svg', id: `team${currentMatchId}-2` },
           ],
         };
         
-        if (isFaceitMatch) {
-          mockMatchDetails.faceitData = {
-            region: 'EU',
-            competitionType: 'Competitive',
-            organizedBy: 'FACEIT',
-            calculateElo: true
-          };
-        }
-        
         console.log("Using mock data as fallback for match ID:", currentMatchId);
         return mockMatchDetails;
       }
     },
-    enabled: !!matchId,
+    enabled: !!matchId && !isFaceitMatch, // Only enable query for non-FACEIT matches
     staleTime: 60000,
     retryOnMount: true,
     retry: 1
   });
+
+  // Show loading state during FACEIT redirect
+  if (isFaceitMatch) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SearchableNavbar />
+        <div className="flex-grow container mx-auto px-4 py-8 flex justify-center items-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-400 mx-auto mb-4" />
+            <span className="text-lg">Redirecting to FACEIT match page...</span>
+            <p className="text-sm text-gray-400 mt-2">Loading specialized FACEIT interface</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (error) {
@@ -206,7 +199,7 @@ const MatchDetailsPage = () => {
       options: [matchDetails.teams[0]?.name || "Team 1", matchDetails.teams[1]?.name || "Team 2"]
     },
     {
-      name: matchDetails.source === 'amateur' ? "Round Winner" : "Map 1 Winner",
+      name: "Map 1 Winner",
       options: [matchDetails.teams[0]?.name || "Team 1", matchDetails.teams[1]?.name || "Team 2"]
     }
   ] : [];
@@ -224,10 +217,7 @@ const MatchDetailsPage = () => {
     );
   }
 
-  // Add a note for FACEIT upcoming matches
-  const isAmateur = matchDetails?.source === 'amateur';
-  const isUpcoming = matchDetails && new Date(matchDetails.startTime) > new Date();
-
+  // Remove the amateur/FACEIT specific logic since those matches are now redirected
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
@@ -239,28 +229,6 @@ const MatchDetailsPage = () => {
           </div>
         ) : matchDetails ? (
           <>
-            {/* Show notice for FACEIT upcoming matches */}
-            {isAmateur && isUpcoming && (
-              <div className="mb-6 p-4 bg-orange-500/20 border border-orange-400/30 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-orange-400 font-semibold">Enhanced FACEIT Match Page Available</h3>
-                    <p className="text-sm text-gray-300">
-                      View detailed rosters, player stats, and pre-match analysis on our specialized FACEIT page.
-                    </p>
-                  </div>
-                  <Button
-                    asChild
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                  >
-                    <Link to={`/faceit/match/${matchId}`}>
-                      View Enhanced Page
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            )}
-
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
                 <h1 className="text-3xl font-bold font-gaming">
@@ -268,17 +236,10 @@ const MatchDetailsPage = () => {
                     ? `${matchDetails.teams[0].name} vs ${matchDetails.teams[1].name}`
                     : 'Match Details'}
                 </h1>
-                {isAmateur ? (
-                  <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
-                    <Users size={16} className="mr-1" />
-                    FACEIT Amateur
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-                    <Trophy size={16} className="mr-1" />
-                    Professional
-                  </Badge>
-                )}
+                <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+                  <Trophy size={16} className="mr-1" />
+                  Professional
+                </Badge>
               </div>
               <div className="flex items-center text-gray-400 flex-wrap gap-4">
                 <div className="flex items-center">
@@ -289,11 +250,6 @@ const MatchDetailsPage = () => {
                   <Trophy className="h-4 w-4 mr-2" />
                   <span>{matchDetails.tournament}</span>
                 </div>
-                {isAmateur && matchDetails.faceitData?.region && (
-                  <div className="flex items-center">
-                    <span className="text-orange-400">Region: {matchDetails.faceitData.region}</span>
-                  </div>
-                )}
               </div>
             </div>
             
@@ -349,7 +305,7 @@ const MatchDetailsPage = () => {
             </div>
             
             {/* Twitch Stream Embed - Only for professional matches */}
-            {matchDetails.twitchChannel && !isAmateur && (
+            {matchDetails.twitchChannel && (
               <div className="mb-8 bg-theme-gray-dark border border-theme-gray-medium rounded-lg overflow-hidden">
                 <div className="p-4 border-b border-theme-gray-medium">
                   <h2 className="text-lg font-bold text-white flex items-center">
@@ -366,42 +322,6 @@ const MatchDetailsPage = () => {
                     className="absolute top-0 left-0 w-full h-full"
                     title={`${matchDetails.teams?.[0]?.name || 'Team 1'} vs ${matchDetails.teams?.[1]?.name || 'Team 2'} Live Stream`}
                   ></iframe>
-                </div>
-              </div>
-            )}
-            
-            {/* FACEIT Match Info - Only for amateur matches */}
-            {isAmateur && matchDetails.faceitData && (
-              <div className="mb-8 bg-theme-gray-dark border border-theme-gray-medium rounded-lg p-4">
-                <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-                  <Users className="h-5 w-5 mr-2 text-orange-400" />
-                  FACEIT Match Details
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  {matchDetails.faceitData.region && (
-                    <div>
-                      <span className="text-gray-400">Region:</span>
-                      <div className="text-orange-400 font-medium">{matchDetails.faceitData.region}</div>
-                    </div>
-                  )}
-                  {matchDetails.faceitData.competitionType && (
-                    <div>
-                      <span className="text-gray-400">Type:</span>
-                      <div className="text-white font-medium">{matchDetails.faceitData.competitionType}</div>
-                    </div>
-                  )}
-                  {matchDetails.faceitData.organizedBy && (
-                    <div>
-                      <span className="text-gray-400">Organized by:</span>
-                      <div className="text-white font-medium">{matchDetails.faceitData.organizedBy}</div>
-                    </div>
-                  )}
-                  {matchDetails.faceitData.calculateElo !== undefined && (
-                    <div>
-                      <span className="text-gray-400">ELO Match:</span>
-                      <div className="text-white font-medium">{matchDetails.faceitData.calculateElo ? 'Yes' : 'No'}</div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -463,7 +383,6 @@ const MatchDetailsPage = () => {
                         }} 
                       />
                       
-                      {/* Add the new TeamPlayerStatsVisualizer component for the first team */}
                       <TeamPlayerStatsVisualizer
                         teamId={matchDetails.teams[0]?.id || 'team1'}
                         teamName={matchDetails.teams[0]?.name || 'Team 1'}
@@ -484,7 +403,6 @@ const MatchDetailsPage = () => {
                         }}
                       />
                       
-                      {/* Add the new TeamPlayerStatsVisualizer component for the second team */}
                       <TeamPlayerStatsVisualizer
                         teamId={matchDetails.teams[1]?.id || 'team2'}
                         teamName={matchDetails.teams[1]?.name || 'Team 2'}
@@ -507,8 +425,8 @@ const MatchDetailsPage = () => {
               </TabsContent>
             </Tabs>
 
-            {/* Lineup Section */}
-            {!isAmateur && matchDetails.teams && matchDetails.teams.length >= 2 && (
+            {/* Lineup Section - Only for professional matches with player data */}
+            {matchDetails.teams && matchDetails.teams.length >= 2 && (
               <>
                 <div style={{ padding: '10px', background: '#333', margin: '10px 0', borderRadius: '5px' }}>
                   <strong>DEBUG - Match Lineup Data:</strong><br/>
