@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { SportDevsSyncButtons } from '@/components/SportDevsSyncButtons';
+import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
@@ -307,8 +308,12 @@ const Index = () => {
                   <FaceitSyncButtons />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs text-gray-400">Pro Sync</span>
+                  <span className="text-xs text-gray-400">SportDevs Sync</span>
                   <SportDevsSyncButtons />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs text-gray-400">PandaScore Sync</span>
+                  <PandaScoreSyncButtons />
                 </div>
               </div>
             </div>
