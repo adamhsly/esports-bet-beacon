@@ -24,15 +24,18 @@ const PandaScoreUpcomingMatchPage = () => {
   const navigate = useNavigate();
   const isMobile = useMobile();
   
-  console.log('🎮 PandaScore Match Page - Match ID:', matchId);
+  console.log('🎮 PandaScore Match Page - Raw Match ID from URL:', matchId);
   
   const { data: matchDetails, isLoading, error } = useQuery({
     queryKey: ['pandascore-match-details', matchId],
     queryFn: async () => {
       if (!matchId) throw new Error('No match ID provided');
       
-      console.log(`🔍 Fetching PandaScore match details from database for: ${matchId}`);
-      const match = await fetchSupabasePandaScoreMatchDetails(matchId);
+      // Ensure we're working with the clean match ID for database query
+      const cleanMatchId = matchId.startsWith('pandascore_') ? matchId : `pandascore_${matchId}`;
+      console.log(`🔍 Fetching PandaScore match details - URL ID: ${matchId}, Clean ID: ${cleanMatchId}`);
+      
+      const match = await fetchSupabasePandaScoreMatchDetails(cleanMatchId);
       
       if (!match) {
         throw new Error('PandaScore match not found in database');

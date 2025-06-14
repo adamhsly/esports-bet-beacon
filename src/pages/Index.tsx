@@ -150,12 +150,15 @@ const Index = () => {
       } satisfies MatchInfo;
     });
 
-    // Transform PandaScore matches to MatchInfo format
+    // Transform PandaScore matches to MatchInfo format with consistent ID prefixing
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
       const teamsData = match.teams as unknown as PandaScoreTeamsData;
+      const matchId = `pandascore_${match.match_id}`;
+      
+      console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId}`);
       
       return {
-        id: `pandascore_${match.match_id}`,
+        id: matchId, // Ensure consistent prefixing for homepage
         teams: [
           {
             name: teamsData.team1?.name || 'TBD',

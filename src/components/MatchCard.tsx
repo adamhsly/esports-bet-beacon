@@ -51,23 +51,33 @@ interface MatchCardProps {
 
 // Helper function to determine the correct route for a match
 const getMatchRoute = (matchId: string): string => {
+  console.log(`🎯 MatchCard - Determining route for match ID: ${matchId}`);
+  
   if (matchId.startsWith('faceit_')) {
     const actualMatchId = matchId.replace('faceit_', '');
-    return `/faceit/match/${actualMatchId}`;
+    const route = `/faceit/match/${actualMatchId}`;
+    console.log(`🎯 MatchCard - FACEIT route: ${route}`);
+    return route;
   }
   
   if (matchId.startsWith('pandascore_')) {
     const actualMatchId = matchId.replace('pandascore_', '');
-    return `/pandascore/match/${actualMatchId}`;
+    const route = `/pandascore/match/${actualMatchId}`;
+    console.log(`🎯 MatchCard - PandaScore route: ${route}`);
+    return route;
   }
   
   if (matchId.startsWith('sportdevs_')) {
     // SportDevs matches still use the generic match route
-    return `/match/${matchId}`;
+    const route = `/match/${matchId}`;
+    console.log(`🎯 MatchCard - SportDevs route: ${route}`);
+    return route;
   }
   
-  // Default fallback
-  return `/match/${matchId}`;
+  // Default fallback for any other matches
+  const route = `/match/${matchId}`;
+  console.log(`🎯 MatchCard - Default fallback route: ${route}`);
+  return route;
 };
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
@@ -75,6 +85,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const matchDate = new Date(startTime);
   const isAmateur = source === 'amateur';
   const matchRoute = getMatchRoute(id);
+
+  console.log(`🎮 MatchCard - Rendering match: ${id}, source: ${source}, route: ${matchRoute}`);
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">

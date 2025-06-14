@@ -51,7 +51,7 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
       if (!isDataStale(new Date(latestSync).toISOString(), CACHE_TTL.MATCHES)) {
         console.log(`✅ Using fresh database data (${dbMatches.length} matches)`);
         
-        // Transform database data to MatchInfo format
+        // Transform database data to MatchInfo format with consistent ID prefixing
         const transformedMatches = dbMatches.map((match) => {
           // Safely extract team data from stored JSON
           const teamsData = match.teams as any;
@@ -66,15 +66,19 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
             logo: teamsData?.team2?.logo || '/placeholder.svg'
           };
 
+          const matchId = `pandascore_${match.match_id}`;
+          console.log(`🔄 PandaScore match transformed: ${match.match_id} -> ${matchId}`);
+
           return {
-            id: match.match_id,
+            id: matchId, // Ensure consistent prefixing
             teams: [team1, team2] as [TeamInfo, TeamInfo],
             startTime: match.start_time,
             tournament: match.tournament_name || 'Unknown Tournament',
             esportType: match.esport_type,
             bestOf: match.number_of_games || 3,
             homeTeamPlayers: [],
-            awayTeamPlayers: []
+            awayTeamPlayers: [],
+            source: 'professional' as const
           };
         });
         
@@ -120,7 +124,7 @@ export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]>
       if (!isDataStale(new Date(latestSync).toISOString(), 5 * 60 * 1000)) {
         console.log(`✅ Using fresh database live data (${dbMatches.length} matches)`);
         
-        // Transform database data to MatchInfo format
+        // Transform database data to MatchInfo format with consistent ID prefixing
         const transformedMatches = dbMatches.map((match) => {
           const teamsData = match.teams as any;
           const team1: TeamInfo = {
@@ -134,15 +138,19 @@ export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]>
             logo: teamsData?.team2?.logo || '/placeholder.svg'
           };
 
+          const matchId = `pandascore_${match.match_id}`;
+          console.log(`🔄 PandaScore live match transformed: ${match.match_id} -> ${matchId}`);
+
           return {
-            id: match.match_id,
+            id: matchId, // Ensure consistent prefixing
             teams: [team1, team2] as [TeamInfo, TeamInfo],
             startTime: match.start_time,
             tournament: match.tournament_name || 'Unknown Tournament',
             esportType: match.esport_type,
             bestOf: match.number_of_games || 3,
             homeTeamPlayers: [],
-            awayTeamPlayers: []
+            awayTeamPlayers: [],
+            source: 'professional' as const
           };
         });
         
@@ -299,16 +307,20 @@ export async function getSyncStats() {
 }
 
 /**
- * Fetch PandaScore match details by ID from database
+ * Fetch PandaScore match details by ID from database with proper ID handling
  */
 export async function fetchSupabasePandaScoreMatchDetails(matchId: string) {
   try {
     console.log(`🔍 Fetching PandaScore match details for ID: ${matchId}`);
     
+    // Strip the pandascore_ prefix if present for database query
+    const cleanMatchId = matchId.startsWith('pandascore_') ? matchId.replace('pandascore_', '') : matchId;
+    console.log(`🔄 Cleaned match ID for database query: ${cleanMatchId}`);
+    
     const { data: match, error } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .eq('match_id', matchId)
+      .eq('match_id', cleanMatchId)
       .single();
 
     if (error) {
@@ -336,8 +348,12 @@ export async function fetchSupabasePandaScoreMatchDetails(matchId: string) {
       players: teamsData?.team2?.players || []
     };
 
+    // Return with consistent prefixed ID
+    const finalMatchId = `pandascore_${match.match_id}`;
+    console.log(`✅ PandaScore match details found: ${match.match_id} -> ${finalMatchId}`);
+
     const transformedMatch = {
-      id: match.match_id,
+      id: finalMatchId, // Ensure consistent prefixing
       teams: [team1, team2],
       startTime: match.start_time,
       tournament: match.tournament_name || match.league_name || 'Professional Tournament',
