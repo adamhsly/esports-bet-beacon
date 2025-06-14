@@ -16,7 +16,6 @@ import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
-import { SportDevsSyncButtons } from '@/components/SportDevsSyncButtons';
 import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { formatMatchDate } from '@/utils/dateMatchUtils';
@@ -88,29 +87,15 @@ const Index = () => {
   // Check if selected date is today
   const isSelectedDateToday = isToday(selectedDate);
   
-  // Unified match loading function to ensure consistency
+  // Updated unified match loading function to exclude SportDevs matches
   const loadAllMatchesFromDatabase = async (): Promise<MatchInfo[]> => {
-    console.log('🔄 Loading all matches from database for unified dataset...');
+    console.log('🔄 Loading matches from database (FACEIT + PandaScore only)...');
     
     // Fetch FACEIT matches
     const faceitMatches = await fetchSupabaseFaceitAllMatches();
     console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches from database`);
     
-    // Fetch SportDevs matches with broader status filtering
-    const { data: sportdevsMatches, error: sportdevsError } = await supabase
-      .from('sportdevs_matches')
-      .select('*')
-      .in('status', ['live', 'scheduled', 'upcoming', 'running', 'ongoing', 'ready'])
-      .order('start_time', { ascending: true })
-      .limit(200);
-
-    if (sportdevsError) {
-      console.error('Error loading SportDevs matches:', sportdevsError);
-    }
-
-    console.log(`📊 Loaded ${sportdevsMatches?.length || 0} SportDevs matches from database`);
-    
-    // Fetch PandaScore matches
+    // Fetch PandaScore matches only (excluding SportDevs)
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
@@ -124,32 +109,6 @@ const Index = () => {
 
     console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database`);
     
-    // Transform SportDevs matches to MatchInfo format
-    const transformedSportDevs = (sportdevsMatches || []).map(match => {
-      const teamsData = match.teams as unknown as SportDevsTeamsData;
-      
-      return {
-        id: `sportdevs_${match.match_id}`,
-        teams: [
-          {
-            name: teamsData.team1?.name || 'TBD',
-            logo: teamsData.team1?.logo || '/placeholder.svg',
-            id: `sportdevs_team_${match.match_id}_1`
-          },
-          {
-            name: teamsData.team2?.name || 'TBD',
-            logo: teamsData.team2?.logo || '/placeholder.svg',
-            id: `sportdevs_team_${match.match_id}_2`
-          }
-        ] as [any, any],
-        startTime: match.start_time,
-        tournament: match.tournament_name || 'Professional Match',
-        esportType: match.esport_type,
-        bestOf: match.best_of || 3,
-        source: 'professional' as const
-      } satisfies MatchInfo;
-    });
-
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
       const teamsData = match.teams as unknown as PandaScoreTeamsData;
@@ -179,8 +138,8 @@ const Index = () => {
       } satisfies MatchInfo;
     });
 
-    const combinedMatches = [...faceitMatches, ...transformedSportDevs, ...transformedPandaScore];
-    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedSportDevs.length} SportDevs + ${transformedPandaScore.length} PandaScore)`);
+    const combinedMatches = [...faceitMatches, ...transformedPandaScore];
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
     
     return combinedMatches;
   };
@@ -235,7 +194,7 @@ const Index = () => {
         const faceitMatches = dateFilteredMatches.filter(m => m.source === 'amateur');
         const professionalMatches = dateFilteredMatches.filter(m => m.source === 'professional');
         
-        console.log(`📊 Date-filtered breakdown: ${faceitMatches.length} FACEIT + ${professionalMatches.length} Professional = ${dateFilteredMatches.length} total`);
+        console.log(`📊 Date-filtered breakdown: ${faceitMatches.length} FACEIT + ${professionalMatches.length} PandaScore = ${dateFilteredMatches.length} total`);
         
         // For now, we'll categorize all matches as upcoming since we're using the database
         // In the future, we could add real-time status checking for live matches
@@ -309,10 +268,6 @@ const Index = () => {
                 <div className="flex flex-col gap-2">
                   <span className="text-xs text-gray-400">FACEIT Sync</span>
                   <FaceitSyncButtons />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs text-gray-400">SportDevs Sync</span>
-                  <SportDevsSyncButtons />
                 </div>
                 <div className="flex flex-col gap-2">
                   <span className="text-xs text-gray-400">PandaScore Sync</span>
