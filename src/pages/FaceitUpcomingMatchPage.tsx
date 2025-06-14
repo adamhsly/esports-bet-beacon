@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { Loader2, AlertTriangle, Zap, Users, TrendingUp } from 'lucide-react';
@@ -20,6 +20,7 @@ import { toast } from '@/hooks/use-toast';
 const FaceitUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [isLoadingPlayerStats, setIsLoadingPlayerStats] = useState(false);
+  const navigate = useNavigate();
   
   console.log('🎮 FACEIT Match Page - Match ID:', matchId);
   
@@ -36,11 +37,20 @@ const FaceitUpcomingMatchPage = () => {
         throw new Error('FACEIT match not found in database');
       }
       
+      // Check if match is live and redirect if so
+      const isLive = match.status === 'ongoing' || match.status === 'live' || match.status === 'running';
+      
+      if (isLive) {
+        console.log('🔴 Match is live, redirecting to live page');
+        navigate(`/faceit/live/${matchId}`, { replace: true });
+        return null;
+      }
+      
       console.log('✅ FACEIT match details retrieved from database:', match);
       return match;
     },
     enabled: !!matchId,
-    staleTime: 30000, // 30 seconds since we're fetching from our database
+    staleTime: 30000,
     retry: 1
   });
 

@@ -60,6 +60,7 @@ function App() {
           <Route path="/player/:id" element={<PlayerDetailPage />} />
           <Route path="/match/:matchId" element={<MatchDetailsPage />} />
           <Route path="/faceit/match/:matchId" element={<FaceitUpcomingMatchPage />} />
+          <Route path="/faceit/live/:matchId" element={<FaceitLiveMatchPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/cards" element={<CardsPage />} />
           <Route path="/advanced-cards" element={<AdvancedCardsPage />} />
