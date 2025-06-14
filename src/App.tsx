@@ -15,6 +15,7 @@ import TeamDetailPage from '@/pages/TeamDetailPage';
 import PlayerDetailPage from '@/pages/PlayerDetailPage';
 import MatchDetailsPage from '@/pages/MatchDetailsPage';
 import FaceitUpcomingMatchPage from '@/pages/FaceitUpcomingMatchPage';
+import FaceitLiveMatchPage from '@/pages/FaceitLiveMatchPage';
 import NewsPage from '@/pages/NewsPage';
 import CardsPage from '@/pages/CardsPage';
 import AdvancedCardsPage from '@/pages/AdvancedCardsPage';
