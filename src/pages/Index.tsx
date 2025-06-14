@@ -37,6 +37,20 @@ interface SportDevsTeamsData {
   };
 }
 
+// Define the expected structure of PandaScore teams data
+interface PandaScoreTeamsData {
+  team1: {
+    id?: string;
+    name: string;
+    logo?: string;
+  };
+  team2: {
+    id?: string;
+    name: string;
+    logo?: string;
+  };
+}
+
 // Helper function to map SportDevs statuses to display categories
 const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
@@ -82,19 +96,32 @@ const Index = () => {
     console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches from database`);
     
     // Fetch SportDevs matches with broader status filtering
-    const { data: sportdevsMatches, error } = await supabase
+    const { data: sportdevsMatches, error: sportdevsError } = await supabase
       .from('sportdevs_matches')
       .select('*')
       .in('status', ['live', 'scheduled', 'upcoming', 'running', 'ongoing', 'ready'])
       .order('start_time', { ascending: true })
       .limit(200);
 
-    if (error) {
-      console.error('Error loading SportDevs matches:', error);
-      return faceitMatches;
+    if (sportdevsError) {
+      console.error('Error loading SportDevs matches:', sportdevsError);
     }
 
     console.log(`📊 Loaded ${sportdevsMatches?.length || 0} SportDevs matches from database`);
+    
+    // Fetch PandaScore matches
+    const { data: pandascoreMatches, error: pandascoreError } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .in('status', ['scheduled', 'not_started', 'running', 'live'])
+      .order('start_time', { ascending: true })
+      .limit(200);
+
+    if (pandascoreError) {
+      console.error('Error loading PandaScore matches:', pandascoreError);
+    }
+
+    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database`);
     
     // Transform SportDevs matches to MatchInfo format
     const transformedSportDevs = (sportdevsMatches || []).map(match => {
@@ -122,8 +149,34 @@ const Index = () => {
       } satisfies MatchInfo;
     });
 
-    const combinedMatches = [...faceitMatches, ...transformedSportDevs];
-    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedSportDevs.length} SportDevs)`);
+    // Transform PandaScore matches to MatchInfo format
+    const transformedPandaScore = (pandascoreMatches || []).map(match => {
+      const teamsData = match.teams as unknown as PandaScoreTeamsData;
+      
+      return {
+        id: `pandascore_${match.match_id}`,
+        teams: [
+          {
+            name: teamsData.team1?.name || 'TBD',
+            logo: teamsData.team1?.logo || '/placeholder.svg',
+            id: `pandascore_team_${match.match_id}_1`
+          },
+          {
+            name: teamsData.team2?.name || 'TBD',
+            logo: teamsData.team2?.logo || '/placeholder.svg',
+            id: `pandascore_team_${match.match_id}_2`
+          }
+        ] as [any, any],
+        startTime: match.start_time,
+        tournament: match.tournament_name || match.league_name || 'Professional Tournament',
+        esportType: match.esport_type,
+        bestOf: match.number_of_games || 3,
+        source: 'professional' as const
+      } satisfies MatchInfo;
+    });
+
+    const combinedMatches = [...faceitMatches, ...transformedSportDevs, ...transformedPandaScore];
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedSportDevs.length} SportDevs + ${transformedPandaScore.length} PandaScore)`);
     
     return combinedMatches;
   };
@@ -178,7 +231,7 @@ const Index = () => {
         const faceitMatches = dateFilteredMatches.filter(m => m.source === 'amateur');
         const professionalMatches = dateFilteredMatches.filter(m => m.source === 'professional');
         
-        console.log(`📊 Date-filtered breakdown: ${faceitMatches.length} FACEIT + ${professionalMatches.length} SportDevs = ${dateFilteredMatches.length} total`);
+        console.log(`📊 Date-filtered breakdown: ${faceitMatches.length} FACEIT + ${professionalMatches.length} Professional = ${dateFilteredMatches.length} total`);
         
         // For now, we'll categorize all matches as upcoming since we're using the database
         // In the future, we could add real-time status checking for live matches
