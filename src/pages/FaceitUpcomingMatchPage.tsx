@@ -183,8 +183,8 @@ const FaceitUpcomingMatchPage = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       
-      <div className={`flex-grow container mx-auto ${isMobile ? 'px-2 py-4' : 'px-4 py-8'}`}>
-        <div className={`space-y-${isMobile ? '4' : '8'}`}>
+      <div className={`flex-grow container mx-auto ${isMobile ? 'px-1 py-2' : 'px-4 py-8'}`}>
+        <div className={`space-y-${isMobile ? '2' : '8'}`}>
           {/* Error Alert if there were issues */}
           {error && (
             <Alert className="bg-yellow-500/10 border-yellow-500/30">
@@ -197,13 +197,13 @@ const FaceitUpcomingMatchPage = () => {
 
           {/* Enhanced Stats Status Card - Compact on mobile */}
           {!statsStatus.allEnhanced && (
-            <Card className={`bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 border-blue-500/30 ${isMobile ? 'p-3' : ''}`}>
-              <CardHeader className={isMobile ? 'p-3 pb-2' : ''}>
-                <CardTitle className={`flex items-center space-x-2 ${isMobile ? 'text-base' : ''}`}>
-                  <TrendingUp className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-blue-400`} />
+            <Card className={`bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 border-blue-500/30 ${isMobile ? 'mx-1' : ''}`}>
+              <CardHeader className={isMobile ? 'p-2 pb-1' : ''}>
+                <CardTitle className={`flex items-center space-x-2 ${isMobile ? 'text-sm' : ''}`}>
+                  <TrendingUp className={`${isMobile ? 'h-3 w-3' : 'h-5 w-5'} text-blue-400`} />
                   <span>Enhanced Player Statistics</span>
                 </CardTitle>
-                <CardDescription className={isMobile ? 'text-sm' : ''}>
+                <CardDescription className={isMobile ? 'text-xs' : ''}>
                   {statsStatus.enhancedPlayers === 0 ? (
                     "No enhanced statistics available for players in this match"
                   ) : (
@@ -211,14 +211,14 @@ const FaceitUpcomingMatchPage = () => {
                   )}
                 </CardDescription>
               </CardHeader>
-              <CardContent className={isMobile ? 'p-3 pt-0' : ''}>
-                <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
+              <CardContent className={isMobile ? 'p-2 pt-0' : ''}>
+                <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'}`}>
                   <div className="space-y-1">
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400`}>
+                    <p className={`${isMobile ? 'text-[10px]' : 'text-sm'} text-gray-400`}>
                       Enhanced stats include win rates, K/D ratios, recent form, match history, and detailed performance metrics.
                     </p>
                     {statsStatus.enhancedPlayers > 0 && (
-                      <p className="text-xs text-green-400">
+                      <p className="text-[10px] text-green-400">
                         ✓ Partial enhanced data available
                       </p>
                     )}
@@ -227,16 +227,16 @@ const FaceitUpcomingMatchPage = () => {
                     onClick={syncPlayerStats}
                     disabled={isLoadingPlayerStats}
                     size={isMobile ? "sm" : "lg"}
-                    className={`bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 ${isMobile ? 'w-full text-sm' : ''}`}
+                    className={`bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 ${isMobile ? 'w-full text-xs h-7' : ''}`}
                   >
                     {isLoadingPlayerStats ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
                         Syncing...
                       </>
                     ) : (
                       <>
-                        <Zap className="h-4 w-4 mr-2" />
+                        <Zap className="h-3 w-3 mr-1" />
                         Sync Enhanced Stats
                       </>
                     )}
@@ -272,11 +272,11 @@ const FaceitUpcomingMatchPage = () => {
           
           {/* Main Content - Simplified for mobile */}
           {isMobile ? (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {/* Merged Overview Section */}
               <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-white mb-4">Match Overview</h3>
+                <div className="p-2">
+                  <h3 className="text-sm font-bold text-white mb-2">Match Overview</h3>
                   <FaceitMatchNotifications 
                     matchId={matchDetails.id}
                     teams={matchDetails.teams}
@@ -294,8 +294,8 @@ const FaceitUpcomingMatchPage = () => {
               
               {/* Community Voting */}
               <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
+                <div className="p-2">
+                  <h3 className="text-sm font-bold text-white mb-2">Community Predictions</h3>
                   <MatchVotingWidget 
                     matchId={matchDetails.id}
                     teams={[
