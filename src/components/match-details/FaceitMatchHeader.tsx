@@ -2,10 +2,13 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Calendar, Clock, Users, Trophy, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, Users, Trophy, MapPin, Bell, BellRing, Loader2 } from 'lucide-react';
+import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 
 interface FaceitMatchHeaderProps {
   match: {
+    id: string;
     teams: Array<{
       name: string;
       logo: string;
@@ -23,12 +26,23 @@ interface FaceitMatchHeaderProps {
 }
 
 export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) => {
+  const { isSubscribed, isLoading, isChecking, toggleNotification } = useMatchNotifications({
+    matchId: match.id,
+    matchStartTime: match.startTime
+  });
+
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return {
       date: date.toLocaleDateString(),
       time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
+  };
+
+  const isMatchInPast = () => {
+    const startTime = new Date(match.startTime);
+    const now = new Date();
+    return startTime.getTime() < now.getTime();
   };
 
   const { date, time } = formatDateTime(match.startTime);
@@ -45,6 +59,37 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
           <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
             ELO Match
           </Badge>
+        )}
+      </div>
+
+      {/* Notification Button */}
+      <div className="flex justify-center">
+        {isChecking ? (
+          <Button disabled variant="outline">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            Loading...
+          </Button>
+        ) : (
+          <Button 
+            variant={isSubscribed ? "default" : "outline"}
+            className={isSubscribed ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            onClick={toggleNotification}
+            disabled={isLoading || isMatchInPast()}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : isSubscribed ? (
+              <>
+                <BellRing className="h-4 w-4 mr-2" />
+                Subscribed to Notifications
+              </>
+            ) : (
+              <>
+                <Bell className="h-4 w-4 mr-2" />
+                Get Notified 15 Minutes Before
+              </>
+            )}
+          </Button>
         )}
       </div>
 

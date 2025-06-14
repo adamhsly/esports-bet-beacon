@@ -3,7 +3,8 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Trophy, MapPin, Bell, Calendar } from 'lucide-react';
+import { Clock, Trophy, MapPin, Bell, BellRing, Calendar, Loader2 } from 'lucide-react';
+import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 
 interface FaceitCompactMatchHeaderProps {
   match: {
@@ -37,6 +38,11 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
 
+  const { isSubscribed, isLoading, isChecking, toggleNotification } = useMatchNotifications({
+    matchId: match.id,
+    matchStartTime: match.startTime
+  });
+
   const getTimeUntilMatch = () => {
     const startTime = new Date(match.startTime);
     const now = new Date();
@@ -48,6 +54,48 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
       return diffMinutes > 0 ? `${diffMinutes}m` : 'Starting soon';
     }
     return diffHours < 24 ? `${diffHours}h` : `${Math.ceil(diffHours / 24)}d`;
+  };
+
+  const isMatchInPast = () => {
+    const startTime = new Date(match.startTime);
+    const now = new Date();
+    return startTime.getTime() < now.getTime();
+  };
+
+  const NotifyButton = ({ size = "sm" }: { size?: "sm" | "xs" }) => {
+    const isPastMatch = isMatchInPast();
+    
+    if (isChecking) {
+      return (
+        <Button size={size} variant="outline" disabled className="text-xs">
+          <Loader2 className="h-3 w-3 animate-spin" />
+        </Button>
+      );
+    }
+
+    return (
+      <Button 
+        size={size} 
+        variant={isSubscribed ? "default" : "outline"} 
+        className={`text-xs ${isSubscribed ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+        onClick={toggleNotification}
+        disabled={isLoading || isPastMatch}
+      >
+        {isLoading ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : isSubscribed ? (
+          <>
+            <BellRing className="h-3 w-3 mr-1" />
+            {isMobile ? '' : 'Subscribed'}
+          </>
+        ) : (
+          <>
+            <Bell className="h-3 w-3 mr-1" />
+            {isMobile ? '' : 'Notify'}
+          </>
+        )}
+      </Button>
+    );
   };
 
   return (
@@ -70,10 +118,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
           
           {!isMobile && (
             <div className="flex items-center space-x-2 ml-4">
-              <Button size="sm" variant="outline" className="text-xs">
-                <Bell className="h-3 w-3 mr-1" />
-                Notify
-              </Button>
+              <NotifyButton />
               <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30">
                 {getTimeUntilMatch()}
               </Badge>
@@ -144,10 +189,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                   {getTimeUntilMatch()}
                 </Badge>
               </div>
-              <Button size="sm" variant="outline" className="text-xs h-6 px-2">
-                <Bell className="h-3 w-3 mr-1" />
-                Notify
-              </Button>
+              <NotifyButton size="sm" />
             </div>
           </div>
         )}

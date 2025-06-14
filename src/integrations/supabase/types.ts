@@ -681,6 +681,36 @@ export type Database = {
           },
         ]
       }
+      match_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          match_start_time: string
+          notification_sent: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          match_start_time: string
+          notification_sent?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          match_start_time?: string
+          notification_sent?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nft_cards: {
         Row: {
           block_number: number | null
