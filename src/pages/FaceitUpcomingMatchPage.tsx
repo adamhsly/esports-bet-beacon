@@ -1,35 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import { Loader2, AlertTriangle, Zap, Users, TrendingUp } from 'lucide-react';
+import { Loader2, AlertTriangle, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader';
 import { FaceitCompactMatchHeader } from '@/components/match-details/FaceitCompactMatchHeader';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
 import { FaceitMobilePlayerLineup } from '@/components/match-details/FaceitMobilePlayerLineup';
 import { FaceitPreMatchStats } from '@/components/match-details/FaceitPreMatchStats';
-import { FaceitMatchNotifications } from '@/components/match-details/FaceitMatchNotifications';
 import { FaceitPlayerLineupTable } from '@/components/match-details/FaceitPlayerLineupTable';
-import { fetchSupabaseFaceitMatchDetails, triggerFaceitPlayerStatsSync } from '@/lib/supabaseFaceitApi';
+import { fetchSupabaseFaceitMatchDetails } from '@/lib/supabaseFaceitApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useMobile } from '@/hooks/useMobile';
 
 const FaceitUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
-  const [isLoadingPlayerStats, setIsLoadingPlayerStats] = useState(false);
   const navigate = useNavigate();
   const isMobile = useMobile();
   
   console.log('🎮 FACEIT Match Page - Match ID:', matchId);
   
   // Use React Query to fetch FACEIT match details from database
-  const { data: matchDetails, isLoading, error, refetch } = useQuery({
+  const { data: matchDetails, isLoading, error } = useQuery({
     queryKey: ['faceit-match-details', matchId],
     queryFn: async () => {
       if (!matchId) throw new Error('No match ID provided');
@@ -57,82 +54,6 @@ const FaceitUpcomingMatchPage = () => {
     staleTime: 30000,
     retry: 1
   });
-
-  // Check if we have enhanced player stats and count them
-  const getStatsStatus = () => {
-    if (!matchDetails) return { totalPlayers: 0, enhancedPlayers: 0, hasAnyEnhanced: false };
-    
-    let totalPlayers = 0;
-    let enhancedPlayers = 0;
-    
-    matchDetails.teams.forEach(team => {
-      if (team.roster) {
-        team.roster.forEach(player => {
-          totalPlayers++;
-          if (player.total_matches && player.total_matches > 0) {
-            enhancedPlayers++;
-          }
-        });
-      }
-    });
-    
-    return {
-      totalPlayers,
-      enhancedPlayers,
-      hasAnyEnhanced: enhancedPlayers > 0,
-      allEnhanced: enhancedPlayers === totalPlayers && totalPlayers > 0
-    };
-  };
-
-  const statsStatus = getStatsStatus();
-
-  // Function to sync player stats for enhanced display
-  const syncPlayerStats = async () => {
-    if (!matchDetails) return;
-    
-    setIsLoadingPlayerStats(true);
-    
-    try {
-      // Extract all player IDs from both teams
-      const playerIds: string[] = [];
-      matchDetails.teams.forEach(team => {
-        if (team.roster) {
-          team.roster.forEach(player => {
-            if (player.player_id) {
-              playerIds.push(player.player_id);
-            }
-          });
-        }
-      });
-
-      console.log(`🔄 Syncing enhanced stats for ${playerIds.length} players...`);
-      
-      const success = await triggerFaceitPlayerStatsSync(playerIds);
-      
-      if (success) {
-        toast({
-          title: "Sync Started!",
-          description: `Enhanced stats sync initiated for ${playerIds.length} players. Refreshing data in a few seconds...`,
-        });
-        
-        // Refetch match details after a delay to get updated stats
-        setTimeout(() => {
-          refetch();
-        }, 4000);
-      } else {
-        throw new Error('Failed to trigger player stats sync');
-      }
-    } catch (error) {
-      console.error('❌ Error syncing player stats:', error);
-      toast({
-        title: "Sync Failed",
-        description: "Failed to sync enhanced player stats. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingPlayerStats(false);
-    }
-  };
 
   useEffect(() => {
     if (error) {
@@ -177,8 +98,6 @@ const FaceitUpcomingMatchPage = () => {
     );
   }
 
-  console.log('🎯 Rendering match details with stats status:', statsStatus);
-
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
@@ -191,67 +110,6 @@ const FaceitUpcomingMatchPage = () => {
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-yellow-400">
                 Some data may be incomplete. Displaying available information from our database.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Enhanced Stats Status Card - Compact on mobile */}
-          {!statsStatus.allEnhanced && (
-            <Card className={`bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 border-blue-500/30 ${isMobile ? 'mx-1' : ''}`}>
-              <CardHeader className={isMobile ? 'p-2 pb-1' : ''}>
-                <CardTitle className={`flex items-center space-x-2 ${isMobile ? 'text-sm' : ''}`}>
-                  <TrendingUp className={`${isMobile ? 'h-3 w-3' : 'h-5 w-5'} text-blue-400`} />
-                  <span>Enhanced Player Statistics</span>
-                </CardTitle>
-                <CardDescription className={isMobile ? 'text-xs' : ''}>
-                  {statsStatus.enhancedPlayers === 0 ? (
-                    "No enhanced statistics available for players in this match"
-                  ) : (
-                    `Enhanced stats available for ${statsStatus.enhancedPlayers} of ${statsStatus.totalPlayers} players`
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className={isMobile ? 'p-2 pt-0' : ''}>
-                <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'}`}>
-                  <div className="space-y-1">
-                    <p className={`${isMobile ? 'text-[10px]' : 'text-sm'} text-gray-400`}>
-                      Enhanced stats include win rates, K/D ratios, recent form, match history, and detailed performance metrics.
-                    </p>
-                    {statsStatus.enhancedPlayers > 0 && (
-                      <p className="text-[10px] text-green-400">
-                        ✓ Partial enhanced data available
-                      </p>
-                    )}
-                  </div>
-                  <Button 
-                    onClick={syncPlayerStats}
-                    disabled={isLoadingPlayerStats}
-                    size={isMobile ? "sm" : "lg"}
-                    className={`bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 ${isMobile ? 'w-full text-xs h-7' : ''}`}
-                  >
-                    {isLoadingPlayerStats ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                        Syncing...
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="h-3 w-3 mr-1" />
-                        Sync Enhanced Stats
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Success message when all players have enhanced stats */}
-          {statsStatus.allEnhanced && (
-            <Alert className="bg-green-500/10 border-green-500/30">
-              <TrendingUp className="h-4 w-4" />
-              <AlertDescription className="text-green-400">
-                ✓ Enhanced statistics available for all {statsStatus.totalPlayers} players in this match
               </AlertDescription>
             </Alert>
           )}
@@ -273,19 +131,6 @@ const FaceitUpcomingMatchPage = () => {
           {/* Main Content - Simplified for mobile */}
           {isMobile ? (
             <div className="space-y-2">
-              {/* Merged Overview Section */}
-              <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                <div className="p-2">
-                  <h3 className="text-sm font-bold text-white mb-2">Match Overview</h3>
-                  <FaceitMatchNotifications 
-                    matchId={matchDetails.id}
-                    teams={matchDetails.teams}
-                    startTime={matchDetails.startTime}
-                    status={matchDetails.status}
-                  />
-                </div>
-              </Card>
-              
               {/* Pre-Match Stats */}
               <FaceitPreMatchStats 
                 teams={matchDetails.teams}
@@ -346,12 +191,6 @@ const FaceitUpcomingMatchPage = () => {
               
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-6">
-                <FaceitMatchNotifications 
-                  matchId={matchDetails.id}
-                  teams={matchDetails.teams}
-                  startTime={matchDetails.startTime}
-                  status={matchDetails.status}
-                />
                 <FaceitPreMatchStats 
                   teams={matchDetails.teams}
                   faceitData={matchDetails.faceitData}
