@@ -49,10 +49,32 @@ interface MatchCardProps {
   match: MatchInfo;
 }
 
+// Helper function to determine the correct route for a match
+const getMatchRoute = (matchId: string): string => {
+  if (matchId.startsWith('faceit_')) {
+    const actualMatchId = matchId.replace('faceit_', '');
+    return `/faceit/match/${actualMatchId}`;
+  }
+  
+  if (matchId.startsWith('pandascore_')) {
+    const actualMatchId = matchId.replace('pandascore_', '');
+    return `/pandascore/match/${actualMatchId}`;
+  }
+  
+  if (matchId.startsWith('sportdevs_')) {
+    // SportDevs matches still use the generic match route
+    return `/match/${matchId}`;
+  }
+  
+  // Default fallback
+  return `/match/${matchId}`;
+};
+
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const { id, teams, startTime, tournament, tournament_name, season_name, class_name, bestOf, source, faceitData } = match;
   const matchDate = new Date(startTime);
   const isAmateur = source === 'amateur';
+  const matchRoute = getMatchRoute(id);
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
@@ -121,7 +143,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
           </div>
 
           <Button variant="ghost" size="sm" asChild className="text-theme-purple hover:text-theme-purple hover:bg-theme-purple/10">
-            <Link to={`/match/${id}`}>
+            <Link to={matchRoute}>
               View Match
               <ArrowRight size={14} className="ml-1.5" />
             </Link>
