@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo, TeamInfo } from '@/components/MatchCard';
 import { 
@@ -295,6 +294,64 @@ export async function getSyncStats() {
     return logs;
   } catch (error) {
     console.error('Error getting sync stats:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch PandaScore match details by ID from database
+ */
+export async function fetchSupabasePandaScoreMatchDetails(matchId: string) {
+  try {
+    console.log(`🔍 Fetching PandaScore match details for ID: ${matchId}`);
+    
+    const { data: match, error } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .eq('match_id', matchId)
+      .single();
+
+    if (error) {
+      console.error('Database error fetching PandaScore match:', error);
+      return null;
+    }
+
+    if (!match) {
+      console.log('No PandaScore match found in database');
+      return null;
+    }
+
+    // Transform database data to match our interface
+    const teamsData = match.teams as any;
+    const team1 = {
+      name: teamsData?.team1?.name || 'TBD',
+      id: teamsData?.team1?.id,
+      logo: teamsData?.team1?.logo || '/placeholder.svg',
+      players: teamsData?.team1?.players || []
+    };
+    const team2 = {
+      name: teamsData?.team2?.name || 'TBD',
+      id: teamsData?.team2?.id,
+      logo: teamsData?.team2?.logo || '/placeholder.svg',
+      players: teamsData?.team2?.players || []
+    };
+
+    const transformedMatch = {
+      id: match.match_id,
+      teams: [team1, team2],
+      startTime: match.start_time,
+      tournament: match.tournament_name || match.league_name || 'Professional Tournament',
+      esportType: match.esport_type,
+      bestOf: match.number_of_games || 3,
+      status: match.status,
+      rawData: match.raw_data
+    };
+
+    console.log('✅ PandaScore match details transformed:', transformedMatch);
+    return transformedMatch;
+
+  } catch (error) {
+    console.error('Error fetching PandaScore match details:', error);
     return null;
   }
 }

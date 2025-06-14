@@ -16,6 +16,8 @@ import PlayerDetailPage from '@/pages/PlayerDetailPage';
 import MatchDetailsPage from '@/pages/MatchDetailsPage';
 import FaceitUpcomingMatchPage from '@/pages/FaceitUpcomingMatchPage';
 import FaceitLiveMatchPage from '@/pages/FaceitLiveMatchPage';
+import PandaScoreUpcomingMatchPage from '@/pages/PandaScoreUpcomingMatchPage';
+import PandaScoreLiveMatchPage from '@/pages/PandaScoreLiveMatchPage';
 import NewsPage from '@/pages/NewsPage';
 import CardsPage from '@/pages/CardsPage';
 import AdvancedCardsPage from '@/pages/AdvancedCardsPage';
@@ -62,6 +64,8 @@ function App() {
           <Route path="/match/:matchId" element={<MatchDetailsPage />} />
           <Route path="/faceit/match/:matchId" element={<FaceitUpcomingMatchPage />} />
           <Route path="/faceit/live/:matchId" element={<FaceitLiveMatchPage />} />
+          <Route path="/pandascore/match/:matchId" element={<PandaScoreUpcomingMatchPage />} />
+          <Route path="/pandascore/live/:matchId" element={<PandaScoreLiveMatchPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/cards" element={<CardsPage />} />
           <Route path="/advanced-cards" element={<AdvancedCardsPage />} />
