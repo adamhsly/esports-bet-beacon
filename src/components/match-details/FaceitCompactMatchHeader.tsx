@@ -62,12 +62,12 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
     return startTime.getTime() < now.getTime();
   };
 
-  const NotifyButton = ({ size = "sm" }: { size?: "sm" | "xs" }) => {
+  const NotifyButton = () => {
     const isPastMatch = isMatchInPast();
     
     if (isChecking) {
       return (
-        <Button size={size} variant="outline" disabled className="text-xs">
+        <Button size="sm" variant="outline" disabled className="text-xs">
           <Loader2 className="h-3 w-3 animate-spin" />
         </Button>
       );
@@ -75,7 +75,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
 
     return (
       <Button 
-        size={size} 
+        size="sm" 
         variant={isSubscribed ? "default" : "outline"} 
         className={`text-xs ${isSubscribed ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
         onClick={toggleNotification}
@@ -189,7 +189,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                   {getTimeUntilMatch()}
                 </Badge>
               </div>
-              <NotifyButton size="sm" />
+              <NotifyButton />
             </div>
           </div>
         )}
