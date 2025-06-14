@@ -9,18 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader';
+import { FaceitCompactMatchHeader } from '@/components/match-details/FaceitCompactMatchHeader';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
+import { FaceitMobilePlayerLineup } from '@/components/match-details/FaceitMobilePlayerLineup';
 import { FaceitPreMatchStats } from '@/components/match-details/FaceitPreMatchStats';
 import { FaceitMatchNotifications } from '@/components/match-details/FaceitMatchNotifications';
 import { FaceitPlayerLineupTable } from '@/components/match-details/FaceitPlayerLineupTable';
 import { fetchSupabaseFaceitMatchDetails, triggerFaceitPlayerStatsSync } from '@/lib/supabaseFaceitApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { useMobile } from '@/hooks/useMobile';
 
 const FaceitUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const [isLoadingPlayerStats, setIsLoadingPlayerStats] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useMobile();
   
   console.log('🎮 FACEIT Match Page - Match ID:', matchId);
   
@@ -145,7 +149,7 @@ const FaceitUpcomingMatchPage = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <SearchableNavbar />
-        <div className="flex-grow container mx-auto px-4 py-8 flex justify-center items-center">
+        <div className="flex-grow container mx-auto px-2 py-4 flex justify-center items-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-orange-400 mx-auto mb-4" />
             <span className="text-lg">Loading FACEIT match details...</span>
@@ -161,7 +165,7 @@ const FaceitUpcomingMatchPage = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <SearchableNavbar />
-        <div className="flex-grow container mx-auto px-4 py-8">
+        <div className="flex-grow container mx-auto px-2 py-4">
           <div className="text-center py-20">
             <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
             <p className="text-xl text-gray-400 mb-2">FACEIT match details not found.</p>
@@ -179,8 +183,8 @@ const FaceitUpcomingMatchPage = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       
-      <div className="flex-grow container mx-auto px-4 py-8">
-        <div className="space-y-8">
+      <div className={`flex-grow container mx-auto ${isMobile ? 'px-2 py-4' : 'px-4 py-8'}`}>
+        <div className={`space-y-${isMobile ? '4' : '8'}`}>
           {/* Error Alert if there were issues */}
           {error && (
             <Alert className="bg-yellow-500/10 border-yellow-500/30">
@@ -191,15 +195,15 @@ const FaceitUpcomingMatchPage = () => {
             </Alert>
           )}
 
-          {/* Enhanced Stats Status Card */}
+          {/* Enhanced Stats Status Card - Compact on mobile */}
           {!statsStatus.allEnhanced && (
-            <Card className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 border-blue-500/30">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5 text-blue-400" />
+            <Card className={`bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 border-blue-500/30 ${isMobile ? 'p-3' : ''}`}>
+              <CardHeader className={isMobile ? 'p-3 pb-2' : ''}>
+                <CardTitle className={`flex items-center space-x-2 ${isMobile ? 'text-base' : ''}`}>
+                  <TrendingUp className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-blue-400`} />
                   <span>Enhanced Player Statistics</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className={isMobile ? 'text-sm' : ''}>
                   {statsStatus.enhancedPlayers === 0 ? (
                     "No enhanced statistics available for players in this match"
                   ) : (
@@ -207,10 +211,10 @@ const FaceitUpcomingMatchPage = () => {
                   )}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
+              <CardContent className={isMobile ? 'p-3 pt-0' : ''}>
+                <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-400">
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400`}>
                       Enhanced stats include win rates, K/D ratios, recent form, match history, and detailed performance metrics.
                     </p>
                     {statsStatus.enhancedPlayers > 0 && (
@@ -222,8 +226,8 @@ const FaceitUpcomingMatchPage = () => {
                   <Button 
                     onClick={syncPlayerStats}
                     disabled={isLoadingPlayerStats}
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                    size={isMobile ? "sm" : "lg"}
+                    className={`bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 ${isMobile ? 'w-full text-sm' : ''}`}
                   >
                     {isLoadingPlayerStats ? (
                       <>
@@ -252,90 +256,144 @@ const FaceitUpcomingMatchPage = () => {
             </Alert>
           )}
 
-          {/* Match Header */}
-          <FaceitMatchHeader match={matchDetails} />
+          {/* Match Header - Use compact version on mobile */}
+          {isMobile ? (
+            <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />
+          ) : (
+            <FaceitMatchHeader match={matchDetails} />
+          )}
           
-          {/* Player Lineup Table - Enhanced with real data */}
-          <FaceitPlayerLineupTable teams={matchDetails.teams} />
+          {/* Player Lineup - Use mobile-optimized component on mobile */}
+          {isMobile ? (
+            <FaceitMobilePlayerLineup teams={matchDetails.teams} />
+          ) : (
+            <FaceitPlayerLineupTable teams={matchDetails.teams} />
+          )}
           
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
-              <TabsTrigger 
-                value="overview" 
-                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rosters" 
-                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Team Rosters
-              </TabsTrigger>
-              <TabsTrigger 
-                value="stats" 
-                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Pre-Match Analysis
-              </TabsTrigger>
-              <TabsTrigger 
-                value="voting" 
-                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Community Vote
-              </TabsTrigger>
-            </TabsList>
-            
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <FaceitMatchNotifications 
-                matchId={matchDetails.id}
-                teams={matchDetails.teams}
-                startTime={matchDetails.startTime}
-                status={matchDetails.status}
-              />
+          {/* Main Content - Simplified for mobile */}
+          {isMobile ? (
+            <div className="space-y-4">
+              {/* Merged Overview Section */}
+              <Card className="bg-theme-gray-dark border-theme-gray-medium">
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-white mb-4">Match Overview</h3>
+                  <FaceitMatchNotifications 
+                    matchId={matchDetails.id}
+                    teams={matchDetails.teams}
+                    startTime={matchDetails.startTime}
+                    status={matchDetails.status}
+                  />
+                </div>
+              </Card>
+              
+              {/* Pre-Match Stats */}
               <FaceitPreMatchStats 
                 teams={matchDetails.teams}
                 faceitData={matchDetails.faceitData}
               />
-            </TabsContent>
-            
-            {/* Rosters Tab */}
-            <TabsContent value="rosters">
-              <FaceitPlayerRoster teams={matchDetails.teams} />
-            </TabsContent>
-            
-            {/* Pre-Match Analysis Tab */}
-            <TabsContent value="stats">
-              <FaceitPreMatchStats 
-                teams={matchDetails.teams}
-                faceitData={matchDetails.faceitData}
-              />
-            </TabsContent>
-            
-            {/* Community Voting Tab */}
-            <TabsContent value="voting">
-              <div className="space-y-6">
-                <h3 className="text-xl font-bold text-white">Community Predictions</h3>
-                <MatchVotingWidget 
+              
+              {/* Community Voting */}
+              <Card className="bg-theme-gray-dark border-theme-gray-medium">
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
+                  <MatchVotingWidget 
+                    matchId={matchDetails.id}
+                    teams={[
+                      { 
+                        id: matchDetails.teams[0]?.id || 'team1',
+                        name: matchDetails.teams[0]?.name || 'Team 1', 
+                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                      },
+                      { 
+                        id: matchDetails.teams[1]?.id || 'team2',
+                        name: matchDetails.teams[1]?.name || 'Team 2', 
+                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                      }
+                    ]}
+                  />
+                </div>
+              </Card>
+            </div>
+          ) : (
+            // Desktop tabs remain the same
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+                <TabsTrigger 
+                  value="overview" 
+                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                >
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="rosters" 
+                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                >
+                  Team Rosters
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="stats" 
+                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                >
+                  Pre-Match Analysis
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="voting" 
+                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                >
+                  Community Vote
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
+                <FaceitMatchNotifications 
                   matchId={matchDetails.id}
-                  teams={[
-                    { 
-                      id: matchDetails.teams[0]?.id || 'team1',
-                      name: matchDetails.teams[0]?.name || 'Team 1', 
-                      logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                    },
-                    { 
-                      id: matchDetails.teams[1]?.id || 'team2',
-                      name: matchDetails.teams[1]?.name || 'Team 2', 
-                      logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                    }
-                  ]}
+                  teams={matchDetails.teams}
+                  startTime={matchDetails.startTime}
+                  status={matchDetails.status}
                 />
-              </div>
-            </TabsContent>
-          </Tabs>
+                <FaceitPreMatchStats 
+                  teams={matchDetails.teams}
+                  faceitData={matchDetails.faceitData}
+                />
+              </TabsContent>
+              
+              {/* Rosters Tab */}
+              <TabsContent value="rosters">
+                <FaceitPlayerRoster teams={matchDetails.teams} />
+              </TabsContent>
+              
+              {/* Pre-Match Analysis Tab */}
+              <TabsContent value="stats">
+                <FaceitPreMatchStats 
+                  teams={matchDetails.teams}
+                  faceitData={matchDetails.faceitData}
+                />
+              </TabsContent>
+              
+              {/* Community Voting Tab */}
+              <TabsContent value="voting">
+                <div className="space-y-6">
+                  <h3 className="text-xl font-bold text-white">Community Predictions</h3>
+                  <MatchVotingWidget 
+                    matchId={matchDetails.id}
+                    teams={[
+                      { 
+                        id: matchDetails.teams[0]?.id || 'team1',
+                        name: matchDetails.teams[0]?.name || 'Team 1', 
+                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                      },
+                      { 
+                        id: matchDetails.teams[1]?.id || 'team2',
+                        name: matchDetails.teams[1]?.name || 'Team 2', 
+                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                      }
+                    ]}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </div>
       
