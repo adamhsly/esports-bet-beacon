@@ -295,23 +295,31 @@ const Index = () => {
                     <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
                       🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
-                    {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
-                      ([league, matches]) => (
-                        <div key={league} className="mb-6">
-                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
-                            {league}
-                          </div>
-                          {/* Add horizontal padding to each MatchCard */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {matches.map(match => (
-                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                <MatchCard match={match} />
+                    <Accordion type="multiple" defaultValue={
+                      Object.keys(groupMatchesByLeague(dateFilteredLiveMatches))
+                    }>
+                      {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
+                        ([league, matches]) => (
+                          <AccordionItem key={league} value={league}>
+                            <AccordionTrigger asChild>
+                              <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors">
+                                {league}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    )}
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              {/* Add horizontal padding to each MatchCard */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {matches.map(match => (
+                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                    <MatchCard match={match} />
+                                  </div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        )
+                      )}
+                    </Accordion>
                   </div>
                 )}
 
@@ -321,23 +329,30 @@ const Index = () => {
                     <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
                       📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
-                    {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
-                      ([league, matches]) => (
-                        <div key={league} className="mb-6">
-                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
-                            {league}
-                          </div>
-                          {/* Add horizontal padding to each MatchCard */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {matches.map(match => (
-                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                <MatchCard match={match} />
+                    <Accordion type="multiple" defaultValue={
+                      Object.keys(groupMatchesByLeague(dateFilteredUpcomingMatches))
+                    }>
+                      {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
+                        ([league, matches]) => (
+                          <AccordionItem key={league} value={league}>
+                            <AccordionTrigger asChild>
+                              <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors">
+                                {league}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    )}
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {matches.map(match => (
+                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                    <MatchCard match={match} />
+                                  </div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        )
+                      )}
+                    </Accordion>
                   </div>
                 )}
 
