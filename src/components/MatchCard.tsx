@@ -48,11 +48,22 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { teams, startTime, tournament, tournament_name } = match;
+  const { teams, startTime, tournament, tournament_name, source } = match;
   const matchDate = new Date(startTime);
 
+  // Determine color based on match source
+  let bgClass = 'bg-theme-gray-medium';
+  let ringClass = '';
+  if (source === 'professional') {
+    bgClass = 'bg-blue-950/70';
+    ringClass = 'ring-1 ring-blue-400/30';
+  } else if (source === 'amateur') {
+    bgClass = 'bg-orange-950/70';
+    ringClass = 'ring-1 ring-orange-400/30';
+  }
+
   return (
-    <Card className="bg-theme-gray-medium border-0 rounded-xl shadow-none px-0 py-0">
+    <Card className={`${bgClass} ${ringClass} border-0 rounded-xl shadow-none px-0 py-0 transition-colors duration-200`}>
       <div className="flex flex-col gap-1 px-3 py-2">
         {/* Tournament info and time row */}
         <div className="flex justify-between items-center mb-0.5">
