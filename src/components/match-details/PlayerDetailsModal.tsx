@@ -217,28 +217,28 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                       </div>
                     )}
 
-                    {/* Match Stats (if available) */}
+                    {/* Match Stats (if available) - Fixed null checks */}
                     {(match.kills !== undefined || match.deaths !== undefined || match.kd_ratio !== undefined) && (
                       <div className="flex space-x-4 mt-2 pt-2 border-t border-theme-gray-medium/30">
-                        {match.kills !== undefined && (
+                        {match.kills !== undefined && match.kills !== null && (
                           <div className="text-xs">
                             <span className="text-gray-400">K:</span>
                             <span className="text-white ml-1">{match.kills}</span>
                           </div>
                         )}
-                        {match.deaths !== undefined && (
+                        {match.deaths !== undefined && match.deaths !== null && (
                           <div className="text-xs">
                             <span className="text-gray-400">D:</span>
                             <span className="text-white ml-1">{match.deaths}</span>
                           </div>
                         )}
-                        {match.assists !== undefined && (
+                        {match.assists !== undefined && match.assists !== null && (
                           <div className="text-xs">
                             <span className="text-gray-400">A:</span>
                             <span className="text-white ml-1">{match.assists}</span>
                           </div>
                         )}
-                        {match.kd_ratio !== undefined && (
+                        {match.kd_ratio !== undefined && match.kd_ratio !== null && (
                           <div className="text-xs">
                             <span className="text-gray-400">K/D:</span>
                             <span className="text-white ml-1">{match.kd_ratio.toFixed(2)}</span>
