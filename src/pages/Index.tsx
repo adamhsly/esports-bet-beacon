@@ -17,6 +17,10 @@ import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import FeaturedGames from '@/components/FeaturedGames';
+import TopBettingSites from '@/components/TopBettingSites';
+import PromoBanner from '@/components/PromoBanner';
+import Testimonials from '@/components/Testimonials';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -26,7 +30,7 @@ interface SportDevsTeamsData {
     logo?: string;
   };
   team2: {
-    id?: string;
+    id: string;
     name: string;
     logo?: string;
   };
