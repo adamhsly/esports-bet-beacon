@@ -1,9 +1,9 @@
-
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding-left: 32px;
-  padding-right: 32px;
+  /* Remove horizontal padding */
+  /* padding-left: 32px;
+  padding-right: 32px; */
   /* padding: 2rem; */ /* REMOVE padding around all pages */
   text-align: center;
 }

@@ -301,9 +301,12 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
+                          {/* Add horizontal padding to each MatchCard */}
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {matches.map(match => (
-                              <MatchCard key={match.id} match={match} />
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>
                             ))}
                           </div>
                         </div>
@@ -324,9 +327,12 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
+                          {/* Add horizontal padding to each MatchCard */}
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {matches.map(match => (
-                              <MatchCard key={match.id} match={match} />
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>
                             ))}
                           </div>
                         </div>
