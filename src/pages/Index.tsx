@@ -104,8 +104,6 @@ const Index = () => {
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
   const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
-  const [matchCounts, setMatchCounts] = useState<Record<string, number>>({});
-  const [detailedMatchCounts, setDetailedMatchCounts] = useState<Record<string, MatchCountBreakdown>>({});
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const [loadingAllMatches, setLoadingAllMatches] = useState(true);
   const { toast } = useToast();
@@ -178,15 +176,11 @@ const Index = () => {
         const combinedMatches = await loadAllMatchesFromDatabase();
         
         setAllMatches(combinedMatches);
-        setMatchCounts(getTotalMatchCountsByDate(combinedMatches));
-        setDetailedMatchCounts(getDetailedMatchCountsByDate(combinedMatches));
         
         console.log('📊 Calendar counts updated from unified dataset');
       } catch (error) {
         console.error('Error loading all matches:', error);
         setAllMatches([]);
-        setMatchCounts({});
-        setDetailedMatchCounts({});
       } finally {
         setLoadingAllMatches(false);
       }
@@ -277,6 +271,11 @@ const Index = () => {
       "Whether you're following international championships or regional qualifiers, our platform provides all the information you need to stay ahead of the game with live coverage, match predictions, and expert analysis for the most competitive esports titles."
     ]
   };
+
+  // NEW: Calculate match counts for the calendar based on filtered matches
+  const filteredAllMatchesForCalendar = filterMatchesByGameType(allMatches, selectedGameType);
+  const matchCounts = getTotalMatchCountsByDate(filteredAllMatchesForCalendar);
+  const detailedMatchCounts = getDetailedMatchCountsByDate(filteredAllMatchesForCalendar);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
