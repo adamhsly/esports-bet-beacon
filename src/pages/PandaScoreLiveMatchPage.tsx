@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -14,6 +13,7 @@ import { PandaScorePlayerRoster } from '@/components/match-details/PandaScorePla
 import { fetchSupabasePandaScoreMatchDetails } from '@/lib/supabasePandaScoreApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { StreamViewer, extractStreamsFromRawData } from "@/components/StreamViewer";
 
 const PandaScoreLiveMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -124,6 +124,12 @@ const PandaScoreLiveMatchPage = () => {
               >
                 Team Rosters
               </TabsTrigger>
+              <TabsTrigger 
+                value="stream"
+                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
+              >
+                🎥 Live Stream
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="live" className="space-y-6">
@@ -165,6 +171,13 @@ const PandaScoreLiveMatchPage = () => {
             
             <TabsContent value="rosters">
               <PandaScorePlayerRoster teams={matchDetails.teams} />
+            </TabsContent>
+
+            <TabsContent value="stream">
+              <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Official Streams</h3>
+                <StreamViewer streams={extractStreamsFromRawData(matchDetails.raw_data)} />
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

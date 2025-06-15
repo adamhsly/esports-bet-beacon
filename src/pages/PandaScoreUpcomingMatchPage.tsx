@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -18,6 +17,7 @@ import { fetchSupabasePandaScoreMatchDetails } from '@/lib/supabasePandaScoreApi
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useMobile } from '@/hooks/useMobile';
+import { StreamViewer, extractStreamsFromRawData } from "@/components/StreamViewer";
 
 const PandaScoreUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -183,6 +183,12 @@ const PandaScoreUpcomingMatchPage = () => {
                 >
                   Community Vote
                 </TabsTrigger>
+                <TabsTrigger
+                  value="stream"
+                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
+                >
+                  🎥 Stream Info
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="space-y-6">
@@ -222,6 +228,16 @@ const PandaScoreUpcomingMatchPage = () => {
                     ]}
                   />
                 </div>
+              </TabsContent>
+              
+              <TabsContent value="stream">
+                <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Streams</h3>
+                  <StreamViewer streams={extractStreamsFromRawData(matchDetails.raw_data)} />
+                  <p className="text-xs text-gray-400 mt-2">
+                    Streams will be available closer to match time. Check back before the match starts!
+                  </p>
+                </Card>
               </TabsContent>
             </Tabs>
           )}
