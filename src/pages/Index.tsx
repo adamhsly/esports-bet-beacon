@@ -308,12 +308,15 @@ const Index = () => {
                         ([league, matches]) => (
                           <AccordionItem key={league} value={league}>
                             <AccordionTrigger asChild>
-                              <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors">
+                              {/* Wrap in a single button for a11y */}
+                              <button
+                                className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
+                                type="button"
+                              >
                                 {league}
-                              </div>
+                              </button>
                             </AccordionTrigger>
                             <AccordionContent>
-                              {/* Add horizontal padding to each MatchCard */}
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {matches.map(match => (
                                   <div key={match.id} className="px-2 sm:px-4 lg:px-6">
@@ -342,9 +345,12 @@ const Index = () => {
                         ([league, matches]) => (
                           <AccordionItem key={league} value={league}>
                             <AccordionTrigger asChild>
-                              <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors">
+                              <button
+                                className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
+                                type="button"
+                              >
                                 {league}
-                              </div>
+                              </button>
                             </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
