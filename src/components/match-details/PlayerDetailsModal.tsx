@@ -8,6 +8,14 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { User, Target, Trophy, TrendingUp, Zap, Calendar, MapPin } from 'lucide-react';
 import type { PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
@@ -88,7 +96,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center space-x-3">
             <Avatar className="h-12 w-12">
@@ -167,7 +175,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             )}
           </div>
 
-          {/* Recent Match History */}
+          {/* Recent Match History Table */}
           {player.match_history && player.match_history.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
@@ -175,78 +183,86 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 <h4 className="text-sm font-semibold text-white">Last 5 Matches</h4>
               </div>
               
-              <div className="space-y-2">
-                {player.match_history.slice(0, 5).map((match, index) => (
-                  <div 
-                    key={match.id}
-                    className="p-3 bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${getMatchResultColor(match.match_result)}`}
-                        >
-                          {match.match_result.toUpperCase()}
-                        </Badge>
-                        <span className="text-xs text-gray-400">
+              <div className="bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-theme-gray-medium/30 hover:bg-transparent">
+                      <TableHead className="text-gray-300 text-xs">Date</TableHead>
+                      <TableHead className="text-gray-300 text-xs">Map</TableHead>
+                      <TableHead className="text-gray-300 text-xs">Result</TableHead>
+                      <TableHead className="text-gray-300 text-xs">K/D/A</TableHead>
+                      <TableHead className="text-gray-300 text-xs">K/D</TableHead>
+                      <TableHead className="text-gray-300 text-xs">HS%</TableHead>
+                      <TableHead className="text-gray-300 text-xs">ADR</TableHead>
+                      <TableHead className="text-gray-300 text-xs">MVPs</TableHead>
+                      <TableHead className="text-gray-300 text-xs">ELO Δ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {player.match_history.slice(0, 5).map((match) => (
+                      <TableRow 
+                        key={match.id}
+                        className="border-theme-gray-medium/30 hover:bg-theme-gray-medium/10"
+                      >
+                        <TableCell className="text-xs text-gray-300 py-2">
                           {formatMatchDate(match.match_date)}
-                        </span>
-                      </div>
-                      {match.map_name && (
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="h-3 w-3 text-gray-400" />
-                          <span className="text-xs text-gray-300">{match.map_name}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="text-xs text-gray-300">
-                      <span className="font-medium text-white">{match.team_name}</span>
-                      {match.opponent_team_name && (
-                        <>
-                          <span className="text-gray-500 mx-1">vs</span>
-                          <span>{match.opponent_team_name}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {match.competition_name && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        {match.competition_name}
-                      </div>
-                    )}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-300 py-2">
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="h-3 w-3 text-gray-400" />
+                            <span>{match.map_name || 'Unknown'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${getMatchResultColor(match.match_result)}`}
+                          >
+                            {match.match_result.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-white py-2">
+                          {match.kills !== undefined && match.kills !== null ? match.kills : '-'}/
+                          {match.deaths !== undefined && match.deaths !== null ? match.deaths : '-'}/
+                          {match.assists !== undefined && match.assists !== null ? match.assists : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs text-white py-2">
+                          {match.kd_ratio !== undefined && match.kd_ratio !== null ? match.kd_ratio.toFixed(2) : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs text-white py-2">
+                          {match.headshots_percent !== undefined && match.headshots_percent !== null ? 
+                            `${match.headshots_percent.toFixed(1)}%` : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs text-white py-2">
+                          {match.adr !== undefined && match.adr !== null ? match.adr.toFixed(1) : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs text-white py-2">
+                          {match.mvps !== undefined && match.mvps !== null ? match.mvps : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs py-2">
+                          {match.faceit_elo_change !== undefined && match.faceit_elo_change !== null ? (
+                            <span className={`${match.faceit_elo_change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {match.faceit_elo_change >= 0 ? '+' : ''}{match.faceit_elo_change}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-                    {/* Match Stats (if available) - Fixed null checks */}
-                    {(match.kills !== undefined || match.deaths !== undefined || match.kd_ratio !== undefined) && (
-                      <div className="flex space-x-4 mt-2 pt-2 border-t border-theme-gray-medium/30">
-                        {match.kills !== undefined && match.kills !== null && (
-                          <div className="text-xs">
-                            <span className="text-gray-400">K:</span>
-                            <span className="text-white ml-1">{match.kills}</span>
-                          </div>
-                        )}
-                        {match.deaths !== undefined && match.deaths !== null && (
-                          <div className="text-xs">
-                            <span className="text-gray-400">D:</span>
-                            <span className="text-white ml-1">{match.deaths}</span>
-                          </div>
-                        )}
-                        {match.assists !== undefined && match.assists !== null && (
-                          <div className="text-xs">
-                            <span className="text-gray-400">A:</span>
-                            <span className="text-white ml-1">{match.assists}</span>
-                          </div>
-                        )}
-                        {match.kd_ratio !== undefined && match.kd_ratio !== null && (
-                          <div className="text-xs">
-                            <span className="text-gray-400">K/D:</span>
-                            <span className="text-white ml-1">{match.kd_ratio.toFixed(2)}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+              {/* Competition info below table */}
+              <div className="text-xs text-gray-400 space-y-1">
+                {player.match_history.slice(0, 5).map((match, index) => (
+                  match.competition_name && (
+                    <div key={`comp-${match.id}`} className="flex justify-between">
+                      <span>Match {index + 1}:</span>
+                      <span>{match.competition_name}</span>
+                    </div>
+                  )
                 ))}
               </div>
             </div>
