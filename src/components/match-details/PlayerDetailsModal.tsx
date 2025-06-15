@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -178,7 +177,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           {/* Recent Match History Table */}
           {player.match_history && player.match_history.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-blue-400" />
                 <h4 className="text-sm font-semibold text-white">Last 5 Matches</h4>
@@ -257,18 +256,22 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                     </Table>
                   </div>
                 </ScrollArea>
-              </div>
 
-              {/* Competition info below table */}
-              <div className="text-xs text-gray-400 space-y-1">
-                {player.match_history.slice(0, 5).map((match, index) => (
-                  match.competition_name && (
-                    <div key={`comp-${match.id}`} className="flex justify-between">
-                      <span>Match {index + 1}:</span>
-                      <span>{match.competition_name}</span>
+                {/* Competition info inside table container */}
+                {player.match_history.slice(0, 5).some(match => match.competition_name) && (
+                  <div className="p-3 border-t border-theme-gray-medium/30 bg-theme-gray-medium/10">
+                    <div className="text-xs text-gray-400 space-y-1">
+                      {player.match_history.slice(0, 5).map((match, index) => (
+                        match.competition_name && (
+                          <div key={`comp-${match.id}`} className="flex justify-between">
+                            <span>Match {index + 1}:</span>
+                            <span>{match.competition_name}</span>
+                          </div>
+                        )
+                      ))}
                     </div>
-                  )
-                ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
