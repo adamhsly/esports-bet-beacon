@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -68,6 +67,21 @@ const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'fini
   
   return null;
 };
+
+// Helper for grouping matches by tournament/league
+function groupMatchesByLeague(matches: MatchInfo[]) {
+  // Use tournament_name or tournament as group key
+  return matches.reduce((acc: Record<string, MatchInfo[]>, match) => {
+    const league =
+      match.tournament_name ||
+      match.tournament ||
+      match.league_name ||
+      'Unknown League';
+    if (!acc[league]) acc[league] = [];
+    acc[league].push(match);
+    return acc;
+  }, {});
+}
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -293,31 +307,49 @@ const Index = () => {
               </div>
             ) : (
               <>
-                {/* Live Matches for Selected Date - Only show if today is selected */}
+                {/* Live Matches for Selected Date - Grouped by League */}
                 {isSelectedDateToday && dateFilteredLiveMatches.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
                       🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {dateFilteredLiveMatches.map(match => (
-                        <MatchCard key={match.id} match={match} />
-                      ))}
-                    </div>
+                    {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
+                      ([league, matches]) => (
+                        <div key={league} className="mb-6">
+                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
+                            {league}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {matches.map(match => (
+                              <MatchCard key={match.id} match={match} />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
 
-                {/* Upcoming Matches for Selected Date */}
+                {/* Upcoming Matches for Selected Date - Grouped by League */}
                 {dateFilteredUpcomingMatches.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
                       📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {dateFilteredUpcomingMatches.map(match => (
-                        <MatchCard key={match.id} match={match} />
-                      ))}
-                    </div>
+                    {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
+                      ([league, matches]) => (
+                        <div key={league} className="mb-6">
+                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
+                            {league}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {matches.map(match => (
+                              <MatchCard key={match.id} match={match} />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
 
@@ -341,7 +373,7 @@ const Index = () => {
           />
         </div>
       </div>
-      {/* Sync Buttons moved here at the very bottom, above Footer */}
+      {/* Sync Buttons at the very bottom, above Footer */}
       <div className="w-full max-w-6xl mx-auto px-4 pb-8 flex flex-col md:flex-row gap-6 justify-center items-stretch">
         <div className="flex-1">
           <span className="block text-xs text-gray-400 mb-1 ml-1">FACEIT Sync</span>
@@ -358,4 +390,3 @@ const Index = () => {
 };
 
 export default Index;
-
