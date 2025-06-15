@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock, Trophy, Users } from 'lucide-react';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 
 export interface TeamInfo {
   name: string;
@@ -48,7 +50,7 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { teams, startTime, tournament, tournament_name, source, bestOf } = match;
+  const { teams, startTime, tournament, tournament_name, source, bestOf, id } = match;
   const matchDate = new Date(startTime);
 
   // Determine color based on match source
@@ -67,6 +69,16 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     badgeClass: '',
     outlineClass: '',
   };
+
+  // Determine the correct route for the given match
+  let to = '/';
+  if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
+    to = `/faceit/match/${id}`;
+  } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
+    to = `/pandascore/match/${id}`;
+  } else {
+    to = `/match/${id}`;
+  }
 
   if (source === 'professional') {
     bgClass = 'bg-blue-950/70';
@@ -109,62 +121,76 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   };
 
   return (
-    <Card className={`${bgClass} ${ringClass} border-0 rounded-xl shadow-none px-0 py-0 transition-colors duration-200`}>
-      <div className="flex flex-col gap-1 px-3 py-2">
-        {/* Tournament info and time row */}
-        <div className="flex justify-between items-center mb-0.5">
-          <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
-            {tournament_name || tournament}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
-            <Clock size={14} className="mr-1" />
-            {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-        {/* Teams row */}
-        <div className="flex items-center justify-between min-h-10 mt-0.5">
-          {/* Team 1 */}
-          <div className="flex items-center gap-2 flex-1">
-            <img
-              src={getEnhancedTeamLogoUrl(teams[0])}
-              alt={`${teams[0].name} logo`}
-              className="w-7 h-7 object-contain rounded-md bg-gray-800"
-              onError={e => (e.currentTarget.src = '/placeholder.svg')}
-            />
-            <span className="truncate font-semibold text-sm text-white max-w-[90px]">{teams[0].name}</span>
+    <Link
+      to={to}
+      className="group block focus:outline-none"
+      tabIndex={0}
+      aria-label={`${teams[0].name} vs ${teams[1].name} - navigate to match details`}
+    >
+      <Card
+        className={`
+          ${bgClass} ${ringClass} border-0 rounded-xl shadow-none px-0 py-0 transition-colors duration-200
+          group-hover:scale-[1.015] group-hover:shadow-md group-hover:ring-2 group-hover:ring-theme-purple/70 cursor-pointer
+        `}
+        style={{ pointerEvents: "auto" }}
+      >
+        <div className="flex flex-col gap-1 px-3 py-2">
+          {/* Tournament info and time row */}
+          <div className="flex justify-between items-center mb-0.5">
+            <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
+              {tournament_name || tournament}
+            </span>
+            <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
+              <Clock size={14} className="mr-1" />
+              {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
-          <span className="text-md font-bold text-gray-400 mx-2">vs</span>
-          {/* Team 2 */}
-          <div className="flex items-center gap-2 flex-1 justify-end">
-            <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{teams[1].name}</span>
-            <img
-              src={getEnhancedTeamLogoUrl(teams[1])}
-              alt={`${teams[1].name} logo`}
-              className="w-7 h-7 object-contain rounded-md bg-gray-800"
-              onError={e => (e.currentTarget.src = '/placeholder.svg')}
-            />
+          {/* Teams row */}
+          <div className="flex items-center justify-between min-h-10 mt-0.5">
+            {/* Team 1 */}
+            <div className="flex items-center gap-2 flex-1">
+              <img
+                src={getEnhancedTeamLogoUrl(teams[0])}
+                alt={`${teams[0].name} logo`}
+                className="w-7 h-7 object-contain rounded-md bg-gray-800"
+                onError={e => (e.currentTarget.src = '/placeholder.svg')}
+              />
+              <span className="truncate font-semibold text-sm text-white max-w-[90px]">{teams[0].name}</span>
+            </div>
+            <span className="text-md font-bold text-gray-400 mx-2">vs</span>
+            {/* Team 2 */}
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{teams[1].name}</span>
+              <img
+                src={getEnhancedTeamLogoUrl(teams[1])}
+                alt={`${teams[1].name} logo`}
+                className="w-7 h-7 object-contain rounded-md bg-gray-800"
+                onError={e => (e.currentTarget.src = '/placeholder.svg')}
+              />
+            </div>
+          </div>
+          {/* Label row for PRO/FACEIT and BO amount */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center">
+              <Badge
+                variant="outline"
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.badgeClass}`}
+              >
+                {badgeProps.icon}
+                {badgeProps.text}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${getBOBadgeClass(bestOf)}`}
+              >
+                BO{bestOf}
+              </Badge>
+            </div>
+            <span className="flex-1" />
           </div>
         </div>
-        {/* Label row for PRO/FACEIT and BO amount */}
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center">
-            <Badge
-              variant="outline"
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.badgeClass}`}
-            >
-              {badgeProps.icon}
-              {badgeProps.text}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${getBOBadgeClass(bestOf)}`}
-            >
-              BO{bestOf}
-            </Badge>
-          </div>
-          <span className="flex-1" />
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 };
+
