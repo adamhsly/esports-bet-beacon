@@ -1,8 +1,7 @@
-
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Calendar, Clock, MapPin, Bell, BellRing, Loader2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import CountdownTimer from '@/components/CountdownTimer';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import { Button } from '@/components/ui/button';
 
@@ -47,8 +46,15 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
 
   const { date, time } = formatDateTime(match.startTime);
 
+  // Attempt to use the `start_time` (PandaScore's field), fallback to other options if needed
+  const startTime =
+    match?.start_time ||
+    match?.scheduled_at ||
+    match?.begin_at ||
+    null;
+
   return (
-    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
+    <Card className="bg-theme-gray-dark border border-theme-gray-medium">
       <div className="p-6">
         {/* Top Section - Tournament and Badges */}
         <div className="flex justify-between items-center mb-4">
@@ -66,6 +72,9 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
             BO{match.bestOf || 3}
           </Badge>
         </div>
+
+        {/* Countdown Timer */}
+        <CountdownTimer targetTime={startTime} />
 
         {/* Teams Section */}
         <div className="flex items-center justify-between gap-4 mb-6">

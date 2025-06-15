@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, Trophy, MapPin, Bell, BellRing, Calendar, Loader2 } from 'lucide-react';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
+import CountdownTimer from '@/components/CountdownTimer';
 
 interface PandaScoreCompactMatchHeaderProps {
   match: {
@@ -87,11 +87,17 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     );
   };
 
+  const startTime =
+    match?.start_time ||
+    match?.scheduled_at ||
+    match?.begin_at ||
+    null;
+
   return (
-    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
-      <div className={`p-${isMobile ? '2' : '4'}`}>
+    <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+      <div className="p-3">
         {/* Top Section - Tournament and Badges */}
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 text-gray-300 text-sm flex-wrap mb-1">
               <span className="truncate">{match.tournament || 'Pro Match'}</span>
@@ -106,6 +112,9 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
             BO{match.bestOf || 3}
           </Badge>
         </div>
+
+        {/* Countdown Timer */}
+        <CountdownTimer targetTime={startTime} className="mb-2 mt-[-0.5rem]" />
 
         {/* Teams Section */}
         <div className={`flex items-center justify-between gap-${isMobile ? '2' : '4'} mb-4`}>

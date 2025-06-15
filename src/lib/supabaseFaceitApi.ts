@@ -387,6 +387,20 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
     console.log(`   - Team 2: ${team2Roster.length} players with enhanced stats`);
     console.log(`   - Total match history records: ${team1Roster.concat(team2Roster).reduce((sum, p) => sum + (p.match_history?.length || 0), 0)}`);
     
+    // Guarantee a proper startTime: Prefer scheduled_at (if not null/invalid), else started_at, else configured_at, else current time
+    function getStartTime(m: any) {
+      if (m?.scheduled_at && !isNaN(new Date(m.scheduled_at).getTime())) {
+        return m.scheduled_at;
+      }
+      if (m?.started_at && !isNaN(new Date(m.started_at).getTime())) {
+        return m.started_at;
+      }
+      if (m?.configured_at && !isNaN(new Date(m.configured_at).getTime())) {
+        return m.configured_at;
+      }
+      return new Date().toISOString();
+    }
+
     // Transform to expected format with enhanced data
     const transformedMatch = {
       id: `faceit_${match.match_id}`,
@@ -404,7 +418,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
           roster: team2Roster
         }
       ],
-      startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+      startTime: getStartTime(match),
       tournament: match.competition_name || 'FACEIT Match',
       tournament_name: match.competition_name,
       season_name: match.competition_type,
