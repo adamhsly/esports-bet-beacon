@@ -95,7 +95,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               className="text-gray-400 border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
               aria-label="Open calendar"
             >
-              <CalendarIcon size={16} />
+              <CalendarIcon size={16} className="pr-1" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
