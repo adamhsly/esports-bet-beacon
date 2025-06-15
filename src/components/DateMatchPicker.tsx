@@ -92,7 +92,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="text-gray-400 border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
+              className="text-gray-400 border-gray-600 hover:bg-gray-700 h-8 w-8 p-0 pr-2"
               aria-label="Open calendar"
             >
               <CalendarIcon size={16} className="pr-1" />
