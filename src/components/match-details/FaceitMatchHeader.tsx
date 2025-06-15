@@ -112,7 +112,9 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
         <div className="text-center">
           <div className="bg-theme-gray-medium/50 rounded-lg p-4">
             <div className="text-3xl font-bold text-white mb-2">VS</div>
-            <div className="text-sm text-gray-400">Best of {match.bestOf || 1}</div>
+            <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
+              Best of {match.bestOf || 1}
+            </Badge>
           </div>
         </div>
         
@@ -153,14 +155,7 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
       </div>
 
       {/* Match Details Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-theme-gray-dark border border-theme-gray-medium p-3 text-center">
-          <div className="text-sm text-gray-400 mb-1">Format</div>
-          <div className="text-lg font-bold text-orange-400">
-            Bo{match.bestOf || 1}
-          </div>
-        </Card>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">        
         <Card className="bg-theme-gray-dark border border-theme-gray-medium p-3 text-center">
           <div className="text-sm text-gray-400 mb-1">Competition Type</div>
           <div className="text-lg font-bold text-white">
