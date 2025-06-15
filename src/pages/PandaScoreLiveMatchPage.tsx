@@ -176,7 +176,7 @@ const PandaScoreLiveMatchPage = () => {
             <TabsContent value="stream">
               <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
                 <h3 className="text-xl font-bold text-white mb-4">Official Streams</h3>
-                <StreamViewer streams={extractStreamsFromRawData(matchDetails.raw_data)} />
+                <StreamViewer streams={extractStreamsFromRawData(matchDetails.rawData)} />
               </Card>
             </TabsContent>
           </Tabs>

@@ -233,7 +233,7 @@ const PandaScoreUpcomingMatchPage = () => {
               <TabsContent value="stream">
                 <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
                   <h3 className="text-xl font-bold text-white mb-4">Streams</h3>
-                  <StreamViewer streams={extractStreamsFromRawData(matchDetails.raw_data)} />
+                  <StreamViewer streams={extractStreamsFromRawData(matchDetails.rawData)} />
                   <p className="text-xs text-gray-400 mt-2">
                     Streams will be available closer to match time. Check back before the match starts!
                   </p>
