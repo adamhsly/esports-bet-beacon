@@ -101,10 +101,14 @@ const PandaScoreUpcomingMatchPage = () => {
     );
   }
 
+  // --- NEW: Extract streams from rawData ---
+  const streams = extractStreamsFromRawData(matchDetails.rawData);
+  const hasStreams = streams && streams.length > 0;
+
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
-      
+
       <div className={`flex-grow container mx-auto ${isMobile ? 'px-1 py-2' : 'px-4 py-8'}`}>
         <div className={`space-y-${isMobile ? '2' : '8'}`}>
           {error && (
@@ -116,39 +120,55 @@ const PandaScoreUpcomingMatchPage = () => {
             </Alert>
           )}
 
+          {/* --- Match Header --- */}
           {isMobile ? (
             <PandaScoreCompactMatchHeader match={matchDetails} isMobile={true} />
           ) : (
             <PandaScoreMatchHeader match={matchDetails} />
           )}
-          
+
+          {/* --- StreamViewer widget stacked prominently, above lineups --- */}
+          {hasStreams && (
+            <Card className="bg-theme-gray-dark border border-theme-gray-medium p-3 mb-4">
+              <h3 className="text-base lg:text-xl font-bold text-white mb-3">
+                {isMobile ? 'Match Streams' : 'Streams'}
+              </h3>
+              <StreamViewer streams={streams} showTabs={!isMobile} />
+              <p className="text-xs text-gray-400 mt-2">
+                Streams will be available closer to match time. Check back before the match starts!
+              </p>
+            </Card>
+          )}
+
+          {/* --- Player lineups & other info --- */}
           {isMobile ? (
             <PandaScoreMobilePlayerLineup teams={matchDetails.teams} />
           ) : (
             <PandaScorePlayerLineupTable teams={matchDetails.teams} />
           )}
-          
+
+          {/* --- The rest of the content: PreMatchStats, Tabs with only Overview/Stats/Voting --- */}
           {isMobile ? (
             <div className="space-y-2">
-              <PandaScorePreMatchStats 
+              <PandaScorePreMatchStats
                 teams={matchDetails.teams}
                 tournament={matchDetails.tournament}
               />
-              
+
               <Card className="bg-theme-gray-dark border-theme-gray-medium">
                 <div className="p-2">
                   <h3 className="text-sm font-bold text-white mb-2">Community Predictions</h3>
-                  <MatchVotingWidget 
+                  <MatchVotingWidget
                     matchId={matchDetails.id}
                     teams={[
-                      { 
+                      {
                         id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1', 
+                        name: matchDetails.teams[0]?.name || 'Team 1',
                         logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
                       },
-                      { 
+                      {
                         id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2', 
+                        name: matchDetails.teams[1]?.name || 'Team 2',
                         logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
                       }
                     ]}
@@ -159,91 +179,76 @@ const PandaScoreUpcomingMatchPage = () => {
           ) : (
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
-                <TabsTrigger 
-                  value="overview" 
+                <TabsTrigger
+                  value="overview"
                   className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
                 >
                   Overview
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="rosters" 
+                <TabsTrigger
+                  value="rosters"
                   className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
                 >
                   Team Rosters
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="stats" 
+                <TabsTrigger
+                  value="stats"
                   className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
                 >
                   Pre-Match Analysis
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="voting" 
+                <TabsTrigger
+                  value="voting"
                   className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
                 >
                   Community Vote
                 </TabsTrigger>
-                <TabsTrigger
-                  value="stream"
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  🎥 Stream Info
-                </TabsTrigger>
+                {/* Removed Stream Info tab */}
               </TabsList>
-              
+
               <TabsContent value="overview" className="space-y-6">
-                <PandaScorePreMatchStats 
+                <PandaScorePreMatchStats
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
                 />
               </TabsContent>
-              
+
               <TabsContent value="rosters">
                 <PandaScorePlayerRoster teams={matchDetails.teams} />
               </TabsContent>
-              
+
               <TabsContent value="stats">
-                <PandaScorePreMatchStats 
+                <PandaScorePreMatchStats
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
                 />
               </TabsContent>
-              
+
               <TabsContent value="voting">
                 <div className="space-y-6">
                   <h3 className="text-xl font-bold text-white">Community Predictions</h3>
-                  <MatchVotingWidget 
+                  <MatchVotingWidget
                     matchId={matchDetails.id}
                     teams={[
-                      { 
+                      {
                         id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1', 
+                        name: matchDetails.teams[0]?.name || 'Team 1',
                         logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
                       },
-                      { 
+                      {
                         id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2', 
+                        name: matchDetails.teams[1]?.name || 'Team 2',
                         logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
                       }
                     ]}
                   />
                 </div>
               </TabsContent>
-              
-              <TabsContent value="stream">
-                <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">Streams</h3>
-                  <StreamViewer streams={extractStreamsFromRawData(matchDetails.rawData)} />
-                  <p className="text-xs text-gray-400 mt-2">
-                    Streams will be available closer to match time. Check back before the match starts!
-                  </p>
-                </Card>
-              </TabsContent>
             </Tabs>
           )}
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );
