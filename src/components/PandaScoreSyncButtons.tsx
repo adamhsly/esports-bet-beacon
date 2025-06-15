@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Loader2, Users } from 'lucide-react';
 
 export const PandaScoreSyncButtons = () => {
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
@@ -11,6 +12,8 @@ export const PandaScoreSyncButtons = () => {
     setSyncing(prev => ({ ...prev, [syncType]: true }));
     
     try {
+      console.log(`🔄 Starting ${syncType} sync...`);
+      
       const { data, error } = await supabase.functions.invoke(functionName);
       
       if (error) {
@@ -52,15 +55,25 @@ export const PandaScoreSyncButtons = () => {
   return (
     <div className="flex flex-wrap gap-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-semibold">PandaScore Sync Controls</h3>
+        <h3 className="text-lg font-semibold flex items-center">
+          <Users className="h-5 w-5 mr-2" />
+          PandaScore Sync Controls
+        </h3>
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={() => handleSync('Upcoming Matches', 'sync-pandascore-upcoming-matches')}
+            onClick={() => handleSync('Upcoming Matches (with Players)', 'sync-pandascore-upcoming-matches')}
             disabled={syncing['matches']}
             variant="outline"
             size="sm"
           >
-            {syncing['matches'] ? 'Syncing...' : 'Sync Upcoming Matches'}
+            {syncing['matches'] ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              'Sync Upcoming Matches + Players'
+            )}
           </Button>
           
           <Button
@@ -90,6 +103,10 @@ export const PandaScoreSyncButtons = () => {
             {syncing['cron'] ? 'Setting up...' : 'Setup Cron Jobs'}
           </Button>
         </div>
+        
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+          💡 The updated sync now fetches detailed match data including player lineups for each team
+        </p>
       </div>
     </div>
   );

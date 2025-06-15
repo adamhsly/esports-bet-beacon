@@ -35,7 +35,7 @@ serve(async (req) => {
   let totalUpdated = 0;
 
   try {
-    console.log('🔄 Starting PandaScore upcoming matches sync...');
+    console.log('🔄 Starting PandaScore upcoming matches sync with player data...');
     
     const apiKey = Deno.env.get('PANDA_SCORE_API_KEY');
     if (!apiKey) {
@@ -67,38 +67,89 @@ serve(async (req) => {
 
         for (const match of matches) {
           try {
-            // Transform PandaScore match data
+            // Fetch detailed match data including players
+            console.log(`🔍 Fetching detailed data for match ${match.id}...`);
+            const detailResponse = await fetch(
+              `https://api.pandascore.co/${game}/matches/${match.id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Accept': 'application/json'
+                }
+              }
+            );
+
+            let detailedMatch = match;
+            if (detailResponse.ok) {
+              detailedMatch = await detailResponse.json();
+              console.log(`✅ Got detailed data for match ${match.id}`);
+            } else {
+              console.log(`⚠️ Could not fetch detailed data for match ${match.id}, using basic data`);
+            }
+
+            // Extract player data from opponents
+            const extractPlayers = (opponents) => {
+              if (!opponents || opponents.length === 0) return [];
+              
+              return opponents.flatMap(opponent => {
+                if (opponent.opponent && opponent.opponent.players) {
+                  return opponent.opponent.players.map(player => ({
+                    nickname: player.name,
+                    player_id: player.id?.toString(),
+                    position: player.role || 'Player'
+                  }));
+                }
+                return [];
+              });
+            };
+
+            // Transform PandaScore match data with player information
+            const team1Players = detailedMatch.opponents?.[0]?.opponent?.players || [];
+            const team2Players = detailedMatch.opponents?.[1]?.opponent?.players || [];
+
             const transformedMatch = {
-              match_id: match.id.toString(),
+              match_id: detailedMatch.id.toString(),
               esport_type: game,
               teams: {
                 team1: {
-                  id: match.opponents?.[0]?.opponent?.id,
-                  name: match.opponents?.[0]?.opponent?.name || 'TBD',
-                  logo: match.opponents?.[0]?.opponent?.image_url,
-                  acronym: match.opponents?.[0]?.opponent?.acronym
+                  id: detailedMatch.opponents?.[0]?.opponent?.id,
+                  name: detailedMatch.opponents?.[0]?.opponent?.name || 'TBD',
+                  logo: detailedMatch.opponents?.[0]?.opponent?.image_url,
+                  acronym: detailedMatch.opponents?.[0]?.opponent?.acronym,
+                  players: team1Players.map(player => ({
+                    nickname: player.name,
+                    player_id: player.id?.toString(),
+                    position: player.role || 'Player'
+                  }))
                 },
                 team2: {
-                  id: match.opponents?.[1]?.opponent?.id,
-                  name: match.opponents?.[1]?.opponent?.name || 'TBD',
-                  logo: match.opponents?.[1]?.opponent?.image_url,
-                  acronym: match.opponents?.[1]?.opponent?.acronym
+                  id: detailedMatch.opponents?.[1]?.opponent?.id,
+                  name: detailedMatch.opponents?.[1]?.opponent?.name || 'TBD',
+                  logo: detailedMatch.opponents?.[1]?.opponent?.image_url,
+                  acronym: detailedMatch.opponents?.[1]?.opponent?.acronym,
+                  players: team2Players.map(player => ({
+                    nickname: player.name,
+                    player_id: player.id?.toString(),
+                    position: player.role || 'Player'
+                  }))
                 }
               },
-              start_time: match.begin_at || match.scheduled_at,
-              end_time: match.end_at,
-              tournament_id: match.tournament?.id?.toString(),
-              tournament_name: match.tournament?.name,
-              league_id: match.league?.id?.toString(),
-              league_name: match.league?.name,
-              serie_id: match.serie?.id?.toString(),
-              serie_name: match.serie?.name,
-              status: match.status || 'scheduled',
-              match_type: match.match_type,
-              number_of_games: match.number_of_games,
-              raw_data: match,
+              start_time: detailedMatch.begin_at || detailedMatch.scheduled_at,
+              end_time: detailedMatch.end_at,
+              tournament_id: detailedMatch.tournament?.id?.toString(),
+              tournament_name: detailedMatch.tournament?.name,
+              league_id: detailedMatch.league?.id?.toString(),
+              league_name: detailedMatch.league?.name,
+              serie_id: detailedMatch.serie?.id?.toString(),
+              serie_name: detailedMatch.serie?.name,
+              status: detailedMatch.status || 'scheduled',
+              match_type: detailedMatch.match_type,
+              number_of_games: detailedMatch.number_of_games,
+              raw_data: detailedMatch,
               last_synced_at: new Date().toISOString()
             };
+
+            console.log(`👥 Match ${detailedMatch.id} - Team1: ${transformedMatch.teams.team1.players.length} players, Team2: ${transformedMatch.teams.team2.players.length} players`);
 
             // Upsert match data
             const { error: upsertError } = await supabase
@@ -109,7 +160,7 @@ serve(async (req) => {
               });
 
             if (upsertError) {
-              console.error(`Error upserting match ${match.id}:`, upsertError);
+              console.error(`Error upserting match ${detailedMatch.id}:`, upsertError);
               continue;
             }
 
@@ -119,7 +170,7 @@ serve(async (req) => {
             const { data: existing } = await supabase
               .from('pandascore_matches')
               .select('created_at, updated_at')
-              .eq('match_id', match.id.toString())
+              .eq('match_id', detailedMatch.id.toString())
               .single();
 
             if (existing && existing.created_at === existing.updated_at) {
@@ -134,7 +185,7 @@ serve(async (req) => {
         }
 
         // Small delay to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
       } catch (error) {
         console.error(`Error syncing ${game} matches:`, error);
@@ -153,7 +204,7 @@ serve(async (req) => {
       records_updated: totalUpdated
     }).eq('id', logId);
 
-    console.log(`✅ PandaScore upcoming matches sync completed: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
+    console.log(`✅ PandaScore upcoming matches sync completed with player data: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
 
     return new Response(
       JSON.stringify({

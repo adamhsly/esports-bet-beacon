@@ -35,12 +35,15 @@ export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineup
           />
           <h4 className="text-sm font-semibold text-white truncate">{team.name}</h4>
           <Users className="h-4 w-4 text-gray-400" />
+          <span className="text-xs text-gray-400">
+            ({team.players?.length || 0})
+          </span>
         </div>
         
         <div className="space-y-2">
           {team.players && team.players.length > 0 ? (
-            team.players.slice(0, 3).map((player: any, index: number) => (
-              <div key={index} className="flex items-center justify-between text-xs">
+            team.players.slice(0, 5).map((player: any, index: number) => (
+              <div key={`${player.player_id}-${index}`} className="flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2">
                   <User className="h-3 w-3 text-gray-400" />
                   <span className="text-white truncate">{player.nickname}</span>
@@ -53,11 +56,11 @@ export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineup
               </div>
             ))
           ) : (
-            <p className="text-gray-400 text-xs">No player data</p>
+            <p className="text-gray-400 text-xs text-center py-2">No player data</p>
           )}
           
-          {team.players && team.players.length > 3 && (
-            <p className="text-gray-400 text-xs">+{team.players.length - 3} more</p>
+          {team.players && team.players.length > 5 && (
+            <p className="text-gray-400 text-xs text-center">+{team.players.length - 5} more</p>
           )}
         </div>
       </div>
