@@ -35,17 +35,12 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     matchStartTime: match.startTime
   });
 
-  const getTimeUntilMatch = () => {
-    const startTime = new Date(match.startTime);
-    const now = new Date();
-    const diffMs = startTime.getTime() - now.getTime();
-    const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-    
-    if (diffHours < 1) {
-      const diffMinutes = Math.ceil(diffMs / (1000 * 60));
-      return diffMinutes > 0 ? `${diffMinutes}m` : 'Starting soon';
-    }
-    return diffHours < 24 ? `${diffHours}h` : `${Math.ceil(diffHours / 24)}d`;
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
   };
 
   const isMatchInPast = () => {
@@ -53,6 +48,8 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     const now = new Date();
     return startTime.getTime() < now.getTime();
   };
+
+  const { date, time } = formatDateTime(match.startTime);
 
   const NotifyButton = () => {
     const isPastMatch = isMatchInPast();
@@ -91,102 +88,71 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
   };
 
   return (
-    <Card className="bg-theme-gray-dark border-theme-gray-medium overflow-hidden">
+    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
       <div className={`p-${isMobile ? '2' : '4'}`}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-gray-400 text-sm flex-wrap mb-1">
-              <div className="flex items-center">
-                <Trophy className="h-3 w-3 mr-1" />
-                <span className="truncate">{match.tournament || 'Pro Match'}</span>
+        {/* Top Section - Tournament and Badges */}
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-gray-300 text-sm flex-wrap mb-1">
+              <span className="truncate">{match.tournament || 'Pro Match'}</span>
+              <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+                <Trophy size={12} className="mr-1" />
+                PRO
+              </Badge>
+            </div>
+            <span className="text-xs text-blue-400 uppercase">{match.esportType}</span>
+          </div>
+          <Badge className="bg-theme-purple">
+            BO{match.bestOf || 3}
+          </Badge>
+        </div>
+
+        {/* Teams Section */}
+        <div className={`flex items-center justify-between gap-${isMobile ? '2' : '4'} mb-4`}>
+          {[team1, team2].map((team, index) => (
+            <div key={team.name || index} className={`flex flex-1 items-center ${index === 1 ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex flex-col items-${index === 0 ? 'start' : 'end'} flex-1`}>
+                <img
+                  src={team.logo || '/placeholder.svg'}
+                  alt={`${team.name} logo`}
+                  className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} object-contain mb-${isMobile ? '1' : '2'}`}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
+                />
+                <span className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-white truncate`}>
+                  {team.name}
+                </span>
               </div>
+              {index === 0 && (
+                <span className={`mx-${isMobile ? '2' : '4'} ${isMobile ? 'text-lg' : 'text-xl'} text-gray-400 font-bold`}>vs</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom Section - Time and Notification */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center text-gray-400 text-xs gap-3 flex-wrap">
+            <div className="flex items-center">
+              <Calendar className="h-3 w-3 mr-1" />
+              <span>
+                {isMobile 
+                  ? new Date(match.startTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                  : `${date} • ${time}`
+                }
+              </span>
+            </div>
+            {!isMobile && (
               <div className="flex items-center">
                 <MapPin className="h-3 w-3 mr-1" />
                 <span className="uppercase">{match.esportType}</span>
               </div>
-            </div>
+            )}
           </div>
-          
-          {!isMobile && (
-            <div className="flex items-center space-x-2 ml-4">
-              <NotifyButton />
-              <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-                {getTimeUntilMatch()}
-              </Badge>
-            </div>
-          )}
+
+          <NotifyButton />
         </div>
-
-        <div className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-3'} gap-${isMobile ? '2' : '4'} items-center`}>
-          <div className="text-center">
-            <img 
-              src={team1.logo || '/placeholder.svg'} 
-              alt={team1.name} 
-              className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} object-contain mx-auto mb-${isMobile ? '1' : '2'} rounded`}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder.svg';
-              }}
-            />
-            <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-white truncate`}>
-              {team1.name}
-            </h3>
-          </div>
-          
-          <div className="text-center">
-            <div className={`bg-theme-gray-medium/50 rounded-lg p-${isMobile ? '2' : '3'}`}>
-              <div className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white`}>VS</div>
-              {!isMobile && (
-                <div className="text-xs text-gray-400 mt-1">Bo{match.bestOf || 3}</div>
-              )}
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <img 
-              src={team2.logo || '/placeholder.svg'} 
-              alt={team2.name} 
-              className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} object-contain mx-auto mb-${isMobile ? '1' : '2'} rounded`}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder.svg';
-              }}
-            />
-            <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-white truncate`}>
-              {team2.name}
-            </h3>
-          </div>
-        </div>
-
-        {isMobile && (
-          <div className="mt-3 pt-2 border-t border-theme-gray-medium">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1 text-gray-400" />
-                  <span className="text-white text-xs">
-                    {new Date(match.startTime).toLocaleDateString([], { 
-                      month: 'short', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30 text-xs">
-                  {getTimeUntilMatch()}
-                </Badge>
-              </div>
-              <NotifyButton />
-            </div>
-          </div>
-        )}
-
-        {!isMobile && (
-          <div className="mt-3 flex items-center justify-center">
-            <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400 border-blue-400/30">
-              Professional Match
-            </Badge>
-          </div>
-        )}
       </div>
     </Card>
   );
