@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -7,16 +8,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, Target, Trophy, TrendingUp, Zap, Calendar, MapPin } from 'lucide-react';
+import { User, Target, Trophy, TrendingUp, Zap, Calendar, Gamepad2 } from 'lucide-react';
 import type { PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
 interface Player {
@@ -96,7 +89,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-7xl max-h-[90vh] p-6">
+      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-4xl max-h-[90vh] p-6">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center space-x-3">
             <Avatar className="h-12 w-12">
@@ -175,7 +168,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             )}
           </div>
 
-          {/* Recent Match History Table */}
+          {/* Recent Match History - Simple List */}
           {player.match_history && player.match_history.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -183,95 +176,45 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 <h4 className="text-sm font-semibold text-white">Last 5 Matches</h4>
               </div>
               
-              <div className="bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30 overflow-hidden">
-                <ScrollArea className="w-full h-64">
-                  <div className="w-max min-w-full">
-                    <Table className="w-full">
-                      <TableHeader>
-                        <TableRow className="border-theme-gray-medium/30 hover:bg-transparent">
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">Date</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-24">Map</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">Result</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-24">K/D/A</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">K/D</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">HS%</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">ADR</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">MVPs</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-24">ELO Δ</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {player.match_history.slice(0, 5).map((match) => (
-                          <TableRow 
-                            key={match.id}
-                            className="border-theme-gray-medium/30 hover:bg-theme-gray-medium/10"
-                          >
-                            <TableCell className="text-xs text-gray-300 py-2 whitespace-nowrap">
+              <div className="bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30 p-4">
+                <ScrollArea className="w-full max-h-64">
+                  <div className="space-y-3">
+                    {player.match_history.slice(0, 5).map((match, index) => (
+                      <div 
+                        key={match.id}
+                        className="flex items-center justify-between p-3 bg-theme-gray-medium/10 rounded-lg hover:bg-theme-gray-medium/20 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${getMatchResultColor(match.match_result)}`}
+                            >
+                              {match.match_result.toUpperCase()}
+                            </Badge>
+                            <span className="text-xs text-gray-400">
                               {formatMatchDate(match.match_date)}
-                            </TableCell>
-                            <TableCell className="text-xs text-gray-300 py-2 whitespace-nowrap">
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                                <span className="truncate max-w-20">{match.map_name || 'Unknown'}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-2 whitespace-nowrap">
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs ${getMatchResultColor(match.match_result)}`}
-                              >
-                                {match.match_result.toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-white py-2 whitespace-nowrap">
-                              {match.kills !== undefined && match.kills !== null ? match.kills : '-'}/
-                              {match.deaths !== undefined && match.deaths !== null ? match.deaths : '-'}/
-                              {match.assists !== undefined && match.assists !== null ? match.assists : '-'}
-                            </TableCell>
-                            <TableCell className="text-xs text-white py-2 whitespace-nowrap">
-                              {match.kd_ratio !== undefined && match.kd_ratio !== null ? match.kd_ratio.toFixed(2) : '-'}
-                            </TableCell>
-                            <TableCell className="text-xs text-white py-2 whitespace-nowrap">
-                              {match.headshots_percent !== undefined && match.headshots_percent !== null ? 
-                                `${match.headshots_percent.toFixed(1)}%` : '-'}
-                            </TableCell>
-                            <TableCell className="text-xs text-white py-2 whitespace-nowrap">
-                              {match.adr !== undefined && match.adr !== null ? match.adr.toFixed(1) : '-'}
-                            </TableCell>
-                            <TableCell className="text-xs text-white py-2 whitespace-nowrap">
-                              {match.mvps !== undefined && match.mvps !== null ? match.mvps : '-'}
-                            </TableCell>
-                            <TableCell className="text-xs py-2 whitespace-nowrap">
-                              {match.faceit_elo_change !== undefined && match.faceit_elo_change !== null ? (
-                                <span className={`${match.faceit_elo_change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                  {match.faceit_elo_change >= 0 ? '+' : ''}{match.faceit_elo_change}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end space-y-1">
+                          <div className="flex items-center space-x-2 text-sm text-white">
+                            <Gamepad2 className="h-3 w-3 text-gray-400" />
+                            <span className="font-medium">
+                              {match.team_name || 'Team'} vs {match.opponent_team_name || 'Opponent'}
+                            </span>
+                          </div>
+                          {match.competition_name && (
+                            <div className="text-xs text-gray-400">
+                              {match.competition_name}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </ScrollArea>
-
-                {/* Competition info inside table container */}
-                {player.match_history.slice(0, 5).some(match => match.competition_name) && (
-                  <div className="p-3 border-t border-theme-gray-medium/30 bg-theme-gray-medium/10">
-                    <div className="text-xs text-gray-400 space-y-1">
-                      {player.match_history.slice(0, 5).map((match, index) => (
-                        match.competition_name && (
-                          <div key={`comp-${match.id}`} className="flex items-center space-x-2">
-                            <span className="text-gray-500">Match {index + 1}:</span>
-                            <span className="text-gray-300">{match.competition_name}</span>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
