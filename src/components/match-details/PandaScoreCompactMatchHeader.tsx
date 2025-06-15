@@ -87,11 +87,8 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     );
   };
 
-  const startTime =
-    match?.start_time ||
-    match?.scheduled_at ||
-    match?.begin_at ||
-    null;
+  // Use only match.startTime (as string) for timer
+  const startTime = match.startTime;
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium">

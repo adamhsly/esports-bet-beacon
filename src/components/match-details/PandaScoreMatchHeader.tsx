@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import CountdownTimer from '@/components/CountdownTimer';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import { Button } from '@/components/ui/button';
+import { Trophy, Calendar, Clock, MapPin, Loader2, BellRing, Bell } from 'lucide-react';
 
 interface PandaScoreMatchHeaderProps {
   match: {
@@ -46,12 +47,8 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
 
   const { date, time } = formatDateTime(match.startTime);
 
-  // Attempt to use the `start_time` (PandaScore's field), fallback to other options if needed
-  const startTime =
-    match?.start_time ||
-    match?.scheduled_at ||
-    match?.begin_at ||
-    null;
+  // Use only match.startTime for timer
+  const startTime = match.startTime;
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium">
