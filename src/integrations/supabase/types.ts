@@ -1623,7 +1623,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      pandascore_view_teams: {
+        Row: {
+          acronym: string | null
+          esport_type: string | null
+          logo_url: string | null
+          name: string | null
+          original_id: string | null
+          players_data: Json | null
+          slug: string | null
+          team_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_fantasy_points: {
