@@ -108,7 +108,7 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
   );
 
   const TeamColumn = ({ team, side }: { team: Team; side: 'left' | 'right' }) => (
-    <div className="flex-1">
+    <div className={`flex-1 p-2 rounded-lg ${side === 'left' ? 'bg-blue-500/10' : 'bg-orange-500/10'}`}>
       <div className="flex items-center space-x-1.5 mb-2 px-1">
         <img 
           src={team.logo || team.avatar || '/placeholder.svg'} 
@@ -119,9 +119,6 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
           }}
         />
         <h4 className="font-semibold text-white text-xs truncate flex-1">{team.name}</h4>
-        <Badge variant="outline" className="text-[10px] px-1 h-4 flex-shrink-0">
-          {team.roster?.length || 0}
-        </Badge>
       </div>
       <div className="space-y-1">
         {team.roster?.map((player, idx) => (

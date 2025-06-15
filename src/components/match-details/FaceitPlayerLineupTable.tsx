@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User, Trophy, Target, TrendingUp } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
+import { PlayerDetailsModal } from './PlayerDetailsModal';
 
 interface Player {
   nickname: string;
@@ -62,6 +63,10 @@ const getSkillLevelColor = (level?: number): string => {
 
 export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = ({ teams }) => {
   const isMobile = useMobile();
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedTeamName, setSelectedTeamName] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const team1 = teams[0] || { name: 'Team 1', roster: [] };
   const team2 = teams[1] || { name: 'Team 2', roster: [] };
 
@@ -69,6 +74,12 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
   if (isMobile) {
     return null;
   }
+
+  const handlePlayerClick = (player: Player, teamName: string) => {
+    setSelectedPlayer(player);
+    setSelectedTeamName(teamName);
+    setIsModalOpen(true);
+  };
 
   const getFormBadge = (form?: string) => {
     if (!form) return null;
@@ -94,8 +105,8 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
     return roster?.some(player => player.total_matches && player.total_matches > 0) || false;
   };
 
-  const renderTeamTable = (team: Team) => (
-    <div>
+  const renderTeamTable = (team: Team, teamIndex: number) => (
+    <div className={`p-4 rounded-lg ${teamIndex === 0 ? 'bg-blue-500/5' : 'bg-orange-500/5'}`}>
       <div className="flex items-center space-x-3 mb-6">
         <img 
           src={team.logo || team.avatar || '/placeholder.svg'} 
@@ -106,7 +117,6 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
           }}
         />
         <h3 className="text-xl font-bold text-white">{team.name}</h3>
-        <Badge variant="outline">{team.roster?.length || 0} players</Badge>
       </div>
       
       <div className="overflow-x-auto">
@@ -123,7 +133,11 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
           </TableHeader>
           <TableBody>
             {team.roster?.map((player, idx) => (
-              <TableRow key={`${player.player_id}-${idx}`} className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
+              <TableRow 
+                key={`${player.player_id}-${idx}`} 
+                className="border-theme-gray-medium hover:bg-theme-gray-medium/30 cursor-pointer"
+                onClick={() => handlePlayerClick(player, team.name)}
+              >
                 <TableCell className="py-3">
                   <div className="flex items-center space-x-3">
                     <img 
@@ -183,28 +197,37 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
   );
 
   return (
-    <Card className="bg-theme-gray-dark border-theme-gray-medium overflow-hidden">
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-          <User className="h-6 w-6 mr-3" />
-          Player Lineups
-        </h2>
+    <>
+      <Card className="bg-theme-gray-dark border-theme-gray-medium overflow-hidden">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+            <User className="h-6 w-6 mr-3" />
+            Player Lineups
+          </h2>
 
-        {/* Enhanced Stats Indicator */}
-        {(hasEnhancedStats(team1.roster) || hasEnhancedStats(team2.roster)) && (
-          <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-            <div className="flex items-center text-green-400 text-sm">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              <span>Enhanced statistics available for some players</span>
+          {/* Enhanced Stats Indicator */}
+          {(hasEnhancedStats(team1.roster) || hasEnhancedStats(team2.roster)) && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <div className="flex items-center text-green-400 text-sm">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                <span>Enhanced statistics available for some players</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {renderTeamTable(team1)}
-          {renderTeamTable(team2)}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {renderTeamTable(team1, 0)}
+            {renderTeamTable(team2, 1)}
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      <PlayerDetailsModal
+        player={selectedPlayer}
+        teamName={selectedTeamName}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 };
