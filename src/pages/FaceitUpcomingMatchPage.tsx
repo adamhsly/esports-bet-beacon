@@ -101,138 +101,153 @@ const FaceitUpcomingMatchPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
-      
-      <div className={`flex-grow container mx-auto ${isMobile ? 'px-1 py-2' : 'px-4 py-8'}`}>
-        <div className={`space-y-${isMobile ? '2' : '8'}`}>
-          {/* Error Alert if there were issues */}
-          {error && (
-            <Alert className="bg-yellow-500/10 border-yellow-500/30">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-yellow-400">
-                Some data may be incomplete. Displaying available information from our database.
-              </AlertDescription>
-            </Alert>
-          )}
 
-          {/* Match Header - Use compact version on mobile */}
-          {isMobile ? (
-            <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />
-          ) : (
-            <FaceitMatchHeader match={matchDetails} />
-          )}
-          
-          {/* Player Lineup - Use mobile-optimized component on mobile */}
-          {isMobile ? (
-            <FaceitMobilePlayerLineup teams={matchDetails.teams} />
-          ) : (
-            <FaceitPlayerLineupTable teams={matchDetails.teams} />
-          )}
-          
-          {/* Main Content - Simplified for mobile */}
-          {isMobile ? (
-            <div className="space-y-2">
-              {/* Pre-Match Stats */}
-              <FaceitPreMatchStats 
-                teams={matchDetails.teams}
-                faceitData={matchDetails.faceitData}
-              />
-              
-              {/* Community Voting */}
-              <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                <div className="p-2">
-                  <h3 className="text-sm font-bold text-white mb-2">Community Predictions</h3>
-                  <MatchVotingWidget 
-                    matchId={matchDetails.id}
-                    teams={[
-                      { 
-                        id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1', 
-                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                      },
-                      { 
-                        id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2', 
-                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                      }
-                    ]}
-                  />
-                </div>
-              </Card>
+      <div className={`flex-grow w-full`}>
+        <div className={`max-w-5xl mx-auto w-full px-2 md:px-8 ${isMobile ? 'py-2' : 'py-8'}`}>
+          <div className={`space-y-${isMobile ? '2' : '8'}`}>
+            {/* Error Alert if there were issues */}
+            {error && (
+              <div className="px-2 md:px-8">
+                <Alert className="bg-yellow-500/10 border-yellow-500/30">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-yellow-400">
+                    Some data may be incomplete. Displaying available information from our database.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {/* Match Header - Use compact version on mobile */}
+            <div className="px-2 md:px-8">
+              {isMobile ? (
+                <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />
+              ) : (
+                <FaceitMatchHeader match={matchDetails} />
+              )}
             </div>
-          ) : (
-            // Desktop tabs remain the same
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
-                <TabsTrigger 
-                  value="overview" 
-                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="rosters" 
-                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Team Rosters
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="stats" 
-                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Pre-Match Analysis
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="voting" 
-                  className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Community Vote
-                </TabsTrigger>
-              </TabsList>
-              
-              {/* Overview Tab */}
-              <TabsContent value="overview" className="space-y-6">
-                <FaceitPreMatchStats 
-                  teams={matchDetails.teams}
-                  faceitData={matchDetails.faceitData}
-                />
-              </TabsContent>
-              
-              {/* Rosters Tab */}
-              <TabsContent value="rosters">
-                <FaceitPlayerRoster teams={matchDetails.teams} />
-              </TabsContent>
-              
-              {/* Pre-Match Analysis Tab */}
-              <TabsContent value="stats">
-                <FaceitPreMatchStats 
-                  teams={matchDetails.teams}
-                  faceitData={matchDetails.faceitData}
-                />
-              </TabsContent>
-              
-              {/* Community Voting Tab */}
-              <TabsContent value="voting">
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-white">Community Predictions</h3>
-                  <MatchVotingWidget 
-                    matchId={matchDetails.id}
-                    teams={[
-                      { 
-                        id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1', 
-                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                      },
-                      { 
-                        id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2', 
-                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                      }
-                    ]}
+            
+            {/* Player Lineup - Use mobile-optimized component on mobile */}
+            <div className="px-2 md:px-8">
+              {isMobile ? (
+                <FaceitMobilePlayerLineup teams={matchDetails.teams} />
+              ) : (
+                <FaceitPlayerLineupTable teams={matchDetails.teams} />
+              )}
+            </div>
+            
+            {/* Main Content - Simplified for mobile/desktop */}
+            <div className="px-2 md:px-8">
+              {isMobile ? (
+                <div className="space-y-2">
+                  {/* Pre-Match Stats */}
+                  <FaceitPreMatchStats 
+                    teams={matchDetails.teams}
+                    faceitData={matchDetails.faceitData}
                   />
+                  {/* Community Voting */}
+                  <Card className="bg-theme-gray-dark border-theme-gray-medium">
+                    <div className="p-2">
+                      <h3 className="text-sm font-bold text-white mb-2">Community Predictions</h3>
+                      <MatchVotingWidget 
+                        matchId={matchDetails.id}
+                        teams={[
+                          { 
+                            id: matchDetails.teams[0]?.id || 'team1',
+                            name: matchDetails.teams[0]?.name || 'Team 1', 
+                            logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                          },
+                          { 
+                            id: matchDetails.teams[1]?.id || 'team2',
+                            name: matchDetails.teams[1]?.name || 'Team 2', 
+                            logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                          }
+                        ]}
+                      />
+                    </div>
+                  </Card>
                 </div>
-              </TabsContent>
-            </Tabs>
-          )}
+              ) : (
+                // Desktop tabs remain the same, but inside px box
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+                    <TabsTrigger 
+                      value="overview" 
+                      className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                    >
+                      Overview
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="rosters" 
+                      className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                    >
+                      Team Rosters
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="stats" 
+                      className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                    >
+                      Pre-Match Analysis
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="voting" 
+                      className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4"
+                    >
+                      Community Vote
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Overview Tab */}
+                  <TabsContent value="overview" className="space-y-6">
+                    <div className="px-2 md:px-8">
+                      <FaceitPreMatchStats 
+                        teams={matchDetails.teams}
+                        faceitData={matchDetails.faceitData}
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  {/* Rosters Tab */}
+                  <TabsContent value="rosters">
+                    <div className="px-2 md:px-8">
+                      <FaceitPlayerRoster teams={matchDetails.teams} />
+                    </div>
+                  </TabsContent>
+                  
+                  {/* Pre-Match Analysis Tab */}
+                  <TabsContent value="stats">
+                    <div className="px-2 md:px-8">
+                      <FaceitPreMatchStats 
+                        teams={matchDetails.teams}
+                        faceitData={matchDetails.faceitData}
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  {/* Community Voting Tab */}
+                  <TabsContent value="voting">
+                    <div className="space-y-6 px-2 md:px-8">
+                      <h3 className="text-xl font-bold text-white">Community Predictions</h3>
+                      <MatchVotingWidget 
+                        matchId={matchDetails.id}
+                        teams={[
+                          { 
+                            id: matchDetails.teams[0]?.id || 'team1',
+                            name: matchDetails.teams[0]?.name || 'Team 1', 
+                            logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                          },
+                          { 
+                            id: matchDetails.teams[1]?.id || 'team2',
+                            name: matchDetails.teams[1]?.name || 'Team 2', 
+                            logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                          }
+                        ]}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       

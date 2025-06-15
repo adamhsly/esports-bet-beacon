@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -102,111 +101,127 @@ const FaceitLiveMatchPage = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       
-      <div className="flex-grow container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {/* Live Status Banner */}
-          <Alert className="bg-red-500/10 border-red-500/30">
-            <Radio className="h-4 w-4 text-red-400 animate-pulse" />
-            <AlertDescription className="text-red-400 font-semibold">
-              🔴 LIVE MATCH - Real-time updates every 30 seconds
-            </AlertDescription>
-          </Alert>
+      {/* Add responsive px to main page content */}
+      <div className="flex-grow w-full">
+        <div className="max-w-5xl mx-auto w-full px-2 md:px-8 py-8">
+          <div className="space-y-6">
+            {/* Live Status Banner */}
+            <div className="px-2 md:px-8">
+              <Alert className="bg-red-500/10 border-red-500/30">
+                <Radio className="h-4 w-4 text-red-400 animate-pulse" />
+                <AlertDescription className="text-red-400 font-semibold">
+                  🔴 LIVE MATCH - Real-time updates every 30 seconds
+                </AlertDescription>
+              </Alert>
+            </div>
 
-          {/* Live Match Header */}
-          <FaceitLiveMatchHeader match={matchDetails} />
-          
-          {/* Live Scorecard */}
-          <FaceitLiveScorecard match={matchDetails} />
-          
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="live" className="w-full">
-            <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
-              <TabsTrigger 
-                value="live" 
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                <Radio className="h-4 w-4 mr-2" />
-                Live Match
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rosters" 
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Team Rosters
-              </TabsTrigger>
-              <TabsTrigger 
-                value="room" 
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Match Room
-              </TabsTrigger>
-            </TabsList>
+            {/* Live Match Header */}
+            <div className="px-2 md:px-8">
+              <FaceitLiveMatchHeader match={matchDetails} />
+            </div>
             
-            {/* Live Match Tab */}
-            <TabsContent value="live" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Match Information */}
-                <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">Match Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Competition:</span>
-                      <span className="text-white">{matchDetails.faceitData?.competitionType || 'FACEIT Match'}</span>
+            {/* Live Scorecard */}
+            <div className="px-2 md:px-8">
+              <FaceitLiveScorecard match={matchDetails} />
+            </div>
+            
+            {/* Main Content Tabs */}
+            <div className="px-2 md:px-8">
+              <Tabs defaultValue="live" className="w-full">
+                <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6" >
+                  <TabsTrigger 
+                    value="live" 
+                    className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
+                  >
+                    <Radio className="h-4 w-4 mr-2" />
+                    Live Match
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="rosters" 
+                    className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
+                  >
+                    Team Rosters
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="room" 
+                    className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
+                  >
+                    Match Room
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Live Match Tab */}
+                <TabsContent value="live" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="px-2 md:px-4">
+                      <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
+                        <h3 className="text-xl font-bold text-white mb-4">Match Information</h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Competition:</span>
+                            <span className="text-white">{matchDetails.faceitData?.competitionType || 'FACEIT Match'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Region:</span>
+                            <span className="text-white">{matchDetails.faceitData?.region || 'EU'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Format:</span>
+                            <span className="text-white">Best of 1</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Status:</span>
+                            <Badge className="bg-red-500 text-white">
+                              <Radio className="h-3 w-3 mr-1 animate-pulse" />
+                              LIVE
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Region:</span>
-                      <span className="text-white">{matchDetails.faceitData?.region || 'EU'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Format:</span>
-                      <span className="text-white">Best of 1</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Status:</span>
-                      <Badge className="bg-red-500 text-white">
-                        <Radio className="h-3 w-3 mr-1 animate-pulse" />
-                        LIVE
-                      </Badge>
+                    <div className="px-2 md:px-4">
+                      <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
+                        <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => window.open(`https://faceit.com/room/${matchDetails.id.replace('faceit_', '')}`, '_blank')}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View Live Room
+                          </button>
+                          <button
+                            onClick={() => refetch()}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold"
+                          >
+                            Refresh Live Data
+                          </button>
+                        </div>
+                      </Card>
                     </div>
                   </div>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => window.open(`https://faceit.com/room/${matchDetails.id.replace('faceit_', '')}`, '_blank')}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View Live Room
-                    </button>
-                    <button
-                      onClick={() => refetch()}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold"
-                    >
-                      Refresh Live Data
-                    </button>
+                </TabsContent>
+                
+                {/* Rosters Tab */}
+                <TabsContent value="rosters">
+                  <div className="px-2 md:px-8">
+                    <FaceitPlayerRoster teams={matchDetails.teams} />
                   </div>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            {/* Rosters Tab */}
-            <TabsContent value="rosters">
-              <FaceitPlayerRoster teams={matchDetails.teams} />
-            </TabsContent>
-            
-            {/* Match Room Tab */}
-            <TabsContent value="room">
-              <FaceitLiveRoomAccess 
-                matchId={matchDetails.id}
-                teams={matchDetails.teams}
-                status="live"
-              />
-            </TabsContent>
-          </Tabs>
+                </TabsContent>
+                
+                {/* Match Room Tab */}
+                <TabsContent value="room">
+                  <div className="px-2 md:px-8">
+                    <FaceitLiveRoomAccess 
+                      matchId={matchDetails.id}
+                      teams={matchDetails.teams}
+                      status="live"
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
         </div>
       </div>
       
