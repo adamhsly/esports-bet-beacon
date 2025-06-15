@@ -152,10 +152,32 @@ serve(async (req) => {
 
     const allUpcomingMatches: FaceitMatch[] = [];
     const allMatchStatuses = new Set();
+    // Map for championship_id -> championship details (including stream url)
+    const championshipDetailsMap = new Map<string, any>();
 
     // Step 2: For each ongoing championship, fetch ALL matches
     for (const championship of championshipsData.items) {
       championshipsProcessed++;
+      // Fetch detailed championship info (for stream URL)
+      let championshipDetails = null;
+      try {
+        const champResp = await fetch(
+          `https://open.faceit.com/data/v4/championships/${championship.championship_id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${faceitApiKey}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        if (champResp.ok) {
+          championshipDetails = await champResp.json();
+        }
+      } catch (err) {
+        console.warn(`⚠️ Could not fetch championship details for ${championship.championship_id}`, err);
+      }
+      championshipDetailsMap.set(championship.championship_id, championshipDetails);
+
       console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id})`);
 
       try {
@@ -212,6 +234,19 @@ serve(async (req) => {
     for (const match of allUpcomingMatches) {
       processed++;
       
+      // Extract stream URL from championship details for this match
+      let championship_stream_url: string | null = null;
+      if (match.competition_name) {
+        // Find the championship using championship_id (from matches API)
+        const championshipId = match.competition_name && championshipsData.items.find((c) => c.name === match.competition_name)?.championship_id;
+        if (championshipId) {
+          const details = championshipDetailsMap.get(championshipId);
+          if (details && (details.stream_url || details.url)) {
+            championship_stream_url = details.stream_url || details.url;
+          }
+        }
+      }
+
       // Extract player IDs from match rosters
       if (match.teams?.faction1?.roster) {
         match.teams.faction1.roster.forEach(player => {
@@ -246,7 +281,8 @@ serve(async (req) => {
           organized_by: match.organized_by,
           calculate_elo: match.calculate_elo
         },
-        raw_data: match
+        raw_data: match,
+        championship_stream_url: championship_stream_url
       };
 
       console.log(`💾 Storing match: ${match.match_id} - ${match.teams.faction1.name} vs ${match.teams.faction2.name} | Scheduled: ${matchData.scheduled_at}`);
