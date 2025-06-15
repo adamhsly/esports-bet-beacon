@@ -60,14 +60,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     icon: React.ReactNode; 
     badgeClass: string; 
     outlineClass: string;
-    boBadgeClass: string;
   } = {
     color: 'gray',
     text: '',
     icon: null,
     badgeClass: '',
     outlineClass: '',
-    boBadgeClass: '',
   };
 
   if (source === 'professional') {
@@ -79,7 +77,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       icon: <Trophy size={13} className="mr-1" />,
       badgeClass: 'bg-blue-500/20 text-blue-400 border-blue-400/30',
       outlineClass: 'variant-outline',
-      boBadgeClass: 'bg-blue-500/20 text-blue-400 border-blue-400/30 ml-1',
     };
   } else if (source === 'amateur') {
     bgClass = 'bg-orange-950/70';
@@ -90,9 +87,26 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       icon: <Users size={13} className="mr-1" />,
       badgeClass: 'bg-orange-500/20 text-orange-400 border-orange-400/30',
       outlineClass: 'variant-outline',
-      boBadgeClass: 'bg-orange-500/20 text-orange-400 border-orange-400/30 ml-1',
     };
   }
+
+  // Function to color code BO badge based on bestOf value
+  const getBOBadgeClass = (bo: number) => {
+    switch (bo) {
+      case 1:
+        return 'bg-green-500/20 text-green-400 border-green-400/30 ml-1';
+      case 2:
+        return 'bg-yellow-400/20 text-yellow-400 border-yellow-400/30 ml-1';
+      case 3:
+        return 'bg-purple-500/20 text-purple-400 border-purple-400/30 ml-1';
+      case 5:
+        return 'bg-pink-500/20 text-pink-400 border-pink-400/30 ml-1';
+      case 7:
+        return 'bg-red-500/20 text-red-400 border-red-400/30 ml-1';
+      default:
+        return 'bg-neutral-500/20 text-neutral-300 border-neutral-400/25 ml-1';
+    }
+  };
 
   return (
     <Card className={`${bgClass} ${ringClass} border-0 rounded-xl shadow-none px-0 py-0 transition-colors duration-200`}>
@@ -143,7 +157,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             </Badge>
             <Badge
               variant="outline"
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.boBadgeClass}`}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${getBOBadgeClass(bestOf)}`}
             >
               BO{bestOf}
             </Badge>
