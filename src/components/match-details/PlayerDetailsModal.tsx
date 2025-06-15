@@ -263,9 +263,9 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                     <div className="text-xs text-gray-400 space-y-1">
                       {player.match_history.slice(0, 5).map((match, index) => (
                         match.competition_name && (
-                          <div key={`comp-${match.id}`} className="flex justify-between">
-                            <span>Match {index + 1}:</span>
-                            <span>{match.competition_name}</span>
+                          <div key={`comp-${match.id}`} className="flex items-center space-x-2">
+                            <span className="text-gray-500">Match {index + 1}:</span>
+                            <span className="text-gray-300">{match.competition_name}</span>
                           </div>
                         )
                       ))}
