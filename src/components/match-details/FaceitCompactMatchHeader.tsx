@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Users, Trophy, MapPin, Bell, BellRing, Loader2 } from 'lucide-react';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
+import CountdownTimer from "@/components/CountdownTimer";
 
 interface FaceitCompactMatchHeaderProps {
   match: {
@@ -64,6 +64,9 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
             BO{match.bestOf || 1}
           </Badge>
         </div>
+
+        {/* Countdown Timer */}
+        <CountdownTimer targetTime={match.startTime} className="mb-2 mt-[-0.5rem]" />
 
         {/* Teams vs Section */}
         <div className="flex items-center justify-center mb-3">
