@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock, Trophy, Users } from 'lucide-react';
@@ -55,12 +54,20 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   // Determine color based on match source
   let bgClass = 'bg-theme-gray-medium';
   let ringClass = '';
-  let badgeProps: { color: string; text: string; icon: React.ReactNode; badgeClass: string; outlineClass: string } = {
+  let badgeProps: { 
+    color: string; 
+    text: string; 
+    icon: React.ReactNode; 
+    badgeClass: string; 
+    outlineClass: string;
+    boBadgeClass: string;
+  } = {
     color: 'gray',
     text: '',
     icon: null,
     badgeClass: '',
     outlineClass: '',
+    boBadgeClass: '',
   };
 
   if (source === 'professional') {
@@ -72,6 +79,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       icon: <Trophy size={13} className="mr-1" />,
       badgeClass: 'bg-blue-500/20 text-blue-400 border-blue-400/30',
       outlineClass: 'variant-outline',
+      boBadgeClass: 'bg-blue-500/20 text-blue-400 border-blue-400/30 ml-1',
     };
   } else if (source === 'amateur') {
     bgClass = 'bg-orange-950/70';
@@ -82,6 +90,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       icon: <Users size={13} className="mr-1" />,
       badgeClass: 'bg-orange-500/20 text-orange-400 border-orange-400/30',
       outlineClass: 'variant-outline',
+      boBadgeClass: 'bg-orange-500/20 text-orange-400 border-orange-400/30 ml-1',
     };
   }
 
@@ -122,18 +131,24 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             />
           </div>
         </div>
-        {/* NEW: Label row for PRO/FACEIT and Best of amount */}
+        {/* Label row for PRO/FACEIT and BO amount */}
         <div className="flex items-center justify-between mt-2">
-          <Badge
-            variant="outline"
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.badgeClass}`}
-          >
-            {badgeProps.icon}
-            {badgeProps.text}
-          </Badge>
-          <span className="text-xs text-gray-300 font-semibold ml-2">
-            BO{bestOf}
-          </span>
+          <div className="flex items-center">
+            <Badge
+              variant="outline"
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.badgeClass}`}
+            >
+              {badgeProps.icon}
+              {badgeProps.text}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.boBadgeClass}`}
+            >
+              BO{bestOf}
+            </Badge>
+          </div>
+          <span className="flex-1" />
         </div>
       </div>
     </Card>
