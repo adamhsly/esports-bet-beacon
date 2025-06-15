@@ -17,6 +17,12 @@ import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
