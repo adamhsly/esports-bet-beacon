@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -96,7 +97,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-7xl max-h-[90vh] p-6">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center space-x-3">
             <Avatar className="h-12 w-12">
@@ -112,7 +113,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 mt-4 overflow-y-auto max-h-[70vh]">
           {/* Skill Level */}
           {player.skill_level && (
             <div className="flex items-center justify-between p-3 bg-theme-gray-medium/30 rounded-lg">
@@ -184,20 +185,20 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
               </div>
               
               <div className="bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30 overflow-hidden">
-                <ScrollArea className="w-full">
-                  <div className="min-w-[800px]">
-                    <Table>
+                <ScrollArea className="w-full h-64">
+                  <div className="w-max min-w-full">
+                    <Table className="w-full">
                       <TableHeader>
                         <TableRow className="border-theme-gray-medium/30 hover:bg-transparent">
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">Date</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">Map</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">Result</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">K/D/A</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">K/D</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">HS%</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">ADR</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">MVPs</TableHead>
-                          <TableHead className="text-gray-300 text-xs whitespace-nowrap">ELO Δ</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">Date</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-24">Map</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">Result</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-24">K/D/A</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">K/D</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">HS%</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">ADR</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-20">MVPs</TableHead>
+                          <TableHead className="text-gray-300 text-xs whitespace-nowrap w-24">ELO Δ</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -211,8 +212,8 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                             </TableCell>
                             <TableCell className="text-xs text-gray-300 py-2 whitespace-nowrap">
                               <div className="flex items-center space-x-1">
-                                <MapPin className="h-3 w-3 text-gray-400" />
-                                <span>{match.map_name || 'Unknown'}</span>
+                                <MapPin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                <span className="truncate max-w-20">{match.map_name || 'Unknown'}</span>
                               </div>
                             </TableCell>
                             <TableCell className="py-2 whitespace-nowrap">
