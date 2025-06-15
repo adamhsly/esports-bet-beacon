@@ -319,7 +319,7 @@ const Index = () => {
                 {dateFilteredUpcomingMatches.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
-                      📅
+                      
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
                       ([league, matches]) => (
