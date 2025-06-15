@@ -282,17 +282,6 @@ const Index = () => {
               detailedMatchCounts={detailedMatchCounts}
             />
 
-            <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-300">
-                Matches for {formatMatchDate(selectedDate)}
-                {!loadingDateFiltered && (
-                  <span className="text-sm text-gray-400 ml-2">
-                    ({dateFilteredLiveMatches.length + dateFilteredUpcomingMatches.length} total)
-                  </span>
-                )}
-              </h3>
-            </div>
-
             {loadingDateFiltered ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
