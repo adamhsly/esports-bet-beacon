@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -283,19 +282,35 @@ serve(async (req) => {
       try {
         console.log(`📊 Processing player: ${playerId}`);
 
-        // Check if player data is fresh (less than 24 hours old)
+        // Check if player data is fresh (less than 24 hours old) AND has raw_response data
         const { data: existingPlayer } = await supabase
           .from('faceit_player_stats')
           .select('last_fetched_at')
           .eq('player_id', playerId)
           .maybeSingle();
 
-        const shouldFetch = !existingPlayer || 
-          new Date().getTime() - new Date(existingPlayer.last_fetched_at).getTime() > 24 * 60 * 60 * 1000;
+        // Check if match history has raw_response data
+        const { data: existingMatchHistory } = await supabase
+          .from('faceit_player_match_history')
+          .select('raw_response')
+          .eq('player_id', playerId)
+          .limit(1)
+          .maybeSingle();
+
+        const dataIsFresh = existingPlayer && 
+          new Date().getTime() - new Date(existingPlayer.last_fetched_at).getTime() < 24 * 60 * 60 * 1000;
+        
+        const hasRawResponseData = existingMatchHistory && existingMatchHistory.raw_response !== null;
+
+        const shouldFetch = !existingPlayer || !dataIsFresh || !hasRawResponseData;
 
         if (!shouldFetch) {
-          console.log(`⏭️ Skipping ${playerId} - data is fresh`);
+          console.log(`⏭️ Skipping ${playerId} - data is fresh and has raw response data`);
           continue;
+        }
+
+        if (!hasRawResponseData) {
+          console.log(`🔄 Forcing refresh for ${playerId} - missing raw response data`);
         }
 
         // Fetch player details
