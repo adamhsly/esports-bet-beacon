@@ -17,6 +17,13 @@ import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -83,8 +90,17 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
   }, {});
 }
 
+const GAME_TYPE_OPTIONS = [
+  { label: 'All Games', value: 'all' },
+  { label: 'CS:GO / CS2', value: 'cs2' },
+  { label: 'League of Legends', value: 'lol' },
+  { label: 'Dota 2', value: 'dota2' },
+  { label: 'Valorant', value: 'valorant' },
+];
+
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedGameType, setSelectedGameType] = useState<string>('all');
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
   const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
@@ -179,6 +195,24 @@ const Index = () => {
     loadAllMatches();
   }, []);
 
+  // Filtering function for game type
+  const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
+    if (gameType === 'all') return matches;
+    // Normalize esport_type for both FACEIT and PandaScore
+    // Faceit esportType: "cs2", "lol", "dota2", "valorant"
+    // PandaScore esportType: "csgo", "cs2", "leagueoflegends", "dota2", "valorant"
+    return matches.filter((match) => {
+      const t = match.esportType?.toLowerCase?.() ?? '';
+      if (gameType === 'cs2') {
+        return t === 'csgo' || t === 'cs2';
+      }
+      if (gameType === 'lol') {
+        return t === 'lol' || t === 'leagueoflegends';
+      }
+      return t === gameType;
+    });
+  };
+
   // Load date-filtered matches using the same unified dataset
   useEffect(() => {
     async function loadDateFilteredMatches() {
@@ -191,36 +225,26 @@ const Index = () => {
         
         // Use the same unified dataset for consistency
         const combinedMatches = await loadAllMatchesFromDatabase();
-        
+        // Apply game type filter
+        const filteredByGameType = filterMatchesByGameType(combinedMatches, selectedGameType);
         // Filter matches by selected date
-        const dateFilteredMatches = combinedMatches.filter(match => {
+        const dateFilteredMatches = filteredByGameType.filter(match => {
           const matchDate = new Date(match.startTime);
           return matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
         });
         
         console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date from unified dataset`);
-        
-        // Separate by source and add status information for debugging
+
         const faceitMatches = dateFilteredMatches.filter(m => m.source === 'amateur');
         const professionalMatches = dateFilteredMatches.filter(m => m.source === 'professional');
         
         console.log(`📊 Date-filtered breakdown: ${faceitMatches.length} FACEIT + ${professionalMatches.length} PandaScore = ${dateFilteredMatches.length} total`);
         
         // For now, we'll categorize all matches as upcoming since we're using the database
-        // In the future, we could add real-time status checking for live matches
         const liveMatches: MatchInfo[] = [];
         const upcomingMatches = dateFilteredMatches.sort((a, b) => 
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
-        
-        console.log(`📊 Final categorization: ${liveMatches.length} live, ${upcomingMatches.length} upcoming`);
-        
-        // Log individual matches for debugging
-        upcomingMatches.forEach((match, index) => {
-          const team1Name = match.teams[0].name;
-          const team2Name = match.teams[1].name;
-          console.log(`🎮 Match ${index + 1}: ${team1Name} vs ${team2Name} (${match.source}) - ${match.startTime}`);
-        });
         
         setDateFilteredLiveMatches(liveMatches);
         setDateFilteredUpcomingMatches(upcomingMatches);
@@ -234,10 +258,14 @@ const Index = () => {
     }
     
     loadDateFilteredMatches();
-  }, [selectedDate]);
+  }, [selectedDate, selectedGameType]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(startOfDay(date));
+  };
+
+  const handleGameTypeChange = (value: string) => {
+    setSelectedGameType(value);
   };
 
   const homepageSEOContent = {
@@ -254,7 +282,6 @@ const Index = () => {
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
       <SearchableNavbar />
       <div className="flex-grow">
-        {/* Removed container and page padding */}
         <div className="w-full">
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
@@ -273,6 +300,21 @@ const Index = () => {
                   </Badge>
                 </div>
               </h2>
+            </div>
+            {/* GAME TYPE DROPDOWN FILTER */}
+            <div className="max-w-xs mb-4 mx-2 md:mx-4">
+              <Select value={selectedGameType} onValueChange={handleGameTypeChange}>
+                <SelectTrigger className="w-full font-medium">
+                  <SelectValue placeholder="Select Game" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GAME_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <DateMatchPicker
               selectedDate={selectedDate}
