@@ -304,12 +304,24 @@ const Index = () => {
             {/* GAME TYPE DROPDOWN FILTER */}
             <div className="max-w-xs mb-4 mx-2 md:mx-4">
               <Select value={selectedGameType} onValueChange={handleGameTypeChange}>
-                <SelectTrigger className="w-full font-medium">
-                  <SelectValue placeholder="Select Game" />
+                <SelectTrigger
+                  className="w-full font-semibold text-theme-purple border border-theme-purple/40 bg-theme-gray-dark focus:ring-2 focus:ring-theme-purple focus:border-theme-purple
+                  transition duration-150 shadow-lg hover:bg-theme-gray rounded-md"
+                >
+                  <SelectValue
+                    placeholder="Select Game"
+                    className="text-theme-purple"
+                  />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  className="bg-theme-gray-dark text-theme-purple border border-theme-purple/40 shadow-2xl rounded-lg z-50"
+                >
                   {GAME_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="font-medium py-2 px-3 hover:bg-theme-purple/10 focus:bg-theme-purple/10 text-theme-purple data-[state=checked]:bg-theme-purple/30"
+                    >
                       {option.label}
                     </SelectItem>
                   ))}
