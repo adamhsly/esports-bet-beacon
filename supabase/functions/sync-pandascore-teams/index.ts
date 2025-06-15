@@ -9,6 +9,34 @@ const corsHeaders = {
 
 const SUPPORTED_GAMES = ['cs2', 'lol', 'dota2', 'valorant', 'ow'];
 
+/**
+ * Helper to robustly extract all team IDs from teams field.
+ */
+function extractTeamIds(teamsField: any): string[] {
+  let ids: string[] = [];
+  if (!teamsField) return ids;
+
+  // If shape: { team1: {id:123,...}, team2: {id:456,...}}
+  if (typeof teamsField === 'object' && ('team1' in teamsField || 'team2' in teamsField)) {
+    if (teamsField.team1?.id) ids.push(teamsField.team1.id.toString());
+    if (teamsField.team2?.id) ids.push(teamsField.team2.id.toString());
+  } 
+  // If shape: [ {id:123,...}, {id:456,...} ]
+  else if (Array.isArray(teamsField)) {
+    teamsField.forEach((team) => {
+      if (team?.id) ids.push(team.id.toString());
+    });
+  } 
+  // If other shape, try to scan for numeric ids as a fallback
+  else if (typeof teamsField === 'object') {
+    Object.values(teamsField).forEach((val) => {
+      if (typeof val === 'object' && val?.id) ids.push(val.id.toString());
+    });
+  }
+  // Remove blanks and duplicates
+  return [...new Set(ids.filter(Boolean))];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,28 +74,46 @@ serve(async (req) => {
       try {
         console.log(`📥 Syncing ${game} teams...`);
         
-        // Get teams from recent matches first to sync relevant teams
-        const { data: recentMatches } = await supabase
+        // Get recent matches for this game
+        const { data: recentMatches, error: matchErr } = await supabase
           .from('pandascore_matches')
           .select('teams')
           .eq('esport_type', game)
           .gte('start_time', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
           .limit(100);
 
-        const teamIds = new Set();
-        recentMatches?.forEach(match => {
-          const teams = match.teams as any;
-          if (teams?.team1?.id) teamIds.add(teams.team1.id);
-          if (teams?.team2?.id) teamIds.add(teams.team2.id);
-        });
+        if (matchErr) {
+          console.error(`Error fetching matches for ${game}:`, matchErr);
+          continue;
+        }
 
-        console.log(`🎯 Found ${teamIds.size} team IDs to sync for ${game}`);
+        const teamIds = new Set();
+        for (const match of recentMatches ?? []) {
+          // Log actual teams field for debugging
+          console.log(`Match teams for ${game}:`, match.teams);
+          const ids = extractTeamIds(match.teams);
+          if (ids.length === 0) {
+            console.warn(`No team IDs extracted from teams:`, match.teams);
+          }
+          ids.forEach(id => {
+            // Only push numeric team IDs
+            if (/^\d+$/.test(id)) {
+              teamIds.add(id);
+            } else {
+              console.warn(`Skipping non-numeric/invalid team ID:`, id);
+            }
+          });
+        }
+
+        console.log(`🎯 Extracted ${teamIds.size} unique team IDs to sync for ${game}:`, Array.from(teamIds));
 
         // Fetch teams in batches
         for (const teamId of Array.from(teamIds)) {
           try {
+            const url = `https://api.pandascore.co/${game}/teams/${teamId}`;
+            console.log(`Fetching team from ${url}`);
             const response = await fetch(
-              `https://api.pandascore.co/${game}/teams/${teamId}`,
+              url,
               {
                 headers: {
                   'Authorization': `Bearer ${apiKey}`,
