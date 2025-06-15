@@ -32,6 +32,7 @@ export interface MatchInfo {
   tournament_name?: string;
   season_name?: string;
   class_name?: string;
+  league_name?: string; // <-- add this line
   esportType: string;
   bestOf: number;
   homeTeamPlayers?: Player[];
