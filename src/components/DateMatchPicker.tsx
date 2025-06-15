@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Trophy, Users } from 'lucide-react';
@@ -27,9 +27,33 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
   detailedMatchCounts = {}
 }) => {
   const [startDate, setStartDate] = useState(() => addDays(new Date(), -3));
-  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // Generate 14 days starting from startDate
   const dates = Array.from({ length: 14 }, (_, i) => addDays(startDate, i));
+
+  // When selectedDate changes, center it in the scrollable carousel
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+    const idx = dates.findIndex(date => isSameDay(date, selectedDate));
+    if (idx === -1) return;
+
+    const selectedButton = scrollContainerRef.current.querySelectorAll<HTMLButtonElement>('button')[idx];
+    if (selectedButton && scrollContainerRef.current) {
+      const scrollContainer = scrollContainerRef.current;
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const buttonRect = selectedButton.getBoundingClientRect();
+
+      // Calculate center
+      const scrollTo =
+        selectedButton.offsetLeft -
+        scrollContainer.offsetLeft -
+        containerRect.width / 2 +
+        buttonRect.width / 2;
+
+      scrollContainer.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  }, [selectedDate, startDate]); // also re-center if the week slides
 
   const scrollLeft = () => {
     setStartDate(prev => addDays(prev, -7));
@@ -56,68 +80,78 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
   };
 
   return (
-    <div className="bg-theme-gray-dark border border-theme-gray-medium rounded-lg p-4 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-white">Select Date</h3>
-        <div className="flex gap-2">
+    <div className="w-full mb-6">
+      {/* Controls row */}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-base font-semibold text-white">Select Date</h3>
+        <div className="flex gap-1">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={scrollLeft}
-            className="text-gray-400 border-gray-600 hover:bg-gray-700"
+            className="text-gray-400 border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
+            aria-label="Scroll dates left"
           >
             <ChevronLeft size={16} />
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={scrollRight}
-            className="text-gray-400 border-gray-600 hover:bg-gray-700"
+            className="text-gray-400 border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
+            aria-label="Scroll dates right"
           >
             <ChevronRight size={16} />
           </Button>
         </div>
       </div>
-      
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+
+      {/* Date carousel */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex gap-1 overflow-x-auto scrollbar-hide w-full pb-0.5"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {dates.map((date) => {
           const isSelected = isSameDay(date, selectedDate);
           const matchCount = getMatchCount(date);
           const detailedCount = getDetailedMatchCount(date);
           const isCurrentDay = isToday(date);
-          
+
           return (
             <button
               key={date.toISOString()}
               onClick={() => onDateSelect(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[90px] h-24 rounded-lg border-2 transition-all relative group
+                flex flex-col items-center justify-center min-w-[56px] max-w-[64px] w-14 h-20 rounded-md border-2 transition-all relative group
                 ${isSelected 
                   ? 'border-theme-purple bg-theme-purple/20 text-theme-purple' 
-                  : 'border-theme-gray-medium bg-theme-gray hover:border-theme-purple/50'
+                  : 'border-theme-gray-medium bg-theme-gray hover:border-theme-purple/50 text-white'
                 }
                 ${isCurrentDay ? 'ring-2 ring-blue-400/50' : ''}
+                p-0 mx-0
               `}
             >
-              <span className="text-xs text-gray-400 uppercase">
+              <span className="text-xs text-gray-400 uppercase leading-none mb-1">
                 {format(date, 'EEE')}
               </span>
-              <span className={`text-lg font-semibold ${isSelected ? 'text-theme-purple' : 'text-white'}`}>
+              <span className={`text-lg font-semibold leading-none ${isSelected ? 'text-theme-purple' : 'text-white'}`}>
                 {format(date, 'd')}
               </span>
               
               {/* Match count badges */}
               {matchCount > 0 && (
-                <div className="flex gap-1 mt-1">
+                <div className="flex gap-0.5 mt-1">
                   {detailedCount.professional > 0 && (
                     <Badge 
                       variant="outline" 
                       className={`
-                        text-xs px-1 py-0.5 min-w-0 h-4 flex items-center
+                        text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center
                         ${isSelected 
                           ? 'bg-blue-500/30 text-blue-300 border-blue-400/50' 
                           : 'bg-blue-500/20 text-blue-400 border-blue-400/30'
                         }
+                        font-medium
                       `}
                     >
                       <Trophy size={8} className="mr-0.5" />
@@ -128,11 +162,12 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                     <Badge 
                       variant="outline" 
                       className={`
-                        text-xs px-1 py-0.5 min-w-0 h-4 flex items-center
+                        text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center
                         ${isSelected 
                           ? 'bg-orange-500/30 text-orange-300 border-orange-400/50' 
                           : 'bg-orange-500/20 text-orange-400 border-orange-400/30'
                         }
+                        font-medium
                       `}
                     >
                       <Users size={8} className="mr-0.5" />
@@ -144,7 +179,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               
               {/* Tooltip */}
               {matchCount > 0 && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                   <div>Total: {detailedCount.total}</div>
                   {detailedCount.professional > 0 && <div>Pro: {detailedCount.professional}</div>}
                   {detailedCount.amateur > 0 && <div>Amateur: {detailedCount.amateur}</div>}

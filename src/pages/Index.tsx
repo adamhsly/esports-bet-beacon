@@ -251,10 +251,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
       <SearchableNavbar />
       <div className="flex-grow">
-        <div className="container mx-auto px-4 py-12">
+        {/* Removed container and page padding */}
+        <div className="w-full">
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
@@ -272,22 +273,14 @@ const Index = () => {
                   </Badge>
                 </div>
               </h2>
-              {/* Removed the sync button sections from here */}
             </div>
 
-            {loadingAllMatches ? (
-              <div className="flex justify-center items-center py-4 mb-4">
-                <Loader2 className="h-6 w-6 animate-spin text-theme-purple mr-2" />
-                <span className="text-sm text-gray-400">Loading match counts...</span>
-              </div>
-            ) : (
-              <DateMatchPicker
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-                matchCounts={matchCounts}
-                detailedMatchCounts={detailedMatchCounts}
-              />
-            )}
+            <DateMatchPicker
+              selectedDate={selectedDate}
+              onDateSelect={handleDateSelect}
+              matchCounts={matchCounts}
+              detailedMatchCounts={detailedMatchCounts}
+            />
 
             <div className="mb-4">
               <h3 className="text-lg font-medium text-gray-300">
