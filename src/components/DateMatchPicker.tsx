@@ -122,7 +122,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               key={date.toISOString()}
               onClick={() => onDateSelect(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[56px] max-w-[64px] w-14 h-20 rounded-md border-2 transition-all relative group
+                flex flex-col items-center justify-center min-w-[64px] max-w-[72px] w-16 h-16 rounded-md border-2 transition-all relative group
                 ${isSelected 
                   ? 'border-theme-purple bg-theme-purple/20 text-theme-purple' 
                   : 'border-theme-gray-medium bg-theme-gray hover:border-theme-purple/50 text-white'
