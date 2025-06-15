@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -147,10 +146,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         </div>
 
         <div className="flex justify-between items-center mt-4">
+          {/* CHANGED: Only show time, not date */}
           <div className="flex items-center text-gray-400 text-sm">
             <Clock size={14} className="mr-1.5" />
             <span>
-              {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
               {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
