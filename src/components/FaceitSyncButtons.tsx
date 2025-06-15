@@ -19,7 +19,7 @@ export const FaceitSyncButtons: React.FC = () => {
       if (success) {
         toast({
           title: "Sync Started",
-          description: "FACEIT live matches sync has been triggered. Check back in a moment for updates.",
+          description: "FACEIT live matches sync has been triggered with enhanced raw data capture. Check back in a moment for updates.",
         });
       } else {
         toast({

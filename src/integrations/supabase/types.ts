@@ -210,6 +210,7 @@ export type Database = {
           opponent_team_name: string | null
           player_id: string
           player_nickname: string
+          raw_response: Json | null
           team_name: string | null
           updated_at: string | null
         }
@@ -234,6 +235,7 @@ export type Database = {
           opponent_team_name?: string | null
           player_id: string
           player_nickname: string
+          raw_response?: Json | null
           team_name?: string | null
           updated_at?: string | null
         }
@@ -258,6 +260,7 @@ export type Database = {
           opponent_team_name?: string | null
           player_id?: string
           player_nickname?: string
+          raw_response?: Json | null
           team_name?: string | null
           updated_at?: string | null
         }

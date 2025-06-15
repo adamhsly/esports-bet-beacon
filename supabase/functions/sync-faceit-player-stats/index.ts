@@ -209,6 +209,7 @@ async function processPlayerMatchHistory(
         match_result: wonMatch ? 'win' : 'loss',
         competition_name: match.competition_name || null,
         competition_type: match.competition_type || null,
+        raw_response: match, // Store the complete raw match object
         // Note: Individual match stats would require additional API calls to match details
         // For now, we'll store basic match info and can enhance later
       };
@@ -231,7 +232,7 @@ async function processPlayerMatchHistory(
     if (error) {
       console.error(`❌ Error storing match history for player ${playerId}:`, error);
     } else {
-      console.log(`✅ Stored ${matchHistoryRecords.length} match history records for ${playerNickname}`);
+      console.log(`✅ Stored ${matchHistoryRecords.length} match history records with raw data for ${playerNickname}`);
     }
   }
 
@@ -343,7 +344,7 @@ serve(async (req) => {
         if (playerHistoryResponse.ok) {
           playerHistory = await playerHistoryResponse.json();
           
-          // Process and store match history
+          // Process and store match history with raw response data
           await processPlayerMatchHistory(
             supabase,
             playerId,
