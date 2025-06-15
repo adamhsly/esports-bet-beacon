@@ -34,6 +34,39 @@ const getLanguageLabel = (lang: string) => {
   return map[lang] || lang.toUpperCase();
 };
 
+/**
+ * Append or update a URL parameter.
+ */
+function addOrUpdateParam(url: string, key: string, value: string) {
+  try {
+    const u = new URL(url);
+    u.searchParams.set(key, value);
+    return u.toString();
+  } catch (e) {
+    // fallback for relative URLs
+    if (url.includes("?")) {
+      if (url.includes(`${key}=`)) return url;
+      return url + `&${key}=${value}`;
+    } else {
+      return url + `?${key}=${value}`;
+    }
+  }
+}
+
+/**
+ * For Twitch embed, append required "parent" parameter (domain part).
+ */
+function getEmbedUrlWithParent(stream: StreamInfo) {
+  if (stream.platform === "twitch" && stream.embed_url) {
+    let parentHost = window?.location?.hostname || "localhost";
+    // Remove port, just in case
+    parentHost = parentHost.replace(/:.*$/, "");
+    // Twitch sometimes already has parent= (rare)
+    return addOrUpdateParam(stream.embed_url, "parent", parentHost);
+  }
+  return stream.embed_url;
+}
+
 export const StreamViewer: React.FC<StreamViewerProps> = ({
   streams,
   showTabs = true,
@@ -72,14 +105,15 @@ export const StreamViewer: React.FC<StreamViewerProps> = ({
         </div>
       )}
 
-      <div className="aspect-w-16 aspect-h-9 bg-black rounded mb-2 relative overflow-hidden">
+      {/* Responsive aspect ratio for video */}
+      <div className="relative w-full overflow-hidden mb-2 rounded aspect-w-16 aspect-h-9 bg-black">
         <iframe
-          src={streams[selected].embed_url}
+          src={getEmbedUrlWithParent(streams[selected])}
           allowFullScreen
           allow="autoplay; picture-in-picture"
           className="w-full h-full border-0 rounded"
           title={`Stream ${selected + 1}`}
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox"
         />
       </div>
 
