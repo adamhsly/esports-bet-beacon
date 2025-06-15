@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Clock } from 'lucide-react';
+import { Clock, Trophy, Users } from 'lucide-react';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import { Badge } from '@/components/ui/badge';
 
 export interface TeamInfo {
   name: string;
@@ -48,18 +49,40 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { teams, startTime, tournament, tournament_name, source } = match;
+  const { teams, startTime, tournament, tournament_name, source, bestOf } = match;
   const matchDate = new Date(startTime);
 
   // Determine color based on match source
   let bgClass = 'bg-theme-gray-medium';
   let ringClass = '';
+  let badgeProps: { color: string; text: string; icon: React.ReactNode; badgeClass: string; outlineClass: string } = {
+    color: 'gray',
+    text: '',
+    icon: null,
+    badgeClass: '',
+    outlineClass: '',
+  };
+
   if (source === 'professional') {
     bgClass = 'bg-blue-950/70';
     ringClass = 'ring-1 ring-blue-400/30';
+    badgeProps = {
+      color: 'blue',
+      text: 'PRO',
+      icon: <Trophy size={13} className="mr-1" />,
+      badgeClass: 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+      outlineClass: 'variant-outline',
+    };
   } else if (source === 'amateur') {
     bgClass = 'bg-orange-950/70';
     ringClass = 'ring-1 ring-orange-400/30';
+    badgeProps = {
+      color: 'orange',
+      text: 'FACEIT',
+      icon: <Users size={13} className="mr-1" />,
+      badgeClass: 'bg-orange-500/20 text-orange-400 border-orange-400/30',
+      outlineClass: 'variant-outline',
+    };
   }
 
   return (
@@ -98,6 +121,19 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
               onError={e => (e.currentTarget.src = '/placeholder.svg')}
             />
           </div>
+        </div>
+        {/* NEW: Label row for PRO/FACEIT and Best of amount */}
+        <div className="flex items-center justify-between mt-2">
+          <Badge
+            variant="outline"
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeProps.badgeClass}`}
+          >
+            {badgeProps.icon}
+            {badgeProps.text}
+          </Badge>
+          <span className="text-xs text-gray-300 font-semibold ml-2">
+            BO{bestOf}
+          </span>
         </div>
       </div>
     </Card>
