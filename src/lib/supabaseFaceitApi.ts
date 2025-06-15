@@ -234,6 +234,27 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
   }
 };
 
+// New function to trigger enhanced player stats sync
+export const triggerFaceitPlayerStatsSync = async (playerIds: string[]): Promise<boolean> => {
+  try {
+    console.log(`🔄 Triggering player stats sync for ${playerIds.length} players...`);
+    const { data, error } = await supabase.functions.invoke('sync-faceit-player-stats', {
+      body: { player_ids: playerIds }
+    });
+    
+    if (error) {
+      console.error('Error triggering FACEIT player stats sync:', error);
+      return false;
+    }
+
+    console.log('FACEIT player stats sync triggered successfully:', data);
+    return true;
+  } catch (error) {
+    console.error('Error in triggerFaceitPlayerStatsSync:', error);
+    return false;
+  }
+};
+
 // New function to fetch specific match details with simplified roster extraction
 export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<any | null> => {
   try {
@@ -277,9 +298,18 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       });
     }
 
-    // Fetch enhanced player statistics
+    console.log(`🎮 Found ${playerIds.length} players, triggering stats sync...`);
+    
+    // Trigger player stats sync to ensure we have recent data including match history
+    if (playerIds.length > 0) {
+      await triggerFaceitPlayerStatsSync(playerIds);
+      // Wait a moment for the sync to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    // Fetch enhanced player statistics with match history
     const enhancedPlayers = await fetchFaceitPlayerStats(playerIds);
-    console.log(`✅ Retrieved enhanced stats for ${enhancedPlayers.length} players`);
+    console.log(`✅ Retrieved enhanced stats for ${enhancedPlayers.length} players with match history`);
 
     // Create a lookup map for enhanced player data
     const playerStatsMap = new Map<string, EnhancedFaceitPlayer>();
@@ -287,7 +317,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       playerStatsMap.set(player.player_id, player);
     });
 
-    // Enhanced roster extraction with comprehensive stats
+    // Enhanced roster extraction with comprehensive stats including match history
     const extractEnhancedPlayersFromRoster = (rosterData: any, teamName: string): any[] => {
       console.log(`🔍 Extracting enhanced players for ${teamName} from roster:`, rosterData);
       
@@ -314,13 +344,15 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
           total_matches: enhancedStats?.total_matches || 0,
           total_wins: enhancedStats?.total_wins || 0,
           win_rate: enhancedStats?.win_rate || 0,
-          avg_kd_ratio: enhancedStats?.avg_kd_ratio || 0,
+          kd_ratio: enhancedStats?.avg_kd_ratio || 0,
           avg_headshots_percent: enhancedStats?.avg_headshots_percent || 0,
           longest_win_streak: enhancedStats?.longest_win_streak || 0,
           current_win_streak: enhancedStats?.current_win_streak || 0,
           recent_form: enhancedStats?.recent_form || 'unknown',
+          recent_form_string: enhancedStats?.recent_form_string || '',
           recent_results: enhancedStats?.recent_results || [],
           map_stats: enhancedStats?.map_stats || {},
+          match_history: enhancedStats?.match_history || [],
           
           // Legacy fields for compatibility
           games: player.games || (player.lifetime && player.lifetime.Matches) || enhancedStats?.total_matches || 0
@@ -331,7 +363,8 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
           skill_level: processedPlayer.skill_level,
           faceit_elo: processedPlayer.faceit_elo,
           win_rate: processedPlayer.win_rate,
-          recent_form: processedPlayer.recent_form
+          recent_form: processedPlayer.recent_form,
+          match_history_count: processedPlayer.match_history?.length || 0
         });
         
         return processedPlayer;
@@ -352,6 +385,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
     console.log(`🎮 Enhanced roster extraction results:`);
     console.log(`   - Team 1: ${team1Roster.length} players with enhanced stats`);
     console.log(`   - Team 2: ${team2Roster.length} players with enhanced stats`);
+    console.log(`   - Total match history records: ${team1Roster.concat(team2Roster).reduce((sum, p) => sum + (p.match_history?.length || 0), 0)}`);
     
     // Transform to expected format with enhanced data
     const transformedMatch = {
@@ -392,17 +426,19 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       }
     };
     
-    console.log('✅ Final enhanced match with comprehensive player stats:', {
+    console.log('✅ Final enhanced match with comprehensive player stats and match history:', {
       id: transformedMatch.id,
       team1: {
         name: transformedMatch.teams[0].name,
         rosterCount: transformedMatch.teams[0].roster?.length || 0,
-        enhancedPlayers: transformedMatch.teams[0].roster?.filter(p => p.faceit_elo > 0).length || 0
+        enhancedPlayers: transformedMatch.teams[0].roster?.filter(p => p.faceit_elo > 0).length || 0,
+        playersWithHistory: transformedMatch.teams[0].roster?.filter(p => p.match_history && p.match_history.length > 0).length || 0
       },
       team2: {
         name: transformedMatch.teams[1].name,
         rosterCount: transformedMatch.teams[1].roster?.length || 0,
-        enhancedPlayers: transformedMatch.teams[1].roster?.filter(p => p.faceit_elo > 0).length || 0
+        enhancedPlayers: transformedMatch.teams[1].roster?.filter(p => p.faceit_elo > 0).length || 0,
+        playersWithHistory: transformedMatch.teams[1].roster?.filter(p => p.match_history && p.match_history.length > 0).length || 0
       }
     });
     
@@ -631,26 +667,6 @@ export const triggerFaceitUpcomingSync = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Error in triggerFaceitUpcomingSync:', error);
-    return false;
-  }
-};
-
-// New function to trigger enhanced player stats sync
-export const triggerFaceitPlayerStatsSync = async (playerIds: string[]): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('sync-faceit-player-stats', {
-      body: { player_ids: playerIds }
-    });
-    
-    if (error) {
-      console.error('Error triggering FACEIT player stats sync:', error);
-      return false;
-    }
-
-    console.log('FACEIT player stats sync triggered successfully:', data);
-    return true;
-  } catch (error) {
-    console.error('Error in triggerFaceitPlayerStatsSync:', error);
     return false;
   }
 };
