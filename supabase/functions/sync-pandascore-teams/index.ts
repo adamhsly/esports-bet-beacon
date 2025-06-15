@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -33,8 +32,16 @@ function extractTeamIds(teamsField: any): string[] {
       if (typeof val === 'object' && val?.id) ids.push(val.id.toString());
     });
   }
-  // Remove blanks and duplicates
-  return [...new Set(ids.filter(Boolean))];
+  // Remove blanks, "TBD", "team1", "team2" and duplicates
+  return [
+    ...new Set(
+      ids
+        .map(id => (id || '').toString().trim())
+        .filter(Boolean)
+        .filter(id => /^[0-9]+$/.test(id)) // numeric only
+        .filter(id => id !== "TBD" && id !== "team1" && id !== "team2")
+    )
+  ];
 }
 
 serve(async (req) => {
@@ -73,41 +80,103 @@ serve(async (req) => {
     for (const game of SUPPORTED_GAMES) {
       try {
         console.log(`📥 Syncing ${game} teams...`);
-        
-        // Get recent matches for this game
+
+        // 1. Get teams from matches in the last 30 days, plus next 7 days
+        let teamIds = new Set<string>();
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
         const { data: recentMatches, error: matchErr } = await supabase
           .from('pandascore_matches')
           .select('teams')
           .eq('esport_type', game)
-          .gte('start_time', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .limit(100);
+          .gte('start_time', thirtyDaysAgo)
+          .lte('start_time', sevenDaysFromNow)
+          .limit(200);
 
         if (matchErr) {
           console.error(`Error fetching matches for ${game}:`, matchErr);
+        } else {
+          for (const match of recentMatches ?? []) {
+            // Log actual teams field for debugging
+            console.log(`Match teams for ${game}:`, match.teams);
+            const ids = extractTeamIds(match.teams);
+            if (ids.length === 0) {
+              console.warn(`No team IDs extracted from teams:`, match.teams);
+            }
+            ids.forEach(id => {
+              // Only push numeric team IDs (already filtered in extractTeamIds)
+              teamIds.add(id);
+            });
+          }
+        }
+
+        // 2. Get teams from tournaments (from recent tournaments)
+        const { data: recentTournaments, error: tournErr } = await supabase
+          .from('pandascore_tournaments')
+          .select('raw_data')
+          .eq('esport_type', game)
+          .gte('start_date', thirtyDaysAgo)
+          .limit(100);
+
+        if (!tournErr && recentTournaments) {
+          for (const t of recentTournaments) {
+            const tRaw = t.raw_data;
+            // Some tournaments have teams or participants arrays
+            if (Array.isArray(tRaw?.teams)) {
+              for (const team of tRaw.teams) {
+                if (team?.id && /^[0-9]+$/.test(team.id.toString())) {
+                  teamIds.add(team.id.toString());
+                }
+              }
+            }
+            if (Array.isArray(tRaw?.participants)) {
+              for (const team of tRaw.participants) {
+                if (team?.id && /^[0-9]+$/.test(team.id.toString())) {
+                  teamIds.add(team.id.toString());
+                }
+              }
+            }
+          }
+        }
+
+        // Log what we have so far
+        console.log(`🎯 Extracted ${teamIds.size} unique team IDs for ${game} from matches/tournaments:`, Array.from(teamIds));
+
+        // 3. Fallback: If still < 10 teams, fallback to fetching first 25 teams from PandaScore API directly (seed the table)
+        if (teamIds.size < 10) {
+          console.warn(`⚠️  Fewer than 10 teams found for ${game}. Fallback to fetching teams list from PandaScore...`);
+          const fallbackUrl = `https://api.pandascore.co/${game}/teams?page=1&per_page=25`;
+          const resp = await fetch(
+            fallbackUrl,
+            {
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Accept': 'application/json'
+              }
+            }
+          );
+          if (resp.ok) {
+            const fallbackTeams = await resp.json();
+            for (const t of fallbackTeams) {
+              if (t?.id && /^[0-9]+$/.test(t.id.toString())) {
+                teamIds.add(t.id.toString());
+              }
+            }
+          } else {
+            console.error(`Error in fallback fetch for teams (${game}):`, resp.status, await resp.text());
+          }
+          console.log(`🎯 After fallback: now have ${teamIds.size} team IDs for ${game}:`, Array.from(teamIds));
+        }
+
+        // 4. If still none, log and skip
+        if (teamIds.size === 0) {
+          console.error(`❌ No teams found to sync for ${game}. Skipping.`);
           continue;
         }
 
-        const teamIds = new Set();
-        for (const match of recentMatches ?? []) {
-          // Log actual teams field for debugging
-          console.log(`Match teams for ${game}:`, match.teams);
-          const ids = extractTeamIds(match.teams);
-          if (ids.length === 0) {
-            console.warn(`No team IDs extracted from teams:`, match.teams);
-          }
-          ids.forEach(id => {
-            // Only push numeric team IDs
-            if (/^\d+$/.test(id)) {
-              teamIds.add(id);
-            } else {
-              console.warn(`Skipping non-numeric/invalid team ID:`, id);
-            }
-          });
-        }
-
-        console.log(`🎯 Extracted ${teamIds.size} unique team IDs to sync for ${game}:`, Array.from(teamIds));
-
-        // Fetch teams in batches
+        // 5. Fetch and upsert teams
         for (const teamId of Array.from(teamIds)) {
           try {
             const url = `https://api.pandascore.co/${game}/teams/${teamId}`;
@@ -142,7 +211,6 @@ serve(async (req) => {
               last_synced_at: new Date().toISOString()
             };
 
-            // Upsert team data
             const { error: upsertError } = await supabase
               .from('pandascore_teams')
               .upsert(transformedTeam, {
@@ -163,7 +231,7 @@ serve(async (req) => {
               .select('created_at, updated_at')
               .eq('team_id', team.id.toString())
               .eq('esport_type', game)
-              .single();
+              .maybeSingle();
 
             if (existing && existing.created_at === existing.updated_at) {
               totalAdded++;
@@ -171,7 +239,7 @@ serve(async (req) => {
               totalUpdated++;
             }
 
-            // Rate limiting - be more conservative with team requests
+            // Respect API rate limits on team requests
             await new Promise(resolve => setTimeout(resolve, 1000));
 
           } catch (error) {
