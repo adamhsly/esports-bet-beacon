@@ -301,19 +301,22 @@ const Index = () => {
                     <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
                       🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
-                    <Accordion type="multiple" defaultValue={
-                      Object.keys(groupMatchesByLeague(dateFilteredLiveMatches))
-                    }>
+                    <Accordion
+                      type="multiple"
+                      defaultValue={Object.keys(groupMatchesByLeague(dateFilteredLiveMatches))}
+                    >
                       {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
                         ([league, matches]) => (
                           <AccordionItem key={league} value={league}>
                             <AccordionTrigger asChild>
-                              {/* Wrap in a single button for a11y */}
+                              {
+                                /* Only pass a single <button> as the child! */
+                              }
                               <button
                                 className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
                                 type="button"
                               >
-                                {league}
+                                {String(league)}
                               </button>
                             </AccordionTrigger>
                             <AccordionContent>
@@ -338,9 +341,10 @@ const Index = () => {
                     <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
                       📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
-                    <Accordion type="multiple" defaultValue={
-                      Object.keys(groupMatchesByLeague(dateFilteredUpcomingMatches))
-                    }>
+                    <Accordion
+                      type="multiple"
+                      defaultValue={Object.keys(groupMatchesByLeague(dateFilteredUpcomingMatches))}
+                    >
                       {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
                         ([league, matches]) => (
                           <AccordionItem key={league} value={league}>
@@ -349,7 +353,7 @@ const Index = () => {
                                 className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
                                 type="button"
                               >
-                                {league}
+                                {String(league)}
                               </button>
                             </AccordionTrigger>
                             <AccordionContent>
