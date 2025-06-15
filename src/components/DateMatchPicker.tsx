@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -135,8 +134,11 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               <span className="text-xs text-gray-400 uppercase leading-none mb-1">
                 {format(date, 'EEE')}
               </span>
-              <span className={`text-lg font-semibold leading-none ${isSelected ? 'text-theme-purple' : 'text-white'}`}>
-                {format(date, 'd')}
+              <span className={`
+                text-[13px] font-semibold leading-none
+                ${isSelected ? 'text-theme-purple' : 'text-white'}
+              `}>
+                {format(date, 'MMM d')}
               </span>
               
               {/* Match count badges */}
