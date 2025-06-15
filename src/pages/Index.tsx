@@ -239,8 +239,6 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       <div className="flex-grow">
-        <Hero />
-        
         <div className="container mx-auto px-4 py-12">
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
