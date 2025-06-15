@@ -17,12 +17,6 @@ import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -301,35 +295,23 @@ const Index = () => {
                     <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
                       🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
-                    <Accordion
-                      type="multiple"
-                      defaultValue={Object.keys(groupMatchesByLeague(dateFilteredLiveMatches))}
-                    >
-                      {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
-                        ([league, matches]) => (
-                          // Only pass a single <button> as the AccordionTrigger child!
-                          <AccordionItem key={league} value={league}>
-                            <AccordionTrigger asChild>
-                              <button
-                                className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
-                                type="button"
-                              >
-                                {String(league)}
-                              </button>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {matches.map(match => (
-                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                    <MatchCard match={match} />
-                                  </div>
-                                ))}
+                    {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
+                      ([league, matches]) => (
+                        <div key={league} className="mb-6">
+                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
+                            {league}
+                          </div>
+                          {/* Add horizontal padding to each MatchCard */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {matches.map(match => (
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
                               </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        )
-                      )}
-                    </Accordion>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
 
@@ -339,35 +321,23 @@ const Index = () => {
                     <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
                       📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
-                    <Accordion
-                      type="multiple"
-                      defaultValue={Object.keys(groupMatchesByLeague(dateFilteredUpcomingMatches))}
-                    >
-                      {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
-                        ([league, matches]) => (
-                          // Only pass a single <button> as the AccordionTrigger child!
-                          <AccordionItem key={league} value={league}>
-                            <AccordionTrigger asChild>
-                              <button
-                                className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
-                                type="button"
-                              >
-                                {String(league)}
-                              </button>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {matches.map(match => (
-                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                    <MatchCard match={match} />
-                                  </div>
-                                ))}
+                    {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
+                      ([league, matches]) => (
+                        <div key={league} className="mb-6">
+                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
+                            {league}
+                          </div>
+                          {/* Add horizontal padding to each MatchCard */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {matches.map(match => (
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
                               </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        )
-                      )}
-                    </Accordion>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
 
