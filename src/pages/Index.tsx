@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -236,7 +237,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       <SearchableNavbar />
       <div className="flex-grow">
         <div className="container mx-auto px-4 py-12">
@@ -257,16 +258,7 @@ const Index = () => {
                   </Badge>
                 </div>
               </h2>
-              <div className="flex gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs text-gray-400">FACEIT Sync</span>
-                  <FaceitSyncButtons />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs text-gray-400">PandaScore Sync</span>
-                  <PandaScoreSyncButtons />
-                </div>
-              </div>
+              {/* Removed the sync button sections from here */}
             </div>
 
             {loadingAllMatches ? (
@@ -334,7 +326,7 @@ const Index = () => {
                   <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
                     <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
                     <p className="text-sm text-gray-500">
-                      Try selecting a different date or use the sync buttons above to refresh match data.
+                      Try selecting a different date or use the sync buttons at the bottom to refresh match data.
                     </p>
                   </div>
                 )}
@@ -349,9 +341,21 @@ const Index = () => {
           />
         </div>
       </div>
+      {/* Sync Buttons moved here at the very bottom, above Footer */}
+      <div className="w-full max-w-6xl mx-auto px-4 pb-8 flex flex-col md:flex-row gap-6 justify-center items-stretch">
+        <div className="flex-1">
+          <span className="block text-xs text-gray-400 mb-1 ml-1">FACEIT Sync</span>
+          <FaceitSyncButtons />
+        </div>
+        <div className="flex-1">
+          <span className="block text-xs text-gray-400 mb-1 ml-1">PandaScore Sync</span>
+          <PandaScoreSyncButtons />
+        </div>
+      </div>
       <Footer />
     </div>
   );
 };
 
 export default Index;
+
