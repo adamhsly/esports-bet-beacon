@@ -86,7 +86,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
     <div className="w-full mb-6">
       {/* Controls row */}
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-base font-semibold text-white pl-2">Select Date</h3>
+        <h3 className="text-base font-semibold text-white">Select Date</h3>
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
             <Button

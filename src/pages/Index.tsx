@@ -259,7 +259,7 @@ const Index = () => {
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming flex items-center pl-2">
+              <h2 className="text-2xl font-bold font-gaming flex items-center">
                 <Trophy className="h-6 w-6 mr-2 text-blue-400" />
                 <span className="highlight-gradient">Esports</span> Matches
                 <div className="flex gap-2 ml-3">
@@ -274,7 +274,6 @@ const Index = () => {
                 </div>
               </h2>
             </div>
-
             <DateMatchPicker
               selectedDate={selectedDate}
               onDateSelect={handleDateSelect}
