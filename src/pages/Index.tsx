@@ -307,11 +307,9 @@ const Index = () => {
                     >
                       {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
                         ([league, matches]) => (
+                          // Only pass a single <button> as the AccordionTrigger child!
                           <AccordionItem key={league} value={league}>
                             <AccordionTrigger asChild>
-                              {
-                                /* Only pass a single <button> as the child! */
-                              }
                               <button
                                 className="w-full text-left font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide cursor-pointer select-none hover:text-theme-purple/70 transition-colors"
                                 type="button"
@@ -347,6 +345,7 @@ const Index = () => {
                     >
                       {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
                         ([league, matches]) => (
+                          // Only pass a single <button> as the AccordionTrigger child!
                           <AccordionItem key={league} value={league}>
                             <AccordionTrigger asChild>
                               <button
