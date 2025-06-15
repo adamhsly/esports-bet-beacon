@@ -188,6 +188,89 @@ export type Database = {
         }
         Relationships: []
       }
+      faceit_player_match_history: {
+        Row: {
+          adr: number | null
+          assists: number | null
+          competition_name: string | null
+          competition_type: string | null
+          created_at: string | null
+          deaths: number | null
+          faceit_elo_change: number | null
+          headshots: number | null
+          headshots_percent: number | null
+          id: string
+          kd_ratio: number | null
+          kills: number | null
+          map_name: string | null
+          match_date: string
+          match_id: string
+          match_result: string | null
+          mvps: number | null
+          opponent_team_name: string | null
+          player_id: string
+          player_nickname: string
+          team_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          adr?: number | null
+          assists?: number | null
+          competition_name?: string | null
+          competition_type?: string | null
+          created_at?: string | null
+          deaths?: number | null
+          faceit_elo_change?: number | null
+          headshots?: number | null
+          headshots_percent?: number | null
+          id?: string
+          kd_ratio?: number | null
+          kills?: number | null
+          map_name?: string | null
+          match_date: string
+          match_id: string
+          match_result?: string | null
+          mvps?: number | null
+          opponent_team_name?: string | null
+          player_id: string
+          player_nickname: string
+          team_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          adr?: number | null
+          assists?: number | null
+          competition_name?: string | null
+          competition_type?: string | null
+          created_at?: string | null
+          deaths?: number | null
+          faceit_elo_change?: number | null
+          headshots?: number | null
+          headshots_percent?: number | null
+          id?: string
+          kd_ratio?: number | null
+          kills?: number | null
+          map_name?: string | null
+          match_date?: string
+          match_id?: string
+          match_result?: string | null
+          mvps?: number | null
+          opponent_team_name?: string | null
+          player_id?: string
+          player_nickname?: string
+          team_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_faceit_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "faceit_player_stats"
+            referencedColumns: ["player_id"]
+          },
+        ]
+      }
       faceit_player_match_stats: {
         Row: {
           assists: number | null
@@ -277,6 +360,7 @@ export type Database = {
           nickname: string
           player_id: string
           recent_form: string | null
+          recent_form_string: string | null
           recent_results: Json | null
           skill_level: number | null
           total_matches: number | null
@@ -300,6 +384,7 @@ export type Database = {
           nickname: string
           player_id: string
           recent_form?: string | null
+          recent_form_string?: string | null
           recent_results?: Json | null
           skill_level?: number | null
           total_matches?: number | null
@@ -323,6 +408,7 @@ export type Database = {
           nickname?: string
           player_id?: string
           recent_form?: string | null
+          recent_form_string?: string | null
           recent_results?: Json | null
           skill_level?: number | null
           total_matches?: number | null

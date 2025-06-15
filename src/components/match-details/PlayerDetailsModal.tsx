@@ -8,7 +8,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Target, Trophy, TrendingUp, Zap } from 'lucide-react';
+import { User, Target, Trophy, TrendingUp, Zap, Calendar, MapPin } from 'lucide-react';
+import type { PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
 interface Player {
   nickname: string;
@@ -19,6 +20,8 @@ interface Player {
   win_rate?: number;
   kd_ratio?: number;
   recent_form?: string;
+  recent_form_string?: string;
+  match_history?: PlayerMatchHistory[];
 }
 
 interface PlayerDetailsModalProps {
@@ -37,6 +40,22 @@ const getSkillLevelColor = (level?: number): string => {
   if (level >= 5) return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30'; // Yellow for 5-6
   if (level >= 3) return 'bg-green-500/20 text-green-300 border-green-400/30'; // Green for 3-4
   return 'bg-red-500/20 text-red-300 border-red-400/30'; // Red for 1-2
+};
+
+// Helper function to get match result color
+const getMatchResultColor = (result: 'win' | 'loss'): string => {
+  return result === 'win' 
+    ? 'bg-green-500/20 text-green-300 border-green-400/30'
+    : 'bg-red-500/20 text-red-300 border-red-400/30';
+};
+
+// Helper function to format date
+const formatMatchDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric'
+  });
 };
 
 export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
@@ -69,7 +88,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-md">
+      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center space-x-3">
             <Avatar className="h-12 w-12">
@@ -135,16 +154,103 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             )}
 
             {/* Recent Form */}
-            {player.recent_form && (
+            {(player.recent_form || player.recent_form_string) && (
               <div className="p-3 bg-theme-gray-medium/30 rounded-lg text-center">
                 <div className="flex items-center justify-center mb-1">
                   <Zap className="h-4 w-4 text-purple-400 mr-1" />
                 </div>
-                <div className="flex justify-center">{getFormBadge(player.recent_form)}</div>
+                <div className="flex justify-center">
+                  {getFormBadge(player.recent_form_string || player.recent_form)}
+                </div>
                 <div className="text-xs text-gray-400 mt-1">Recent Form</div>
               </div>
             )}
           </div>
+
+          {/* Recent Match History */}
+          {player.match_history && player.match_history.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-blue-400" />
+                <h4 className="text-sm font-semibold text-white">Last 5 Matches</h4>
+              </div>
+              
+              <div className="space-y-2">
+                {player.match_history.slice(0, 5).map((match, index) => (
+                  <div 
+                    key={match.id}
+                    className="p-3 bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getMatchResultColor(match.match_result)}`}
+                        >
+                          {match.match_result.toUpperCase()}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {formatMatchDate(match.match_date)}
+                        </span>
+                      </div>
+                      {match.map_name && (
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="h-3 w-3 text-gray-400" />
+                          <span className="text-xs text-gray-300">{match.map_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-gray-300">
+                      <span className="font-medium text-white">{match.team_name}</span>
+                      {match.opponent_team_name && (
+                        <>
+                          <span className="text-gray-500 mx-1">vs</span>
+                          <span>{match.opponent_team_name}</span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {match.competition_name && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {match.competition_name}
+                      </div>
+                    )}
+
+                    {/* Match Stats (if available) */}
+                    {(match.kills !== undefined || match.deaths !== undefined || match.kd_ratio !== undefined) && (
+                      <div className="flex space-x-4 mt-2 pt-2 border-t border-theme-gray-medium/30">
+                        {match.kills !== undefined && (
+                          <div className="text-xs">
+                            <span className="text-gray-400">K:</span>
+                            <span className="text-white ml-1">{match.kills}</span>
+                          </div>
+                        )}
+                        {match.deaths !== undefined && (
+                          <div className="text-xs">
+                            <span className="text-gray-400">D:</span>
+                            <span className="text-white ml-1">{match.deaths}</span>
+                          </div>
+                        )}
+                        {match.assists !== undefined && (
+                          <div className="text-xs">
+                            <span className="text-gray-400">A:</span>
+                            <span className="text-white ml-1">{match.assists}</span>
+                          </div>
+                        )}
+                        {match.kd_ratio !== undefined && (
+                          <div className="text-xs">
+                            <span className="text-gray-400">K/D:</span>
+                            <span className="text-white ml-1">{match.kd_ratio.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Additional Stats Info */}
           {(!player.total_matches || player.total_matches === 0) && (

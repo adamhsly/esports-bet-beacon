@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -21,7 +20,31 @@ export interface EnhancedFaceitPlayer {
   current_win_streak?: number;
   recent_results?: string[];
   recent_form?: 'unknown' | 'poor' | 'average' | 'good' | 'excellent';
+  recent_form_string?: string;
   map_stats?: Record<string, any>;
+  match_history?: PlayerMatchHistory[];
+}
+
+// New interface for player match history
+export interface PlayerMatchHistory {
+  id: string;
+  match_id: string;
+  match_date: string;
+  map_name?: string;
+  team_name?: string;
+  opponent_team_name?: string;
+  match_result: 'win' | 'loss';
+  competition_name?: string;
+  competition_type?: string;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  kd_ratio?: number;
+  headshots?: number;
+  headshots_percent?: number;
+  mvps?: number;
+  adr?: number;
+  faceit_elo_change?: number;
 }
 
 // Helper function to map FACEIT statuses to display categories
@@ -113,6 +136,51 @@ const convertToMapStats = (jsonData: any): Record<string, any> => {
   return {};
 };
 
+// New function to fetch player match history
+export const fetchPlayerMatchHistory = async (playerId: string): Promise<PlayerMatchHistory[]> => {
+  try {
+    console.log(`📚 Fetching match history for player: ${playerId}`);
+    
+    const { data: matchHistory, error } = await supabase
+      .from('faceit_player_match_history')
+      .select('*')
+      .eq('player_id', playerId)
+      .order('match_date', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error('Error fetching player match history:', error);
+      return [];
+    }
+
+    console.log(`📊 Retrieved ${matchHistory?.length || 0} match history records for player ${playerId}`);
+    
+    return (matchHistory || []).map(match => ({
+      id: match.id,
+      match_id: match.match_id,
+      match_date: match.match_date,
+      map_name: match.map_name,
+      team_name: match.team_name,
+      opponent_team_name: match.opponent_team_name,
+      match_result: match.match_result as 'win' | 'loss',
+      competition_name: match.competition_name,
+      competition_type: match.competition_type,
+      kills: match.kills,
+      deaths: match.deaths,
+      assists: match.assists,
+      kd_ratio: match.kd_ratio,
+      headshots: match.headshots,
+      headshots_percent: match.headshots_percent,
+      mvps: match.mvps,
+      adr: match.adr,
+      faceit_elo_change: match.faceit_elo_change
+    }));
+  } catch (error) {
+    console.error('Error in fetchPlayerMatchHistory:', error);
+    return [];
+  }
+};
+
 // New function to fetch enhanced player stats
 export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<EnhancedFaceitPlayer[]> => {
   try {
@@ -130,25 +198,36 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
 
     console.log(`📊 Retrieved enhanced stats for ${players?.length || 0} players`);
     
-    return (players || []).map(player => ({
-      player_id: player.player_id,
-      nickname: player.nickname,
-      avatar: player.avatar,
-      country: player.country,
-      skill_level: player.skill_level,
-      faceit_elo: player.faceit_elo,
-      membership: player.membership,
-      total_matches: player.total_matches,
-      total_wins: player.total_wins,
-      win_rate: player.win_rate,
-      avg_kd_ratio: player.avg_kd_ratio,
-      avg_headshots_percent: player.avg_headshots_percent,
-      longest_win_streak: player.longest_win_streak,
-      current_win_streak: player.current_win_streak,
-      recent_results: convertToStringArray(player.recent_results),
-      recent_form: validateRecentForm(player.recent_form),
-      map_stats: convertToMapStats(player.map_stats)
-    }));
+    const enhancedPlayers = await Promise.all(
+      (players || []).map(async (player) => {
+        // Fetch match history for each player
+        const matchHistory = await fetchPlayerMatchHistory(player.player_id);
+        
+        return {
+          player_id: player.player_id,
+          nickname: player.nickname,
+          avatar: player.avatar,
+          country: player.country,
+          skill_level: player.skill_level,
+          faceit_elo: player.faceit_elo,
+          membership: player.membership,
+          total_matches: player.total_matches,
+          total_wins: player.total_wins,
+          win_rate: player.win_rate,
+          avg_kd_ratio: player.avg_kd_ratio,
+          avg_headshots_percent: player.avg_headshots_percent,
+          longest_win_streak: player.longest_win_streak,
+          current_win_streak: player.current_win_streak,
+          recent_results: convertToStringArray(player.recent_results),
+          recent_form: validateRecentForm(player.recent_form),
+          recent_form_string: player.recent_form_string,
+          map_stats: convertToMapStats(player.map_stats),
+          match_history: matchHistory
+        };
+      })
+    );
+    
+    return enhancedPlayers;
   } catch (error) {
     console.error('Error in fetchFaceitPlayerStats:', error);
     return [];

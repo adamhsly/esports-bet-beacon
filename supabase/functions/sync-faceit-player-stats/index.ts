@@ -175,6 +175,81 @@ function parseIntValue(value: string | undefined): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
+// Helper function to process and store match history
+async function processPlayerMatchHistory(
+  supabase: any,
+  playerId: string,
+  playerNickname: string,
+  playerHistory: FaceitPlayerHistory
+): Promise<void> {
+  if (!playerHistory?.items || playerHistory.items.length === 0) {
+    console.log(`⚠️ No match history available for player ${playerId}`);
+    return;
+  }
+
+  const matchHistoryRecords = [];
+
+  for (const match of playerHistory.items.slice(0, 5)) { // Only process last 5 matches
+    try {
+      // Determine which team the player was on
+      const playerTeam = match.teams.faction1.players.some(p => p.player_id === playerId) ? 'faction1' : 'faction2';
+      const opponentTeam = playerTeam === 'faction1' ? 'faction2' : 'faction1';
+      
+      // Determine match result for this player
+      const wonMatch = match.results.winner === playerTeam;
+      
+      const matchRecord = {
+        player_id: playerId,
+        match_id: match.match_id,
+        player_nickname: playerNickname,
+        match_date: new Date(match.finished_at * 1000).toISOString(),
+        map_name: match.maps?.[0]?.name || null,
+        team_name: match.teams[playerTeam].nickname,
+        opponent_team_name: match.teams[opponentTeam].nickname,
+        match_result: wonMatch ? 'win' : 'loss',
+        competition_name: match.competition_name || null,
+        competition_type: match.competition_type || null,
+        // Note: Individual match stats would require additional API calls to match details
+        // For now, we'll store basic match info and can enhance later
+      };
+
+      matchHistoryRecords.push(matchRecord);
+    } catch (error) {
+      console.error(`❌ Error processing match ${match.match_id} for player ${playerId}:`, error);
+    }
+  }
+
+  // Bulk insert match history records
+  if (matchHistoryRecords.length > 0) {
+    const { error } = await supabase
+      .from('faceit_player_match_history')
+      .upsert(matchHistoryRecords, { 
+        onConflict: 'player_id,match_id',
+        ignoreDuplicates: false 
+      });
+
+    if (error) {
+      console.error(`❌ Error storing match history for player ${playerId}:`, error);
+    } else {
+      console.log(`✅ Stored ${matchHistoryRecords.length} match history records for ${playerNickname}`);
+    }
+  }
+
+  // Update recent form string in player stats
+  const recentFormString = matchHistoryRecords
+    .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
+    .slice(0, 5)
+    .map(match => match.match_result === 'win' ? 'W' : 'L')
+    .join('');
+
+  if (recentFormString) {
+    await supabase
+      .from('faceit_player_stats')
+      .update({ recent_form_string: recentFormString })
+      .eq('player_id', playerId);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -267,6 +342,14 @@ serve(async (req) => {
         let playerHistory: FaceitPlayerHistory | null = null;
         if (playerHistoryResponse.ok) {
           playerHistory = await playerHistoryResponse.json();
+          
+          // Process and store match history
+          await processPlayerMatchHistory(
+            supabase,
+            playerId,
+            playerDetails.nickname,
+            playerHistory
+          );
         } else {
           console.warn(`⚠️ No match history available for player ${playerId}: ${playerHistoryResponse.status}`);
         }
@@ -294,7 +377,7 @@ serve(async (req) => {
           }
         });
 
-        // Extract recent results from history
+        // Extract recent results from history or stats
         const recentResults = playerHistory?.items.map(match => {
           const playerTeam = match.teams.faction1.players.some(p => p.player_id === playerId) ? 'faction1' : 'faction2';
           const wonMatch = match.results.winner === playerTeam;
