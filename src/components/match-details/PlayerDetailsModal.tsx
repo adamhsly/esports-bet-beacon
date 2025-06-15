@@ -178,14 +178,14 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
               </div>
               
               <div className="bg-theme-gray-medium/20 rounded-lg border border-theme-gray-medium/30 overflow-hidden">
-                <ScrollArea className="w-full max-h-64">
+                <ScrollArea className="w-full h-72">
                   <Table>
                     <TableHeader>
                       <TableRow className="border-theme-gray-medium/30 hover:bg-transparent">
-                        <TableHead className="text-gray-400 text-xs p-2">Result</TableHead>
-                        <TableHead className="text-gray-400 text-xs p-2">Teams</TableHead>
-                        <TableHead className="text-gray-400 text-xs p-2">Competition</TableHead>
-                        <TableHead className="text-gray-400 text-xs p-2 text-right">Date</TableHead>
+                        <TableHead className="text-gray-400 text-xs p-3">Result</TableHead>
+                        <TableHead className="text-gray-400 text-xs p-3">Teams</TableHead>
+                        <TableHead className="text-gray-400 text-xs p-3">Competition</TableHead>
+                        <TableHead className="text-gray-400 text-xs p-3 text-right">Date</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -194,7 +194,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                           key={match.id}
                           className="border-theme-gray-medium/20 hover:bg-theme-gray-medium/10"
                         >
-                          <TableCell className="p-2">
+                          <TableCell className="p-3">
                             <Badge 
                               variant="outline" 
                               className={`text-xs ${getMatchResultColor(match.match_result)}`}
@@ -202,18 +202,18 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                               {match.match_result?.toUpperCase() || 'N/A'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="p-2">
-                            <div className="text-xs text-white truncate max-w-32">
+                          <TableCell className="p-3">
+                            <div className="text-xs text-white truncate max-w-36">
                               <div className="font-medium">{match.team_name || 'Team'}</div>
                               <div className="text-gray-400 text-[10px]">vs {match.opponent_team_name || 'Opponent'}</div>
                             </div>
                           </TableCell>
-                          <TableCell className="p-2">
-                            <div className="text-xs text-gray-300 truncate max-w-24">
+                          <TableCell className="p-3">
+                            <div className="text-xs text-gray-300 truncate max-w-28">
                               {match.competition_name || 'N/A'}
                             </div>
                           </TableCell>
-                          <TableCell className="p-2 text-right">
+                          <TableCell className="p-3 text-right">
                             <div className="text-xs text-gray-400">
                               {formatMatchDate(match.match_date)}
                             </div>
@@ -222,6 +222,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                       ))}
                     </TableBody>
                   </Table>
+                  <div className="h-4" />
                 </ScrollArea>
               </div>
             </div>
