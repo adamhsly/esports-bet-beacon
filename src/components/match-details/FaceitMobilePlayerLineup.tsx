@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +26,17 @@ interface Team {
 interface FaceitMobilePlayerLineupProps {
   teams: Team[];
 }
+
+// Helper function to get color for skill level
+const getSkillLevelColor = (level?: number): string => {
+  if (!level) return 'bg-gray-500/20 text-gray-400 border-gray-400/30';
+  
+  if (level >= 9) return 'bg-purple-500/20 text-purple-300 border-purple-400/30'; // Purple for 9-10
+  if (level >= 7) return 'bg-orange-500/20 text-orange-300 border-orange-400/30'; // Orange for 7-8
+  if (level >= 5) return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30'; // Yellow for 5-6
+  if (level >= 3) return 'bg-green-500/20 text-green-300 border-green-400/30'; // Green for 3-4
+  return 'bg-red-500/20 text-red-300 border-red-400/30'; // Red for 1-2
+};
 
 export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> = ({ teams }) => {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -63,7 +73,7 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
       
       <div className="flex items-center space-x-1.5 flex-shrink-0">
         {player.skill_level && (
-          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+          <Badge variant="outline" className={`text-[10px] px-1 py-0 h-4 ${getSkillLevelColor(player.skill_level)}`}>
             {player.skill_level}
           </Badge>
         )}

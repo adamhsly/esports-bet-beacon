@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,17 @@ interface Team {
 interface FaceitPlayerLineupTableProps {
   teams: Team[];
 }
+
+// Helper function to get color for skill level
+const getSkillLevelColor = (level?: number): string => {
+  if (!level) return 'bg-gray-500/20 text-gray-400 border-gray-400/30';
+  
+  if (level >= 9) return 'bg-purple-500/20 text-purple-300 border-purple-400/30'; // Purple for 9-10
+  if (level >= 7) return 'bg-orange-500/20 text-orange-300 border-orange-400/30'; // Orange for 7-8
+  if (level >= 5) return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30'; // Yellow for 5-6
+  if (level >= 3) return 'bg-green-500/20 text-green-300 border-green-400/30'; // Green for 3-4
+  return 'bg-red-500/20 text-red-300 border-red-400/30'; // Red for 1-2
+};
 
 export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = ({ teams }) => {
   const isMobile = useMobile();
@@ -62,6 +74,94 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
     return roster?.some(player => player.total_matches && player.total_matches > 0) || false;
   };
 
+  const renderTeamTable = (team: Team) => (
+    <div>
+      <div className="flex items-center space-x-3 mb-6">
+        <img 
+          src={team.logo || team.avatar || '/placeholder.svg'} 
+          alt={team.name} 
+          className="w-8 h-8 object-contain"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
+        />
+        <h3 className="text-xl font-bold text-white">{team.name}</h3>
+        <Badge variant="outline">{team.roster?.length || 0} players</Badge>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
+              <TableHead className="text-gray-300 font-semibold">Player</TableHead>
+              <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
+              <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
+              <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
+              <TableHead className="text-gray-300 font-semibold text-center">K/D</TableHead>
+              <TableHead className="text-gray-300 font-semibold text-center">Form</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {team.roster?.map((player, idx) => (
+              <TableRow key={`${player.player_id}-${idx}`} className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
+                <TableCell className="py-3">
+                  <div className="flex items-center space-x-3">
+                    <img 
+                      src={player.avatar || '/placeholder.svg'} 
+                      alt={player.nickname} 
+                      className="w-8 h-8 rounded-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                    <span className="text-white font-medium text-sm">{player.nickname}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  {player.skill_level ? (
+                    <Badge variant="outline" className={`text-xs ${getSkillLevelColor(player.skill_level)}`}>
+                      {player.skill_level}
+                    </Badge>
+                  ) : (
+                    <span className="text-gray-500 text-xs">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <span className="text-white text-sm">
+                    {player.total_matches || '-'}
+                  </span>
+                </TableCell>
+                <TableCell className="text-center">
+                  {player.win_rate ? (
+                    <span className="text-green-400 text-sm font-semibold">
+                      {Math.round(player.win_rate)}%
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 text-xs">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  {player.kd_ratio ? (
+                    <span className="text-blue-400 text-sm font-semibold">
+                      {player.kd_ratio.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 text-xs">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  {getFormBadge(player.recent_form) || (
+                    <span className="text-gray-500 text-xs">-</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+
   return (
     <Card className="bg-theme-gray-dark border-theme-gray-medium overflow-hidden">
       <div className="p-6">
@@ -81,179 +181,8 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Team 1 */}
-          <div>
-            <div className="flex items-center space-x-3 mb-6">
-              <img 
-                src={team1.logo || team1.avatar || '/placeholder.svg'} 
-                alt={team1.name} 
-                className="w-8 h-8 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-              <h3 className="text-xl font-bold text-white">{team1.name}</h3>
-              <Badge variant="outline">{team1.roster?.length || 0} players</Badge>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
-                    <TableHead className="text-gray-300 font-semibold">Player</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">K/D</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Form</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {team1.roster?.map((player, idx) => (
-                    <TableRow key={`${player.player_id}-${idx}`} className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
-                      <TableCell className="py-3">
-                        <div className="flex items-center space-x-3">
-                          <img 
-                            src={player.avatar || '/placeholder.svg'} 
-                            alt={player.nickname} 
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder.svg';
-                            }}
-                          />
-                          <span className="text-white font-medium text-sm">{player.nickname}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {player.skill_level ? (
-                          <Badge variant="outline" className="text-xs">
-                            {player.skill_level}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-white text-sm">
-                          {player.total_matches || '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {player.win_rate ? (
-                          <span className="text-green-400 text-sm font-semibold">
-                            {Math.round(player.win_rate)}%
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {player.kd_ratio ? (
-                          <span className="text-blue-400 text-sm font-semibold">
-                            {player.kd_ratio.toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getFormBadge(player.recent_form) || (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Team 2 */}
-          <div>
-            <div className="flex items-center space-x-3 mb-6">
-              <img 
-                src={team2.logo || team2.avatar || '/placeholder.svg'} 
-                alt={team2.name} 
-                className="w-8 h-8 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-              <h3 className="text-xl font-bold text-white">{team2.name}</h3>
-              <Badge variant="outline">{team2.roster?.length || 0} players</Badge>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
-                    <TableHead className="text-gray-300 font-semibold">Player</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">K/D</TableHead>
-                    <TableHead className="text-gray-300 font-semibold text-center">Form</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {team2.roster?.map((player, idx) => (
-                    <TableRow key={`${player.player_id}-${idx}`} className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
-                      <TableCell className="py-3">
-                        <div className="flex items-center space-x-3">
-                          <img 
-                            src={player.avatar || '/placeholder.svg'} 
-                            alt={player.nickname} 
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder.svg';
-                            }}
-                          />
-                          <span className="text-white font-medium text-sm">{player.nickname}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {player.skill_level ? (
-                          <Badge variant="outline" className="text-xs">
-                            {player.skill_level}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-white text-sm">
-                          {player.total_matches || '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {player.win_rate ? (
-                          <span className="text-green-400 text-sm font-semibold">
-                            {Math.round(player.win_rate)}%
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {player.kd_ratio ? (
-                          <span className="text-blue-400 text-sm font-semibold">
-                            {player.kd_ratio.toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getFormBadge(player.recent_form) || (
-                          <span className="text-gray-500 text-xs">-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          {renderTeamTable(team1)}
+          {renderTeamTable(team2)}
         </div>
       </div>
     </Card>
