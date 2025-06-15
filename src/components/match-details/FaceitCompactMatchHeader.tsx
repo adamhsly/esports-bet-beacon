@@ -50,46 +50,57 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
-      <div className="p-4">
-        {/* Top Section - Tournament and Badges */}
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm text-gray-300">{match.tournament}</span>
-              <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
-                <Users size={12} className="mr-1" />
-                FACEIT
-              </Badge>
-            </div>
-            {match.faceitData?.region && (
-              <span className="text-xs text-orange-400">{match.faceitData.region}</span>
-            )}
+      <div className="p-3">
+        {/* Tournament and Platform Badge */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-sm font-medium text-white truncate">{match.tournament}</span>
+            <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30 text-xs">
+              <Users size={10} className="mr-1" />
+              FACEIT
+            </Badge>
           </div>
-          <Badge className="bg-theme-purple">
+          <Badge className="bg-theme-purple text-xs px-2 py-1">
             BO{match.bestOf || 1}
           </Badge>
         </div>
 
-        {/* Teams Section */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          {match.teams.map((team, index) => (
-            <div key={team.name || index} className={`flex flex-1 items-center ${index === 1 ? 'flex-row-reverse' : ''}`}>
-              <div className={`flex flex-col items-${index === 0 ? 'start' : 'end'} flex-1`}>
-                <img
-                  src={team.logo || '/placeholder.svg'}
-                  alt={`${team.name} logo`}
-                  className="w-12 h-12 object-contain mb-2"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-                <span className="text-sm font-bold text-white truncate">{team.name}</span>
-              </div>
-              {index === 0 && (
-                <span className="mx-4 text-lg text-gray-400 font-bold">vs</span>
-              )}
+        {/* Teams vs Section */}
+        <div className="flex items-center justify-center mb-3">
+          <div className="flex items-center gap-3">
+            {/* Team 1 */}
+            <div className="flex flex-col items-center">
+              <img
+                src={match.teams[0]?.logo || '/placeholder.svg'}
+                alt={`${match.teams[0]?.name} logo`}
+                className="w-10 h-10 object-contain mb-1"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
+              />
+              <span className="text-xs font-medium text-white text-center max-w-[60px] truncate">
+                {match.teams[0]?.name}
+              </span>
             </div>
-          ))}
+
+            {/* VS */}
+            <span className="text-lg font-bold text-gray-400 mx-2">vs</span>
+
+            {/* Team 2 */}
+            <div className="flex flex-col items-center">
+              <img
+                src={match.teams[1]?.logo || '/placeholder.svg'}
+                alt={`${match.teams[1]?.name} logo`}
+                className="w-10 h-10 object-contain mb-1"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
+              />
+              <span className="text-xs font-medium text-white text-center max-w-[60px] truncate">
+                {match.teams[1]?.name}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Section - Time and Notification */}
@@ -111,32 +122,25 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
             )}
           </div>
 
-          {/* Notification Button */}
+          {/* Notification Button - Icon only for mobile */}
           {isChecking ? (
-            <Button disabled variant="outline" size="sm">
-              <Loader2 className="h-3 w-3 animate-spin mr-1" />
-              Loading...
+            <Button disabled variant="outline" size="icon">
+              <Loader2 className="h-3 w-3 animate-spin" />
             </Button>
           ) : (
             <Button 
               variant={isSubscribed ? "default" : "outline"}
-              size="sm"
+              size="icon"
               className={isSubscribed ? 'bg-orange-500 hover:bg-orange-600' : ''}
               onClick={toggleNotification}
               disabled={isLoading || isMatchInPast()}
             >
               {isLoading ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : isSubscribed ? (
-                <>
-                  <BellRing className="h-3 w-3 mr-1" />
-                  Subscribed
-                </>
+                <BellRing className="h-3 w-3" />
               ) : (
-                <>
-                  <Bell className="h-3 w-3 mr-1" />
-                  Get Notified
-                </>
+                <Bell className="h-3 w-3" />
               )}
             </Button>
           )}
