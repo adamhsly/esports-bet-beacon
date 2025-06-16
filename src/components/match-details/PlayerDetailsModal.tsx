@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -11,18 +10,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User, Target, Trophy, TrendingUp, Zap, Calendar } from 'lucide-react';
-import type { PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
+import { EnhancedFaceitPlayer, PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
-interface Player {
-  nickname: string;
-  player_id: string;
-  skill_level?: number;
-  avatar?: string;
-  total_matches?: number;
-  win_rate?: number;
-  kd_ratio?: number;
-  recent_form?: string;
-  recent_form_string?: string;
+interface Player extends EnhancedFaceitPlayer {
   match_history?: PlayerMatchHistory[];
 }
 
@@ -169,7 +159,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             )}
           </div>
 
-          {/* Recent Match History - Condensed Table */}
+          {/* Recent Match History - Fixed Table */}
           {player.match_history && player.match_history.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -197,7 +187,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                           <TableCell className="p-3">
                             <Badge 
                               variant="outline" 
-                              className={`text-xs ${getMatchResultColor(match.match_result)}`}
+                              className={`text-xs ${getMatchResultColor(match.match_result as 'win' | 'loss' || 'loss')}`}
                             >
                               {match.match_result?.toUpperCase() || 'N/A'}
                             </Badge>

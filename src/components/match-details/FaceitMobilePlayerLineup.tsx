@@ -3,37 +3,10 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User } from 'lucide-react';
 import { PlayerDetailsModal } from './PlayerDetailsModal';
+import { EnhancedFaceitPlayer, PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
-interface Player {
-  nickname: string;
-  player_id: string;
-  skill_level?: number;
-  avatar?: string;
-  total_matches?: number;
-  win_rate?: number;
-  kd_ratio?: number;
-  recent_form?: string;
-  recent_form_string?: string;
-  match_history?: Array<{
-    id: string;
-    match_id: string;
-    match_date: string;
-    map_name?: string;
-    team_name?: string;
-    opponent_team_name?: string;
-    match_result: 'win' | 'loss';
-    competition_name?: string;
-    competition_type?: string;
-    kills?: number;
-    deaths?: number;
-    assists?: number;
-    kd_ratio?: number;
-    headshots?: number;
-    headshots_percent?: number;
-    mvps?: number;
-    adr?: number;
-    faceit_elo_change?: number;
-  }>;
+interface Player extends EnhancedFaceitPlayer {
+  match_history?: PlayerMatchHistory[];
 }
 
 interface Team {
