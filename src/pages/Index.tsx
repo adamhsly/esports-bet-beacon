@@ -152,7 +152,7 @@ const Index = () => {
     if (faceitMatches.length > 0) {
       console.log('🔍 Sample FACEIT match data:', {
         id: faceitMatches[0].id,
-        match_id: faceitMatches[0].match_id, // Log the actual match_id field
+        match_id: (faceitMatches[0] as any).match_id, // Cast to any to access database field
         status: faceitMatches[0].status,
         faceitData: faceitMatches[0].faceitData,
         hasResults: !!(faceitMatches[0].faceitData?.results)
@@ -162,7 +162,7 @@ const Index = () => {
     // 🔧 ENHANCED: Transform FACEIT matches to use correct match_id for routing
     const transformedFaceitMatches = faceitMatches.map(match => ({
       ...match,
-      id: `faceit_${match.match_id}`, // Use the actual match_id from database
+      id: `faceit_${(match as any).match_id}`, // Use the actual match_id from database
     }));
     
     console.log(`📊 Transformed ${transformedFaceitMatches.length} FACEIT matches with correct IDs`);
