@@ -83,9 +83,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   let to = '/';
   if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
     if (isFinished) {
-      to = `/faceit/finished/${id}`;
+      to = `/faceit/finished/${id.replace('faceit_', '')}`;
     } else {
-      to = `/faceit/match/${id}`;
+      to = `/faceit/match/${id.replace('faceit_', '')}`;
     }
   } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
     to = `/pandascore/match/${id}`;

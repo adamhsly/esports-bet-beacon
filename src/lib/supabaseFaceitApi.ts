@@ -472,7 +472,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
     const { data: matches, error } = await supabase
       .from('faceit_matches')
       .select('*')
-      .in('status', ['upcoming', 'ongoing', 'finished', 'ready', 'scheduled', 'configured', 'running', 'live'])
+      .in('status', ['upcoming', 'ongoing', 'finished', 'ready', 'scheduled', 'configured', 'running', 'live', 'completed', 'cancelled', 'aborted'])
       .order('scheduled_at', { ascending: true })
       .limit(500);
 
@@ -494,6 +494,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
 
     return (matches || []).map(match => {
       const teams = match.teams as any;
+      const rawData = match.raw_data as any;
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
@@ -508,6 +509,12 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         if (faceitData.best_of) {
           bestOf = faceitData.best_of;
         }
+      }
+
+      // Extract results from raw_data if available
+      let results = null;
+      if (rawData && rawData.results) {
+        results = rawData.results;
       }
 
       return {
@@ -529,11 +536,13 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
+        status: match.status,
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
           organizedBy: match.organized_by,
-          calculateElo: match.calculate_elo
+          calculateElo: match.calculate_elo,
+          results: results
         }
       } satisfies MatchInfo;
     });
@@ -559,7 +568,7 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
 
     if (error) {
       console.error('Error fetching FACEIT matches by date:', error);
-      return { live: [], upcoming: [] };
+      return { live: [], upcoming: [], finished: [] };
     }
 
     console.log(`📊 Found ${matches?.length || 0} FACEIT matches for ${date.toDateString()}`);
@@ -575,6 +584,7 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
 
     const transformedMatches = (matches || []).map(match => {
       const teams = match.teams as any;
+      const rawData = match.raw_data as any;
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
@@ -589,6 +599,12 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
         if (faceitData.best_of) {
           bestOf = faceitData.best_of;
         }
+      }
+
+      // Extract results from raw_data if available
+      let results = null;
+      if (rawData && rawData.results) {
+        results = rawData.results;
       }
 
       return {
@@ -610,16 +626,18 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
+        status: match.status,
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
           organizedBy: match.organized_by,
-          calculateElo: match.calculate_elo
+          calculateElo: match.calculate_elo,
+          results: results
         }
       } satisfies MatchInfo;
     });
 
-    // Separate live and upcoming matches using correct status mapping
+    // Separate live, upcoming, and finished matches using correct status mapping
     const live = transformedMatches.filter(match => {
       const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
       const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
@@ -632,7 +650,13 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
       return statusCategory === 'upcoming';
     });
 
-    console.log(`📊 FACEIT matches categorized: ${live.length} live, ${upcoming.length} upcoming`);
+    const finished = transformedMatches.filter(match => {
+      const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
+      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
+      return statusCategory === 'finished';
+    });
+
+    console.log(`📊 FACEIT matches categorized: ${live.length} live, ${upcoming.length} upcoming, ${finished.length} finished`);
     
     // Log specific match details for debugging
     if (matches && matches.length > 0) {
@@ -644,10 +668,89 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
       });
     }
     
-    return { live, upcoming };
+    return { live, upcoming, finished };
   } catch (error) {
     console.error('Error in fetchSupabaseFaceitMatchesByDate:', error);
-    return { live: [], upcoming: [] };
+    return { live: [], upcoming: [], finished: [] };
+  }
+};
+
+// New function to fetch recent finished matches for homepage
+export const fetchSupabaseFaceitFinishedMatches = async (limit: number = 10): Promise<MatchInfo[]> => {
+  try {
+    console.log('🏁 Fetching recent finished FACEIT matches...');
+    
+    const { data: matches, error } = await supabase
+      .from('faceit_matches')
+      .select('*')
+      .in('status', ['finished', 'completed', 'cancelled', 'aborted'])
+      .order('finished_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching finished FACEIT matches:', error);
+      return [];
+    }
+
+    console.log(`🏁 Found ${matches?.length || 0} finished FACEIT matches`);
+
+    return (matches || []).map(match => {
+      const teams = match.teams as any;
+      const rawData = match.raw_data as any;
+      
+      // Extract best_of from raw_data or faceit_data, fallback to 3
+      let bestOf = 3;
+      if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+        const rawData = match.raw_data as any;
+        if (rawData.best_of) {
+          bestOf = rawData.best_of;
+        }
+      }
+      if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+        const faceitData = match.faceit_data as any;
+        if (faceitData.best_of) {
+          bestOf = faceitData.best_of;
+        }
+      }
+
+      // Extract results from raw_data if available
+      let results = null;
+      if (rawData && rawData.results) {
+        results = rawData.results;
+      }
+
+      return {
+        id: `faceit_${match.match_id}`,
+        teams: [
+          {
+            name: teams.faction1?.name || teams.team1?.name || 'Team 1',
+            logo: teams.faction1?.avatar || teams.team1?.logo || '/placeholder.svg',
+            id: teams.faction1?.id || teams.team1?.id || `team1_${match.match_id}`
+          },
+          {
+            name: teams.faction2?.name || teams.team2?.name || 'Team 2',
+            logo: teams.faction2?.avatar || teams.team2?.logo || '/placeholder.svg',
+            id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`
+          }
+        ] as [any, any],
+        startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+        tournament: match.competition_name || 'FACEIT Match',
+        esportType: match.game || 'cs2',
+        bestOf: bestOf,
+        source: 'amateur' as const,
+        status: match.status,
+        faceitData: {
+          region: match.region,
+          competitionType: match.competition_type,
+          organizedBy: match.organized_by,
+          calculateElo: match.calculate_elo,
+          results: results
+        }
+      } satisfies MatchInfo;
+    });
+  } catch (error) {
+    console.error('Error in fetchSupabaseFaceitFinishedMatches:', error);
+    return [];
   }
 };
 
