@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface FaceitPlayer {
@@ -11,15 +12,16 @@ export interface EnhancedFaceitPlayer extends FaceitPlayer {
   total_matches?: number;
   win_rate?: number;
   avg_kd_ratio?: number;
-  kd_ratio?: number; // Add this property
+  kd_ratio?: number;
   avg_headshots_percent?: number;
   recent_form?: string;
-  recent_form_string?: string; // Add this property
+  recent_form_string?: string;
   country?: string;
   membership?: string;
   faceit_elo?: number;
   current_win_streak?: number;
   recent_results?: string[];
+  match_history?: PlayerMatchHistory[];
 }
 
 export interface PlayerMatchHistory {
@@ -74,8 +76,8 @@ export interface FaceitMatch {
   startTime: string;
   endTime?: string;
   tournament: string;
-  esportType: string; // Add this property
-  bestOf: number; // Add this property
+  esportType: string;
+  bestOf: number;
   source?: 'amateur' | 'professional';
 }
 
@@ -175,6 +177,11 @@ export const triggerFaceitUpcomingSync = async (): Promise<boolean> => {
 };
 
 const transformFaceitMatch = (match: any): FaceitMatch => {
+  // Ensure we have exactly 2 teams
+  const teamsArray = match.teams || [];
+  const team1 = teamsArray[0] || { name: 'Team 1', logo: '/placeholder.svg', roster: [] };
+  const team2 = teamsArray[1] || { name: 'Team 2', logo: '/placeholder.svg', roster: [] };
+
   return {
     id: match.match_id,
     match_id: match.match_id,
@@ -190,13 +197,22 @@ const transformFaceitMatch = (match: any): FaceitMatch => {
     configured_at: match.configured_at,
     calculate_elo: match.calculate_elo,
     version: match.version,
-    teams: (match.teams || []).map((team: any, index: number) => ({
-      id: team.id || `team_${index + 1}`,
-      name: team.name,
-      logo: team.logo || team.avatar || '/placeholder.svg',
-      avatar: team.avatar,
-      roster: team.roster || []
-    })),
+    teams: [
+      {
+        id: team1.id || `team_1`,
+        name: team1.name,
+        logo: team1.logo || team1.avatar || '/placeholder.svg',
+        avatar: team1.avatar,
+        roster: team1.roster || []
+      },
+      {
+        id: team2.id || `team_2`,
+        name: team2.name,
+        logo: team2.logo || team2.avatar || '/placeholder.svg',
+        avatar: team2.avatar,
+        roster: team2.roster || []
+      }
+    ],
     voting: match.voting,
     faceitData: match.faceit_data,
     raw_data: match.raw_data,
@@ -204,8 +220,39 @@ const transformFaceitMatch = (match: any): FaceitMatch => {
     startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
     endTime: match.finished_at,
     tournament: match.competition_name || 'FACEIT Match',
-    esportType: 'csgo', // Add default esportType for FACEIT matches
-    bestOf: 1, // Add default bestOf for FACEIT matches
+    esportType: 'csgo',
+    bestOf: 1,
     source: 'amateur'
   };
+};
+
+export const fetchSupabaseFaceitAllMatches = async (limit = 100) => {
+  return fetchSupabaseFaceitMatches(limit);
+};
+
+export const fetchSupabaseFaceitMatchesByDate = async (date: string, limit = 50) => {
+  console.log('🔍 Fetching FACEIT matches by date from Supabase...');
+  
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const { data, error } = await supabase
+    .from('faceit_matches')
+    .select('*')
+    .gte('scheduled_at', startOfDay.toISOString())
+    .lte('scheduled_at', endOfDay.toISOString())
+    .order('scheduled_at', { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    console.error('❌ Error fetching FACEIT matches by date:', error);
+    throw new Error(`Failed to fetch FACEIT matches by date: ${error.message}`);
+  }
+
+  console.log(`✅ Fetched ${data?.length || 0} FACEIT matches for date: ${date}`);
+  
+  return data?.map(transformFaceitMatch) || [];
 };
