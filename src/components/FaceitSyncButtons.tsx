@@ -15,12 +15,12 @@ export const FaceitSyncButtons: React.FC = () => {
   const handleLiveSync = async () => {
     setSyncingLive(true);
     try {
-      // Sync multiple games: CS2, Valorant, League of Legends, Dota 2
-      const success = await triggerFaceitLiveSync(['cs2', 'valorant', 'lol', 'dota2']);
+      // Sync 10 games: CS2, Valorant, League of Legends, Dota 2, Rocket League, Rainbow Six, PUBG, Team Fortress 2, World of Tanks, Call of Duty
+      const success = await triggerFaceitLiveSync(['cs2', 'valorant', 'lol', 'dota2', 'rocketleague', 'rainbow6', 'pubg', 'tf2', 'wot', 'cod']);
       if (success) {
         toast({
           title: "Multi-Game Sync Started",
-          description: "FACEIT live matches sync has been triggered for CS2, Valorant, LoL, and Dota 2 with enhanced raw data capture. Check back in a moment for updates.",
+          description: "FACEIT live matches sync has been triggered for 10 games (CS2, Valorant, LoL, Dota 2, Rocket League, Rainbow Six, PUBG, TF2, WoT, CoD) with enhanced raw data capture. Check back in a moment for updates.",
         });
       } else {
         toast({
@@ -44,12 +44,12 @@ export const FaceitSyncButtons: React.FC = () => {
   const handleUpcomingSync = async () => {
     setSyncingUpcoming(true);
     try {
-      // Sync multiple games: CS2, Valorant, League of Legends, Dota 2
-      const success = await triggerFaceitUpcomingSync(['cs2', 'valorant', 'lol', 'dota2']);
+      // Sync 10 games: CS2, Valorant, League of Legends, Dota 2, Rocket League, Rainbow Six, PUBG, Team Fortress 2, World of Tanks, Call of Duty
+      const success = await triggerFaceitUpcomingSync(['cs2', 'valorant', 'lol', 'dota2', 'rocketleague', 'rainbow6', 'pubg', 'tf2', 'wot', 'cod']);
       if (success) {
         toast({
           title: "Multi-Game Sync Started",
-          description: "FACEIT upcoming matches sync has been triggered for CS2, Valorant, LoL, and Dota 2. Check back in a moment for updates.",
+          description: "FACEIT upcoming matches sync has been triggered for 10 games (CS2, Valorant, LoL, Dota 2, Rocket League, Rainbow Six, PUBG, TF2, WoT, CoD). Check back in a moment for updates.",
         });
       } else {
         toast({
@@ -119,7 +119,7 @@ export const FaceitSyncButtons: React.FC = () => {
         className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
       >
         <RefreshCw className={`h-4 w-4 mr-1 ${syncingLive ? 'animate-spin' : ''}`} />
-        {syncingLive ? 'Syncing...' : 'Sync Live (Multi-Game)'}
+        {syncingLive ? 'Syncing...' : 'Sync Live (10 Games)'}
       </Button>
       <Button
         variant="outline"
@@ -129,7 +129,7 @@ export const FaceitSyncButtons: React.FC = () => {
         className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
       >
         <Users className={`h-4 w-4 mr-1 ${syncingUpcoming ? 'animate-spin' : ''}`} />
-        {syncingUpcoming ? 'Syncing...' : 'Sync Upcoming (Multi-Game)'}
+        {syncingUpcoming ? 'Syncing...' : 'Sync Upcoming (10 Games)'}
       </Button>
       <Button
         variant="outline"
