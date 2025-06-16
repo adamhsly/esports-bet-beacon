@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -8,13 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { StreamViewer } from '@/components/StreamViewer';
 import { FaceitLiveMatchHeader } from '@/components/match-details/FaceitLiveMatchHeader';
 import { FaceitLiveScorecard } from '@/components/match-details/FaceitLiveScorecard';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
 import { FaceitLiveRoomAccess } from '@/components/match-details/FaceitLiveRoomAccess';
 import { fetchSupabaseFaceitMatchDetails } from '@/lib/supabaseFaceitApi';
-import { extractFaceitStreamsFromMatch } from '@/utils/faceitStreamUtils';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
@@ -100,9 +97,6 @@ const FaceitLiveMatchPage = () => {
     );
   }
 
-  // Extract streams from FACEIT match data
-  const streams = extractFaceitStreamsFromMatch(matchDetails);
-
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
@@ -125,21 +119,6 @@ const FaceitLiveMatchPage = () => {
             <div className="px-2 md:px-8">
               <FaceitLiveMatchHeader match={matchDetails} />
             </div>
-
-            {/* Championship Stream Widget - Only show if streams are available */}
-            {streams.length > 0 && (
-              <div className="px-2 md:px-8">
-                <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                      <Radio className="h-5 w-5 mr-2 text-red-400 animate-pulse" />
-                      Live Championship Stream
-                    </h3>
-                    <StreamViewer streams={streams} showTabs={streams.length > 1} />
-                  </div>
-                </Card>
-              </div>
-            )}
             
             {/* Live Scorecard */}
             <div className="px-2 md:px-8">

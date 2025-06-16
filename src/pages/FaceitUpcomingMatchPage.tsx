@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -8,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
-import { StreamViewer } from '@/components/StreamViewer';
 import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader';
 import { FaceitCompactMatchHeader } from '@/components/match-details/FaceitCompactMatchHeader';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
@@ -16,7 +14,6 @@ import { FaceitMobilePlayerLineup } from '@/components/match-details/FaceitMobil
 import { FaceitPreMatchStats } from '@/components/match-details/FaceitPreMatchStats';
 import { FaceitPlayerLineupTable } from '@/components/match-details/FaceitPlayerLineupTable';
 import { fetchSupabaseFaceitMatchDetails } from '@/lib/supabaseFaceitApi';
-import { extractFaceitStreamsFromMatch } from '@/utils/faceitStreamUtils';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useMobile } from '@/hooks/useMobile';
@@ -101,9 +98,6 @@ const FaceitUpcomingMatchPage = () => {
     );
   }
 
-  // Extract streams from FACEIT match data
-  const streams = extractFaceitStreamsFromMatch(matchDetails);
-
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
@@ -131,18 +125,6 @@ const FaceitUpcomingMatchPage = () => {
                 <FaceitMatchHeader match={matchDetails} />
               )}
             </div>
-
-            {/* Championship Stream Widget - Only show if streams are available */}
-            {streams.length > 0 && (
-              <div className="px-2 md:px-8">
-                <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-4">Championship Stream</h3>
-                    <StreamViewer streams={streams} showTabs={streams.length > 1} />
-                  </div>
-                </Card>
-              </div>
-            )}
             
             {/* Player Lineup - Use mobile-optimized component on mobile */}
             <div className="px-2 md:px-8">

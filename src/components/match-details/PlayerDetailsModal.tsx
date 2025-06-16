@@ -11,9 +11,18 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User, Target, Trophy, TrendingUp, Zap, Calendar } from 'lucide-react';
-import { EnhancedFaceitPlayer, PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
+import type { PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
-interface Player extends EnhancedFaceitPlayer {
+interface Player {
+  nickname: string;
+  player_id: string;
+  skill_level?: number;
+  avatar?: string;
+  total_matches?: number;
+  win_rate?: number;
+  kd_ratio?: number;
+  recent_form?: string;
+  recent_form_string?: string;
   match_history?: PlayerMatchHistory[];
 }
 
@@ -36,8 +45,7 @@ const getSkillLevelColor = (level?: number): string => {
 };
 
 // Helper function to get match result color
-const getMatchResultColor = (result?: 'win' | 'loss'): string => {
-  if (!result) return 'bg-gray-500/20 text-gray-300 border-gray-400/30';
+const getMatchResultColor = (result: 'win' | 'loss'): string => {
   return result === 'win' 
     ? 'bg-green-500/20 text-green-300 border-green-400/30'
     : 'bg-red-500/20 text-red-300 border-red-400/30';
@@ -137,14 +145,12 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             )}
 
             {/* K/D Ratio */}
-            {(player.kd_ratio !== undefined || player.avg_kd_ratio !== undefined) && (
+            {player.kd_ratio !== undefined && (
               <div className="p-3 bg-theme-gray-medium/30 rounded-lg text-center">
                 <div className="flex items-center justify-center mb-1">
                   <Target className="h-4 w-4 text-red-400 mr-1" />
                 </div>
-                <div className="text-lg font-bold text-red-400">
-                  {(player.kd_ratio || player.avg_kd_ratio)!.toFixed(2)}
-                </div>
+                <div className="text-lg font-bold text-red-400">{player.kd_ratio.toFixed(2)}</div>
                 <div className="text-xs text-gray-400">K/D Ratio</div>
               </div>
             )}
@@ -156,14 +162,14 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                   <Zap className="h-4 w-4 text-purple-400 mr-1" />
                 </div>
                 <div className="flex justify-center">
-                  {getFormBadge(player.recent_form || player.recent_form_string)}
+                  {getFormBadge(player.recent_form_string || player.recent_form)}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Recent Form</div>
               </div>
             )}
           </div>
 
-          {/* Recent Match History - Fixed Table */}
+          {/* Recent Match History - Condensed Table */}
           {player.match_history && player.match_history.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center space-x-2">

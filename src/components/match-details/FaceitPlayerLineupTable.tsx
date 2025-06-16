@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,10 +5,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { User, Trophy, Target, TrendingUp } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { PlayerDetailsModal } from './PlayerDetailsModal';
-import { EnhancedFaceitPlayer, PlayerMatchHistory } from '@/lib/supabaseFaceitApi';
 
-interface Player extends EnhancedFaceitPlayer {
-  match_history?: PlayerMatchHistory[];
+interface Player {
+  nickname: string;
+  player_id: string;
+  skill_level?: number;
+  avatar?: string;
+  total_matches?: number;
+  win_rate?: number;
+  kd_ratio?: number;
+  recent_form?: string;
+  recent_form_string?: string;
+  match_history?: Array<{
+    id: string;
+    match_id: string;
+    match_date: string;
+    map_name?: string;
+    team_name?: string;
+    opponent_team_name?: string;
+    match_result: 'win' | 'loss';
+    competition_name?: string;
+    competition_type?: string;
+    kills?: number;
+    deaths?: number;
+    assists?: number;
+    kd_ratio?: number;
+    headshots?: number;
+    headshots_percent?: number;
+    mvps?: number;
+    adr?: number;
+    faceit_elo_change?: number;
+  }>;
 }
 
 interface Team {
@@ -149,16 +175,16 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                  {(player.kd_ratio || player.avg_kd_ratio) ? (
+                  {player.kd_ratio ? (
                     <span className="text-blue-400 text-sm font-semibold">
-                      {(player.kd_ratio || player.avg_kd_ratio)!.toFixed(2)}
+                      {player.kd_ratio.toFixed(2)}
                     </span>
                   ) : (
                     <span className="text-gray-500 text-xs">-</span>
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                  {getFormBadge(player.recent_form || player.recent_form_string) || (
+                  {getFormBadge(player.recent_form) || (
                     <span className="text-gray-500 text-xs">-</span>
                   )}
                 </TableCell>
