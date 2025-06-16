@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -517,7 +518,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         results = rawData.results;
       }
 
-      return {
+      const transformedMatch = {
         id: `faceit_${match.match_id}`,
         teams: [
           {
@@ -536,15 +537,26 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
-        status: match.status,
+        status: match.status, // Include status for routing logic
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
           organizedBy: match.organized_by,
           calculateElo: match.calculate_elo,
-          results: results
+          results: results // Include results for winner display
         }
       } satisfies MatchInfo;
+
+      // Debug log for finished matches
+      if (match.status === 'finished' && results) {
+        console.log(`✅ Finished match with results: ${transformedMatch.id}`, {
+          status: match.status,
+          results: results,
+          teams: [teams.faction1?.name, teams.faction2?.name]
+        });
+      }
+
+      return transformedMatch;
     });
   } catch (error) {
     console.error('Error in fetchSupabaseFaceitAllMatches:', error);
@@ -626,13 +638,13 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
-        status: match.status,
+        status: match.status, // Include status for routing logic
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
           organizedBy: match.organized_by,
           calculateElo: match.calculate_elo,
-          results: results
+          results: results // Include results for winner display
         }
       } satisfies MatchInfo;
     });

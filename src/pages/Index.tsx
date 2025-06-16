@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Loader2, Trophy, Users } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
-import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate } from '@/lib/supabaseFaceitApi';
+import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate, fetchSupabaseFaceitFinishedMatches } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
@@ -103,6 +104,7 @@ const Index = () => {
   const [selectedGameType, setSelectedGameType] = useState<string>('all');
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
+  const [dateFilteredFinishedMatches, setDateFilteredFinishedMatches] = useState<MatchInfo[]>([]);
   const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const [loadingAllMatches, setLoadingAllMatches] = useState(true);
@@ -115,9 +117,19 @@ const Index = () => {
   const loadAllMatchesFromDatabase = async (): Promise<MatchInfo[]> => {
     console.log('🔄 Loading matches from database (FACEIT + PandaScore only)...');
     
-    // Fetch FACEIT matches
+    // Fetch FACEIT matches with full data including status and results
     const faceitMatches = await fetchSupabaseFaceitAllMatches();
     console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches from database`);
+    
+    // Debug: Log a sample FACEIT match to verify data structure
+    if (faceitMatches.length > 0) {
+      console.log('🔍 Sample FACEIT match data:', {
+        id: faceitMatches[0].id,
+        status: faceitMatches[0].status,
+        faceitData: faceitMatches[0].faceitData,
+        hasResults: !!(faceitMatches[0].faceitData?.results)
+      });
+    }
     
     // Fetch PandaScore matches only (excluding SportDevs)
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
@@ -207,7 +219,29 @@ const Index = () => {
     });
   };
 
-  // Load date-filtered matches using the same unified dataset
+  // Helper function to map FACEIT statuses to display categories
+  const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+    const lowerStatus = status.toLowerCase();
+    
+    // Live match statuses
+    if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
+      return 'live';
+    }
+    
+    // Upcoming match statuses
+    if (['upcoming', 'ready', 'scheduled', 'configured'].includes(lowerStatus)) {
+      return 'upcoming';
+    }
+    
+    // Finished match statuses
+    if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+      return 'finished';
+    }
+    
+    return null;
+  };
+
+  // Load date-filtered matches using the same unified dataset with proper categorization
   useEffect(() => {
     async function loadDateFilteredMatches() {
       setLoadingDateFiltered(true);
@@ -229,23 +263,49 @@ const Index = () => {
         
         console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date from unified dataset`);
 
-        const faceitMatches = dateFilteredMatches.filter(m => m.source === 'amateur');
-        const professionalMatches = dateFilteredMatches.filter(m => m.source === 'professional');
-        
-        console.log(`📊 Date-filtered breakdown: ${faceitMatches.length} FACEIT + ${professionalMatches.length} PandaScore = ${dateFilteredMatches.length} total`);
-        
-        // For now, we'll categorize all matches as upcoming since we're using the database
+        // Properly categorize matches based on their status and source
         const liveMatches: MatchInfo[] = [];
-        const upcomingMatches = dateFilteredMatches.sort((a, b) => 
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-        );
+        const upcomingMatches: MatchInfo[] = [];
+        const finishedMatches: MatchInfo[] = [];
         
-        setDateFilteredLiveMatches(liveMatches);
-        setDateFilteredUpcomingMatches(upcomingMatches);
+        dateFilteredMatches.forEach(match => {
+          console.log(`🔍 Categorizing match ${match.id}:`, {
+            source: match.source,
+            status: match.status,
+            hasResults: !!(match.faceitData?.results)
+          });
+          
+          if (match.source === 'amateur') {
+            // FACEIT match categorization
+            const statusCategory = getFaceitStatusCategory(match.status || '');
+            
+            if (statusCategory === 'live') {
+              liveMatches.push(match);
+            } else if (statusCategory === 'finished') {
+              finishedMatches.push(match);
+            } else {
+              upcomingMatches.push(match);
+            }
+          } else {
+            // PandaScore matches - for now assume upcoming
+            upcomingMatches.push(match);
+          }
+        });
+        
+        console.log(`📊 Date-filtered categorization: ${liveMatches.length} live, ${upcomingMatches.length} upcoming, ${finishedMatches.length} finished`);
+        
+        // Sort matches by start time
+        const sortByStartTime = (a: MatchInfo, b: MatchInfo) => 
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        
+        setDateFilteredLiveMatches(liveMatches.sort(sortByStartTime));
+        setDateFilteredUpcomingMatches(upcomingMatches.sort(sortByStartTime));
+        setDateFilteredFinishedMatches(finishedMatches.sort(sortByStartTime));
       } catch (error) {
         console.error('Error loading date-filtered matches:', error);
         setDateFilteredLiveMatches([]);
         setDateFilteredUpcomingMatches([]);
+        setDateFilteredFinishedMatches([]);
       } finally {
         setLoadingDateFiltered(false);
       }
@@ -371,7 +431,7 @@ const Index = () => {
                 {dateFilteredUpcomingMatches.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
-                      
+                      📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
                       ([league, matches]) => (
@@ -393,8 +453,36 @@ const Index = () => {
                   </div>
                 )}
 
+                {/* Finished Matches for Selected Date - Grouped by League */}
+                {dateFilteredFinishedMatches.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
+                      ✅ Finished ({dateFilteredFinishedMatches.length})
+                    </h4>
+                    {Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(
+                      ([league, matches]) => (
+                        <div key={league} className="mb-6">
+                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
+                            {league}
+                          </div>
+                          {/* Add horizontal padding to each MatchCard */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {matches.map(match => (
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+
                 {/* No Matches State */}
-                {((!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && dateFilteredUpcomingMatches.length === 0) && (
+                {((!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && 
+                  dateFilteredUpcomingMatches.length === 0 && 
+                  dateFilteredFinishedMatches.length === 0) && (
                   <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
                     <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
                     <p className="text-sm text-gray-500">
