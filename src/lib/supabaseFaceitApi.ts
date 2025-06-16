@@ -11,8 +11,10 @@ export interface EnhancedFaceitPlayer extends FaceitPlayer {
   total_matches?: number;
   win_rate?: number;
   avg_kd_ratio?: number;
+  kd_ratio?: number; // Add this property
   avg_headshots_percent?: number;
   recent_form?: string;
+  recent_form_string?: string; // Add this property
   country?: string;
   membership?: string;
   faceit_elo?: number;
@@ -57,7 +59,7 @@ export interface FaceitMatch {
   teams: Array<{
     id?: string;
     name: string;
-    logo: string; // Make this required
+    logo: string;
     avatar?: string;
     roster?: FaceitPlayer[];
   }>;
@@ -71,7 +73,10 @@ export interface FaceitMatch {
   championship_stream_url?: string;
   startTime: string;
   endTime?: string;
-  tournament: string; // Make this required
+  tournament: string;
+  esportType: string; // Add this property
+  bestOf: number; // Add this property
+  source?: 'amateur' | 'professional';
 }
 
 export const fetchSupabaseFaceitMatches = async (limit = 50) => {
@@ -188,7 +193,7 @@ const transformFaceitMatch = (match: any): FaceitMatch => {
     teams: (match.teams || []).map((team: any, index: number) => ({
       id: team.id || `team_${index + 1}`,
       name: team.name,
-      logo: team.logo || team.avatar || '/placeholder.svg', // Ensure logo is always present
+      logo: team.logo || team.avatar || '/placeholder.svg',
       avatar: team.avatar,
       roster: team.roster || []
     })),
@@ -198,6 +203,9 @@ const transformFaceitMatch = (match: any): FaceitMatch => {
     championship_stream_url: match.championship_stream_url,
     startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
     endTime: match.finished_at,
-    tournament: match.competition_name || 'FACEIT Match', // Ensure tournament is always present
+    tournament: match.competition_name || 'FACEIT Match',
+    esportType: 'csgo', // Add default esportType for FACEIT matches
+    bestOf: 1, // Add default bestOf for FACEIT matches
+    source: 'amateur'
   };
 };

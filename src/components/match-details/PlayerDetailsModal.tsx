@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -35,7 +36,8 @@ const getSkillLevelColor = (level?: number): string => {
 };
 
 // Helper function to get match result color
-const getMatchResultColor = (result: 'win' | 'loss'): string => {
+const getMatchResultColor = (result?: 'win' | 'loss'): string => {
+  if (!result) return 'bg-gray-500/20 text-gray-300 border-gray-400/30';
   return result === 'win' 
     ? 'bg-green-500/20 text-green-300 border-green-400/30'
     : 'bg-red-500/20 text-red-300 border-red-400/30';
@@ -135,12 +137,14 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             )}
 
             {/* K/D Ratio */}
-            {player.kd_ratio !== undefined && (
+            {(player.kd_ratio !== undefined || player.avg_kd_ratio !== undefined) && (
               <div className="p-3 bg-theme-gray-medium/30 rounded-lg text-center">
                 <div className="flex items-center justify-center mb-1">
                   <Target className="h-4 w-4 text-red-400 mr-1" />
                 </div>
-                <div className="text-lg font-bold text-red-400">{player.kd_ratio.toFixed(2)}</div>
+                <div className="text-lg font-bold text-red-400">
+                  {(player.kd_ratio || player.avg_kd_ratio)!.toFixed(2)}
+                </div>
                 <div className="text-xs text-gray-400">K/D Ratio</div>
               </div>
             )}
@@ -152,7 +156,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                   <Zap className="h-4 w-4 text-purple-400 mr-1" />
                 </div>
                 <div className="flex justify-center">
-                  {getFormBadge(player.recent_form_string || player.recent_form)}
+                  {getFormBadge(player.recent_form || player.recent_form_string)}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Recent Form</div>
               </div>
@@ -187,7 +191,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                           <TableCell className="p-3">
                             <Badge 
                               variant="outline" 
-                              className={`text-xs ${getMatchResultColor(match.match_result as 'win' | 'loss' || 'loss')}`}
+                              className={`text-xs ${getMatchResultColor(match.match_result)}`}
                             >
                               {match.match_result?.toUpperCase() || 'N/A'}
                             </Badge>

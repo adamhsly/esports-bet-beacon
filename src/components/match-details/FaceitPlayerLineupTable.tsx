@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -148,16 +149,16 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                  {player.kd_ratio ? (
+                  {(player.kd_ratio || player.avg_kd_ratio) ? (
                     <span className="text-blue-400 text-sm font-semibold">
-                      {player.kd_ratio.toFixed(2)}
+                      {(player.kd_ratio || player.avg_kd_ratio)!.toFixed(2)}
                     </span>
                   ) : (
                     <span className="text-gray-500 text-xs">-</span>
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                  {getFormBadge(player.recent_form) || (
+                  {getFormBadge(player.recent_form || player.recent_form_string) || (
                     <span className="text-gray-500 text-xs">-</span>
                   )}
                 </TableCell>
