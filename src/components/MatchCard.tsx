@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Clock, Trophy, Users } from 'lucide-react';
+import { Clock, Trophy, Users, CheckCircle } from 'lucide-react';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
@@ -37,11 +37,19 @@ export interface MatchInfo {
   homeTeamPlayers?: Player[];
   awayTeamPlayers?: Player[];
   source?: 'professional' | 'amateur';
+  status?: string;
   faceitData?: {
     region?: string;
     competitionType?: string;
     organizedBy?: string;
     calculateElo?: boolean;
+    results?: {
+      winner: string;
+      score: {
+        faction1: number;
+        faction2: number;
+      };
+    };
   };
 }
 
@@ -50,8 +58,9 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { teams, startTime, tournament, tournament_name, source, bestOf, id } = match;
+  const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData } = match;
   const matchDate = new Date(startTime);
+  const isFinished = status === 'finished' || status === 'completed';
 
   // Determine color based on match source
   let bgClass = 'bg-theme-gray-medium';
@@ -73,7 +82,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   // Determine the correct route for the given match
   let to = '/';
   if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
-    to = `/faceit/match/${id}`;
+    if (isFinished) {
+      to = `/faceit/finished/${id}`;
+    } else {
+      to = `/faceit/match/${id}`;
+    }
   } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
     to = `/pandascore/match/${id}`;
   } else {
@@ -120,6 +133,14 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     }
   };
 
+  // Determine winner and styling for finished matches
+  const getWinnerStyling = (teamIndex: number) => {
+    if (!isFinished || !faceitData?.results) return '';
+    
+    const isWinner = faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
+    return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+  };
+
   return (
     <Link
       to={to}
@@ -135,20 +156,28 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         style={{ pointerEvents: "auto" }}
       >
         <div className="flex flex-col gap-1 px-3 py-2">
-          {/* Tournament info and time row */}
+          {/* Tournament info and time/result row */}
           <div className="flex justify-between items-center mb-0.5">
             <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
               {tournament_name || tournament}
             </span>
-            <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
-              <Clock size={14} className="mr-1" />
-              {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </span>
+            {isFinished && faceitData?.results ? (
+              <div className="flex items-center gap-1 text-xs text-green-400 font-semibold">
+                <CheckCircle size={12} />
+                <span>{faceitData.results.score.faction1} - {faceitData.results.score.faction2}</span>
+              </div>
+            ) : (
+              <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
+                <Clock size={14} className="mr-1" />
+                {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
+          
           {/* Teams row */}
           <div className="flex items-center justify-between min-h-10 mt-0.5">
             {/* Team 1 */}
-            <div className="flex items-center gap-2 flex-1">
+            <div className={`flex items-center gap-2 flex-1 rounded-lg p-1 transition-all ${getWinnerStyling(0)}`}>
               <img
                 src={getEnhancedTeamLogoUrl(teams[0])}
                 alt={`${teams[0].name} logo`}
@@ -157,9 +186,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
               />
               <span className="truncate font-semibold text-sm text-white max-w-[90px]">{teams[0].name}</span>
             </div>
+            
             <span className="text-md font-bold text-gray-400 mx-2">vs</span>
+            
             {/* Team 2 */}
-            <div className="flex items-center gap-2 flex-1 justify-end">
+            <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-1 transition-all ${getWinnerStyling(1)}`}>
               <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{teams[1].name}</span>
               <img
                 src={getEnhancedTeamLogoUrl(teams[1])}
@@ -169,7 +200,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
               />
             </div>
           </div>
-          {/* Label row for PRO/FACEIT and BO amount */}
+          
+          {/* Label row for PRO/FACEIT, BO amount, and status */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center">
               <Badge
@@ -185,6 +217,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
               >
                 BO{bestOf}
               </Badge>
+              {isFinished && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-400/30 ml-1"
+                >
+                  <CheckCircle size={10} className="mr-1" />
+                  FINISHED
+                </Badge>
+              )}
             </div>
             <span className="flex-1" />
           </div>
@@ -193,4 +234,3 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     </Link>
   );
 };
-

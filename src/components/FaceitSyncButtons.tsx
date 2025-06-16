@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { triggerFaceitLiveSync, triggerFaceitUpcomingSync } from '@/lib/supabaseFaceitApi';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, Users, Wrench } from 'lucide-react';
+import { RefreshCw, Users, Wrench, CheckCircle } from 'lucide-react';
 
 export const FaceitSyncButtons: React.FC = () => {
   const [syncingLive, setSyncingLive] = useState(false);
@@ -20,12 +20,12 @@ export const FaceitSyncButtons: React.FC = () => {
       if (success) {
         toast({
           title: "Multi-Game Sync Started",
-          description: "FACEIT live matches sync has been triggered for 10 games (CS2, Valorant, LoL, Dota 2, Rocket League, Rainbow Six, PUBG, TF2, WoT, CoD) with enhanced raw data capture. Check back in a moment for updates.",
+          description: "FACEIT live and finished matches sync has been triggered for 10 games (CS2, Valorant, LoL, Dota 2, Rocket League, Rainbow Six, PUBG, TF2, WoT, CoD) with enhanced raw data capture. Check back in a moment for updates.",
         });
       } else {
         toast({
           title: "Sync Failed",
-          description: "Failed to trigger FACEIT live matches sync. Please try again.",
+          description: "Failed to trigger FACEIT live/finished matches sync. Please try again.",
           variant: "destructive",
         });
       }
@@ -118,8 +118,8 @@ export const FaceitSyncButtons: React.FC = () => {
         disabled={syncingLive}
         className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
       >
-        <RefreshCw className={`h-4 w-4 mr-1 ${syncingLive ? 'animate-spin' : ''}`} />
-        {syncingLive ? 'Syncing...' : 'Sync Live (10 Games)'}
+        <CheckCircle className={`h-4 w-4 mr-1 ${syncingLive ? 'animate-spin' : ''}`} />
+        {syncingLive ? 'Syncing...' : 'Sync Live+Finished (10 Games)'}
       </Button>
       <Button
         variant="outline"

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -16,6 +15,7 @@ import PlayerDetailPage from '@/pages/PlayerDetailPage';
 import MatchDetailsPage from '@/pages/MatchDetailsPage';
 import FaceitUpcomingMatchPage from '@/pages/FaceitUpcomingMatchPage';
 import FaceitLiveMatchPage from '@/pages/FaceitLiveMatchPage';
+import FaceitFinishedMatchPage from '@/pages/FaceitFinishedMatchPage';
 import PandaScoreUpcomingMatchPage from '@/pages/PandaScoreUpcomingMatchPage';
 import PandaScoreLiveMatchPage from '@/pages/PandaScoreLiveMatchPage';
 import NewsPage from '@/pages/NewsPage';
@@ -64,6 +64,7 @@ function App() {
           <Route path="/match/:matchId" element={<MatchDetailsPage />} />
           <Route path="/faceit/match/:matchId" element={<FaceitUpcomingMatchPage />} />
           <Route path="/faceit/live/:matchId" element={<FaceitLiveMatchPage />} />
+          <Route path="/faceit/finished/:matchId" element={<FaceitFinishedMatchPage />} />
           <Route path="/pandascore/match/:matchId" element={<PandaScoreUpcomingMatchPage />} />
           <Route path="/pandascore/live/:matchId" element={<PandaScoreLiveMatchPage />} />
           <Route path="/news" element={<NewsPage />} />

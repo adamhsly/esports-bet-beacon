@@ -29,6 +29,13 @@ interface FaceitMatch {
   configured_at: string | number;
   calculate_elo: boolean;
   version: number;
+  results?: {
+    winner: string;
+    score: {
+      faction1: number;
+      faction2: number;
+    };
+  };
   teams: {
     faction1: {
       name: string;
@@ -136,9 +143,9 @@ serve(async (req) => {
       throw new Error('FACEIT_API_KEY not found in secrets');
     }
 
-    console.log('🔴 Starting FACEIT live matches sync (ongoing championships only)...');
+    console.log('🔴 Starting FACEIT live matches sync (ongoing championships - including finished matches)...');
 
-    const allLiveMatches: FaceitMatch[] = [];
+    const allMatches: FaceitMatch[] = [];
     const allMatchStatuses = new Set();
     // Map for championship_id -> championship details (including stream url)
     const championshipDetailsMap = new Map<string, any>();
@@ -225,16 +232,21 @@ serve(async (req) => {
             console.log(`  • ${match.match_id} | ${match.status} | ${teams} | Scheduled: ${scheduledTime} | Game: ${match.game}`);
           });
 
-          // Filter for ongoing/live matches only
-          const liveMatches = matchesData.items.filter(match => {
+          // Filter for live and recently finished matches (last 48 hours)
+          const relevantMatches = matchesData.items.filter(match => {
             const status = match.status.toLowerCase();
             const isLiveStatus = status === 'ongoing' || status === 'live' || status === 'running' || status === 'started';
             
-            return isLiveStatus;
+            // Include finished matches from the last 48 hours
+            const isRecentlyFinished = (status === 'finished' || status === 'completed') && 
+              match.finished_at && 
+              (Date.now() - new Date(convertFaceitTimestamp(match.finished_at) || 0).getTime() < 48 * 60 * 60 * 1000);
+            
+            return isLiveStatus || isRecentlyFinished;
           });
 
-          console.log(`🔴 Found ${liveMatches.length} live matches in ${championship.name}`);
-          allLiveMatches.push(...liveMatches);
+          console.log(`🔴 Found ${relevantMatches.length} live/recently finished matches in ${championship.name}`);
+          allMatches.push(...relevantMatches);
 
           // Add delay between requests to respect rate limits
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -250,10 +262,10 @@ serve(async (req) => {
     }
 
     console.log(`📊 All match statuses found: ${Array.from(allMatchStatuses).join(', ')}`);
-    console.log(`🎯 Total live matches found across all games: ${allLiveMatches.length}`);
+    console.log(`🎯 Total live/finished matches found across all games: ${allMatches.length}`);
 
     // Step 3: Process and store matches
-    for (const match of allLiveMatches) {
+    for (const match of allMatches) {
       processed++;
       
       // Extract stream URL and raw championship data from championship details for this match
@@ -284,6 +296,15 @@ serve(async (req) => {
         });
       }
       
+      // Determine status - map FACEIT statuses to our internal status
+      let internalStatus = 'ongoing';
+      const faceitStatus = match.status.toLowerCase();
+      if (faceitStatus === 'finished' || faceitStatus === 'completed') {
+        internalStatus = 'finished';
+      } else if (faceitStatus === 'ongoing' || faceitStatus === 'live' || faceitStatus === 'running' || faceitStatus === 'started') {
+        internalStatus = 'ongoing';
+      }
+      
       const matchData = {
         match_id: match.match_id,
         game: match.game,
@@ -291,7 +312,7 @@ serve(async (req) => {
         competition_name: match.competition_name,
         competition_type: match.competition_type,
         organized_by: match.organized_by,
-        status: 'ongoing',
+        status: internalStatus,
         started_at: convertFaceitTimestamp(match.started_at),
         scheduled_at: convertFaceitTimestamp(match.scheduled_at),
         finished_at: convertFaceitTimestamp(match.finished_at),
@@ -304,14 +325,15 @@ serve(async (req) => {
           region: match.region,
           competition_type: match.competition_type,
           organized_by: match.organized_by,
-          calculate_elo: match.calculate_elo
+          calculate_elo: match.calculate_elo,
+          results: match.results || null
         },
         raw_data: match,
         championship_stream_url: championship_stream_url,
         championship_raw_data: championship_raw_data
       };
 
-      console.log(`💾 Storing match: ${match.match_id} - ${match.teams.faction1.name} vs ${match.teams.faction2.name} | Scheduled: ${matchData.scheduled_at} | Game: ${match.game}`);
+      console.log(`💾 Storing match: ${match.match_id} - ${match.teams.faction1.name} vs ${match.teams.faction2.name} | Status: ${internalStatus} | Scheduled: ${matchData.scheduled_at} | Game: ${match.game}`);
 
       const { error, data: upsertResult } = await supabase
         .from('faceit_matches')
@@ -322,7 +344,7 @@ serve(async (req) => {
         .select('id');
 
       if (error) {
-        console.error(`❌ Error upserting live match ${match.match_id}:`, error);
+        console.error(`❌ Error upserting match ${match.match_id}:`, error);
         continue;
       }
 
@@ -375,7 +397,7 @@ serve(async (req) => {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Live sync completed: ${processed} processed, ${added} added, ${updated} updated in ${duration}ms`);
+    console.log(`✅ Live/Finished sync completed: ${processed} processed, ${added} added, ${updated} updated in ${duration}ms`);
     console.log(`📊 Championships processed: ${championshipsProcessed} across ${games.length} games`);
 
     // Update log entry with success
@@ -393,7 +415,7 @@ serve(async (req) => {
             championships_processed: championshipsProcessed,
             total_championships_found: totalChampionshipsFound,
             games_processed: games,
-            live_matches_found: allLiveMatches.length,
+            matches_found: allMatches.length,
             match_statuses: Array.from(allMatchStatuses),
             unique_players_found: playerIds.size
           }
@@ -411,7 +433,7 @@ serve(async (req) => {
         championships_processed: championshipsProcessed,
         total_championships_found: totalChampionshipsFound,
         games_processed: games,
-        live_matches_found: allLiveMatches.length,
+        matches_found: allMatches.length,
         unique_players_found: playerIds.size,
         debug_info: {
           match_statuses: Array.from(allMatchStatuses)
@@ -422,7 +444,7 @@ serve(async (req) => {
 
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error('❌ FACEIT live sync failed:', error);
+    console.error('❌ FACEIT live/finished sync failed:', error);
 
     if (logEntry) {
       await supabase
