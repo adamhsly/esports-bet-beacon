@@ -497,6 +497,10 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
       const teams = match.teams as any;
       const rawData = match.raw_data as any;
       
+      // 🔧 CRITICAL: Store the database match_id for routing
+      const databaseMatchId = match.match_id;
+      console.log(`🔍 Processing match with database match_id: ${databaseMatchId}`);
+      
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
       if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
@@ -516,21 +520,21 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
       let results = null;
       if (rawData && rawData.results) {
         results = rawData.results;
-        console.log(`🏆 Match ${match.match_id} has results:`, results);
+        console.log(`🏆 Match ${databaseMatchId} has results:`, results);
       }
 
       const transformedMatch = {
-        id: `faceit_${match.match_id}`,
+        id: `faceit_${databaseMatchId}`, // 🔧 USE DATABASE MATCH_ID DIRECTLY
         teams: [
           {
             name: teams.faction1?.name || teams.team1?.name || 'Team 1',
             logo: teams.faction1?.avatar || teams.team1?.logo || '/placeholder.svg',
-            id: teams.faction1?.id || teams.team1?.id || `team1_${match.match_id}`
+            id: teams.faction1?.id || teams.team1?.id || `team1_${databaseMatchId}`
           },
           {
             name: teams.faction2?.name || teams.team2?.name || 'Team 2',
             logo: teams.faction2?.avatar || teams.team2?.logo || '/placeholder.svg',
-            id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`
+            id: teams.faction2?.id || teams.team2?.id || `team2_${databaseMatchId}`
           }
         ] as [any, any],
         startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
@@ -545,12 +549,15 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
           organizedBy: match.organized_by,
           calculateElo: match.calculate_elo,
           results: results // CRITICAL: Include results for winner display and routing
-        }
-      } satisfies MatchInfo;
+        },
+        // 🔧 ADD: Store the original database match_id for easy access
+        databaseMatchId: databaseMatchId
+      } satisfies MatchInfo & { databaseMatchId: string };
 
       // Enhanced logging for debugging routing issues
-      console.log(`🔍 Transformed match ${match.match_id}:`, {
-        id: transformedMatch.id,
+      console.log(`🔍 Transformed match ${databaseMatchId}:`, {
+        transformedId: transformedMatch.id,
+        databaseMatchId: databaseMatchId,
         status: transformedMatch.status,
         hasResults: !!transformedMatch.faceitData?.results,
         teams: [teams.faction1?.name, teams.faction2?.name],

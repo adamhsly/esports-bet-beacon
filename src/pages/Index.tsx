@@ -150,22 +150,18 @@ const Index = () => {
     
     // Debug: Log a sample FACEIT match to verify data structure
     if (faceitMatches.length > 0) {
+      const sampleMatch = faceitMatches[0] as any;
       console.log('🔍 Sample FACEIT match data:', {
-        id: faceitMatches[0].id,
-        match_id: (faceitMatches[0] as any).match_id, // Cast to any to access database field
-        status: faceitMatches[0].status,
-        faceitData: faceitMatches[0].faceitData,
-        hasResults: !!(faceitMatches[0].faceitData?.results)
+        id: sampleMatch.id,
+        databaseMatchId: sampleMatch.databaseMatchId,
+        status: sampleMatch.status,
+        faceitData: sampleMatch.faceitData,
+        hasResults: !!(sampleMatch.faceitData?.results)
       });
     }
     
-    // 🔧 ENHANCED: Transform FACEIT matches to use correct match_id for routing
-    const transformedFaceitMatches = faceitMatches.map(match => ({
-      ...match,
-      id: `faceit_${(match as any).match_id}`, // Use the actual match_id from database
-    }));
-    
-    console.log(`📊 Transformed ${transformedFaceitMatches.length} FACEIT matches with correct IDs`);
+    // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
+    console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
     // Fetch PandaScore matches only (excluding SportDevs)
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
@@ -210,8 +206,8 @@ const Index = () => {
       } satisfies MatchInfo;
     });
 
-    const combinedMatches = [...transformedFaceitMatches, ...transformedPandaScore];
-    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${transformedFaceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
+    const combinedMatches = [...faceitMatches, ...transformedPandaScore];
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
     
     return combinedMatches;
   };
