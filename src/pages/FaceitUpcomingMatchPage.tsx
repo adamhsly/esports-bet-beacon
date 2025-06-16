@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -38,12 +39,27 @@ const FaceitUpcomingMatchPage = () => {
         throw new Error('FACEIT match not found in database');
       }
       
-      // Check if match is live and redirect if so
-      const isLive = match.status === 'ongoing' || match.status === 'live' || match.status === 'running';
+      // 🔧 ENHANCED: Check for both live and finished status with case-insensitive comparison
+      const normalizedStatus = match.status?.toLowerCase() || '';
+      console.log(`🔍 Match ${matchId} status check:`, {
+        originalStatus: match.status,
+        normalizedStatus,
+        statusCategory: 'determining...'
+      });
       
+      // Check if match is live and redirect
+      const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
       if (isLive) {
         console.log('🔴 Match is live, redirecting to live page');
         navigate(`/faceit/live/${matchId}`, { replace: true });
+        return null;
+      }
+      
+      // 🔧 NEW: Check if match is finished and redirect
+      const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
+      if (isFinished) {
+        console.log(`✅ Match is finished (${match.status}), redirecting to finished page`);
+        navigate(`/faceit/finished/${matchId}`, { replace: true });
         return null;
       }
       

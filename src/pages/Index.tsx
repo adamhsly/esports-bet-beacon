@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -153,11 +152,20 @@ const Index = () => {
     if (faceitMatches.length > 0) {
       console.log('🔍 Sample FACEIT match data:', {
         id: faceitMatches[0].id,
+        match_id: faceitMatches[0].match_id, // Log the actual match_id field
         status: faceitMatches[0].status,
         faceitData: faceitMatches[0].faceitData,
         hasResults: !!(faceitMatches[0].faceitData?.results)
       });
     }
+    
+    // 🔧 ENHANCED: Transform FACEIT matches to use correct match_id for routing
+    const transformedFaceitMatches = faceitMatches.map(match => ({
+      ...match,
+      id: `faceit_${match.match_id}`, // Use the actual match_id from database
+    }));
+    
+    console.log(`📊 Transformed ${transformedFaceitMatches.length} FACEIT matches with correct IDs`);
     
     // Fetch PandaScore matches only (excluding SportDevs)
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
@@ -202,8 +210,8 @@ const Index = () => {
       } satisfies MatchInfo;
     });
 
-    const combinedMatches = [...faceitMatches, ...transformedPandaScore];
-    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
+    const combinedMatches = [...transformedFaceitMatches, ...transformedPandaScore];
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${transformedFaceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
     
     return combinedMatches;
   };
