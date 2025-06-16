@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock, Trophy, Users, CheckCircle } from 'lucide-react';
@@ -59,11 +60,15 @@ interface MatchCardProps {
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData } = match;
   const matchDate = new Date(startTime);
-  const isFinished = status === 'finished' || status === 'completed';
+  
+  // 🔧 FIXED: Case-insensitive status comparison
+  const normalizedStatus = status?.toLowerCase() || '';
+  const isFinished = normalizedStatus === 'finished' || normalizedStatus === 'completed';
 
   // Enhanced logging for routing decisions
   console.log(`🎯 MatchCard rendering for ${id}:`, {
-    status,
+    originalStatus: status,
+    normalizedStatus,
     isFinished,
     hasResults: !!(faceitData?.results),
     source,
@@ -95,10 +100,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
     if (isFinished) {
       to = `/faceit/finished/${id.replace('faceit_', '')}`;
-      console.log(`🎯 FINISHED match ${id} will route to: ${to}`);
+      console.log(`🎯 FINISHED match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
     } else {
       to = `/faceit/match/${id.replace('faceit_', '')}`;
-      console.log(`🎯 UPCOMING/LIVE match ${id} will route to: ${to}`);
+      console.log(`🎯 UPCOMING/LIVE match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
     }
   } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
     to = `/pandascore/match/${id}`;
@@ -165,7 +170,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       onClick={() => {
         console.log(`🔗 MatchCard clicked - navigating to: ${to}`, {
           matchId: id,
-          status,
+          originalStatus: status,
+          normalizedStatus,
           isFinished,
           hasResults: !!(faceitData?.results)
         });

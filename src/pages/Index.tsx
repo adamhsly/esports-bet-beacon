@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,34 @@ interface PandaScoreTeamsData {
     logo?: string;
   };
 }
+
+// 🔧 FIXED: Case-insensitive status categorization for FACEIT matches
+const getFaceitStatusCategory = (status: string, matchId: string): 'live' | 'upcoming' | 'finished' | null => {
+  const lowerStatus = status.toLowerCase();
+  
+  console.log(`🔍 Categorizing match ${matchId} with status: ${status} (normalized: ${lowerStatus})`);
+  
+  // Live match statuses
+  if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
+    console.log(`✅ Match ${matchId} categorized as LIVE`);
+    return 'live';
+  }
+  
+  // Upcoming match statuses
+  if (['upcoming', 'ready', 'scheduled', 'configured'].includes(lowerStatus)) {
+    console.log(`✅ Match ${matchId} categorized as UPCOMING`);
+    return 'upcoming';
+  }
+  
+  // Finished match statuses
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+    console.log(`✅ Match ${matchId} categorized as FINISHED`);
+    return 'finished';
+  }
+  
+  console.log(`⚠️ Match ${matchId} status ${status} not recognized, returning null`);
+  return null;
+};
 
 // Helper function to map SportDevs statuses to display categories
 const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
@@ -216,34 +245,6 @@ const Index = () => {
       }
       return t === gameType;
     });
-  };
-
-  // Helper function to map FACEIT statuses to display categories with enhanced logging
-  const getFaceitStatusCategory = (status: string, matchId: string): 'live' | 'upcoming' | 'finished' | null => {
-    const lowerStatus = status.toLowerCase();
-    
-    console.log(`🔍 Categorizing match ${matchId} with status: ${status} (${lowerStatus})`);
-    
-    // Live match statuses
-    if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
-      console.log(`✅ Match ${matchId} categorized as LIVE`);
-      return 'live';
-    }
-    
-    // Upcoming match statuses
-    if (['upcoming', 'ready', 'scheduled', 'configured'].includes(lowerStatus)) {
-      console.log(`✅ Match ${matchId} categorized as UPCOMING`);
-      return 'upcoming';
-    }
-    
-    // Finished match statuses
-    if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
-      console.log(`✅ Match ${matchId} categorized as FINISHED`);
-      return 'finished';
-    }
-    
-    console.log(`⚠️ Match ${matchId} status ${status} not recognized, returning null`);
-    return null;
   };
 
   // Load date-filtered matches using the same unified dataset with enhanced logging and categorization
