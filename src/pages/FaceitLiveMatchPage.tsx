@@ -166,10 +166,6 @@ const FaceitLiveMatchPage = () => {
                             <span className="text-white">{matchDetails.faceitData?.region || 'EU'}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-400">Format:</span>
-                            <span className="text-white">Best of 1</span>
-                          </div>
-                          <div className="flex justify-between">
                             <span className="text-gray-400">Status:</span>
                             <Badge className="bg-red-500 text-white">
                               <Radio className="h-3 w-3 mr-1 animate-pulse" />

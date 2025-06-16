@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -126,10 +125,6 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
             <div>
               <div className="text-sm text-gray-400">Region</div>
               <div className="text-white font-semibold">{match.faceitData?.region || 'EU'}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Format</div>
-              <div className="text-white font-semibold">Best of 1</div>
             </div>
             <div>
               <div className="text-sm text-gray-400">Type</div>
