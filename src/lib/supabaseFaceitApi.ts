@@ -183,10 +183,33 @@ export const triggerFaceitUpcomingSync = async (): Promise<boolean> => {
 };
 
 const transformFaceitMatch = (match: any): FaceitMatch => {
-  // Ensure we have exactly 2 teams
-  const teamsArray = match.teams || [];
-  const team1 = teamsArray[0] || { name: 'Team 1', logo: '/placeholder.svg', roster: [] };
-  const team2 = teamsArray[1] || { name: 'Team 2', logo: '/placeholder.svg', roster: [] };
+  console.log('🔄 Raw FACEIT match data from database:', match);
+  
+  // Extract teams from the database structure - teams can be stored as faction1/faction2 or as an array
+  let team1, team2;
+  
+  if (match.teams && typeof match.teams === 'object') {
+    if (match.teams.faction1 && match.teams.faction2) {
+      // Teams stored as faction1/faction2 objects
+      team1 = match.teams.faction1;
+      team2 = match.teams.faction2;
+    } else if (Array.isArray(match.teams) && match.teams.length >= 2) {
+      // Teams stored as array
+      team1 = match.teams[0];
+      team2 = match.teams[1];
+    } else {
+      // Fallback for unexpected structure
+      console.warn('⚠️ Unexpected team structure in FACEIT match:', match.teams);
+      team1 = { name: 'Team 1', avatar: '/placeholder.svg', roster: [] };
+      team2 = { name: 'Team 2', avatar: '/placeholder.svg', roster: [] };
+    }
+  } else {
+    // No team data available
+    team1 = { name: 'Team 1', avatar: '/placeholder.svg', roster: [] };
+    team2 = { name: 'Team 2', avatar: '/placeholder.svg', roster: [] };
+  }
+
+  console.log('🔄 Extracted teams:', { team1, team2 });
 
   return {
     id: match.match_id,
@@ -205,16 +228,16 @@ const transformFaceitMatch = (match: any): FaceitMatch => {
     version: match.version,
     teams: [
       {
-        id: team1.id || `team_1`,
-        name: team1.name,
-        logo: team1.logo || team1.avatar || '/placeholder.svg',
+        id: team1.team_id || team1.id || `team_1_${match.match_id}`,
+        name: team1.name || 'Team 1',
+        logo: team1.avatar || team1.logo || '/placeholder.svg',
         avatar: team1.avatar,
         roster: team1.roster || []
       },
       {
-        id: team2.id || `team_2`,
-        name: team2.name,
-        logo: team2.logo || team2.avatar || '/placeholder.svg',
+        id: team2.team_id || team2.id || `team_2_${match.match_id}`,
+        name: team2.name || 'Team 2',
+        logo: team2.avatar || team2.logo || '/placeholder.svg',
         avatar: team2.avatar,
         roster: team2.roster || []
       }
