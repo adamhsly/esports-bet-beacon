@@ -516,6 +516,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
       let results = null;
       if (rawData && rawData.results) {
         results = rawData.results;
+        console.log(`🏆 Match ${match.match_id} has results:`, results);
       }
 
       const transformedMatch = {
@@ -537,24 +538,29 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
-        status: match.status, // Include status for routing logic
+        status: match.status, // CRITICAL: Include status for routing logic
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
           organizedBy: match.organized_by,
           calculateElo: match.calculate_elo,
-          results: results // Include results for winner display
+          results: results // CRITICAL: Include results for winner display and routing
         }
       } satisfies MatchInfo;
 
-      // Debug log for finished matches
-      if (match.status === 'finished' && results) {
-        console.log(`✅ Finished match with results: ${transformedMatch.id}`, {
-          status: match.status,
-          results: results,
-          teams: [teams.faction1?.name, teams.faction2?.name]
-        });
-      }
+      // Enhanced logging for debugging routing issues
+      console.log(`🔍 Transformed match ${match.match_id}:`, {
+        id: transformedMatch.id,
+        status: transformedMatch.status,
+        hasResults: !!transformedMatch.faceitData?.results,
+        teams: [teams.faction1?.name, teams.faction2?.name],
+        routingData: {
+          status: transformedMatch.status,
+          results: transformedMatch.faceitData?.results,
+          isFinished: transformedMatch.status === 'finished',
+          willRouteToFinished: transformedMatch.status === 'finished' || transformedMatch.status === 'completed'
+        }
+      });
 
       return transformedMatch;
     });

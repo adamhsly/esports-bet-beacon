@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -219,29 +218,35 @@ const Index = () => {
     });
   };
 
-  // Helper function to map FACEIT statuses to display categories
-  const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+  // Helper function to map FACEIT statuses to display categories with enhanced logging
+  const getFaceitStatusCategory = (status: string, matchId: string): 'live' | 'upcoming' | 'finished' | null => {
     const lowerStatus = status.toLowerCase();
+    
+    console.log(`🔍 Categorizing match ${matchId} with status: ${status} (${lowerStatus})`);
     
     // Live match statuses
     if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
+      console.log(`✅ Match ${matchId} categorized as LIVE`);
       return 'live';
     }
     
     // Upcoming match statuses
     if (['upcoming', 'ready', 'scheduled', 'configured'].includes(lowerStatus)) {
+      console.log(`✅ Match ${matchId} categorized as UPCOMING`);
       return 'upcoming';
     }
     
     // Finished match statuses
     if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+      console.log(`✅ Match ${matchId} categorized as FINISHED`);
       return 'finished';
     }
     
+    console.log(`⚠️ Match ${matchId} status ${status} not recognized, returning null`);
     return null;
   };
 
-  // Load date-filtered matches using the same unified dataset with proper categorization
+  // Load date-filtered matches using the same unified dataset with enhanced logging and categorization
   useEffect(() => {
     async function loadDateFilteredMatches() {
       setLoadingDateFiltered(true);
@@ -253,8 +258,12 @@ const Index = () => {
         
         // Use the same unified dataset for consistency
         const combinedMatches = await loadAllMatchesFromDatabase();
+        console.log(`📊 Loaded ${combinedMatches.length} total matches from unified dataset`);
+        
         // Apply game type filter
         const filteredByGameType = filterMatchesByGameType(combinedMatches, selectedGameType);
+        console.log(`📊 After game type filter (${selectedGameType}): ${filteredByGameType.length} matches`);
+        
         // Filter matches by selected date
         const dateFilteredMatches = filteredByGameType.filter(match => {
           const matchDate = new Date(match.startTime);
@@ -263,36 +272,55 @@ const Index = () => {
         
         console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date from unified dataset`);
 
-        // Properly categorize matches based on their status and source
+        // Enhanced categorization with detailed logging
         const liveMatches: MatchInfo[] = [];
         const upcomingMatches: MatchInfo[] = [];
         const finishedMatches: MatchInfo[] = [];
         
         dateFilteredMatches.forEach(match => {
-          console.log(`🔍 Categorizing match ${match.id}:`, {
+          console.log(`🔍 Processing match for categorization:`, {
+            id: match.id,
             source: match.source,
             status: match.status,
-            hasResults: !!(match.faceitData?.results)
+            hasResults: !!(match.faceitData?.results),
+            teams: match.teams?.map(t => t.name)
           });
           
           if (match.source === 'amateur') {
-            // FACEIT match categorization
-            const statusCategory = getFaceitStatusCategory(match.status || '');
+            // FACEIT match categorization with enhanced logging
+            const statusCategory = getFaceitStatusCategory(match.status || '', match.id);
+            
+            console.log(`🎯 FACEIT match ${match.id} categorization result:`, {
+              originalStatus: match.status,
+              statusCategory,
+              hasResults: !!(match.faceitData?.results)
+            });
             
             if (statusCategory === 'live') {
               liveMatches.push(match);
+              console.log(`➕ Added ${match.id} to LIVE matches`);
             } else if (statusCategory === 'finished') {
               finishedMatches.push(match);
+              console.log(`➕ Added ${match.id} to FINISHED matches`);
             } else {
               upcomingMatches.push(match);
+              console.log(`➕ Added ${match.id} to UPCOMING matches (fallback or upcoming status)`);
             }
           } else {
             // PandaScore matches - for now assume upcoming
             upcomingMatches.push(match);
+            console.log(`➕ Added PandaScore match ${match.id} to UPCOMING matches`);
           }
         });
         
-        console.log(`📊 Date-filtered categorization: ${liveMatches.length} live, ${upcomingMatches.length} upcoming, ${finishedMatches.length} finished`);
+        console.log(`📊 Final date-filtered categorization:`, {
+          live: liveMatches.length,
+          upcoming: upcomingMatches.length,
+          finished: finishedMatches.length,
+          liveMatchIds: liveMatches.map(m => m.id),
+          upcomingMatchIds: upcomingMatches.map(m => m.id),
+          finishedMatchIds: finishedMatches.map(m => m.id)
+        });
         
         // Sort matches by start time
         const sortByStartTime = (a: MatchInfo, b: MatchInfo) => 
@@ -413,13 +441,19 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
-                          {/* Add horizontal padding to each MatchCard */}
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {matches.map(match => (
-                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                <MatchCard match={match} />
-                              </div>
-                            ))}
+                            {matches.map(match => {
+                              console.log(`🎮 Rendering LIVE MatchCard:`, {
+                                id: match.id,
+                                status: match.status,
+                                hasResults: !!(match.faceitData?.results)
+                              });
+                              return (
+                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                  <MatchCard match={match} />
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )
@@ -439,13 +473,19 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
-                          {/* Add horizontal padding to each MatchCard */}
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {matches.map(match => (
-                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                <MatchCard match={match} />
-                              </div>
-                            ))}
+                            {matches.map(match => {
+                              console.log(`🎮 Rendering UPCOMING MatchCard:`, {
+                                id: match.id,
+                                status: match.status,
+                                hasResults: !!(match.faceitData?.results)
+                              });
+                              return (
+                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                  <MatchCard match={match} />
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )
@@ -465,13 +505,20 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
-                          {/* Add horizontal padding to each MatchCard */}
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {matches.map(match => (
-                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                <MatchCard match={match} />
-                              </div>
-                            ))}
+                            {matches.map(match => {
+                              console.log(`🎮 Rendering FINISHED MatchCard:`, {
+                                id: match.id,
+                                status: match.status,
+                                hasResults: !!(match.faceitData?.results),
+                                expectedRoute: `/faceit/finished/${match.id.replace('faceit_', '')}`
+                              });
+                              return (
+                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                  <MatchCard match={match} />
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )

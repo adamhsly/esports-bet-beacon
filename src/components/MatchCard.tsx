@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock, Trophy, Users, CheckCircle } from 'lucide-react';
@@ -62,6 +61,18 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const matchDate = new Date(startTime);
   const isFinished = status === 'finished' || status === 'completed';
 
+  // Enhanced logging for routing decisions
+  console.log(`🎯 MatchCard rendering for ${id}:`, {
+    status,
+    isFinished,
+    hasResults: !!(faceitData?.results),
+    source,
+    routingDecision: {
+      willRouteToFinished: isFinished,
+      expectedRoute: isFinished ? `/faceit/finished/${id.replace('faceit_', '')}` : `/faceit/match/${id.replace('faceit_', '')}`
+    }
+  });
+
   // Determine color based on match source
   let bgClass = 'bg-theme-gray-medium';
   let ringClass = '';
@@ -79,18 +90,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     outlineClass: '',
   };
 
-  // Determine the correct route for the given match
+  // Determine the correct route for the given match with enhanced logging
   let to = '/';
   if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
     if (isFinished) {
       to = `/faceit/finished/${id.replace('faceit_', '')}`;
+      console.log(`🎯 FINISHED match ${id} will route to: ${to}`);
     } else {
       to = `/faceit/match/${id.replace('faceit_', '')}`;
+      console.log(`🎯 UPCOMING/LIVE match ${id} will route to: ${to}`);
     }
   } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
     to = `/pandascore/match/${id}`;
+    console.log(`🎯 PROFESSIONAL match ${id} will route to: ${to}`);
   } else {
     to = `/match/${id}`;
+    console.log(`🎯 UNKNOWN source match ${id} will route to: ${to}`);
   }
 
   if (source === 'professional') {
@@ -147,6 +162,14 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       className="group block focus:outline-none"
       tabIndex={0}
       aria-label={`${teams[0].name} vs ${teams[1].name} - navigate to match details`}
+      onClick={() => {
+        console.log(`🔗 MatchCard clicked - navigating to: ${to}`, {
+          matchId: id,
+          status,
+          isFinished,
+          hasResults: !!(faceitData?.results)
+        });
+      }}
     >
       <Card
         className={`
