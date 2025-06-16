@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 
-type StreamInfo = {
+export type StreamInfo = {
   embed_url: string; // For embedding (Twitch/YouTube iframe)
   raw_url?: string; // "Watch on Twitch" or direct links
   language?: string;
