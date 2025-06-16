@@ -58,13 +58,19 @@ export interface FaceitMatch {
   configured_at?: string;
   calculate_elo?: boolean;
   version?: number;
-  teams: Array<{
+  teams: [{
     id?: string;
     name: string;
     logo: string;
     avatar?: string;
     roster?: FaceitPlayer[];
-  }>;
+  }, {
+    id?: string;
+    name: string;
+    logo: string;
+    avatar?: string;
+    roster?: FaceitPlayer[];
+  }];
   voting?: any;
   faceitData?: {
     region?: string;
@@ -224,35 +230,4 @@ const transformFaceitMatch = (match: any): FaceitMatch => {
     bestOf: 1,
     source: 'amateur'
   };
-};
-
-export const fetchSupabaseFaceitAllMatches = async (limit = 100) => {
-  return fetchSupabaseFaceitMatches(limit);
-};
-
-export const fetchSupabaseFaceitMatchesByDate = async (date: string, limit = 50) => {
-  console.log('🔍 Fetching FACEIT matches by date from Supabase...');
-  
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-  
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const { data, error } = await supabase
-    .from('faceit_matches')
-    .select('*')
-    .gte('scheduled_at', startOfDay.toISOString())
-    .lte('scheduled_at', endOfDay.toISOString())
-    .order('scheduled_at', { ascending: true })
-    .limit(limit);
-
-  if (error) {
-    console.error('❌ Error fetching FACEIT matches by date:', error);
-    throw new Error(`Failed to fetch FACEIT matches by date: ${error.message}`);
-  }
-
-  console.log(`✅ Fetched ${data?.length || 0} FACEIT matches for date: ${date}`);
-  
-  return data?.map(transformFaceitMatch) || [];
 };
