@@ -122,6 +122,7 @@ export type Database = {
       faceit_matches: {
         Row: {
           calculate_elo: boolean | null
+          championship_raw_data: Json | null
           championship_stream_url: string | null
           competition_name: string | null
           competition_type: string | null
@@ -145,6 +146,7 @@ export type Database = {
         }
         Insert: {
           calculate_elo?: boolean | null
+          championship_raw_data?: Json | null
           championship_stream_url?: string | null
           competition_name?: string | null
           competition_type?: string | null
@@ -168,6 +170,7 @@ export type Database = {
         }
         Update: {
           calculate_elo?: boolean | null
+          championship_raw_data?: Json | null
           championship_stream_url?: string | null
           competition_name?: string | null
           competition_type?: string | null

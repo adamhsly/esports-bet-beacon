@@ -15,11 +15,12 @@ export const FaceitSyncButtons: React.FC = () => {
   const handleLiveSync = async () => {
     setSyncingLive(true);
     try {
-      const success = await triggerFaceitLiveSync();
+      // Sync multiple games: CS2, Valorant, League of Legends, Dota 2
+      const success = await triggerFaceitLiveSync(['cs2', 'valorant', 'lol', 'dota2']);
       if (success) {
         toast({
-          title: "Sync Started",
-          description: "FACEIT live matches sync has been triggered with enhanced raw data capture. Check back in a moment for updates.",
+          title: "Multi-Game Sync Started",
+          description: "FACEIT live matches sync has been triggered for CS2, Valorant, LoL, and Dota 2 with enhanced raw data capture. Check back in a moment for updates.",
         });
       } else {
         toast({
@@ -43,11 +44,12 @@ export const FaceitSyncButtons: React.FC = () => {
   const handleUpcomingSync = async () => {
     setSyncingUpcoming(true);
     try {
-      const success = await triggerFaceitUpcomingSync();
+      // Sync multiple games: CS2, Valorant, League of Legends, Dota 2
+      const success = await triggerFaceitUpcomingSync(['cs2', 'valorant', 'lol', 'dota2']);
       if (success) {
         toast({
-          title: "Sync Started",
-          description: "FACEIT upcoming matches sync has been triggered. Check back in a moment for updates.",
+          title: "Multi-Game Sync Started",
+          description: "FACEIT upcoming matches sync has been triggered for CS2, Valorant, LoL, and Dota 2. Check back in a moment for updates.",
         });
       } else {
         toast({
@@ -117,7 +119,7 @@ export const FaceitSyncButtons: React.FC = () => {
         className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
       >
         <RefreshCw className={`h-4 w-4 mr-1 ${syncingLive ? 'animate-spin' : ''}`} />
-        {syncingLive ? 'Syncing...' : 'Sync Live'}
+        {syncingLive ? 'Syncing...' : 'Sync Live (Multi-Game)'}
       </Button>
       <Button
         variant="outline"
@@ -127,7 +129,7 @@ export const FaceitSyncButtons: React.FC = () => {
         className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
       >
         <Users className={`h-4 w-4 mr-1 ${syncingUpcoming ? 'animate-spin' : ''}`} />
-        {syncingUpcoming ? 'Syncing...' : 'Sync Upcoming'}
+        {syncingUpcoming ? 'Syncing...' : 'Sync Upcoming (Multi-Game)'}
       </Button>
       <Button
         variant="outline"

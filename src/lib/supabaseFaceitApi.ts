@@ -651,9 +651,11 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
   }
 };
 
-export const triggerFaceitLiveSync = async (): Promise<boolean> => {
+export const triggerFaceitLiveSync = async (games?: string[]): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.functions.invoke('sync-faceit-live');
+    const { data, error } = await supabase.functions.invoke('sync-faceit-live', {
+      body: { games: games || ['cs2'] }
+    });
     
     if (error) {
       console.error('Error triggering FACEIT live sync:', error);
@@ -668,9 +670,11 @@ export const triggerFaceitLiveSync = async (): Promise<boolean> => {
   }
 };
 
-export const triggerFaceitUpcomingSync = async (): Promise<boolean> => {
+export const triggerFaceitUpcomingSync = async (games?: string[]): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.functions.invoke('sync-faceit-upcoming');
+    const { data, error } = await supabase.functions.invoke('sync-faceit-upcoming', {
+      body: { games: games || ['cs2'] }
+    });
     
     if (error) {
       console.error('Error triggering FACEIT upcoming sync:', error);
