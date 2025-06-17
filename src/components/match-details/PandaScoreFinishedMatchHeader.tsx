@@ -34,14 +34,24 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
 
-  // Extract winner and score from rawData if available
+  // Extract winner and score from rawData
   const getMatchResult = () => {
-    if (match.rawData?.results) {
-      const results = match.rawData.results;
-      return {
-        winner: results.winner,
-        score: results.score || { team1: 0, team2: 0 }
-      };
+    if (match.rawData?.results && Array.isArray(match.rawData.results) && match.rawData.winner_id) {
+      const team1Id = team1.id;
+      const team2Id = team2.id;
+      
+      if (team1Id && team2Id) {
+        const team1Result = match.rawData.results.find((r: any) => r.team_id?.toString() === team1Id.toString());
+        const team2Result = match.rawData.results.find((r: any) => r.team_id?.toString() === team2Id.toString());
+        
+        if (team1Result && team2Result) {
+          const winnerId = match.rawData.winner_id.toString();
+          return {
+            winner: winnerId === team1Id.toString() ? 'team1' : 'team2',
+            score: { team1: team1Result.score, team2: team2Result.score }
+          };
+        }
+      }
     }
     return null;
   };

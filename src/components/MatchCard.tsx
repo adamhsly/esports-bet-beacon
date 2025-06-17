@@ -51,6 +51,7 @@ export interface MatchInfo {
       };
     };
   };
+  rawData?: any;
 }
 
 interface MatchCardProps {
@@ -58,7 +59,7 @@ interface MatchCardProps {
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData } = match;
+  const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData, rawData } = match;
   const matchDate = new Date(startTime);
   
   // 🔧 FIXED: Case-insensitive status comparison for both FACEIT and PandaScore
@@ -158,7 +159,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     }
   };
 
-  // Determine winner and styling for finished matches (FACEIT only has results data)
+  // Determine winner and styling for finished matches
   const getWinnerStyling = (teamIndex: number) => {
     if (!isFinished) return '';
     
@@ -168,7 +169,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
     }
     
-    // For PandaScore matches, we don't have results data yet, so no winner styling
+    // For PandaScore matches, use rawData.winner_id
+    if (source === 'professional' && rawData?.winner_id) {
+      const teamId = teams[teamIndex]?.id;
+      if (teamId) {
+        const isWinner = rawData.winner_id.toString() === teamId.toString();
+        return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+      }
+    }
+    
     return '';
   };
 
@@ -181,8 +190,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       return `${faceitData.results.score.faction1} - ${faceitData.results.score.faction2}`;
     }
     
-    // For PandaScore matches, we might have score in rawData
-    // This would need to be implemented based on PandaScore API structure
+    // For PandaScore matches, extract score from rawData.results
+    if (source === 'professional' && rawData?.results && Array.isArray(rawData.results)) {
+      // rawData.results is an array like: [{score: 0, team_id: 2883}, {score: 3, team_id: 126061}]
+      const team1Id = teams[0]?.id;
+      const team2Id = teams[1]?.id;
+      
+      if (team1Id && team2Id) {
+        const team1Result = rawData.results.find((r: any) => r.team_id?.toString() === team1Id.toString());
+        const team2Result = rawData.results.find((r: any) => r.team_id?.toString() === team2Id.toString());
+        
+        if (team1Result && team2Result) {
+          return `${team1Result.score} - ${team2Result.score}`;
+        }
+      }
+    }
+    
     return null;
   };
 
@@ -200,7 +223,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
           originalStatus: status,
           normalizedStatus,
           isFinished,
-          hasResults: !!(faceitData?.results)
+          hasResults: !!(faceitData?.results || (rawData?.results && rawData?.winner_id))
         });
       }}
     >
