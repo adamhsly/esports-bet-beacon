@@ -199,12 +199,21 @@ const Index = () => {
 
     console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (including finished)`);
     
-    // Transform PandaScore matches to MatchInfo format with consistent ID prefixing
+    // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
       const teamsData = match.teams as unknown as PandaScoreTeamsData;
       const matchId = `pandascore_${match.match_id}`;
       
       console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status})`);
+      
+      // 🔧 FIXED: Use actual team IDs from rawData instead of generated ones
+      const actualTeam1Id = match.raw_data?.opponents?.[0]?.opponent?.id?.toString();
+      const actualTeam2Id = match.raw_data?.opponents?.[1]?.opponent?.id?.toString();
+      
+      console.log(`🎯 PandaScore team IDs - Team1: ${actualTeam1Id}, Team2: ${actualTeam2Id}`, {
+        rawDataWinner: match.raw_data?.winner?.id,
+        rawDataResults: match.raw_data?.results
+      });
       
       return {
         id: matchId, // Ensure consistent prefixing for homepage
@@ -212,12 +221,12 @@ const Index = () => {
           {
             name: teamsData.team1?.name || 'TBD',
             logo: teamsData.team1?.logo || '/placeholder.svg',
-            id: `pandascore_team_${match.match_id}_1`
+            id: actualTeam1Id || `pandascore_team_${match.match_id}_1` // Use actual ID or fallback
           },
           {
             name: teamsData.team2?.name || 'TBD',
             logo: teamsData.team2?.logo || '/placeholder.svg',
-            id: `pandascore_team_${match.match_id}_2`
+            id: actualTeam2Id || `pandascore_team_${match.match_id}_2` // Use actual ID or fallback
           }
         ] as [any, any],
         startTime: match.start_time,
@@ -225,7 +234,8 @@ const Index = () => {
         esportType: match.esport_type,
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
-        status: match.status // Include status for proper categorization
+        status: match.status, // Include status for proper categorization
+        rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
       } satisfies MatchInfo;
     });
 

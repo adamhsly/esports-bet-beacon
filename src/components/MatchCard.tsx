@@ -74,7 +74,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     hasResults: !!(faceitData?.results),
     source,
     rawDataKeys: rawData ? Object.keys(rawData) : 'no rawData',
-    rawDataWinnerId: rawData?.winner_id,
+    rawDataWinner: rawData?.winner,
+    rawDataWinnerId: rawData?.winner?.id,
     rawDataResults: rawData?.results,
     teamsWithIds: teams.map(t => ({ name: t.name, id: t.id })),
     routingDecision: {
@@ -173,17 +174,17 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
     }
     
-    // For PandaScore matches, use rawData.winner_id
-    if (source === 'professional' && rawData?.winner_id) {
+    // 🔧 FIXED: For PandaScore matches, use rawData.winner.id instead of rawData.winner_id
+    if (source === 'professional' && rawData?.winner?.id) {
       const teamId = teams[teamIndex]?.id;
       console.log(`🏆 Checking winner for team ${teamIndex}:`, {
         teamId,
-        winnerId: rawData.winner_id,
-        isWinner: teamId && rawData.winner_id?.toString() === teamId?.toString()
+        winnerId: rawData.winner.id,
+        isWinner: teamId && rawData.winner.id?.toString() === teamId?.toString()
       });
       
       if (teamId) {
-        const isWinner = rawData.winner_id.toString() === teamId.toString();
+        const isWinner = rawData.winner.id.toString() === teamId.toString();
         return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
       }
     }
