@@ -64,6 +64,48 @@ export const SportDevsSyncButtons = () => {
     }
   };
 
+  const handleMidnightSync = async () => {
+    setSyncing(prev => ({ ...prev, midnight: true }));
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('midnight-master-sync');
+      
+      if (error) {
+        console.error('Midnight sync error:', error);
+        toast.error(`Midnight sync failed: ${error.message}`);
+      } else {
+        console.log('Midnight sync result:', data);
+        toast.success(`Midnight sync completed: ${data.summary?.successful || 0} successful, ${data.summary?.failed || 0} failed`);
+      }
+    } catch (error) {
+      console.error('Midnight sync error:', error);
+      toast.error('Midnight sync failed');
+    } finally {
+      setSyncing(prev => ({ ...prev, midnight: false }));
+    }
+  };
+
+  const handleDynamicCronManager = async () => {
+    setSyncing(prev => ({ ...prev, dynamic: true }));
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-dynamic-cron');
+      
+      if (error) {
+        console.error('Dynamic cron manager error:', error);
+        toast.error(`Dynamic cron manager failed: ${error.message}`);
+      } else {
+        console.log('Dynamic cron manager result:', data);
+        toast.success(`Dynamic cron jobs managed: ${data.stats?.upcoming_matches || 0} active matches, ${data.stats?.cleaned_up_jobs || 0} cleaned up`);
+      }
+    } catch (error) {
+      console.error('Dynamic cron manager error:', error);
+      toast.error('Dynamic cron manager failed');
+    } finally {
+      setSyncing(prev => ({ ...prev, dynamic: false }));
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button
@@ -107,13 +149,33 @@ export const SportDevsSyncButtons = () => {
       </Button>
       
       <Button
+        onClick={handleMidnightSync}
+        disabled={syncing['midnight']}
+        variant="outline"
+        size="sm"
+        className="text-yellow-400 border-yellow-400/30 hover:bg-yellow-500/20"
+      >
+        {syncing['midnight'] ? 'Running...' : 'Run Midnight Sync'}
+      </Button>
+      
+      <Button
+        onClick={handleDynamicCronManager}
+        disabled={syncing['dynamic']}
+        variant="outline"
+        size="sm"
+        className="text-orange-400 border-orange-400/30 hover:bg-orange-500/20"
+      >
+        {syncing['dynamic'] ? 'Managing...' : 'Manage Dynamic Crons'}
+      </Button>
+      
+      <Button
         onClick={handleSetupCron}
         disabled={syncing['cron']}
         variant="default"
         size="sm"
         className="bg-theme-purple hover:bg-theme-purple/90"
       >
-        {syncing['cron'] ? 'Setting up...' : 'Setup Cron Jobs'}
+        {syncing['cron'] ? 'Setting up...' : 'Setup Optimized Crons'}
       </Button>
     </div>
   );

@@ -18,7 +18,7 @@ serve(async (req) => {
   )
 
   try {
-    console.log('⚙️ Setting up PandaScore cron jobs...');
+    console.log('⚙️ Setting up optimized PandaScore cron jobs...');
     
     const projectRef = Deno.env.get('SUPABASE_URL')?.split('//')[1]?.split('.')[0];
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -35,75 +35,27 @@ serve(async (req) => {
       `
     });
 
-    // Remove old cron job if it exists
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.unschedule('pandascore-upcoming-matches-sync');
-      `
-    });
+    // Remove old cron jobs
+    const oldJobs = [
+      'pandascore-upcoming-matches-sync',
+      'pandascore-matches-sync',
+      'pandascore-teams-sync',
+      'pandascore-tournaments-sync'
+    ];
 
-    // Schedule matches sync (upcoming + finished) every 15 minutes
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'pandascore-matches-sync',
-          '*/15 * * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-pandascore-matches',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
+    for (const job of oldJobs) {
+      await supabase.rpc('sql', {
+        query: `SELECT cron.unschedule('${job}');`
+      }).catch(() => {}); // Ignore errors if job doesn't exist
+    }
 
-    // Schedule teams sync every 2 hours
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'pandascore-teams-sync',
-          '0 */2 * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-pandascore-teams',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    // Schedule tournaments sync every 6 hours
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'pandascore-tournaments-sync',
-          '0 */6 * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-pandascore-tournaments',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    console.log('✅ PandaScore cron jobs set up successfully');
+    console.log('✅ Optimized PandaScore cron jobs configured (using centralized midnight sync)');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'PandaScore cron jobs configured successfully',
-        schedules: {
-          matches: 'Every 15 minutes (upcoming + finished)',
-          teams: 'Every 2 hours',
-          tournaments: 'Every 6 hours'
-        }
+        message: 'PandaScore cron jobs optimized successfully',
+        note: 'PandaScore syncing is now handled by the centralized midnight master sync and dynamic match-specific syncs'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

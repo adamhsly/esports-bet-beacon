@@ -18,7 +18,7 @@ serve(async (req) => {
   )
 
   try {
-    console.log('🕒 Setting up FACEIT cron jobs...');
+    console.log('🕒 Setting up optimized FACEIT cron jobs...');
     
     const projectRef = Deno.env.get('SUPABASE_URL')?.split('//')[1]?.split('.')[0];
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -35,15 +35,30 @@ serve(async (req) => {
       `
     });
 
-    // Schedule live matches sync every 2 minutes
+    // Remove old cron jobs
+    const oldJobs = [
+      'faceit-live-sync',
+      'faceit-upcoming-sync',
+      'sportdevs-upcoming-matches-sync',
+      'sportdevs-teams-sync',
+      'sportdevs-tournaments-sync'
+    ];
+
+    for (const job of oldJobs) {
+      await supabase.rpc('sql', {
+        query: `SELECT cron.unschedule('${job}');`
+      }).catch(() => {}); // Ignore errors if job doesn't exist
+    }
+
+    // Schedule midnight master sync (runs all endpoints once daily at 00:00)
     await supabase.rpc('sql', {
       query: `
         SELECT cron.schedule(
-          'faceit-live-sync',
-          '*/2 * * * *',
+          'midnight-master-sync',
+          '0 0 * * *',
           $$
           SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-faceit-live',
+            url := 'https://${projectRef}.supabase.co/functions/v1/midnight-master-sync',
             headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
             body := '{}'::jsonb
           ) as request_id;
@@ -52,15 +67,15 @@ serve(async (req) => {
       `
     });
 
-    // Schedule upcoming matches sync every 10 minutes
+    // Schedule dynamic cron manager (runs every 3 minutes to manage match-specific syncs)
     await supabase.rpc('sql', {
       query: `
         SELECT cron.schedule(
-          'faceit-upcoming-sync',
-          '*/10 * * * *',
+          'dynamic-cron-manager',
+          '*/3 * * * *',
           $$
           SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-faceit-upcoming',
+            url := 'https://${projectRef}.supabase.co/functions/v1/manage-dynamic-cron',
             headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
             body := '{}'::jsonb
           ) as request_id;
@@ -69,77 +84,23 @@ serve(async (req) => {
       `
     });
 
-    // Add SportDevs cron jobs as well
-    // Schedule SportDevs upcoming matches sync every 15 minutes
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'sportdevs-upcoming-matches-sync',
-          '*/15 * * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-sportdevs-upcoming-matches',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    // Schedule SportDevs teams sync every 2 hours
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'sportdevs-teams-sync',
-          '0 */2 * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-sportdevs-teams',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    // Schedule SportDevs tournaments sync every 6 hours
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'sportdevs-tournaments-sync',
-          '0 */6 * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-sportdevs-tournaments',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    console.log('✅ FACEIT and SportDevs cron jobs set up successfully');
+    console.log('✅ Optimized FACEIT and match-specific cron jobs set up successfully');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'FACEIT and SportDevs cron jobs configured successfully',
+        message: 'Optimized cron jobs configured successfully',
         schedules: {
-          faceit_live: 'Every 2 minutes',
-          faceit_upcoming: 'Every 10 minutes',
-          sportdevs_upcoming_matches: 'Every 15 minutes',
-          sportdevs_teams: 'Every 2 hours',
-          sportdevs_tournaments: 'Every 6 hours'
+          midnight_master_sync: 'Daily at 00:00 (all endpoints)',
+          dynamic_cron_manager: 'Every 3 minutes (manages match-specific 5-min syncs)',
+          match_specific_syncs: 'Every 5 minutes for matches starting within 15 minutes'
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Error setting up cron jobs:', error);
+    console.error('❌ Error setting up optimized cron jobs:', error);
     
     return new Response(
       JSON.stringify({ 

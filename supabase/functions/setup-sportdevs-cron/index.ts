@@ -18,7 +18,7 @@ serve(async (req) => {
   )
 
   try {
-    console.log('⚙️ Setting up SportDevs cron jobs...');
+    console.log('⚙️ Setting up optimized SportDevs cron jobs...');
     
     const projectRef = Deno.env.get('SUPABASE_URL')?.split('//')[1]?.split('.')[0];
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -35,68 +35,26 @@ serve(async (req) => {
       `
     });
 
-    // Schedule upcoming matches sync every 15 minutes
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'sportdevs-upcoming-matches-sync',
-          '*/15 * * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-sportdevs-upcoming-matches',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
+    // Remove old cron jobs if they exist
+    const oldJobs = [
+      'sportdevs-upcoming-matches-sync',
+      'sportdevs-teams-sync',
+      'sportdevs-tournaments-sync'
+    ];
 
-    // Schedule teams sync every 2 hours
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'sportdevs-teams-sync',
-          '0 */2 * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-sportdevs-teams',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
+    for (const job of oldJobs) {
+      await supabase.rpc('sql', {
+        query: `SELECT cron.unschedule('${job}');`
+      }).catch(() => {}); // Ignore errors if job doesn't exist
+    }
 
-    // Schedule tournaments sync every 6 hours
-    await supabase.rpc('sql', {
-      query: `
-        SELECT cron.schedule(
-          'sportdevs-tournaments-sync',
-          '0 */6 * * *',
-          $$
-          SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-sportdevs-tournaments',
-            headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-            body := '{}'::jsonb
-          ) as request_id;
-          $$
-        );
-      `
-    });
-
-    console.log('✅ SportDevs cron jobs set up successfully');
+    console.log('✅ Optimized SportDevs cron jobs configured (using centralized midnight sync)');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'SportDevs cron jobs configured successfully',
-        schedules: {
-          upcoming_matches: 'Every 15 minutes',
-          teams: 'Every 2 hours',
-          tournaments: 'Every 6 hours'
-        }
+        message: 'SportDevs cron jobs optimized successfully',
+        note: 'SportDevs syncing is now handled by the centralized midnight master sync and dynamic match-specific syncs'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
