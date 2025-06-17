@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -9,6 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { FaceitMatchHeader } from '@/components/match-details/FaceitMatchHeader';
+import { FaceitFinishedMatchHeader } from '@/components/match-details/FaceitFinishedMatchHeader';
+import { FaceitLiveMatchHeader } from '@/components/match-details/FaceitLiveMatchHeader';
 import { FaceitCompactMatchHeader } from '@/components/match-details/FaceitCompactMatchHeader';
 import { FaceitPlayerRoster } from '@/components/match-details/FaceitPlayerRoster';
 import { FaceitMobilePlayerLineup } from '@/components/match-details/FaceitMobilePlayerLineup';
@@ -18,6 +19,24 @@ import { fetchSupabaseFaceitMatchDetails } from '@/lib/supabaseFaceitApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useMobile } from '@/hooks/useMobile';
+
+// Helper function to determine header type based on match status
+const getHeaderType = (status: string): 'finished' | 'live' | 'upcoming' => {
+  const normalizedStatus = status?.toLowerCase() || '';
+  
+  // Finished match statuses
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
+    return 'finished';
+  }
+  
+  // Live match statuses
+  if (['ongoing', 'running', 'live'].includes(normalizedStatus)) {
+    return 'live';
+  }
+  
+  // Default to upcoming
+  return 'upcoming';
+};
 
 const FaceitUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -37,30 +56,6 @@ const FaceitUpcomingMatchPage = () => {
       
       if (!match) {
         throw new Error('FACEIT match not found in database');
-      }
-      
-      // 🔧 ENHANCED: Check for both live and finished status with case-insensitive comparison
-      const normalizedStatus = match.status?.toLowerCase() || '';
-      console.log(`🔍 Match ${matchId} status check:`, {
-        originalStatus: match.status,
-        normalizedStatus,
-        statusCategory: 'determining...'
-      });
-      
-      // Check if match is live and redirect
-      const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
-      if (isLive) {
-        console.log('🔴 Match is live, redirecting to live page');
-        navigate(`/faceit/live/${matchId}`, { replace: true });
-        return null;
-      }
-      
-      // 🔧 NEW: Check if match is finished and redirect
-      const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
-      if (isFinished) {
-        console.log(`✅ Match is finished (${match.status}), redirecting to finished page`);
-        navigate(`/faceit/finished/${matchId}`, { replace: true });
-        return null;
       }
       
       console.log('✅ FACEIT match details retrieved from database:', match);
@@ -114,6 +109,26 @@ const FaceitUpcomingMatchPage = () => {
     );
   }
 
+  // Determine which header to render based on match status
+  const headerType = getHeaderType(matchDetails.status);
+  console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchDetails.status}`);
+
+  const renderMatchHeader = () => {
+    if (isMobile) {
+      return <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />;
+    }
+
+    switch (headerType) {
+      case 'finished':
+        return <FaceitFinishedMatchHeader match={matchDetails} />;
+      case 'live':
+        return <FaceitLiveMatchHeader match={matchDetails} />;
+      case 'upcoming':
+      default:
+        return <FaceitMatchHeader match={matchDetails} />;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
@@ -133,13 +148,9 @@ const FaceitUpcomingMatchPage = () => {
               </div>
             )}
 
-            {/* Match Header - Use compact version on mobile */}
+            {/* Dynamic Match Header based on status */}
             <div className="px-2 md:px-8">
-              {isMobile ? (
-                <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />
-              ) : (
-                <FaceitMatchHeader match={matchDetails} />
-              )}
+              {renderMatchHeader()}
             </div>
             
             {/* Player Lineup - Use mobile-optimized component on mobile */}
