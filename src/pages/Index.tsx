@@ -206,13 +206,14 @@ const Index = () => {
       
       console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status})`);
       
-      // 🔧 FIXED: Use actual team IDs from rawData instead of generated ones
-      const actualTeam1Id = match.raw_data?.opponents?.[0]?.opponent?.id?.toString();
-      const actualTeam2Id = match.raw_data?.opponents?.[1]?.opponent?.id?.toString();
+      // 🔧 FIXED: Use actual team IDs from rawData with proper type casting
+      const rawData = match.raw_data as any;
+      const actualTeam1Id = rawData?.opponents?.[0]?.opponent?.id?.toString();
+      const actualTeam2Id = rawData?.opponents?.[1]?.opponent?.id?.toString();
       
       console.log(`🎯 PandaScore team IDs - Team1: ${actualTeam1Id}, Team2: ${actualTeam2Id}`, {
-        rawDataWinner: match.raw_data?.winner?.id,
-        rawDataResults: match.raw_data?.results
+        rawDataWinner: rawData?.winner?.id,
+        rawDataResults: rawData?.results
       });
       
       return {
