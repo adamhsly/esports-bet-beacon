@@ -66,13 +66,17 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const normalizedStatus = status?.toLowerCase() || '';
   const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
 
-  // Enhanced logging for routing decisions
+  // Enhanced logging for routing decisions AND winner/score data
   console.log(`🎯 MatchCard rendering for ${id}:`, {
     originalStatus: status,
     normalizedStatus,
     isFinished,
     hasResults: !!(faceitData?.results),
     source,
+    rawDataKeys: rawData ? Object.keys(rawData) : 'no rawData',
+    rawDataWinnerId: rawData?.winner_id,
+    rawDataResults: rawData?.results,
+    teamsWithIds: teams.map(t => ({ name: t.name, id: t.id })),
     routingDecision: {
       willRouteToFinished: isFinished && source === 'amateur',
       expectedRoute: source === 'amateur' && isFinished 
@@ -172,6 +176,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     // For PandaScore matches, use rawData.winner_id
     if (source === 'professional' && rawData?.winner_id) {
       const teamId = teams[teamIndex]?.id;
+      console.log(`🏆 Checking winner for team ${teamIndex}:`, {
+        teamId,
+        winnerId: rawData.winner_id,
+        isWinner: teamId && rawData.winner_id?.toString() === teamId?.toString()
+      });
+      
       if (teamId) {
         const isWinner = rawData.winner_id.toString() === teamId.toString();
         return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
@@ -196,9 +206,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       const team1Id = teams[0]?.id;
       const team2Id = teams[1]?.id;
       
+      console.log(`📊 Getting score for PandaScore match:`, {
+        team1Id,
+        team2Id,
+        results: rawData.results,
+        team1Name: teams[0]?.name,
+        team2Name: teams[1]?.name
+      });
+      
       if (team1Id && team2Id) {
         const team1Result = rawData.results.find((r: any) => r.team_id?.toString() === team1Id.toString());
         const team2Result = rawData.results.find((r: any) => r.team_id?.toString() === team2Id.toString());
+        
+        console.log(`📊 Score results found:`, {
+          team1Result,
+          team2Result
+        });
         
         if (team1Result && team2Result) {
           return `${team1Result.score} - ${team2Result.score}`;
