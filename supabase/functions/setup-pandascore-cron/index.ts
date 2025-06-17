@@ -35,15 +35,22 @@ serve(async (req) => {
       `
     });
 
-    // Schedule upcoming matches sync every 15 minutes
+    // Remove old cron job if it exists
+    await supabase.rpc('sql', {
+      query: `
+        SELECT cron.unschedule('pandascore-upcoming-matches-sync');
+      `
+    });
+
+    // Schedule matches sync (upcoming + finished) every 15 minutes
     await supabase.rpc('sql', {
       query: `
         SELECT cron.schedule(
-          'pandascore-upcoming-matches-sync',
+          'pandascore-matches-sync',
           '*/15 * * * *',
           $$
           SELECT net.http_post(
-            url := 'https://${projectRef}.supabase.co/functions/v1/sync-pandascore-upcoming-matches',
+            url := 'https://${projectRef}.supabase.co/functions/v1/sync-pandascore-matches',
             headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
             body := '{}'::jsonb
           ) as request_id;
@@ -93,7 +100,7 @@ serve(async (req) => {
         success: true,
         message: 'PandaScore cron jobs configured successfully',
         schedules: {
-          upcoming_matches: 'Every 15 minutes',
+          matches: 'Every 15 minutes (upcoming + finished)',
           teams: 'Every 2 hours',
           tournaments: 'Every 6 hours'
         }

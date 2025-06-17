@@ -61,7 +61,7 @@ export const PandaScoreSyncButtons = () => {
         </h3>
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={() => handleSync('Upcoming Matches (with Players)', 'sync-pandascore-upcoming-matches')}
+            onClick={() => handleSync('All Matches (Upcoming + Finished)', 'sync-pandascore-matches')}
             disabled={syncing['matches']}
             variant="outline"
             size="sm"
@@ -72,7 +72,7 @@ export const PandaScoreSyncButtons = () => {
                 Syncing...
               </>
             ) : (
-              'Sync Upcoming Matches + Players'
+              'Sync All Matches + Players'
             )}
           </Button>
           
@@ -105,7 +105,7 @@ export const PandaScoreSyncButtons = () => {
         </div>
         
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-          💡 The updated sync now fetches detailed match data including player lineups for each team
+          💡 The updated sync now fetches both upcoming and finished matches with detailed player lineups
         </p>
       </div>
     </div>
