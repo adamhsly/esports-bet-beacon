@@ -28,12 +28,12 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
   try {
     console.log(`🔍 Fetching upcoming matches for ${esportType} from database...`);
     
-    // First, try to get data from database
+    // First, try to get data from database - include both upcoming and finished matches
     const { data: dbMatches, error } = await supabase
       .from('pandascore_matches')
       .select('*')
       .eq('esport_type', esportType)
-      .in('status', ['scheduled', 'not_started'])
+      .in('status', ['scheduled', 'not_started', 'finished', 'completed'])
       .gte('start_time', new Date().toISOString())
       .order('start_time', { ascending: true });
 
@@ -49,7 +49,7 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
       ));
       
       if (!isDataStale(new Date(latestSync).toISOString(), CACHE_TTL.MATCHES)) {
-        console.log(`✅ Using fresh database data (${dbMatches.length} matches)`);
+        console.log(`✅ Using fresh database data (${dbMatches.length} matches including finished)`);
         
         // Transform database data to MatchInfo format with consistent ID prefixing
         const transformedMatches = dbMatches.map((match) => {
@@ -67,7 +67,7 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
           };
 
           const matchId = `pandascore_${match.match_id}`;
-          console.log(`🔄 PandaScore match transformed: ${match.match_id} -> ${matchId}`);
+          console.log(`🔄 PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status})`);
 
           return {
             id: matchId, // Ensure consistent prefixing
@@ -78,7 +78,8 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
             bestOf: match.number_of_games || 3,
             homeTeamPlayers: [],
             awayTeamPlayers: [],
-            source: 'professional' as const
+            source: 'professional' as const,
+            status: match.status // Include status for proper categorization
           };
         });
         
@@ -92,6 +93,73 @@ export async function fetchUpcomingMatches(esportType: string): Promise<MatchInf
   } catch (error) {
     console.error('Error in hybrid fetch, falling back to API:', error);
     return apiUpcomingMatches(esportType);
+  }
+}
+
+/**
+ * Fetch finished matches with database-first approach
+ */
+export async function fetchFinishedMatches(esportType: string): Promise<MatchInfo[]> {
+  try {
+    console.log(`🔍 Fetching finished matches for ${esportType} from database...`);
+    
+    // Get finished matches from database
+    const { data: dbMatches, error } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .eq('esport_type', esportType)
+      .in('status', ['finished', 'completed'])
+      .order('start_time', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Database error fetching finished matches:', error);
+      return [];
+    }
+
+    if (dbMatches && dbMatches.length > 0) {
+      console.log(`✅ Found ${dbMatches.length} finished matches in database`);
+      
+      // Transform database data to MatchInfo format with consistent ID prefixing
+      const transformedMatches = dbMatches.map((match) => {
+        const teamsData = match.teams as any;
+        const team1: TeamInfo = {
+          name: teamsData?.team1?.name || 'TBD',
+          id: teamsData?.team1?.id,
+          logo: teamsData?.team1?.logo || '/placeholder.svg'
+        };
+        const team2: TeamInfo = {
+          name: teamsData?.team2?.name || 'TBD',
+          id: teamsData?.team2?.id,
+          logo: teamsData?.team2?.logo || '/placeholder.svg'
+        };
+
+        const matchId = `pandascore_${match.match_id}`;
+        console.log(`🔄 PandaScore finished match transformed: ${match.match_id} -> ${matchId}`);
+
+        return {
+          id: matchId, // Ensure consistent prefixing
+          teams: [team1, team2] as [TeamInfo, TeamInfo],
+          startTime: match.start_time,
+          tournament: match.tournament_name || 'Unknown Tournament',
+          esportType: match.esport_type,
+          bestOf: match.number_of_games || 3,
+          homeTeamPlayers: [],
+          awayTeamPlayers: [],
+          source: 'professional' as const,
+          status: match.status // Include status for proper categorization
+        };
+      });
+      
+      return transformedMatches;
+    }
+
+    console.log('💡 No finished matches found in database');
+    return [];
+
+  } catch (error) {
+    console.error('Error fetching finished matches:', error);
+    return [];
   }
 }
 
@@ -350,7 +418,7 @@ export async function fetchSupabasePandaScoreMatchDetails(matchId: string) {
 
     // Return with consistent prefixed ID
     const finalMatchId = `pandascore_${match.match_id}`;
-    console.log(`✅ PandaScore match details found: ${match.match_id} -> ${finalMatchId}`);
+    console.log(`✅ PandaScore match details found: ${match.match_id} -> ${finalMatchId} (status: ${match.status})`);
 
     const transformedMatch = {
       id: finalMatchId, // Ensure consistent prefixing

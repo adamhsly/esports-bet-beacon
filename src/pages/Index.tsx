@@ -103,6 +103,28 @@ const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'fini
   return null;
 };
 
+// Helper function to map PandaScore statuses to display categories  
+const getPandaScoreStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+  const lowerStatus = status.toLowerCase();
+  
+  // Live match statuses for PandaScore
+  if (['live', 'running', 'ongoing'].includes(lowerStatus)) {
+    return 'live';
+  }
+  
+  // Upcoming match statuses for PandaScore
+  if (['scheduled', 'upcoming', 'ready', 'not_started'].includes(lowerStatus)) {
+    return 'upcoming';
+  }
+  
+  // Finished match statuses for PandaScore
+  if (['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+    return 'finished';
+  }
+  
+  return null;
+};
+
 // Helper for grouping matches by tournament/league
 function groupMatchesByLeague(matches: MatchInfo[]) {
   // Use tournament_name or tournament as group key
@@ -140,9 +162,9 @@ const Index = () => {
   // Check if selected date is today
   const isSelectedDateToday = isToday(selectedDate);
   
-  // Updated unified match loading function to exclude SportDevs matches
+  // Updated unified match loading function to include finished PandaScore matches
   const loadAllMatchesFromDatabase = async (): Promise<MatchInfo[]> => {
-    console.log('🔄 Loading matches from database (FACEIT + PandaScore only)...');
+    console.log('🔄 Loading matches from database (FACEIT + PandaScore including finished)...');
     
     // Fetch FACEIT matches with full data including status and results
     const faceitMatches = await fetchSupabaseFaceitAllMatches();
@@ -163,11 +185,11 @@ const Index = () => {
     // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
     console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
-    // Fetch PandaScore matches only (excluding SportDevs)
+    // Fetch PandaScore matches including finished ones
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .in('status', ['scheduled', 'not_started', 'running', 'live'])
+      .in('status', ['scheduled', 'not_started', 'running', 'live', 'finished', 'completed'])
       .order('start_time', { ascending: true })
       .limit(200);
 
@@ -175,14 +197,14 @@ const Index = () => {
       console.error('Error loading PandaScore matches:', pandascoreError);
     }
 
-    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database`);
+    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (including finished)`);
     
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
       const teamsData = match.teams as unknown as PandaScoreTeamsData;
       const matchId = `pandascore_${match.match_id}`;
       
-      console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId}`);
+      console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status})`);
       
       return {
         id: matchId, // Ensure consistent prefixing for homepage
@@ -202,12 +224,13 @@ const Index = () => {
         tournament: match.tournament_name || match.league_name || 'Professional Tournament',
         esportType: match.esport_type,
         bestOf: match.number_of_games || 3,
-        source: 'professional' as const
+        source: 'professional' as const,
+        status: match.status // Include status for proper categorization
       } satisfies MatchInfo;
     });
 
     const combinedMatches = [...faceitMatches, ...transformedPandaScore];
-    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore including finished)`);
     
     return combinedMatches;
   };
@@ -277,7 +300,7 @@ const Index = () => {
         
         console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date from unified dataset`);
 
-        // Enhanced categorization with detailed logging
+        // Enhanced categorization with detailed logging for both FACEIT and PandaScore
         const liveMatches: MatchInfo[] = [];
         const upcomingMatches: MatchInfo[] = [];
         const finishedMatches: MatchInfo[] = [];
@@ -311,10 +334,25 @@ const Index = () => {
               upcomingMatches.push(match);
               console.log(`➕ Added ${match.id} to UPCOMING matches (fallback or upcoming status)`);
             }
-          } else {
-            // PandaScore matches - for now assume upcoming
-            upcomingMatches.push(match);
-            console.log(`➕ Added PandaScore match ${match.id} to UPCOMING matches`);
+          } else if (match.source === 'professional') {
+            // PandaScore match categorization
+            const statusCategory = getPandaScoreStatusCategory(match.status || '');
+            
+            console.log(`🎯 PandaScore match ${match.id} categorization result:`, {
+              originalStatus: match.status,
+              statusCategory
+            });
+            
+            if (statusCategory === 'live') {
+              liveMatches.push(match);
+              console.log(`➕ Added PandaScore match ${match.id} to LIVE matches`);
+            } else if (statusCategory === 'finished') {
+              finishedMatches.push(match);
+              console.log(`➕ Added PandaScore match ${match.id} to FINISHED matches`);
+            } else {
+              upcomingMatches.push(match);
+              console.log(`➕ Added PandaScore match ${match.id} to UPCOMING matches`);
+            }
           }
         });
         

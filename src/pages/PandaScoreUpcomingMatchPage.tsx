@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import MatchVotingWidget from '@/components/MatchVotingWidget';
 import { PandaScoreMatchHeader } from '@/components/match-details/PandaScoreMatchHeader';
+import { PandaScoreFinishedMatchHeader } from '@/components/match-details/PandaScoreFinishedMatchHeader';
+import { PandaScoreLiveMatchHeader } from '@/components/match-details/PandaScoreLiveMatchHeader';
 import { PandaScoreCompactMatchHeader } from '@/components/match-details/PandaScoreCompactMatchHeader';
 import { PandaScorePlayerRoster } from '@/components/match-details/PandaScorePlayerRoster';
 import { PandaScoreMobilePlayerLineup } from '@/components/match-details/PandaScoreMobilePlayerLineup';
@@ -18,6 +20,24 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useMobile } from '@/hooks/useMobile';
 import { StreamViewer, extractStreamsFromRawData } from "@/components/StreamViewer";
+
+// Helper function to determine header type based on match status
+const getHeaderType = (status: string): 'finished' | 'live' | 'upcoming' => {
+  const normalizedStatus = status?.toLowerCase() || '';
+  
+  // Finished match statuses
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
+    return 'finished';
+  }
+  
+  // Live match statuses
+  if (['ongoing', 'running', 'live'].includes(normalizedStatus)) {
+    return 'live';
+  }
+  
+  // Default to upcoming
+  return 'upcoming';
+};
 
 const PandaScoreUpcomingMatchPage = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -39,15 +59,6 @@ const PandaScoreUpcomingMatchPage = () => {
       
       if (!match) {
         throw new Error('PandaScore match not found in database');
-      }
-      
-      // Check if match is live and redirect if so
-      const isLive = match.status === 'running' || match.status === 'live';
-      
-      if (isLive) {
-        console.log('🔴 Match is live, redirecting to live page');
-        navigate(`/pandascore/live/${matchId}`, { replace: true });
-        return null;
       }
       
       console.log('✅ PandaScore match details retrieved from database:', match);
@@ -101,7 +112,27 @@ const PandaScoreUpcomingMatchPage = () => {
     );
   }
 
-  // --- NEW: Extract streams from rawData ---
+  // Determine which header to render based on match status
+  const headerType = getHeaderType(matchDetails.status);
+  console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchDetails.status}`);
+
+  const renderMatchHeader = () => {
+    if (isMobile) {
+      return <PandaScoreCompactMatchHeader match={matchDetails} isMobile={true} />;
+    }
+
+    switch (headerType) {
+      case 'finished':
+        return <PandaScoreFinishedMatchHeader match={matchDetails} />;
+      case 'live':
+        return <PandaScoreLiveMatchHeader match={matchDetails} />;
+      case 'upcoming':
+      default:
+        return <PandaScoreMatchHeader match={matchDetails} />;
+    }
+  };
+
+  // --- Extract streams from rawData ---
   const streams = extractStreamsFromRawData(matchDetails.rawData);
   const hasStreams = streams && streams.length > 0;
 
@@ -120,15 +151,11 @@ const PandaScoreUpcomingMatchPage = () => {
             </Alert>
           )}
 
-          {/* --- Match Header --- */}
-          {isMobile ? (
-            <PandaScoreCompactMatchHeader match={matchDetails} isMobile={true} />
-          ) : (
-            <PandaScoreMatchHeader match={matchDetails} />
-          )}
+          {/* --- Dynamic Match Header based on status --- */}
+          {renderMatchHeader()}
 
-          {/* --- StreamViewer widget stacked prominently, above lineups --- */}
-          {hasStreams && (
+          {/* --- StreamViewer widget for non-finished matches --- */}
+          {hasStreams && headerType !== 'finished' && (
             <Card className="bg-theme-gray-dark border border-theme-gray-medium p-3 mb-4">
               <h3 className="text-base lg:text-xl font-bold text-white mb-3">
                 {isMobile ? 'Match Streams' : 'Streams'}
@@ -147,7 +174,7 @@ const PandaScoreUpcomingMatchPage = () => {
             <PandaScorePlayerLineupTable teams={matchDetails.teams} />
           )}
 
-          {/* --- The rest of the content: PreMatchStats, Tabs with only Overview/Stats/Voting --- */}
+          {/* --- The rest of the content --- */}
           {isMobile ? (
             <div className="space-y-2">
               <PandaScorePreMatchStats
@@ -203,7 +230,6 @@ const PandaScoreUpcomingMatchPage = () => {
                 >
                   Community Vote
                 </TabsTrigger>
-                {/* Removed Stream Info tab */}
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">

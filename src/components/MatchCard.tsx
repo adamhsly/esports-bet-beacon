@@ -61,9 +61,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData } = match;
   const matchDate = new Date(startTime);
   
-  // 🔧 FIXED: Case-insensitive status comparison
+  // 🔧 FIXED: Case-insensitive status comparison for both FACEIT and PandaScore
   const normalizedStatus = status?.toLowerCase() || '';
-  const isFinished = normalizedStatus === 'finished' || normalizedStatus === 'completed';
+  const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
 
   // Enhanced logging for routing decisions
   console.log(`🎯 MatchCard rendering for ${id}:`, {
@@ -73,8 +73,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     hasResults: !!(faceitData?.results),
     source,
     routingDecision: {
-      willRouteToFinished: isFinished,
-      expectedRoute: isFinished ? `/faceit/finished/${id.replace('faceit_', '')}` : `/faceit/match/${id.replace('faceit_', '')}`
+      willRouteToFinished: isFinished && source === 'amateur',
+      expectedRoute: source === 'amateur' && isFinished 
+        ? `/faceit/finished/${id.replace('faceit_', '')}` 
+        : source === 'amateur' 
+        ? `/faceit/match/${id.replace('faceit_', '')}`
+        : `/pandascore/match/${id.replace('pandascore_', '')}`
     }
   });
 
@@ -100,14 +104,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
     if (isFinished) {
       to = `/faceit/finished/${id.replace('faceit_', '')}`;
-      console.log(`🎯 FINISHED match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
+      console.log(`🎯 FINISHED FACEIT match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
     } else {
       to = `/faceit/match/${id.replace('faceit_', '')}`;
-      console.log(`🎯 UPCOMING/LIVE match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
+      console.log(`🎯 UPCOMING/LIVE FACEIT match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
     }
   } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
-    to = `/pandascore/match/${id}`;
-    console.log(`🎯 PROFESSIONAL match ${id} will route to: ${to}`);
+    // For PandaScore matches, always route to the same page (no separate finished page)
+    to = `/pandascore/match/${id.replace('pandascore_', '')}`;
+    console.log(`🎯 PANDASCORE match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
   } else {
     to = `/match/${id}`;
     console.log(`🎯 UNKNOWN source match ${id} will route to: ${to}`);
@@ -153,13 +158,35 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     }
   };
 
-  // Determine winner and styling for finished matches
+  // Determine winner and styling for finished matches (FACEIT only has results data)
   const getWinnerStyling = (teamIndex: number) => {
-    if (!isFinished || !faceitData?.results) return '';
+    if (!isFinished) return '';
     
-    const isWinner = faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
-    return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+    // For FACEIT matches, use faceitData.results
+    if (source === 'amateur' && faceitData?.results) {
+      const isWinner = faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
+      return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+    }
+    
+    // For PandaScore matches, we don't have results data yet, so no winner styling
+    return '';
   };
+
+  // Get final score for finished matches
+  const getFinalScore = () => {
+    if (!isFinished) return null;
+    
+    // For FACEIT matches
+    if (source === 'amateur' && faceitData?.results) {
+      return `${faceitData.results.score.faction1} - ${faceitData.results.score.faction2}`;
+    }
+    
+    // For PandaScore matches, we might have score in rawData
+    // This would need to be implemented based on PandaScore API structure
+    return null;
+  };
+
+  const finalScore = getFinalScore();
 
   return (
     <Link
@@ -190,10 +217,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
               {tournament_name || tournament}
             </span>
-            {isFinished && faceitData?.results ? (
+            {isFinished && finalScore ? (
               <div className="flex items-center gap-1 text-xs text-green-400 font-semibold">
                 <CheckCircle size={12} />
-                <span>{faceitData.results.score.faction1} - {faceitData.results.score.faction2}</span>
+                <span>{finalScore}</span>
               </div>
             ) : (
               <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
