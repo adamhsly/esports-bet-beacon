@@ -70,6 +70,24 @@ const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finishe
   return null;
 };
 
+// Helper function to determine header type (same logic as FaceitMatchPage)
+const getHeaderType = (status: string): 'finished' | 'live' | 'upcoming' => {
+  const normalizedStatus = status?.toLowerCase() || '';
+  
+  // Finished match statuses
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
+    return 'finished';
+  }
+  
+  // Live match statuses
+  if (['ongoing', 'running', 'live'].includes(normalizedStatus)) {
+    return 'live';
+  }
+  
+  // Default to upcoming
+  return 'upcoming';
+};
+
 // Simplified and direct roster extraction function
 const extractPlayersFromRoster = (rosterData: any, teamName: string): any[] => {
   console.log(`🔍 Extracting players for ${teamName} from roster:`, rosterData);
