@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -67,9 +66,9 @@ const FaceitMatchPage = () => {
     enabled: !!matchId,
     staleTime: 30000,
     retry: 1,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Auto-refresh live matches every 30 seconds
-      if (data && getHeaderType(data.status) === 'live') {
+      if (query.state.data && getHeaderType(query.state.data.status) === 'live') {
         return 30000;
       }
       return false;
