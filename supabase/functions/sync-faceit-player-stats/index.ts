@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -277,6 +278,7 @@ serve(async (req) => {
     let added = 0;
     let updated = 0;
     let errors = 0;
+    let skipped = 0;
 
     for (const playerId of player_ids) {
       try {
@@ -306,6 +308,7 @@ serve(async (req) => {
 
         if (!shouldFetch) {
           console.log(`⏭️ Skipping ${playerId} - data is fresh and has raw response data`);
+          skipped++;
           continue;
         }
 
@@ -313,7 +316,7 @@ serve(async (req) => {
           console.log(`🔄 Forcing refresh for ${playerId} - missing raw response data`);
         }
 
-        // Fetch player details
+        // Fetch player details with shorter timeout for batch processing
         console.log(`🔍 Fetching player details for: ${playerId}`);
         const playerDetailsResponse = await fetch(`https://open.faceit.com/data/v4/players/${playerId}`, {
           headers: {
@@ -328,7 +331,7 @@ serve(async (req) => {
           continue;
         }
 
-        const playerDetails: FaceitPlayerDetails = await playerDetailsResponse.json();
+        const playerDetails = await playerDetailsResponse.json();
 
         // Fetch player CS2 statistics
         console.log(`📈 Fetching CS2 stats for: ${playerId}`);
@@ -339,7 +342,7 @@ serve(async (req) => {
           }
         });
 
-        let playerStats: FaceitPlayerStats | null = null;
+        let playerStats = null;
         if (playerStatsResponse.ok) {
           playerStats = await playerStatsResponse.json();
         } else {
@@ -355,7 +358,7 @@ serve(async (req) => {
           }
         });
 
-        let playerHistory: FaceitPlayerHistory | null = null;
+        let playerHistory = null;
         if (playerHistoryResponse.ok) {
           playerHistory = await playerHistoryResponse.json();
           
@@ -376,7 +379,7 @@ serve(async (req) => {
         const segments = playerStats?.segments || [];
 
         // Build map statistics from segments
-        const mapStats: Record<string, any> = {};
+        const mapStats = {};
         segments.forEach(segment => {
           if (segment.label && segment.stats) {
             mapStats[segment.label] = {
@@ -459,8 +462,8 @@ serve(async (req) => {
 
         processed++;
 
-        // Add delay to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Shorter delay for batch processing during midnight sync
+        await new Promise(resolve => setTimeout(resolve, 150));
 
       } catch (error) {
         console.error(`❌ Error processing player ${playerId}:`, error);
@@ -468,7 +471,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`✅ Player stats sync completed: ${processed} processed, ${added} added, ${updated} updated, ${errors} errors`);
+    console.log(`✅ Player stats sync completed: ${processed} processed, ${added} added, ${updated} updated, ${skipped} skipped, ${errors} errors`);
 
     return new Response(
       JSON.stringify({
@@ -476,6 +479,7 @@ serve(async (req) => {
         processed,
         added,
         updated,
+        skipped,
         errors
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

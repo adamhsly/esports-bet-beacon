@@ -79,6 +79,97 @@ serve(async (req) => {
       }
     }
 
+    // After all endpoint syncs, sync player data for all active players
+    console.log('🎮 Starting comprehensive player data sync...');
+    
+    try {
+      // Get all unique player IDs from recent Faceit matches (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: recentMatches, error: matchError } = await supabase
+        .from('faceit_matches')
+        .select('teams')
+        .gte('scheduled_at', sevenDaysAgo.toISOString());
+
+      if (matchError) {
+        console.error('❌ Error fetching recent matches for player sync:', matchError);
+      } else {
+        // Extract all unique player IDs from match rosters
+        const playerIds = new Set<string>();
+        
+        (recentMatches || []).forEach(match => {
+          const teams = match.teams as any;
+          
+          // Extract player IDs from both teams
+          if (teams?.faction1?.roster) {
+            teams.faction1.roster.forEach((player: any) => {
+              if (player.player_id) playerIds.add(player.player_id);
+            });
+          }
+          if (teams?.faction2?.roster) {
+            teams.faction2.roster.forEach((player: any) => {
+              if (player.player_id) playerIds.add(player.player_id);
+            });
+          }
+        });
+
+        const uniquePlayerIds = Array.from(playerIds);
+        console.log(`🎯 Found ${uniquePlayerIds.length} unique players to sync`);
+
+        if (uniquePlayerIds.length > 0) {
+          // Sync player stats in batches to avoid rate limiting
+          const batchSize = 50;
+          let playerSyncResults = [];
+          
+          for (let i = 0; i < uniquePlayerIds.length; i += batchSize) {
+            const batch = uniquePlayerIds.slice(i, i + batchSize);
+            console.log(`🔄 Syncing player batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(uniquePlayerIds.length/batchSize)} (${batch.length} players)...`);
+            
+            const { data: playerSyncData, error: playerSyncError } = await supabase.functions.invoke('sync-faceit-player-stats', {
+              body: { player_ids: batch }
+            });
+            
+            if (playerSyncError) {
+              console.error(`❌ Error in player stats sync batch ${Math.floor(i/batchSize) + 1}:`, playerSyncError);
+              playerSyncResults.push({
+                batch: Math.floor(i/batchSize) + 1,
+                success: false,
+                error: playerSyncError.message
+              });
+            } else {
+              console.log(`✅ Player stats sync batch ${Math.floor(i/batchSize) + 1} completed successfully`);
+              playerSyncResults.push({
+                batch: Math.floor(i/batchSize) + 1,
+                success: true,
+                data: playerSyncData
+              });
+            }
+            
+            // Wait between batches to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
+          
+          syncResults.push({
+            function: 'sync-faceit-player-stats',
+            success: true,
+            data: {
+              total_players: uniquePlayerIds.length,
+              batches_processed: playerSyncResults.length,
+              batch_results: playerSyncResults
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error in player data sync:', error);
+      syncResults.push({
+        function: 'sync-faceit-player-stats',
+        success: false,
+        error: error.message
+      });
+    }
+
     const successCount = syncResults.filter(r => r.success).length;
     const errorCount = syncResults.filter(r => !r.success).length;
 
@@ -89,7 +180,7 @@ serve(async (req) => {
         success: true,
         message: 'Midnight master sync completed',
         summary: {
-          total_functions: syncFunctions.length,
+          total_functions: syncFunctions.length + 1, // +1 for player stats sync
           successful: successCount,
           failed: errorCount
         },

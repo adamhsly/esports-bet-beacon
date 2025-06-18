@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -256,10 +255,10 @@ export const triggerFaceitPlayerStatsSync = async (playerIds: string[]): Promise
   }
 };
 
-// New function to fetch specific match details with simplified roster extraction
+// New function to fetch specific match details - optimized for speed
 export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<any | null> => {
   try {
-    console.log(`🔍 Fetching enhanced FACEIT match details from database for: ${matchId}`);
+    console.log(`🔍 Fetching FACEIT match details from database for: ${matchId}`);
     
     // Remove 'faceit_' prefix if present
     const cleanMatchId = matchId.startsWith('faceit_') ? matchId.replace('faceit_', '') : matchId;
@@ -285,7 +284,6 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
     // Extract player IDs from match data
     const playerIds: string[] = [];
     const teams = match.teams as any;
-    const rawData = match.raw_data as any;
     
     // Collect all player IDs from both teams
     if (teams?.faction1?.roster) {
@@ -299,18 +297,11 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       });
     }
 
-    console.log(`🎮 Found ${playerIds.length} players, triggering stats sync...`);
+    console.log(`🎮 Found ${playerIds.length} players, fetching enhanced stats from database...`);
     
-    // Trigger player stats sync to ensure we have recent data including match history
-    if (playerIds.length > 0) {
-      await triggerFaceitPlayerStatsSync(playerIds);
-      // Wait a moment for the sync to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-
-    // Fetch enhanced player statistics with match history
+    // Fetch enhanced player statistics directly from database (no API calls)
     const enhancedPlayers = await fetchFaceitPlayerStats(playerIds);
-    console.log(`✅ Retrieved enhanced stats for ${enhancedPlayers.length} players with match history`);
+    console.log(`✅ Retrieved enhanced stats for ${enhancedPlayers.length} players from database`);
 
     // Create a lookup map for enhanced player data
     const playerStatsMap = new Map<string, EnhancedFaceitPlayer>();
@@ -318,7 +309,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       playerStatsMap.set(player.player_id, player);
     });
 
-    // Enhanced roster extraction with comprehensive stats including match history
+    // Enhanced roster extraction with comprehensive stats
     const extractEnhancedPlayersFromRoster = (rosterData: any, teamName: string): any[] => {
       console.log(`🔍 Extracting enhanced players for ${teamName} from roster:`, rosterData);
       
@@ -335,13 +326,13 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
           nickname: player.nickname || player.name || player.username || `Player ${index + 1}`,
           avatar: player.avatar || player.image_url || player.picture,
           
-          // Enhanced stats from database
+          // Enhanced stats from database (fallback to basic data if not available)
           skill_level: enhancedStats?.skill_level || player.game_skill_level || player.skill_level || player.faceit_level || 1,
           faceit_elo: enhancedStats?.faceit_elo || player.faceit_elo || player.elo || player.rating || 800,
           membership: enhancedStats?.membership || player.membership || player.faceit_subscription || 'free',
           country: enhancedStats?.country || player.country,
           
-          // Performance statistics
+          // Performance statistics (only available if enhanced stats exist)
           total_matches: enhancedStats?.total_matches || 0,
           total_wins: enhancedStats?.total_wins || 0,
           win_rate: enhancedStats?.win_rate || 0,
@@ -356,17 +347,12 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
           match_history: enhancedStats?.match_history || [],
           
           // Legacy fields for compatibility
-          games: player.games || (player.lifetime && player.lifetime.Matches) || enhancedStats?.total_matches || 0
+          games: player.games || (player.lifetime && player.lifetime.Matches) || enhancedStats?.total_matches || 0,
+          
+          // Add data freshness indicator
+          has_enhanced_stats: !!enhancedStats,
+          last_updated: enhancedStats?.last_fetched_at || null
         };
-        
-        console.log(`✅ Processed enhanced player for ${teamName}:`, {
-          nickname: processedPlayer.nickname,
-          skill_level: processedPlayer.skill_level,
-          faceit_elo: processedPlayer.faceit_elo,
-          win_rate: processedPlayer.win_rate,
-          recent_form: processedPlayer.recent_form,
-          match_history_count: processedPlayer.match_history?.length || 0
-        });
         
         return processedPlayer;
       });
@@ -383,10 +369,10 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       team2Roster = extractEnhancedPlayersFromRoster(teams.faction2.roster, 'Team 2');
     }
     
-    console.log(`🎮 Enhanced roster extraction results:`);
-    console.log(`   - Team 1: ${team1Roster.length} players with enhanced stats`);
-    console.log(`   - Team 2: ${team2Roster.length} players with enhanced stats`);
-    console.log(`   - Total match history records: ${team1Roster.concat(team2Roster).reduce((sum, p) => sum + (p.match_history?.length || 0), 0)}`);
+    console.log(`🎮 Enhanced roster extraction results (database-only):`);
+    console.log(`   - Team 1: ${team1Roster.length} players`);
+    console.log(`   - Team 2: ${team2Roster.length} players`);
+    console.log(`   - Players with enhanced stats: ${team1Roster.concat(team2Roster).filter(p => p.has_enhanced_stats).length}`);
     
     // Guarantee a proper startTime: Prefer scheduled_at (if not null/invalid), else started_at, else configured_at, else current time
     function getStartTime(m: any) {
@@ -407,14 +393,14 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       id: `faceit_${match.match_id}`,
       teams: [
         {
-          name: teams?.faction1?.name || teams?.team1?.name || rawData?.teams?.faction1?.name || 'Team 1',
-          logo: teams?.faction1?.avatar || teams?.team1?.logo || rawData?.teams?.faction1?.avatar || '/placeholder.svg',
+          name: teams?.faction1?.name || teams?.team1?.name || 'Team 1',
+          logo: teams?.faction1?.avatar || teams?.team1?.logo || '/placeholder.svg',
           id: teams?.faction1?.id || teams?.team1?.id || `team1_${match.match_id}`,
           roster: team1Roster
         },
         {
-          name: teams?.faction2?.name || teams?.team2?.name || rawData?.teams?.faction2?.name || 'Team 2',
-          logo: teams?.faction2?.avatar || teams?.team2?.logo || rawData?.teams?.faction2?.avatar || '/placeholder.svg',
+          name: teams?.faction2?.name || teams?.team2?.name || 'Team 2',
+          logo: teams?.faction2?.avatar || teams?.team2?.logo || '/placeholder.svg',
           id: teams?.faction2?.id || teams?.team2?.id || `team2_${match.match_id}`,
           roster: team2Roster
         }
@@ -425,7 +411,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       season_name: match.competition_type,
       class_name: match.organized_by,
       esportType: 'csgo',
-      bestOf: rawData?.best_of || (rawData && typeof rawData === 'object' && 'best_of' in rawData ? (rawData as any).best_of : 1),
+      bestOf: match.raw_data?.best_of || 1,
       source: 'amateur' as const,
       faceitData: {
         region: match.region,
@@ -441,21 +427,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       }
     };
     
-    console.log('✅ Final enhanced match with comprehensive player stats and match history:', {
-      id: transformedMatch.id,
-      team1: {
-        name: transformedMatch.teams[0].name,
-        rosterCount: transformedMatch.teams[0].roster?.length || 0,
-        enhancedPlayers: transformedMatch.teams[0].roster?.filter(p => p.faceit_elo > 0).length || 0,
-        playersWithHistory: transformedMatch.teams[0].roster?.filter(p => p.match_history && p.match_history.length > 0).length || 0
-      },
-      team2: {
-        name: transformedMatch.teams[1].name,
-        rosterCount: transformedMatch.teams[1].roster?.length || 0,
-        enhancedPlayers: transformedMatch.teams[1].roster?.filter(p => p.faceit_elo > 0).length || 0,
-        playersWithHistory: transformedMatch.teams[1].roster?.filter(p => p.match_history && p.match_history.length > 0).length || 0
-      }
-    });
+    console.log('✅ Fast match loading completed (database-only lookup)');
     
     return transformedMatch;
     
