@@ -23,6 +23,7 @@ export interface EnhancedFaceitPlayer {
   recent_form_string?: string;
   map_stats?: Record<string, any>;
   match_history?: PlayerMatchHistory[];
+  last_fetched_at?: string; // Add the missing property
 }
 
 // New interface for player match history
@@ -222,7 +223,8 @@ export const fetchFaceitPlayerStats = async (playerIds: string[]): Promise<Enhan
           recent_form: validateRecentForm(player.recent_form),
           recent_form_string: player.recent_form_string,
           map_stats: convertToMapStats(player.map_stats),
-          match_history: matchHistory
+          match_history: matchHistory,
+          last_fetched_at: player.last_fetched_at // Include the last_fetched_at property
         };
       })
     );
@@ -388,6 +390,21 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       return new Date().toISOString();
     }
 
+    // Extract best_of from raw_data with proper type checking
+    let bestOf = 3;
+    if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+      const rawData = match.raw_data as Record<string, any>;
+      if (typeof rawData.best_of === 'number') {
+        bestOf = rawData.best_of;
+      }
+    }
+    if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+      const faceitData = match.faceit_data as Record<string, any>;
+      if (typeof faceitData.best_of === 'number') {
+        bestOf = faceitData.best_of;
+      }
+    }
+
     // Transform to expected format with enhanced data
     const transformedMatch = {
       id: `faceit_${match.match_id}`,
@@ -411,7 +428,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       season_name: match.competition_type,
       class_name: match.organized_by,
       esportType: 'csgo',
-      bestOf: match.raw_data?.best_of || 1,
+      bestOf: bestOf,
       source: 'amateur' as const,
       faceitData: {
         region: match.region,
