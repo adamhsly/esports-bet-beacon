@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock, Trophy, Users, CheckCircle } from 'lucide-react';
@@ -79,12 +78,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     rawDataResults: rawData?.results,
     teamsWithIds: teams.map(t => ({ name: t.name, id: t.id })),
     routingDecision: {
-      willRouteToFinished: isFinished && source === 'amateur',
-      expectedRoute: source === 'amateur' && isFinished 
-        ? `/faceit/finished/${id.replace('faceit_', '')}` 
-        : source === 'amateur' 
-        ? `/faceit/match/${id.replace('faceit_', '')}`
-        : `/pandascore/match/${id.replace('pandascore_', '')}`
+      willRouteToUnifiedFaceit: source === 'amateur',
+      expectedRoute: source === 'amateur' 
+        ? `/faceit/match/${id.replace('faceit_', '')}` 
+        : source === 'professional' 
+        ? `/pandascore/match/${id.replace('pandascore_', '')}`
+        : `/match/${id}`
     }
   });
 
@@ -108,13 +107,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   // Determine the correct route for the given match with enhanced logging
   let to = '/';
   if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
-    if (isFinished) {
-      to = `/faceit/finished/${id.replace('faceit_', '')}`;
-      console.log(`🎯 FINISHED FACEIT match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
-    } else {
-      to = `/faceit/match/${id.replace('faceit_', '')}`;
-      console.log(`🎯 UPCOMING/LIVE FACEIT match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
-    }
+    // All FACEIT matches go to the unified page regardless of status
+    to = `/faceit/match/${id.replace('faceit_', '')}`;
+    console.log(`🎯 FACEIT match ${id} will route to unified page: ${to} (status: ${status} -> ${normalizedStatus})`);
   } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
     // For PandaScore matches, always route to the same page (no separate finished page)
     to = `/pandascore/match/${id.replace('pandascore_', '')}`;
