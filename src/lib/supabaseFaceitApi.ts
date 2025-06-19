@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -423,6 +424,27 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       }
     }
 
+    // 🔧 CRITICAL FIX: Extract results from raw_data or faceit_data
+    let results = null;
+    
+    // Check raw_data first for results
+    if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+      const rawData = match.raw_data as Record<string, any>;
+      if (rawData.results) {
+        results = rawData.results;
+        console.log('🏆 Found results in raw_data:', results);
+      }
+    }
+    
+    // Fallback to faceit_data if no results in raw_data
+    if (!results && match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+      const faceitData = match.faceit_data as Record<string, any>;
+      if (faceitData.results) {
+        results = faceitData.results;
+        console.log('🏆 Found results in faceit_data:', results);
+      }
+    }
+
     // Transform to expected format with enhanced data
     const transformedMatch = {
       id: `faceit_${match.match_id}`,
@@ -448,11 +470,15 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       esportType: 'csgo',
       bestOf: bestOf,
       source: 'amateur' as const,
+      status: match.status, // 🔧 CRITICAL: Include status for proper header detection
+      finished_at: match.finished_at, // 🔧 CRITICAL: Include finished_at for finished matches
+      finishedTime: match.finished_at, // 🔧 CRITICAL: Legacy field for compatibility
       faceitData: {
         region: match.region,
         competitionType: match.competition_type,
         organizedBy: match.organized_by,
-        calculateElo: match.calculate_elo
+        calculateElo: match.calculate_elo,
+        results: results // 🔧 CRITICAL: Include results data for winner/score display
       },
       faceitMatchDetails: {
         version: match.version,
@@ -462,7 +488,12 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       }
     };
     
-    console.log('✅ Fast match loading completed (database-only lookup)');
+    console.log('✅ Fast match loading completed with results:', {
+      hasResults: !!results,
+      results: results,
+      status: match.status,
+      finishedAt: match.finished_at
+    });
     
     return transformedMatch;
     
