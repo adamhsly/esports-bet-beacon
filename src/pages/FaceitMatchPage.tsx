@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -123,16 +124,21 @@ const FaceitMatchPage = () => {
   console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchDetails.status}`);
 
   const renderMatchHeader = () => {
+    // For finished matches, always use the full finished header to show scores and winners
+    if (headerType === 'finished') {
+      return <FaceitFinishedMatchHeader match={{
+        ...matchDetails,
+        finishedTime: matchDetails.finished_at || matchDetails.startTime
+      }} />;
+    }
+
+    // For mobile non-finished matches, use compact header
     if (isMobile) {
       return <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />;
     }
 
+    // Desktop headers for live and upcoming matches
     switch (headerType) {
-      case 'finished':
-        return <FaceitFinishedMatchHeader match={{
-          ...matchDetails,
-          finishedTime: matchDetails.finished_at || matchDetails.startTime
-        }} />;
       case 'live':
         return <FaceitLiveMatchHeader match={matchDetails} />;
       case 'upcoming':
