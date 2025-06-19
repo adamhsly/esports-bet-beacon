@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, Trophy, Calendar, Crown } from 'lucide-react';
+import { CheckCircle, Clock, Users, Calendar, Crown } from 'lucide-react';
 
 interface FaceitFinishedMatchHeaderProps {
   match: {
@@ -66,8 +66,8 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
   };
 
   const getTeamStyling = (teamIndex: number) => {
-    if (!results) return 'border-theme-gray-medium';
-    return isWinner(teamIndex) ? 'border-green-400 bg-green-900/30' : 'border-gray-600 opacity-75';
+    if (!results) return '';
+    return isWinner(teamIndex) ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
   };
 
   const getScore = (teamIndex: number) => {
@@ -76,145 +76,88 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
   };
 
   return (
-    <Card className="bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border border-green-500/30 overflow-hidden">
-      <div className="p-6">
-        {/* Top Section - Tournament and Status */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-2">
-              {match.competition_name || match.tournament || 'FACEIT Match'}
-            </h1>
-            <div className="flex items-center gap-4 text-gray-400">
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>Finished {finishedTime ? new Date(finishedTime).toLocaleDateString() : new Date(match.startTime).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2" />
-                <span>Duration: {getMatchDuration()}</span>
-              </div>
-              {match.faceitData?.region && (
-                <div className="flex items-center">
-                  <span>Region: {match.faceitData.region}</span>
-                </div>
-              )}
-            </div>
+    <Card className="bg-orange-950/70 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none">
+      <div className="flex flex-col gap-2 px-3 py-3">
+        {/* Tournament info and finished status row */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-400 truncate max-w-[65%] font-medium">
+            {match.competition_name || match.tournament || 'FACEIT Match'}
+          </span>
+          <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
+            <CheckCircle size={14} />
+            <span>{results ? `${getScore(0)} - ${getScore(1)}` : 'FINISHED'}</span>
           </div>
-          <Badge className="bg-green-500 text-white text-lg px-4 py-2">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            FINISHED
-          </Badge>
         </div>
-
-        {/* Teams and Score Display */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+        
+        {/* Teams row */}
+        <div className="flex items-center justify-between min-h-10">
           {/* Team 1 */}
-          <div className={`col-span-2 text-center rounded-lg p-6 border-2 transition-all ${getTeamStyling(0)}`}>
-            <div className="flex flex-col items-center">
-              <img 
-                src={team1.logo || team1.avatar || '/placeholder.svg'} 
-                alt={team1.name} 
-                className="w-20 h-20 object-contain mb-3 rounded-lg"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-              <h3 className="text-xl font-bold text-white mb-2">{team1.name}</h3>
-              <p className="text-sm text-gray-400 mb-3">
-                {team1.roster?.length || 0} players
-              </p>
-              {isWinner(0) && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
-                  <Crown className="h-3 w-3 mr-1" />
-                  WINNER
-                </Badge>
-              )}
-            </div>
+          <div className={`flex items-center gap-2 flex-1 rounded-lg p-2 transition-all ${getTeamStyling(0)}`}>
+            <img
+              src={team1.logo || team1.avatar || '/placeholder.svg'}
+              alt={`${team1.name} logo`}
+              className="w-8 h-8 object-contain rounded-md bg-gray-800"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+            <span className="truncate font-semibold text-sm text-white max-w-[90px]">{team1.name}</span>
+            {isWinner(0) && (
+              <Crown className="h-4 w-4 text-green-400 ml-1" />
+            )}
           </div>
           
-          {/* Score Section */}
-          <div className="col-span-1 text-center">
-            <div className="bg-theme-gray-dark rounded-lg p-6 border border-theme-gray-medium">
-              {results ? (
-                <>
-                  <div className="text-5xl font-bold text-white mb-2">
-                    <span className={isWinner(0) ? 'text-green-400' : 'text-gray-300'}>
-                      {getScore(0)}
-                    </span>
-                    <span className="text-gray-500 mx-2">:</span>
-                    <span className={isWinner(1) ? 'text-green-400' : 'text-gray-300'}>
-                      {getScore(1)}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-400">Final Score</div>
-                </>
-              ) : (
-                <>
-                  <div className="text-3xl font-bold text-white mb-2">
-                    <Trophy className="h-8 w-8 mx-auto mb-2" />
-                  </div>
-                  <div className="text-sm text-gray-400">Match Complete</div>
-                  <div className="text-xs text-gray-500">Score unavailable</div>
-                </>
-              )}
-            </div>
-          </div>
+          <span className="text-md font-bold text-gray-400 mx-2">vs</span>
           
           {/* Team 2 */}
-          <div className={`col-span-2 text-center rounded-lg p-6 border-2 transition-all ${getTeamStyling(1)}`}>
-            <div className="flex flex-col items-center">
-              <img 
-                src={team2.logo || team2.avatar || '/placeholder.svg'} 
-                alt={team2.name} 
-                className="w-20 h-20 object-contain mb-3 rounded-lg"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-              <h3 className="text-xl font-bold text-white mb-2">{team2.name}</h3>
-              <p className="text-sm text-gray-400 mb-3">
-                {team2.roster?.length || 0} players
-              </p>
-              {isWinner(1) && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
-                  <Crown className="h-3 w-3 mr-1" />
-                  WINNER
-                </Badge>
-              )}
-            </div>
+          <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-2 transition-all ${getTeamStyling(1)}`}>
+            {isWinner(1) && (
+              <Crown className="h-4 w-4 text-green-400 mr-1" />
+            )}
+            <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{team2.name}</span>
+            <img
+              src={team2.logo || team2.avatar || '/placeholder.svg'}
+              alt={`${team2.name} logo`}
+              className="w-8 h-8 object-contain rounded-md bg-gray-800"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
           </div>
         </div>
-
-        {/* Match Details Footer */}
-        <div className="mt-6 pt-6 border-t border-theme-gray-medium">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-sm text-gray-400">Region</div>
-              <div className="text-white font-semibold">{match.faceitData?.region || 'EU'}</div>
+        
+        {/* Bottom info row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Badge
+              variant="outline"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-orange-500/20 text-orange-400 border-orange-400/30"
+            >
+              <Users size={10} className="mr-1" />
+              FACEIT
+            </Badge>
+            <Badge
+              variant="outline"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-400/30 ml-1"
+            >
+              <CheckCircle size={10} className="mr-1" />
+              FINISHED
+            </Badge>
+          </div>
+          
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <div className="flex items-center">
+              <Calendar className="h-3 w-3 mr-1" />
+              <span>{finishedTime ? new Date(finishedTime).toLocaleDateString() : new Date(match.startTime).toLocaleDateString()}</span>
             </div>
-            <div>
-              <div className="text-sm text-gray-400">Type</div>
-              <div className="text-white font-semibold">
-                {match.faceitData?.calculateElo ? 'ELO Match' : 'League Match'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Started</div>
-              <div className="text-white font-semibold">
-                {new Date(match.startTime).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Finished</div>
-              <div className="text-white font-semibold">
-                {finishedTime ? new Date(finishedTime).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                }) : 'Unknown'}
-              </div>
+            <div className="flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>
+                {finishedTime 
+                  ? new Date(finishedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : getMatchDuration()
+                }
+              </span>
             </div>
           </div>
         </div>
