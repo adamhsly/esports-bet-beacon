@@ -122,13 +122,7 @@ export const fetchSupabasePandaScoreMatchDetails = async (matchId: string): Prom
       status: match.status, // 🔧 CRITICAL: Include status for proper header detection
       finished_at: match.end_time, // 🔧 CRITICAL: Include finished_at for finished matches
       finishedTime: match.end_time, // 🔧 CRITICAL: Legacy field for compatibility
-      pandaScoreData: {
-        league_id: match.league_id,
-        tournament_id: match.tournament_id,
-        serie_id: match.serie_id,
-        matchType: match.match_type,
-        results: results // 🔧 CRITICAL: Include results data for winner/score display
-      }
+      results: results // 🔧 CRITICAL: Include results data for winner/score display
     };
     
     console.log('✅ PandaScore match loading completed with results:', {
@@ -194,14 +188,7 @@ export const fetchSupabasePandaScoreAllMatches = async (): Promise<MatchInfo[]> 
         esportType: match.esport_type || 'csgo',
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
-        status: match.status,
-        pandaScoreData: {
-          league_id: match.league_id,
-          tournament_id: match.tournament_id,
-          serie_id: match.serie_id,
-          matchType: match.match_type,
-          results: results
-        }
+        status: match.status
       } satisfies MatchInfo;
 
       return transformedMatch;
@@ -262,14 +249,7 @@ export const fetchSupabasePandaScoreMatchesByDate = async (date: Date) => {
         esportType: match.esport_type || 'csgo',
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
-        status: match.status,
-        pandaScoreData: {
-          league_id: match.league_id,
-          tournament_id: match.tournament_id,
-          serie_id: match.serie_id,
-          matchType: match.match_type,
-          results: results
-        }
+        status: match.status
       } satisfies MatchInfo;
     });
 
@@ -349,14 +329,7 @@ export const fetchSupabasePandaScoreFinishedMatches = async (limit: number = 10)
         esportType: match.esport_type || 'csgo',
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
-        status: match.status,
-        pandaScoreData: {
-          league_id: match.league_id,
-          tournament_id: match.tournament_id,
-          serie_id: match.serie_id,
-          matchType: match.match_type,
-          results: results
-        }
+        status: match.status
       } satisfies MatchInfo;
     });
   } catch (error) {
