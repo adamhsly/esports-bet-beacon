@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Trophy, Calendar, Clock, MapPin, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Clock, Users, Calendar, Crown } from 'lucide-react';
 
 interface PandaScoreFinishedMatchHeaderProps {
   match: {
@@ -10,138 +10,158 @@ interface PandaScoreFinishedMatchHeaderProps {
     teams: Array<{
       name: string;
       logo?: string;
-      id?: string;
+      avatar?: string;
+      roster?: Array<{
+        nickname: string;
+        player_id: string;
+        position?: string;
+      }>;
     }>;
     startTime: string;
+    finishedTime?: string;
+    finished_at?: string;
     tournament?: string;
-    esportType: string;
-    bestOf?: number;
+    tournament_name?: string;
+    league_name?: string;
+    serie_name?: string;
+    pandaScoreData?: {
+      results?: {
+        winner: string;
+        score: {
+          team1: number;
+          team2: number;
+        };
+      };
+      status?: string;
+    };
     status: string;
-    rawData?: any;
   };
 }
 
 export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHeaderProps> = ({ match }) => {
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-  };
-
-  const { date, time } = formatDateTime(match.startTime);
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
+  const results = match.pandaScoreData?.results;
+  const finishedTime = match.finishedTime || match.finished_at;
 
-  // Extract winner and score from rawData
-  const getMatchResult = () => {
-    if (match.rawData?.results && Array.isArray(match.rawData.results) && match.rawData.winner_id) {
-      const team1Id = team1.id;
-      const team2Id = team2.id;
-      
-      if (team1Id && team2Id) {
-        const team1Result = match.rawData.results.find((r: any) => r.team_id?.toString() === team1Id.toString());
-        const team2Result = match.rawData.results.find((r: any) => r.team_id?.toString() === team2Id.toString());
-        
-        if (team1Result && team2Result) {
-          const winnerId = match.rawData.winner_id.toString();
-          return {
-            winner: winnerId === team1Id.toString() ? 'team1' : 'team2',
-            score: { team1: team1Result.score, team2: team2Result.score }
-          };
-        }
-      }
+  const getMatchDuration = () => {
+    if (!finishedTime) return 'Unknown duration';
+    
+    const startTime = new Date(match.startTime);
+    const endTime = new Date(finishedTime);
+    const diffMs = endTime.getTime() - startTime.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
     }
-    return null;
+    return `${minutes}m`;
   };
 
-  const result = getMatchResult();
+  const isWinner = (teamIndex: number) => {
+    if (!results) return false;
+    return results.winner === (teamIndex === 0 ? 'team1' : 'team2');
+  };
+
+  const getTeamStyling = (teamIndex: number) => {
+    if (!results) return '';
+    return isWinner(teamIndex) ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+  };
+
+  const getScore = (teamIndex: number) => {
+    if (!results) return '-';
+    return teamIndex === 0 ? results.score.team1 : results.score.team2;
+  };
+
+  const getTournamentName = () => {
+    return match.tournament_name || match.tournament || match.league_name || match.serie_name || 'PandaScore Match';
+  };
 
   return (
-    <Card className="bg-theme-gray-dark border border-green-500/30 overflow-hidden">
-      <div className="p-6">
-        {/* Top Section - Tournament and Badges */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg text-gray-300">{match.tournament || 'Pro Match'}</span>
-              <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-                <Trophy size={12} className="mr-1" />
-                PRO
-              </Badge>
-              <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30">
-                <CheckCircle size={12} className="mr-1" />
-                FINISHED
-              </Badge>
-            </div>
-            <span className="text-sm text-blue-400 uppercase">{match.esportType}</span>
+    <Card className="bg-blue-950/70 ring-1 ring-blue-400/30 border-0 rounded-xl shadow-none">
+      <div className="flex flex-col gap-2 px-3 py-3">
+        {/* Tournament info and finished status row */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-400 truncate max-w-[65%] font-medium">
+            {getTournamentName()}
+          </span>
+          <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
+            <CheckCircle size={14} />
+            <span>{results ? `${getScore(0)} - ${getScore(1)}` : 'FINISHED'}</span>
           </div>
-          <Badge className="bg-theme-purple">
-            BO{match.bestOf || 3}
-          </Badge>
         </div>
-
-        {/* Result Section */}
-        {result && (
-          <div className="text-center mb-4">
-            <div className="text-2xl font-bold text-green-400 mb-1">
-              MATCH FINISHED
-            </div>
-            <div className="text-lg text-gray-300">
-              Final Score: {result.score.team1} - {result.score.team2}
-            </div>
+        
+        {/* Teams row */}
+        <div className="flex items-center justify-between min-h-10">
+          {/* Team 1 */}
+          <div className={`flex items-center gap-2 flex-1 rounded-lg p-2 transition-all ${getTeamStyling(0)}`}>
+            <img
+              src={team1.logo || team1.avatar || '/placeholder.svg'}
+              alt={`${team1.name} logo`}
+              className="w-8 h-8 object-contain rounded-md bg-gray-800"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+            <span className="truncate font-semibold text-sm text-white max-w-[90px]">{team1.name}</span>
+            {isWinner(0) && (
+              <Crown className="h-4 w-4 text-green-400 ml-1" />
+            )}
           </div>
-        )}
-
-        {/* Teams Section */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          {[team1, team2].map((team, index) => {
-            const isWinner = result && result.winner === (index === 0 ? 'team1' : 'team2');
-            
-            return (
-              <div
-                key={team.name || index}
-                className={`flex flex-1 items-center ${index === 1 ? 'flex-row-reverse' : ''} ${
-                  isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20 rounded-lg p-2' : 'opacity-75'
-                }`}
-              >
-                <div className={`flex flex-col items-${index === 0 ? 'start' : 'end'} flex-1`}>
-                  <img
-                    src={team.logo || '/placeholder.svg'}
-                    alt={`${team.name} logo`}
-                    className="w-20 h-20 object-contain mb-3"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold text-white">{team.name}</span>
-                    {isWinner && <Trophy className="h-5 w-5 text-yellow-400" />}
-                  </div>
-                </div>
-                {index === 0 && (
-                  <span className="mx-6 text-2xl text-gray-400 font-bold">vs</span>
-                )}
-              </div>
-            );
-          })}
+          
+          <span className="text-md font-bold text-gray-400 mx-2">vs</span>
+          
+          {/* Team 2 */}
+          <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-2 transition-all ${getTeamStyling(1)}`}>
+            {isWinner(1) && (
+              <Crown className="h-4 w-4 text-green-400 mr-1" />
+            )}
+            <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{team2.name}</span>
+            <img
+              src={team2.logo || team2.avatar || '/placeholder.svg'}
+              alt={`${team2.name} logo`}
+              className="w-8 h-8 object-contain rounded-md bg-gray-800"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+          </div>
         </div>
-
-        {/* Bottom Section - Match Info */}
-        <div className="flex justify-center items-center">
-          <div className="flex items-center text-gray-400 text-sm gap-4">
+        
+        {/* Bottom info row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Badge
+              variant="outline"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-blue-500/20 text-blue-400 border-blue-400/30"
+            >
+              <Users size={10} className="mr-1" />
+              PROFESSIONAL
+            </Badge>
+            <Badge
+              variant="outline"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-400/30 ml-1"
+            >
+              <CheckCircle size={10} className="mr-1" />
+              FINISHED
+            </Badge>
+          </div>
+          
+          <div className="flex items-center gap-3 text-xs text-gray-400">
             <div className="flex items-center">
-              <Calendar size={14} className="mr-1.5" />
-              <span>{date}</span>
+              <Calendar className="h-3 w-3 mr-1" />
+              <span>{finishedTime ? new Date(finishedTime).toLocaleDateString() : new Date(match.startTime).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center">
-              <Clock size={14} className="mr-1.5" />
-              <span>{time}</span>
-            </div>
-            <div className="flex items-center">
-              <MapPin size={14} className="mr-1.5" />
-              <span className="uppercase">{match.esportType}</span>
+              <Clock className="h-3 w-3 mr-1" />
+              <span>
+                {finishedTime 
+                  ? new Date(finishedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : getMatchDuration()
+                }
+              </span>
             </div>
           </div>
         </div>

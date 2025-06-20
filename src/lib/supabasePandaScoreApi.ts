@@ -1,441 +1,366 @@
-import { supabase } from '@/integrations/supabase/client';
-import { MatchInfo, TeamInfo } from '@/components/MatchCard';
-import { 
-  fetchUpcomingMatches as apiUpcomingMatches,
-  fetchLiveMatches as apiLiveMatches
-} from '@/lib/pandaScoreApi';
 
-// Cache TTL constants (in milliseconds)
-const CACHE_TTL = {
-  MATCHES: 15 * 60 * 1000,      // 15 minutes
-  TEAMS: 2 * 60 * 60 * 1000,   // 2 hours
-  TOURNAMENTS: 6 * 60 * 60 * 1000, // 6 hours
+import { supabase } from '@/integrations/supabase/client';
+import { MatchInfo } from '@/components/MatchCard';
+import { startOfDay, endOfDay } from 'date-fns';
+
+// Helper function to map PandaScore statuses to display categories
+const getPandaScoreStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+  const lowerStatus = status.toLowerCase();
+  
+  // Live match statuses
+  if (['running', 'live', 'ongoing'].includes(lowerStatus)) {
+    return 'live';
+  }
+  
+  // Upcoming match statuses
+  if (['not_started', 'upcoming', 'scheduled'].includes(lowerStatus)) {
+    return 'upcoming';
+  }
+  
+  // Finished match statuses
+  if (['finished', 'completed', 'cancelled', 'postponed', 'forfeit'].includes(lowerStatus)) {
+    return 'finished';
+  }
+  
+  return null;
 };
 
-/**
- * Check if data is stale based on last_synced_at timestamp
- */
-function isDataStale(lastSyncedAt: string, ttl: number): boolean {
-  const lastSync = new Date(lastSyncedAt).getTime();
-  const now = Date.now();
-  return (now - lastSync) > ttl;
-}
-
-/**
- * Fetch upcoming matches with database-first approach
- */
-export async function fetchUpcomingMatches(esportType: string): Promise<MatchInfo[]> {
+// New function to fetch specific PandaScore match details - optimized for speed
+export const fetchSupabasePandaScoreMatchDetails = async (matchId: string): Promise<any | null> => {
   try {
-    console.log(`🔍 Fetching upcoming matches for ${esportType} from database...`);
+    console.log(`🔍 Fetching PandaScore match details from database for: ${matchId}`);
     
-    // First, try to get data from database - include both upcoming and finished matches
-    const { data: dbMatches, error } = await supabase
-      .from('pandascore_matches')
-      .select('*')
-      .eq('esport_type', esportType)
-      .in('status', ['scheduled', 'not_started', 'finished', 'completed'])
-      .gte('start_time', new Date().toISOString())
-      .order('start_time', { ascending: true });
-
-    if (error) {
-      console.error('Database error, falling back to API:', error);
-      return apiUpcomingMatches(esportType);
-    }
-
-    // Check if data is fresh
-    if (dbMatches && dbMatches.length > 0) {
-      const latestSync = Math.max(...dbMatches.map(match => 
-        new Date(match.last_synced_at).getTime()
-      ));
-      
-      if (!isDataStale(new Date(latestSync).toISOString(), CACHE_TTL.MATCHES)) {
-        console.log(`✅ Using fresh database data (${dbMatches.length} matches including finished)`);
-        
-        // Transform database data to MatchInfo format with consistent ID prefixing
-        const transformedMatches = dbMatches.map((match) => {
-          // Safely extract team data from stored JSON
-          const teamsData = match.teams as any;
-          const team1: TeamInfo = {
-            name: teamsData?.team1?.name || 'TBD',
-            id: teamsData?.team1?.id,
-            logo: teamsData?.team1?.logo || '/placeholder.svg'
-          };
-          const team2: TeamInfo = {
-            name: teamsData?.team2?.name || 'TBD', 
-            id: teamsData?.team2?.id,
-            logo: teamsData?.team2?.logo || '/placeholder.svg'
-          };
-
-          const matchId = `pandascore_${match.match_id}`;
-          console.log(`🔄 PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status})`);
-
-          return {
-            id: matchId, // Ensure consistent prefixing
-            teams: [team1, team2] as [TeamInfo, TeamInfo],
-            startTime: match.start_time,
-            tournament: match.tournament_name || 'Unknown Tournament',
-            esportType: match.esport_type,
-            bestOf: match.number_of_games || 3,
-            homeTeamPlayers: [],
-            awayTeamPlayers: [],
-            source: 'professional' as const,
-            status: match.status // Include status for proper categorization
-          };
-        });
-        
-        return transformedMatches;
-      }
-    }
-
-    console.log('💡 Data is stale or empty, falling back to API...');
-    return apiUpcomingMatches(esportType);
-
-  } catch (error) {
-    console.error('Error in hybrid fetch, falling back to API:', error);
-    return apiUpcomingMatches(esportType);
-  }
-}
-
-/**
- * Fetch finished matches with database-first approach
- */
-export async function fetchFinishedMatches(esportType: string): Promise<MatchInfo[]> {
-  try {
-    console.log(`🔍 Fetching finished matches for ${esportType} from database...`);
-    
-    // Get finished matches from database
-    const { data: dbMatches, error } = await supabase
-      .from('pandascore_matches')
-      .select('*')
-      .eq('esport_type', esportType)
-      .in('status', ['finished', 'completed'])
-      .order('start_time', { ascending: false })
-      .limit(50);
-
-    if (error) {
-      console.error('Database error fetching finished matches:', error);
-      return [];
-    }
-
-    if (dbMatches && dbMatches.length > 0) {
-      console.log(`✅ Found ${dbMatches.length} finished matches in database`);
-      
-      // Transform database data to MatchInfo format with consistent ID prefixing
-      const transformedMatches = dbMatches.map((match) => {
-        const teamsData = match.teams as any;
-        const team1: TeamInfo = {
-          name: teamsData?.team1?.name || 'TBD',
-          id: teamsData?.team1?.id,
-          logo: teamsData?.team1?.logo || '/placeholder.svg'
-        };
-        const team2: TeamInfo = {
-          name: teamsData?.team2?.name || 'TBD',
-          id: teamsData?.team2?.id,
-          logo: teamsData?.team2?.logo || '/placeholder.svg'
-        };
-
-        const matchId = `pandascore_${match.match_id}`;
-        console.log(`🔄 PandaScore finished match transformed: ${match.match_id} -> ${matchId}`);
-
-        return {
-          id: matchId, // Ensure consistent prefixing
-          teams: [team1, team2] as [TeamInfo, TeamInfo],
-          startTime: match.start_time,
-          tournament: match.tournament_name || 'Unknown Tournament',
-          esportType: match.esport_type,
-          bestOf: match.number_of_games || 3,
-          homeTeamPlayers: [],
-          awayTeamPlayers: [],
-          source: 'professional' as const,
-          status: match.status // Include status for proper categorization
-        };
-      });
-      
-      return transformedMatches;
-    }
-
-    console.log('💡 No finished matches found in database');
-    return [];
-
-  } catch (error) {
-    console.error('Error fetching finished matches:', error);
-    return [];
-  }
-}
-
-/**
- * Fetch live matches with database-first approach
- */
-export async function fetchLiveMatches(esportType: string): Promise<MatchInfo[]> {
-  try {
-    console.log(`🔍 Fetching live matches for ${esportType} from database...`);
-    
-    // First, try to get data from database
-    const { data: dbMatches, error } = await supabase
-      .from('pandascore_matches')
-      .select('*')
-      .eq('esport_type', esportType)
-      .in('status', ['running', 'live'])
-      .order('start_time', { ascending: true });
-
-    if (error) {
-      console.error('Database error, falling back to API:', error);
-      return apiLiveMatches(esportType);
-    }
-
-    // For live matches, use shorter cache TTL (5 minutes)
-    if (dbMatches && dbMatches.length > 0) {
-      const latestSync = Math.max(...dbMatches.map(match => 
-        new Date(match.last_synced_at).getTime()
-      ));
-      
-      if (!isDataStale(new Date(latestSync).toISOString(), 5 * 60 * 1000)) {
-        console.log(`✅ Using fresh database live data (${dbMatches.length} matches)`);
-        
-        // Transform database data to MatchInfo format with consistent ID prefixing
-        const transformedMatches = dbMatches.map((match) => {
-          const teamsData = match.teams as any;
-          const team1: TeamInfo = {
-            name: teamsData?.team1?.name || 'TBD',
-            id: teamsData?.team1?.id,
-            logo: teamsData?.team1?.logo || '/placeholder.svg'
-          };
-          const team2: TeamInfo = {
-            name: teamsData?.team2?.name || 'TBD',
-            id: teamsData?.team2?.id,
-            logo: teamsData?.team2?.logo || '/placeholder.svg'
-          };
-
-          const matchId = `pandascore_${match.match_id}`;
-          console.log(`🔄 PandaScore live match transformed: ${match.match_id} -> ${matchId}`);
-
-          return {
-            id: matchId, // Ensure consistent prefixing
-            teams: [team1, team2] as [TeamInfo, TeamInfo],
-            startTime: match.start_time,
-            tournament: match.tournament_name || 'Unknown Tournament',
-            esportType: match.esport_type,
-            bestOf: match.number_of_games || 3,
-            homeTeamPlayers: [],
-            awayTeamPlayers: [],
-            source: 'professional' as const
-          };
-        });
-        
-        return transformedMatches;
-      }
-    }
-
-    console.log('💡 Live data is stale or empty, falling back to API...');
-    return apiLiveMatches(esportType);
-
-  } catch (error) {
-    console.error('Error in hybrid live fetch, falling back to API:', error);
-    return apiLiveMatches(esportType);
-  }
-}
-
-/**
- * Fetch team by ID with database-first approach
- */
-export async function fetchTeamById(teamId: string, esportType: string) {
-  try {
-    console.log(`🔍 Fetching team ${teamId} from database...`);
-    
-    // First, try to get data from database
-    const { data: dbTeams, error } = await supabase
-      .from('pandascore_teams')
-      .select('*')
-      .eq('team_id', teamId)
-      .eq('esport_type', esportType)
-      .order('last_synced_at', { ascending: false })
-      .limit(1);
-
-    if (error) {
-      console.error('Database error for team fetch:', error);
-      return null;
-    }
-
-    // Check if data is fresh
-    if (dbTeams && dbTeams.length > 0) {
-      const team = dbTeams[0];
-      
-      if (!isDataStale(team.last_synced_at, CACHE_TTL.TEAMS)) {
-        console.log(`✅ Using fresh database team data`);
-        
-        // Transform database data to expected format
-        const rawData = team.raw_data as any || {};
-        return {
-          id: team.team_id,
-          name: team.name,
-          acronym: team.acronym,
-          image_url: team.logo_url,
-          slug: team.slug,
-          players: team.players_data || [],
-          ...rawData
-        };
-      }
-    }
-
-    console.log('💡 Team data is stale or empty, no fallback available');
-    return null;
-
-  } catch (error) {
-    console.error('Error in hybrid team fetch:', error);
-    return null;
-  }
-}
-
-/**
- * Fetch tournaments with database-first approach
- */
-export async function fetchTournaments(esportType: string) {
-  try {
-    console.log(`🔍 Fetching tournaments for ${esportType} from database...`);
-    
-    // First, try to get data from database
-    const { data: dbTournaments, error } = await supabase
-      .from('pandascore_tournaments')
-      .select('*')
-      .eq('esport_type', esportType)
-      .order('last_synced_at', { ascending: false })
-      .limit(50);
-
-    if (error) {
-      console.error('Database error for tournaments fetch:', error);
-      return [];
-    }
-
-    // Check if data is fresh
-    if (dbTournaments && dbTournaments.length > 0) {
-      const latestSync = Math.max(...dbTournaments.map(tournament => 
-        new Date(tournament.last_synced_at).getTime()
-      ));
-      
-      if (!isDataStale(new Date(latestSync).toISOString(), CACHE_TTL.TOURNAMENTS)) {
-        console.log(`✅ Using fresh database tournaments data (${dbTournaments.length} tournaments)`);
-        
-        // Transform database data to expected format
-        const transformedTournaments = dbTournaments.map((tournament) => {
-          const rawData = tournament.raw_data as any || {};
-          return {
-            id: tournament.tournament_id,
-            name: tournament.name,
-            slug: tournament.slug,
-            league: {
-              id: tournament.league_id,
-              name: tournament.league_name,
-              image_url: tournament.image_url
-            },
-            serie: {
-              id: tournament.serie_id,
-              name: tournament.serie_name
-            },
-            begin_at: tournament.start_date,
-            end_at: tournament.end_date,
-            tier: tournament.status,
-            ...rawData
-          };
-        });
-        
-        return transformedTournaments;
-      }
-    }
-
-    console.log('💡 Tournament data is stale or empty, returning empty array');
-    return [];
-
-  } catch (error) {
-    console.error('Error in hybrid tournament fetch:', error);
-    return [];
-  }
-}
-
-/**
- * Get sync statistics
- */
-export async function getSyncStats() {
-  try {
-    const { data: logs, error } = await supabase
-      .from('pandascore_sync_logs')
-      .select('*')
-      .order('started_at', { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error('Error fetching sync logs:', error);
-      return null;
-    }
-
-    return logs;
-  } catch (error) {
-    console.error('Error getting sync stats:', error);
-    return null;
-  }
-}
-
-/**
- * Fetch PandaScore match details by ID from database with proper ID handling
- */
-export async function fetchSupabasePandaScoreMatchDetails(matchId: string) {
-  try {
-    console.log(`🔍 Fetching PandaScore match details for ID: ${matchId}`);
-    
-    // Strip the pandascore_ prefix if present for database query
+    // Remove 'pandascore_' prefix if present
     const cleanMatchId = matchId.startsWith('pandascore_') ? matchId.replace('pandascore_', '') : matchId;
-    console.log(`🔄 Cleaned match ID for database query: ${cleanMatchId}`);
     
     const { data: match, error } = await supabase
       .from('pandascore_matches')
       .select('*')
       .eq('match_id', cleanMatchId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      console.error('Database error fetching PandaScore match:', error);
+      console.error('Error fetching PandaScore match details:', error);
       return null;
     }
 
     if (!match) {
-      console.log('No PandaScore match found in database');
+      console.log(`No PandaScore match found for ID: ${cleanMatchId}`);
       return null;
     }
 
-    // Transform database data to match our interface
+    console.log('📊 Raw PandaScore match data from database:', JSON.stringify(match, null, 2));
+    
+    // Extract teams data
     const teamsData = match.teams as any;
-    const team1 = {
-      name: teamsData?.team1?.name || 'TBD',
-      id: teamsData?.team1?.id,
-      logo: teamsData?.team1?.logo || '/placeholder.svg',
-      players: teamsData?.team1?.players || []
-    };
-    const team2 = {
-      name: teamsData?.team2?.name || 'TBD',
-      id: teamsData?.team2?.id,
-      logo: teamsData?.team2?.logo || '/placeholder.svg',
-      players: teamsData?.team2?.players || []
-    };
+    
+    // 🔧 CRITICAL FIX: Extract results from raw_data
+    let results = null;
+    
+    // Check raw_data for results
+    if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+      const rawData = match.raw_data as Record<string, any>;
+      if (rawData.results) {
+        results = rawData.results;
+        console.log('🏆 Found results in raw_data:', results);
+      } else if (rawData.games && Array.isArray(rawData.games)) {
+        // Check if match is finished by looking at games
+        const finishedGames = rawData.games.filter((game: any) => game.finished);
+        if (finishedGames.length > 0) {
+          // Calculate overall winner based on game wins
+          const team1Wins = finishedGames.filter((game: any) => game.winner?.id === teamsData?.team1?.id).length;
+          const team2Wins = finishedGames.filter((game: any) => game.winner?.id === teamsData?.team2?.id).length;
+          
+          results = {
+            winner: team1Wins > team2Wins ? 'team1' : 'team2',
+            score: {
+              team1: team1Wins,
+              team2: team2Wins
+            }
+          };
+          console.log('🏆 Calculated results from games:', results);
+        }
+      }
+    }
 
-    // Return with consistent prefixed ID
-    const finalMatchId = `pandascore_${match.match_id}`;
-    console.log(`✅ PandaScore match details found: ${match.match_id} -> ${finalMatchId} (status: ${match.status})`);
+    // Guarantee a proper startTime
+    function getStartTime(m: any) {
+      if (m?.start_time && !isNaN(new Date(m.start_time).getTime())) {
+        return m.start_time;
+      }
+      if (m?.scheduled_at && !isNaN(new Date(m.scheduled_at).getTime())) {
+        return m.scheduled_at;
+      }
+      return new Date().toISOString();
+    }
 
+    // Transform to expected format with enhanced data
     const transformedMatch = {
-      id: finalMatchId, // Ensure consistent prefixing
-      teams: [team1, team2],
-      startTime: match.start_time,
-      tournament: match.tournament_name || match.league_name || 'Professional Tournament',
-      esportType: match.esport_type,
+      id: `pandascore_${match.match_id}`,
+      teams: [
+        {
+          name: teamsData?.team1?.name || 'Team 1',
+          logo: teamsData?.team1?.logo || '/placeholder.svg',
+          id: teamsData?.team1?.id || `team1_${match.match_id}`,
+          roster: teamsData?.team1?.players || []
+        },
+        {
+          name: teamsData?.team2?.name || 'Team 2',
+          logo: teamsData?.team2?.logo || '/placeholder.svg',
+          id: teamsData?.team2?.id || `team2_${match.match_id}`,
+          roster: teamsData?.team2?.players || []
+        }
+      ],
+      startTime: getStartTime(match),
+      tournament: match.tournament_name || match.league_name || match.serie_name || 'PandaScore Match',
+      tournament_name: match.tournament_name,
+      league_name: match.league_name,
+      serie_name: match.serie_name,
+      esportType: match.esport_type || 'csgo',
       bestOf: match.number_of_games || 3,
-      status: match.status,
-      rawData: match.raw_data
+      source: 'professional' as const,
+      status: match.status, // 🔧 CRITICAL: Include status for proper header detection
+      finished_at: match.end_time, // 🔧 CRITICAL: Include finished_at for finished matches
+      finishedTime: match.end_time, // 🔧 CRITICAL: Legacy field for compatibility
+      pandaScoreData: {
+        league_id: match.league_id,
+        tournament_id: match.tournament_id,
+        serie_id: match.serie_id,
+        matchType: match.match_type,
+        results: results // 🔧 CRITICAL: Include results data for winner/score display
+      }
     };
-
-    console.log('✅ PandaScore match details transformed:', transformedMatch);
+    
+    console.log('✅ PandaScore match loading completed with results:', {
+      hasResults: !!results,
+      results: results,
+      status: match.status,
+      finishedAt: match.end_time
+    });
+    
     return transformedMatch;
-
+    
   } catch (error) {
-    console.error('Error fetching PandaScore match details:', error);
+    console.error('Error in fetchSupabasePandaScoreMatchDetails:', error);
     return null;
   }
-}
+};
+
+export const fetchSupabasePandaScoreAllMatches = async (): Promise<MatchInfo[]> => {
+  try {
+    console.log('🔄 Fetching all PandaScore matches from Supabase...');
+    
+    const { data: matches, error } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .in('status', ['not_started', 'running', 'finished', 'completed', 'cancelled', 'postponed', 'forfeit', 'upcoming', 'scheduled', 'live', 'ongoing'])
+      .order('start_time', { ascending: true })
+      .limit(500);
+
+    if (error) {
+      console.error('Error fetching PandaScore matches:', error);
+      return [];
+    }
+
+    console.log(`📊 Found ${matches?.length || 0} PandaScore matches in database`);
+    
+    return (matches || []).map(match => {
+      const teamsData = match.teams as any;
+      const rawData = match.raw_data as any;
+      
+      // Extract results from raw_data if available
+      let results = null;
+      if (rawData && rawData.results) {
+        results = rawData.results;
+        console.log(`🏆 Match ${match.match_id} has results:`, results);
+      }
+
+      const transformedMatch = {
+        id: `pandascore_${match.match_id}`,
+        teams: [
+          {
+            name: teamsData?.team1?.name || 'Team 1',
+            logo: teamsData?.team1?.logo || '/placeholder.svg',
+            id: teamsData?.team1?.id || `team1_${match.match_id}`
+          },
+          {
+            name: teamsData?.team2?.name || 'Team 2',
+            logo: teamsData?.team2?.logo || '/placeholder.svg',
+            id: teamsData?.team2?.id || `team2_${match.match_id}`
+          }
+        ] as [any, any],
+        startTime: match.start_time || new Date().toISOString(),
+        tournament: match.tournament_name || match.league_name || match.serie_name || 'PandaScore Match',
+        esportType: match.esport_type || 'csgo',
+        bestOf: match.number_of_games || 3,
+        source: 'professional' as const,
+        status: match.status,
+        pandaScoreData: {
+          league_id: match.league_id,
+          tournament_id: match.tournament_id,
+          serie_id: match.serie_id,
+          matchType: match.match_type,
+          results: results
+        }
+      } satisfies MatchInfo;
+
+      return transformedMatch;
+    });
+  } catch (error) {
+    console.error('Error in fetchSupabasePandaScoreAllMatches:', error);
+    return [];
+  }
+};
+
+export const fetchSupabasePandaScoreMatchesByDate = async (date: Date) => {
+  try {
+    console.log('🗓️ Fetching PandaScore matches for date:', date.toDateString());
+    
+    const startDate = startOfDay(date);
+    const endDate = endOfDay(date);
+    
+    const { data: matches, error } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .gte('start_time', startDate.toISOString())
+      .lte('start_time', endDate.toISOString())
+      .order('start_time', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching PandaScore matches by date:', error);
+      return { live: [], upcoming: [], finished: [] };
+    }
+
+    console.log(`📊 Found ${matches?.length || 0} PandaScore matches for ${date.toDateString()}`);
+
+    const transformedMatches = (matches || []).map(match => {
+      const teamsData = match.teams as any;
+      const rawData = match.raw_data as any;
+      
+      // Extract results from raw_data if available
+      let results = null;
+      if (rawData && rawData.results) {
+        results = rawData.results;
+      }
+
+      return {
+        id: `pandascore_${match.match_id}`,
+        teams: [
+          {
+            name: teamsData?.team1?.name || 'Team 1',
+            logo: teamsData?.team1?.logo || '/placeholder.svg',
+            id: teamsData?.team1?.id || `team1_${match.match_id}`
+          },
+          {
+            name: teamsData?.team2?.name || 'Team 2',
+            logo: teamsData?.team2?.logo || '/placeholder.svg',
+            id: teamsData?.team2?.id || `team2_${match.match_id}`
+          }
+        ] as [any, any],
+        startTime: match.start_time || new Date().toISOString(),
+        tournament: match.tournament_name || match.league_name || match.serie_name || 'PandaScore Match',
+        esportType: match.esport_type || 'csgo',
+        bestOf: match.number_of_games || 3,
+        source: 'professional' as const,
+        status: match.status,
+        pandaScoreData: {
+          league_id: match.league_id,
+          tournament_id: match.tournament_id,
+          serie_id: match.serie_id,
+          matchType: match.match_type,
+          results: results
+        }
+      } satisfies MatchInfo;
+    });
+
+    // Separate live, upcoming, and finished matches
+    const live = transformedMatches.filter(match => {
+      const matchRecord = matches?.find(m => m.match_id === match.id.replace('pandascore_', ''));
+      const statusCategory = matchRecord ? getPandaScoreStatusCategory(matchRecord.status) : null;
+      return statusCategory === 'live';
+    });
+
+    const upcoming = transformedMatches.filter(match => {
+      const matchRecord = matches?.find(m => m.match_id === match.id.replace('pandascore_', ''));
+      const statusCategory = matchRecord ? getPandaScoreStatusCategory(matchRecord.status) : null;
+      return statusCategory === 'upcoming';
+    });
+
+    const finished = transformedMatches.filter(match => {
+      const matchRecord = matches?.find(m => m.match_id === match.id.replace('pandascore_', ''));
+      const statusCategory = matchRecord ? getPandaScoreStatusCategory(matchRecord.status) : null;
+      return statusCategory === 'finished';
+    });
+
+    console.log(`📊 PandaScore matches categorized: ${live.length} live, ${upcoming.length} upcoming, ${finished.length} finished`);
+    
+    return { live, upcoming, finished };
+  } catch (error) {
+    console.error('Error in fetchSupabasePandaScoreMatchesByDate:', error);
+    return { live: [], upcoming: [], finished: [] };
+  }
+};
+
+// New function to fetch recent finished matches for homepage
+export const fetchSupabasePandaScoreFinishedMatches = async (limit: number = 10): Promise<MatchInfo[]> => {
+  try {
+    console.log('🏁 Fetching recent finished PandaScore matches...');
+    
+    const { data: matches, error } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .in('status', ['finished', 'completed', 'cancelled', 'postponed', 'forfeit'])
+      .order('end_time', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching finished PandaScore matches:', error);
+      return [];
+    }
+
+    console.log(`🏁 Found ${matches?.length || 0} finished PandaScore matches`);
+
+    return (matches || []).map(match => {
+      const teamsData = match.teams as any;
+      const rawData = match.raw_data as any;
+      
+      // Extract results from raw_data if available
+      let results = null;
+      if (rawData && rawData.results) {
+        results = rawData.results;
+      }
+
+      return {
+        id: `pandascore_${match.match_id}`,
+        teams: [
+          {
+            name: teamsData?.team1?.name || 'Team 1',
+            logo: teamsData?.team1?.logo || '/placeholder.svg',
+            id: teamsData?.team1?.id || `team1_${match.match_id}`
+          },
+          {
+            name: teamsData?.team2?.name || 'Team 2',
+            logo: teamsData?.team2?.logo || '/placeholder.svg',
+            id: teamsData?.team2?.id || `team2_${match.match_id}`
+          }
+        ] as [any, any],
+        startTime: match.start_time || new Date().toISOString(),
+        tournament: match.tournament_name || match.league_name || match.serie_name || 'PandaScore Match',
+        esportType: match.esport_type || 'csgo',
+        bestOf: match.number_of_games || 3,
+        source: 'professional' as const,
+        status: match.status,
+        pandaScoreData: {
+          league_id: match.league_id,
+          tournament_id: match.tournament_id,
+          serie_id: match.serie_id,
+          matchType: match.match_type,
+          results: results
+        }
+      } satisfies MatchInfo;
+    });
+  } catch (error) {
+    console.error('Error in fetchSupabasePandaScoreFinishedMatches:', error);
+    return [];
+  }
+};
