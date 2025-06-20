@@ -24,15 +24,12 @@ interface PandaScoreFinishedMatchHeaderProps {
     tournament_name?: string;
     league_name?: string;
     serie_name?: string;
-    pandaScoreData?: {
-      results?: {
-        winner: string;
-        score: {
-          team1: number;
-          team2: number;
-        };
+    results?: {
+      winner: string;
+      score: {
+        team1: number;
+        team2: number;
       };
-      status?: string;
     };
     status: string;
   };
@@ -41,7 +38,7 @@ interface PandaScoreFinishedMatchHeaderProps {
 export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHeaderProps> = ({ match }) => {
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
-  const results = match.pandaScoreData?.results;
+  const results = match.results;
   const finishedTime = match.finishedTime || match.finished_at;
 
   const getMatchDuration = () => {

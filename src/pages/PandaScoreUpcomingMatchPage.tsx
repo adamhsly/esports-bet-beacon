@@ -117,10 +117,12 @@ const PandaScoreUpcomingMatchPage = () => {
   console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchDetails.status}`);
 
   const renderMatchHeader = () => {
+    // For mobile, use compact header that handles all states
     if (isMobile) {
       return <PandaScoreCompactMatchHeader match={matchDetails} isMobile={true} />;
     }
 
+    // For desktop, use specific headers for each state
     switch (headerType) {
       case 'finished':
         return <PandaScoreFinishedMatchHeader match={matchDetails} />;
