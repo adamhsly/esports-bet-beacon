@@ -13,7 +13,7 @@ interface PandaScoreCompactMatchHeaderProps {
     teams: Array<{
       name: string;
       logo?: string;
-      id?: string;
+      id?: string | number;
     }>;
     startTime: string;
     tournament?: string;
@@ -22,13 +22,10 @@ interface PandaScoreCompactMatchHeaderProps {
     status: string;
     finishedTime?: string;
     finished_at?: string;
-    results?: {
-      winner: string;
-      score: {
-        team1: number;
-        team2: number;
-      };
-    };
+    results?: Array<{
+      score: number;
+      team_id: number;
+    }>;
   };
   isMobile?: boolean;
 }
@@ -65,13 +62,28 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
   };
 
   const isWinner = (teamIndex: number) => {
-    if (!match.results) return false;
-    return match.results.winner === (teamIndex === 0 ? 'team1' : 'team2');
+    if (!match.results || !match.results.length) return false;
+    
+    const team = match.teams[teamIndex];
+    if (!team || !team.id) return false;
+    
+    // Find the result for this team
+    const teamResult = match.results.find(r => r.team_id.toString() === team.id?.toString());
+    if (!teamResult) return false;
+    
+    // Check if this team has the highest score
+    const maxScore = Math.max(...match.results.map(r => r.score));
+    return teamResult.score === maxScore && maxScore > 0;
   };
 
   const getScore = (teamIndex: number) => {
-    if (!match.results) return '-';
-    return teamIndex === 0 ? match.results.score.team1 : match.results.score.team2;
+    if (!match.results || !match.results.length) return '-';
+    
+    const team = match.teams[teamIndex];
+    if (!team || !team.id) return '-';
+    
+    const teamResult = match.results.find(r => r.team_id.toString() === team.id?.toString());
+    return teamResult ? teamResult.score : '-';
   };
 
   const { date, time } = formatDateTime(match.startTime);

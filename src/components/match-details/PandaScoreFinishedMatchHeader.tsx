@@ -11,6 +11,7 @@ interface PandaScoreFinishedMatchHeaderProps {
       name: string;
       logo?: string;
       avatar?: string;
+      id?: string | number;
       roster?: Array<{
         nickname: string;
         player_id: string;
@@ -24,13 +25,10 @@ interface PandaScoreFinishedMatchHeaderProps {
     tournament_name?: string;
     league_name?: string;
     serie_name?: string;
-    results?: {
-      winner: string;
-      score: {
-        team1: number;
-        team2: number;
-      };
-    };
+    results?: Array<{
+      score: number;
+      team_id: number;
+    }>;
     status: string;
   };
 }
@@ -58,8 +56,18 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   };
 
   const isWinner = (teamIndex: number) => {
-    if (!results) return false;
-    return results.winner === (teamIndex === 0 ? 'team1' : 'team2');
+    if (!results || !results.length) return false;
+    
+    const team = match.teams[teamIndex];
+    if (!team || !team.id) return false;
+    
+    // Find the result for this team
+    const teamResult = results.find(r => r.team_id.toString() === team.id?.toString());
+    if (!teamResult) return false;
+    
+    // Check if this team has the highest score
+    const maxScore = Math.max(...results.map(r => r.score));
+    return teamResult.score === maxScore && maxScore > 0;
   };
 
   const getTeamStyling = (teamIndex: number) => {
@@ -68,12 +76,22 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   };
 
   const getScore = (teamIndex: number) => {
-    if (!results) return '-';
-    return teamIndex === 0 ? results.score.team1 : results.score.team2;
+    if (!results || !results.length) return '-';
+    
+    const team = match.teams[teamIndex];
+    if (!team || !team.id) return '-';
+    
+    const teamResult = results.find(r => r.team_id.toString() === team.id?.toString());
+    return teamResult ? teamResult.score : '-';
   };
 
   const getTournamentName = () => {
     return match.tournament_name || match.tournament || match.league_name || match.serie_name || 'PandaScore Match';
+  };
+
+  const getScoreDisplay = () => {
+    if (!results || !results.length) return 'FINISHED';
+    return `${getScore(0)} - ${getScore(1)}`;
   };
 
   return (
@@ -86,7 +104,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
           </span>
           <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
             <CheckCircle size={14} />
-            <span>{results ? `${getScore(0)} - ${getScore(1)}` : 'FINISHED'}</span>
+            <span>{getScoreDisplay()}</span>
           </div>
         </div>
         
