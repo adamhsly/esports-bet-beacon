@@ -42,6 +42,40 @@ serve(async (req) => {
       throw new Error('PANDA_SCORE_API_KEY not configured');
     }
 
+    // Helper function to fetch team data with players
+    const fetchTeamData = async (teamId: number, game: string) => {
+      try {
+        console.log(`🏟️ Fetching team data for team ${teamId} in ${game}...`);
+        const teamResponse = await fetch(
+          `https://api.pandascore.co/${game}/teams/${teamId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (!teamResponse.ok) {
+          console.log(`⚠️ Could not fetch team ${teamId} data: ${teamResponse.status}`);
+          return [];
+        }
+
+        const teamData = await teamResponse.json();
+        const players = teamData.players || [];
+        console.log(`👥 Retrieved ${players.length} players for team ${teamId}`);
+        
+        return players.map(player => ({
+          nickname: player.name,
+          player_id: player.id?.toString(),
+          position: player.role || 'Player'
+        }));
+      } catch (error) {
+        console.error(`Error fetching team ${teamId} data:`, error);
+        return [];
+      }
+    };
+
     for (const game of SUPPORTED_GAMES) {
       try {
         console.log(`📥 Syncing ${game} matches (upcoming + past)...`);
@@ -97,9 +131,24 @@ serve(async (req) => {
                   console.log(`⚠️ Could not fetch detailed data for ${endpoint.type} match ${match.id}, using basic data`);
                 }
 
-                // Transform PandaScore match data with player information
-                const team1Players = detailedMatch.opponents?.[0]?.opponent?.players || [];
-                const team2Players = detailedMatch.opponents?.[1]?.opponent?.players || [];
+                // Fetch team roster data for each team
+                const team1Data = detailedMatch.opponents?.[0]?.opponent;
+                const team2Data = detailedMatch.opponents?.[1]?.opponent;
+                
+                let team1Players = [];
+                let team2Players = [];
+
+                if (team1Data?.id) {
+                  team1Players = await fetchTeamData(team1Data.id, game);
+                  // Small delay to respect rate limits
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                }
+
+                if (team2Data?.id) {
+                  team2Players = await fetchTeamData(team2Data.id, game);
+                  // Small delay to respect rate limits
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                }
 
                 // Map PandaScore status to our internal status
                 const mapStatus = (pandaStatus: string) => {
@@ -121,26 +170,18 @@ serve(async (req) => {
                   esport_type: game,
                   teams: {
                     team1: {
-                      id: detailedMatch.opponents?.[0]?.opponent?.id,
-                      name: detailedMatch.opponents?.[0]?.opponent?.name || 'TBD',
-                      logo: detailedMatch.opponents?.[0]?.opponent?.image_url,
-                      acronym: detailedMatch.opponents?.[0]?.opponent?.acronym,
-                      players: team1Players.map(player => ({
-                        nickname: player.name,
-                        player_id: player.id?.toString(),
-                        position: player.role || 'Player'
-                      }))
+                      id: team1Data?.id,
+                      name: team1Data?.name || 'TBD',
+                      logo: team1Data?.image_url,
+                      acronym: team1Data?.acronym,
+                      players: team1Players
                     },
                     team2: {
-                      id: detailedMatch.opponents?.[1]?.opponent?.id,
-                      name: detailedMatch.opponents?.[1]?.opponent?.name || 'TBD',
-                      logo: detailedMatch.opponents?.[1]?.opponent?.image_url,
-                      acronym: detailedMatch.opponents?.[1]?.opponent?.acronym,
-                      players: team2Players.map(player => ({
-                        nickname: player.name,
-                        player_id: player.id?.toString(),
-                        position: player.role || 'Player'
-                      }))
+                      id: team2Data?.id,
+                      name: team2Data?.name || 'TBD',
+                      logo: team2Data?.image_url,
+                      acronym: team2Data?.acronym,
+                      players: team2Players
                     }
                   },
                   start_time: detailedMatch.begin_at || detailedMatch.scheduled_at,
@@ -158,7 +199,7 @@ serve(async (req) => {
                   last_synced_at: new Date().toISOString()
                 };
 
-                console.log(`👥 ${endpoint.type} match ${detailedMatch.id} (${transformedMatch.status}) - Team1: ${transformedMatch.teams.team1.players.length} players, Team2: ${transformedMatch.teams.team2.players.length} players`);
+                console.log(`👥 ${endpoint.type} match ${detailedMatch.id} (${transformedMatch.status}) - Team1: ${team1Players.length} players, Team2: ${team2Players.length} players`);
 
                 // Upsert match data
                 const { error: upsertError } = await supabase
