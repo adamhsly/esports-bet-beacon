@@ -7,7 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SUPPORTED_GAMES = ['cs2', 'lol', 'dota2', 'valorant', 'ow'];
+// Fixed: Changed 'cs2' to 'csgo' for proper Counter-Strike syncing
+const SUPPORTED_GAMES = ['csgo', 'lol', 'dota2', 'valorant', 'ow'];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,19 +36,47 @@ serve(async (req) => {
   let totalUpdated = 0;
 
   try {
-    console.log('🔄 Starting PandaScore matches sync (upcoming + past) with player data...');
+    console.log('🔄 Starting PandaScore matches sync (upcoming + past) with game-specific player data...');
     
     const apiKey = Deno.env.get('PANDA_SCORE_API_KEY');
     if (!apiKey) {
       throw new Error('PANDA_SCORE_API_KEY not configured');
     }
 
-    // Helper function to fetch team data with players
-    const fetchTeamData = async (teamId: number, game: string) => {
+    // Game-specific player data fetching strategy
+    const fetchPlayerDataForGame = async (game: string, matchId: number, teamData: any, detailedMatch: any) => {
+      console.log(`🎮 Fetching player data for ${game} match ${matchId}...`);
+      
+      switch (game) {
+        case 'valorant':
+        case 'lol':
+          // These games have robust match-level player stats endpoints
+          return await fetchMatchPlayerStats(game, matchId, teamData, apiKey);
+          
+        case 'csgo':
+          // Try team roster first, fallback to match data
+          return await fetchTeamRosterWithFallback(game, teamData, detailedMatch, apiKey);
+          
+        case 'dota2':
+          // Use team rosters with better error handling
+          return await fetchTeamRosterSafe(game, teamData, apiKey);
+          
+        case 'ow':
+          // Overwatch has limited roster data, extract from match if possible
+          return await extractPlayersFromMatchData(detailedMatch, teamData);
+          
+        default:
+          console.log(`⚠️ No player data strategy for game: ${game}`);
+          return [];
+      }
+    };
+
+    // Fetch match-level player stats (for Valorant/LoL)
+    const fetchMatchPlayerStats = async (game: string, matchId: number, teamData: any, apiKey: string) => {
       try {
-        console.log(`🏟️ Fetching team data for team ${teamId} in ${game}...`);
-        const teamResponse = await fetch(
-          `https://api.pandascore.co/${game}/teams/${teamId}`,
+        console.log(`📊 Fetching match player stats for ${game} match ${matchId}...`);
+        const response = await fetch(
+          `https://api.pandascore.co/${game}/matches/${matchId}/players/stats`,
           {
             headers: {
               'Authorization': `Bearer ${apiKey}`,
@@ -56,22 +85,121 @@ serve(async (req) => {
           }
         );
 
-        if (!teamResponse.ok) {
-          console.log(`⚠️ Could not fetch team ${teamId} data: ${teamResponse.status}`);
+        if (!response.ok) {
+          console.log(`⚠️ Could not fetch match player stats for ${game}: ${response.status}`);
           return [];
         }
 
-        const teamData = await teamResponse.json();
-        const players = teamData.players || [];
-        console.log(`👥 Retrieved ${players.length} players for team ${teamId}`);
+        const playerStats = await response.json();
+        console.log(`👥 Retrieved ${playerStats.length} player stats for match ${matchId}`);
         
-        return players.map(player => ({
-          nickname: player.name,
-          player_id: player.id?.toString(),
-          position: player.role || 'Player'
+        return playerStats.map(player => ({
+          nickname: player.player?.name || player.name,
+          player_id: player.player?.id?.toString() || player.id?.toString(),
+          position: player.player?.role || player.role || 'Player'
         }));
       } catch (error) {
-        console.error(`Error fetching team ${teamId} data:`, error);
+        console.error(`Error fetching match player stats for ${game}:`, error);
+        return [];
+      }
+    };
+
+    // Fetch team roster with fallback to match data
+    const fetchTeamRosterWithFallback = async (game: string, teamData: any, detailedMatch: any, apiKey: string) => {
+      if (!teamData?.id) return [];
+      
+      try {
+        console.log(`🏟️ Fetching team roster for team ${teamData.id} in ${game}...`);
+        const teamResponse = await fetch(
+          `https://api.pandascore.co/${game}/teams/${teamData.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (teamResponse.ok) {
+          const teamDetails = await teamResponse.json();
+          const players = teamDetails.players || [];
+          console.log(`👥 Retrieved ${players.length} players from team roster`);
+          
+          return players.map(player => ({
+            nickname: player.name,
+            player_id: player.id?.toString(),
+            position: player.role || 'Player'
+          }));
+        } else {
+          console.log(`⚠️ Team roster failed, trying match data fallback...`);
+          return await extractPlayersFromMatchData(detailedMatch, teamData);
+        }
+      } catch (error) {
+        console.error(`Error fetching team roster, using fallback:`, error);
+        return await extractPlayersFromMatchData(detailedMatch, teamData);
+      }
+    };
+
+    // Safely fetch team roster (for Dota2)
+    const fetchTeamRosterSafe = async (game: string, teamData: any, apiKey: string) => {
+      if (!teamData?.id) return [];
+      
+      try {
+        console.log(`🏟️ Safely fetching team roster for team ${teamData.id} in ${game}...`);
+        const teamResponse = await fetch(
+          `https://api.pandascore.co/${game}/teams/${teamData.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (teamResponse.ok) {
+          const teamDetails = await teamResponse.json();
+          const players = teamDetails.players || [];
+          console.log(`👥 Retrieved ${players.length} players for team ${teamData.id}`);
+          
+          return players.map(player => ({
+            nickname: player.name,
+            player_id: player.id?.toString(),
+            position: player.role || 'Player'
+          }));
+        } else {
+          console.log(`⚠️ Could not fetch team ${teamData.id} roster: ${teamResponse.status}`);
+          return [];
+        }
+      } catch (error) {
+        console.error(`Error fetching team ${teamData.id} roster:`, error);
+        return [];
+      }
+    };
+
+    // Extract players from match raw data as fallback
+    const extractPlayersFromMatchData = async (detailedMatch: any, teamData: any) => {
+      try {
+        console.log(`🔍 Extracting players from match data for team ${teamData?.name}...`);
+        
+        // Try to find players in various parts of the match data
+        const rawPlayers = detailedMatch.players || [];
+        const teamPlayers = rawPlayers.filter(player => 
+          player.team?.id === teamData?.id || player.team?.name === teamData?.name
+        );
+        
+        if (teamPlayers.length > 0) {
+          console.log(`👥 Found ${teamPlayers.length} players in match data`);
+          return teamPlayers.map(player => ({
+            nickname: player.name,
+            player_id: player.id?.toString(),
+            position: player.role || 'Player'
+          }));
+        }
+        
+        console.log(`⚠️ No players found in match data for team ${teamData?.name}`);
+        return [];
+      } catch (error) {
+        console.error(`Error extracting players from match data:`, error);
         return [];
       }
     };
@@ -111,7 +239,7 @@ serve(async (req) => {
 
             for (const match of matches) {
               try {
-                // Fetch detailed match data including players
+                // Fetch detailed match data
                 console.log(`🔍 Fetching detailed data for ${endpoint.type} match ${match.id}...`);
                 const detailResponse = await fetch(
                   `https://api.pandascore.co/${game}/matches/${match.id}`,
@@ -131,21 +259,22 @@ serve(async (req) => {
                   console.log(`⚠️ Could not fetch detailed data for ${endpoint.type} match ${match.id}, using basic data`);
                 }
 
-                // Fetch team roster data for each team
+                // Get team data
                 const team1Data = detailedMatch.opponents?.[0]?.opponent;
                 const team2Data = detailedMatch.opponents?.[1]?.opponent;
                 
+                // Fetch player data using game-specific strategies
                 let team1Players = [];
                 let team2Players = [];
 
                 if (team1Data?.id) {
-                  team1Players = await fetchTeamData(team1Data.id, game);
+                  team1Players = await fetchPlayerDataForGame(game, match.id, team1Data, detailedMatch);
                   // Small delay to respect rate limits
                   await new Promise(resolve => setTimeout(resolve, 200));
                 }
 
                 if (team2Data?.id) {
-                  team2Players = await fetchTeamData(team2Data.id, game);
+                  team2Players = await fetchPlayerDataForGame(game, match.id, team2Data, detailedMatch);
                   // Small delay to respect rate limits
                   await new Promise(resolve => setTimeout(resolve, 200));
                 }
@@ -261,7 +390,7 @@ serve(async (req) => {
       records_updated: totalUpdated
     }).eq('id', logId);
 
-    console.log(`✅ PandaScore matches sync completed (upcoming + past) with player data: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
+    console.log(`✅ PandaScore matches sync completed with game-specific player data: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
 
     return new Response(
       JSON.stringify({
