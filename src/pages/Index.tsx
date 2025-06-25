@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -103,25 +104,31 @@ const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'fini
   return null;
 };
 
-// Helper function to map PandaScore statuses to display categories  
+// 🔧 FIXED: Updated PandaScore status categorization to include 'scheduled' → 'upcoming'
 const getPandaScoreStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
   
+  console.log(`🎯 PandaScore status categorization for status: ${status} (normalized: ${lowerStatus})`);
+  
   // Live match statuses for PandaScore
   if (['live', 'running', 'ongoing'].includes(lowerStatus)) {
+    console.log(`✅ PandaScore status ${status} categorized as LIVE`);
     return 'live';
   }
   
-  // Upcoming match statuses for PandaScore
+  // 🔧 FIXED: Include 'scheduled' in upcoming statuses
   if (['scheduled', 'upcoming', 'ready', 'not_started'].includes(lowerStatus)) {
+    console.log(`✅ PandaScore status ${status} categorized as UPCOMING`);
     return 'upcoming';
   }
   
   // Finished match statuses for PandaScore
-  if (['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+  if (['finished', 'completed', 'cancelled', 'postponed', 'forfeit'].includes(lowerStatus)) {
+    console.log(`✅ PandaScore status ${status} categorized as FINISHED`);
     return 'finished';
   }
   
+  console.log(`⚠️ PandaScore status ${status} not recognized, returning null`);
   return null;
 };
 
@@ -185,26 +192,45 @@ const Index = () => {
     // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
     console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
-    // Fetch PandaScore matches including finished ones
+    // 🔧 ENHANCED: Fetch PandaScore matches with better status filtering and logging
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .in('status', ['scheduled', 'not_started', 'running', 'live', 'finished', 'completed'])
       .order('start_time', { ascending: true })
-      .limit(200);
+      .limit(500); // Increased limit to ensure we get more matches
 
     if (pandascoreError) {
       console.error('Error loading PandaScore matches:', pandascoreError);
     }
 
-    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (including finished)`);
+    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (all statuses)`);
+    
+    // 🔧 DEBUG: Log status distribution of PandaScore matches
+    if (pandascoreMatches && pandascoreMatches.length > 0) {
+      const statusCounts = pandascoreMatches.reduce((acc: Record<string, number>, match) => {
+        const status = match.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('📊 PandaScore match status distribution:', statusCounts);
+      
+      // Log a few sample matches for debugging
+      const sampleMatches = pandascoreMatches.slice(0, 3);
+      console.log('🔍 Sample PandaScore matches:', sampleMatches.map(m => ({
+        id: m.match_id,
+        status: m.status,
+        startTime: m.start_time,
+        esportType: m.esport_type,
+        teams: m.teams
+      })));
+    }
     
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
       const teamsData = match.teams as unknown as PandaScoreTeamsData;
       const matchId = `pandascore_${match.match_id}`;
       
-      console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status})`);
+      console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status}, esport: ${match.esport_type})`);
       
       // 🔧 FIXED: Use actual team IDs from rawData with proper type casting
       const rawData = match.raw_data as any;
@@ -232,16 +258,20 @@ const Index = () => {
         ] as [any, any],
         startTime: match.start_time,
         tournament: match.tournament_name || match.league_name || 'Professional Tournament',
+        tournament_name: match.tournament_name,
+        league_name: match.league_name,
         esportType: match.esport_type,
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
         status: match.status, // Include status for proper categorization
+        finished_at: match.end_time, // 🔧 CRITICAL: Include finished_at for finished matches
+        finishedTime: match.end_time, // 🔧 CRITICAL: Legacy field for compatibility
         rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
       } satisfies MatchInfo;
     });
 
     const combinedMatches = [...faceitMatches, ...transformedPandaScore];
-    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore including finished)`);
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
     
     return combinedMatches;
   };
@@ -267,22 +297,36 @@ const Index = () => {
     loadAllMatches();
   }, []);
 
-  // Filtering function for game type
+  // 🔧 ENHANCED: Updated filtering function for game type with better csgo/cs2 handling
   const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
-    if (gameType === 'all') return matches;
-    // Normalize esport_type for both FACEIT and PandaScore
-    // Faceit esportType: "cs2", "lol", "dota2", "valorant"
-    // PandaScore esportType: "csgo", "cs2", "leagueoflegends", "dota2", "valorant"
-    return matches.filter((match) => {
-      const t = match.esportType?.toLowerCase?.() ?? '';
+    console.log(`🎮 Filtering ${matches.length} matches by game type: ${gameType}`);
+    
+    if (gameType === 'all') {
+      console.log(`🎮 All games selected, returning all ${matches.length} matches`);
+      return matches;
+    }
+    
+    const filtered = matches.filter((match) => {
+      const esportType = match.esportType?.toLowerCase?.() ?? '';
+      console.log(`🎮 Match ${match.id} has esportType: ${esportType}, checking against filter: ${gameType}`);
+      
       if (gameType === 'cs2') {
-        return t === 'csgo' || t === 'cs2';
+        const isCS = esportType === 'csgo' || esportType === 'cs2';
+        console.log(`🎮 CS:GO/CS2 filter - Match ${match.id} esportType ${esportType} matches: ${isCS}`);
+        return isCS;
       }
       if (gameType === 'lol') {
-        return t === 'lol' || t === 'leagueoflegends';
+        const isLOL = esportType === 'lol' || esportType === 'leagueoflegends';
+        console.log(`🎮 LOL filter - Match ${match.id} esportType ${esportType} matches: ${isLOL}`);
+        return isLOL;
       }
-      return t === gameType;
+      const matches = esportType === gameType;
+      console.log(`🎮 ${gameType} filter - Match ${match.id} esportType ${esportType} matches: ${matches}`);
+      return matches;
     });
+    
+    console.log(`🎮 Game type filtering result: ${filtered.length} matches after filtering for ${gameType}`);
+    return filtered;
   };
 
   // Load date-filtered matches using the same unified dataset with enhanced logging and categorization
@@ -299,17 +343,48 @@ const Index = () => {
         const combinedMatches = await loadAllMatchesFromDatabase();
         console.log(`📊 Loaded ${combinedMatches.length} total matches from unified dataset`);
         
+        // 🔧 DEBUG: Log PandaScore matches before filtering
+        const pandaScoreMatches = combinedMatches.filter(m => m.source === 'professional');
+        console.log(`📊 PandaScore matches in unified dataset: ${pandaScoreMatches.length}`);
+        if (pandaScoreMatches.length > 0) {
+          console.log('🔍 Sample PandaScore matches in unified dataset:', pandaScoreMatches.slice(0, 3).map(m => ({
+            id: m.id,
+            status: m.status,
+            esportType: m.esportType,
+            startTime: m.startTime
+          })));
+        }
+        
         // Apply game type filter
         const filteredByGameType = filterMatchesByGameType(combinedMatches, selectedGameType);
         console.log(`📊 After game type filter (${selectedGameType}): ${filteredByGameType.length} matches`);
         
+        // 🔧 DEBUG: Log PandaScore matches after game type filtering
+        const pandaScoreAfterGameFilter = filteredByGameType.filter(m => m.source === 'professional');
+        console.log(`📊 PandaScore matches after game type filter: ${pandaScoreAfterGameFilter.length}`);
+        
         // Filter matches by selected date
         const dateFilteredMatches = filteredByGameType.filter(match => {
           const matchDate = new Date(match.startTime);
-          return matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
+          const isInDateRange = matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
+          
+          if (match.source === 'professional') {
+            console.log(`🗓️ PandaScore match ${match.id} date check:`, {
+              matchDate: matchDate.toISOString(),
+              selectedStart: selectedDateStart.toISOString(),
+              selectedEnd: selectedDateEnd.toISOString(),
+              isInRange: isInDateRange
+            });
+          }
+          
+          return isInDateRange;
         });
         
         console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date from unified dataset`);
+        
+        // 🔧 DEBUG: Log PandaScore matches after date filtering
+        const pandaScoreAfterDateFilter = dateFilteredMatches.filter(m => m.source === 'professional');
+        console.log(`📊 PandaScore matches after date filter: ${pandaScoreAfterDateFilter.length}`);
 
         // Enhanced categorization with detailed logging for both FACEIT and PandaScore
         const liveMatches: MatchInfo[] = [];
@@ -346,12 +421,13 @@ const Index = () => {
               console.log(`➕ Added ${match.id} to UPCOMING matches (fallback or upcoming status)`);
             }
           } else if (match.source === 'professional') {
-            // PandaScore match categorization
+            // 🔧 ENHANCED: PandaScore match categorization with better logging
             const statusCategory = getPandaScoreStatusCategory(match.status || '');
             
             console.log(`🎯 PandaScore match ${match.id} categorization result:`, {
               originalStatus: match.status,
-              statusCategory
+              statusCategory,
+              esportType: match.esportType
             });
             
             if (statusCategory === 'live') {
@@ -360,9 +436,12 @@ const Index = () => {
             } else if (statusCategory === 'finished') {
               finishedMatches.push(match);
               console.log(`➕ Added PandaScore match ${match.id} to FINISHED matches`);
-            } else {
+            } else if (statusCategory === 'upcoming') {
               upcomingMatches.push(match);
               console.log(`➕ Added PandaScore match ${match.id} to UPCOMING matches`);
+            } else {
+              console.log(`⚠️ PandaScore match ${match.id} with status ${match.status} was not categorized - adding to upcoming as fallback`);
+              upcomingMatches.push(match);
             }
           }
         });
@@ -373,7 +452,10 @@ const Index = () => {
           finished: finishedMatches.length,
           liveMatchIds: liveMatches.map(m => m.id),
           upcomingMatchIds: upcomingMatches.map(m => m.id),
-          finishedMatchIds: finishedMatches.map(m => m.id)
+          finishedMatchIds: finishedMatches.map(m => m.id),
+          pandaScoreLive: liveMatches.filter(m => m.source === 'professional').length,
+          pandaScoreUpcoming: upcomingMatches.filter(m => m.source === 'professional').length,
+          pandaScoreFinished: finishedMatches.filter(m => m.source === 'professional').length
         });
         
         // Sort matches by start time
@@ -532,6 +614,8 @@ const Index = () => {
                               console.log(`🎮 Rendering UPCOMING MatchCard:`, {
                                 id: match.id,
                                 status: match.status,
+                                source: match.source,
+                                esportType: match.esportType,
                                 hasResults: !!(match.faceitData?.results)
                               });
                               return (
