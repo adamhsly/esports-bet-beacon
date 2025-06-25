@@ -263,8 +263,7 @@ const Index = () => {
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
         status: match.status, // Include status for proper categorization
-        // 🔧 FIXED: Use finishedTime instead of finished_at to match MatchInfo interface
-        finishedTime: match.end_time, // Use finishedTime property that exists in MatchInfo
+        // 🔧 FIXED: Remove finishedTime property as it doesn't exist in MatchInfo interface
         rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
       } satisfies MatchInfo;
     });
