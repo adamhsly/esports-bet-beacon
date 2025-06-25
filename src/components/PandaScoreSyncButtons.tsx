@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, AlertCircle } from 'lucide-react';
 
 export const PandaScoreSyncButtons = () => {
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
@@ -21,7 +21,11 @@ export const PandaScoreSyncButtons = () => {
         toast.error(`${syncType} sync failed: ${error.message}`);
       } else {
         console.log(`${syncType} sync result:`, data);
-        toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
+        if (data.success) {
+          toast.success(`${syncType} sync completed: ${data.processed} processed, ${data.added} added, ${data.updated} updated`);
+        } else {
+          toast.error(`${syncType} sync failed: ${data.error || 'Unknown error'}`);
+        }
       }
     } catch (error) {
       console.error(`${syncType} sync error:`, error);
@@ -52,6 +56,24 @@ export const PandaScoreSyncButtons = () => {
     }
   };
 
+  const checkMatchCount = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pandascore_matches')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('Error checking match count:', error);
+        toast.error('Failed to check match count');
+      } else {
+        toast.info(`PandaScore matches in database: ${data?.length || 0}`);
+      }
+    } catch (error) {
+      console.error('Error checking match count:', error);
+      toast.error('Failed to check match count');
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
       <div className="flex flex-col gap-2">
@@ -61,7 +83,7 @@ export const PandaScoreSyncButtons = () => {
         </h3>
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={() => handleSync('All Matches (Upcoming + Finished)', 'sync-pandascore-matches')}
+            onClick={() => handleSync('All Matches (CS:GO + Others)', 'sync-pandascore-matches')}
             disabled={syncing['matches']}
             variant="outline"
             size="sm"
@@ -95,6 +117,15 @@ export const PandaScoreSyncButtons = () => {
           </Button>
           
           <Button
+            onClick={checkMatchCount}
+            variant="secondary"
+            size="sm"
+          >
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Check DB Count
+          </Button>
+          
+          <Button
             onClick={handleSetupCron}
             disabled={syncing['cron']}
             variant="default"
@@ -105,7 +136,10 @@ export const PandaScoreSyncButtons = () => {
         </div>
         
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-          💡 The updated sync now fetches both upcoming and finished matches with detailed player lineups
+          💡 Updated sync now fetches CS:GO (not cs2) + other games with improved player data handling
+        </p>
+        <p className="text-xs text-red-600 dark:text-red-400">
+          ⚠️ If you see 403 errors, the API key may need different permissions for player stats
         </p>
       </div>
     </div>
