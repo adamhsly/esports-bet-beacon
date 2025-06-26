@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, AlertCircle } from 'lucide-react';
+import { Loader2, Users, AlertCircle, GamepadIcon } from 'lucide-react';
 
 export const PandaScoreSyncButtons = () => {
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
@@ -78,12 +78,12 @@ export const PandaScoreSyncButtons = () => {
     <div className="flex flex-wrap gap-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
       <div className="flex flex-col gap-2">
         <h3 className="text-lg font-semibold flex items-center">
-          <Users className="h-5 w-5 mr-2" />
+          <GamepadIcon className="h-5 w-5 mr-2" />
           PandaScore Sync Controls
         </h3>
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={() => handleSync('All Matches (CS:GO + Others)', 'sync-pandascore-matches')}
+            onClick={() => handleSync('All Matches + Game-Specific Players', 'sync-pandascore-matches')}
             disabled={syncing['matches']}
             variant="outline"
             size="sm"
@@ -95,6 +95,22 @@ export const PandaScoreSyncButtons = () => {
               </>
             ) : (
               'Sync All Matches + Players'
+            )}
+          </Button>
+          
+          <Button
+            onClick={() => handleSync('Upcoming + Game-Specific Players', 'sync-pandascore-upcoming-matches')}
+            disabled={syncing['upcoming']}
+            variant="outline"
+            size="sm"
+          >
+            {syncing['upcoming'] ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              'Sync Upcoming + Players'
             )}
           </Button>
           
@@ -135,12 +151,20 @@ export const PandaScoreSyncButtons = () => {
           </Button>
         </div>
         
-        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-          💡 Updated sync now fetches CS:GO (not cs2) + other games with improved player data handling
-        </p>
-        <p className="text-xs text-red-600 dark:text-red-400">
-          ⚠️ If you see 403 errors, the API key may need different permissions for player stats
-        </p>
+        <div className="space-y-1 mt-2">
+          <p className="text-xs text-green-600 dark:text-green-400">
+            ✅ <strong>NEW:</strong> Game-specific player fetching for CS:GO, LoL, Valorant, Dota2, Overwatch
+          </p>
+          <p className="text-xs text-blue-600 dark:text-blue-400">
+            🎮 Multiple strategies: Team rosters → Match stats → Match data fallback
+          </p>
+          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+            🎯 Role mapping: AWPer, IGL, Top, Jungle, Duelist, Carry, Tank, etc.
+          </p>
+          <p className="text-xs text-red-600 dark:text-red-400">
+            ⚠️ Rate limiting: 300ms delays between API calls to respect PandaScore limits
+          </p>
+        </div>
       </div>
     </div>
   );

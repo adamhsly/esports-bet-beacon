@@ -7,7 +7,162 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SUPPORTED_GAMES = ['cs2', 'lol', 'dota2', 'valorant', 'ow'];
+// Game-specific player fetching functions
+interface PlayerData {
+  nickname: string;
+  player_id: string;
+  position?: string;
+  role?: string;
+}
+
+// Game-specific fetcher functions
+const fetchPlayersForGame = async (game: string, apiKey: string, teamId: string, matchId: string): Promise<PlayerData[]> => {
+  console.log(`🎮 Fetching ${game} players for team ${teamId} (match ${matchId})...`);
+  
+  // Strategy 1: Try team roster endpoint
+  try {
+    const teamResponse = await fetch(`https://api.pandascore.co/${game}/teams/${teamId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (teamResponse.ok) {
+      const teamData = await teamResponse.json();
+      const players = teamData.players || [];
+      
+      if (players.length > 0) {
+        console.log(`👥 ${game} team ${teamId}: ${players.length} players from roster`);
+        return players.map(player => ({
+          nickname: player.name,
+          player_id: player.id?.toString(),
+          position: mapPlayerRole(game, player.role || 'Player')
+        }));
+      }
+    }
+  } catch (error) {
+    console.log(`⚠️ ${game} team ${teamId} roster fetch failed:`, error);
+  }
+
+  // Strategy 2: Try match-specific player stats (for games that support it)
+  if (['lol', 'valorant'].includes(game)) {
+    try {
+      console.log(`🎯 Trying match player stats for ${game} match ${matchId}...`);
+      const statsResponse = await fetch(`https://api.pandascore.co/${game}/matches/${matchId}/players/stats`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (statsResponse.ok) {
+        const playerStats = await statsResponse.json();
+        const teamPlayers = playerStats.filter(stat => 
+          stat.team?.id?.toString() === teamId || stat.team?.name === teamId
+        );
+        
+        if (teamPlayers.length > 0) {
+          console.log(`👥 ${game} match ${matchId}: ${teamPlayers.length} players from stats`);
+          return teamPlayers.map(stat => ({
+            nickname: stat.player?.name || stat.name,
+            player_id: stat.player?.id?.toString() || stat.id?.toString(),
+            position: mapPlayerRole(game, stat.player?.role || stat.role || 'Player')
+          }));
+        }
+      }
+    } catch (error) {
+      console.log(`⚠️ ${game} match ${matchId} player stats fetch failed:`, error);
+    }
+  }
+
+  // Strategy 3: Extract from detailed match data
+  try {
+    console.log(`🔍 Extracting players from ${game} match ${matchId} data...`);
+    const matchResponse = await fetch(`https://api.pandascore.co/${game}/matches/${matchId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (matchResponse.ok) {
+      const matchData = await matchResponse.json();
+      
+      // Look for the specific team in opponents
+      if (matchData.opponents) {
+        for (const opponent of matchData.opponents) {
+          if (opponent.opponent?.id?.toString() === teamId && opponent.opponent?.players) {
+            const players = opponent.opponent.players.map(player => ({
+              nickname: player.name,
+              player_id: player.id?.toString(),
+              position: mapPlayerRole(game, player.role || 'Player')
+            }));
+            
+            console.log(`👥 ${game} match ${matchId}: ${players.length} players from match data`);
+            return players;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log(`⚠️ ${game} match ${matchId} detailed data fetch failed:`, error);
+  }
+
+  console.log(`⚠️ No players found for ${game} team ${teamId}`);
+  return [];
+};
+
+// Game-specific role mapping
+const mapPlayerRole = (game: string, role: string): string => {
+  const gameMappings = {
+    'csgo': {
+      'awper': 'AWPer',
+      'igl': 'IGL',
+      'entry': 'Entry Fragger',
+      'support': 'Support',
+      'lurker': 'Lurker',
+      'rifler': 'Rifler'
+    },
+    'lol': {
+      'top': 'Top',
+      'jun': 'Jungle',
+      'jungle': 'Jungle',
+      'mid': 'Mid',
+      'adc': 'ADC',
+      'bot': 'ADC',
+      'sup': 'Support',
+      'support': 'Support'
+    },
+    'valorant': {
+      'duelist': 'Duelist',
+      'controller': 'Controller',
+      'initiator': 'Initiator',
+      'sentinel': 'Sentinel',
+      'flex': 'Flex'
+    },
+    'dota2': {
+      'carry': 'Carry',
+      'mid': 'Mid',
+      'offlaner': 'Offlaner',
+      'support': 'Support',
+      'hard_support': 'Hard Support',
+      'core': 'Core'
+    },
+    'ow': {
+      'tank': 'Tank',
+      'dps': 'DPS',
+      'damage': 'DPS',
+      'support': 'Support',
+      'flex': 'Flex'
+    }
+  };
+  
+  const mapping = gameMappings[game] || {};
+  return mapping[role.toLowerCase()] || 'Player';
+};
+
+const SUPPORTED_GAMES = ['csgo', 'lol', 'dota2', 'valorant', 'ow'];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,7 +190,7 @@ serve(async (req) => {
   let totalUpdated = 0;
 
   try {
-    console.log('🔄 Starting PandaScore upcoming matches sync with player data...');
+    console.log('🔄 Starting PandaScore upcoming matches sync with game-specific player data...');
     
     const apiKey = Deno.env.get('PANDA_SCORE_API_KEY');
     if (!apiKey) {
@@ -67,89 +222,61 @@ serve(async (req) => {
 
         for (const match of matches) {
           try {
-            // Fetch detailed match data including players
-            console.log(`🔍 Fetching detailed data for match ${match.id}...`);
-            const detailResponse = await fetch(
-              `https://api.pandascore.co/${game}/matches/${match.id}`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${apiKey}`,
-                  'Accept': 'application/json'
-                }
-              }
-            );
+            // Get team data
+            const team1Data = match.opponents?.[0]?.opponent;
+            const team2Data = match.opponents?.[1]?.opponent;
+            
+            // Fetch player data using game-specific strategies with rate limiting
+            let team1Players = [];
+            let team2Players = [];
 
-            let detailedMatch = match;
-            if (detailResponse.ok) {
-              detailedMatch = await detailResponse.json();
-              console.log(`✅ Got detailed data for match ${match.id}`);
-            } else {
-              console.log(`⚠️ Could not fetch detailed data for match ${match.id}, using basic data`);
+            if (team1Data?.id) {
+              team1Players = await fetchPlayersForGame(game, apiKey, team1Data.id.toString(), match.id.toString());
+              // Rate limiting delay
+              await new Promise(resolve => setTimeout(resolve, 300));
             }
 
-            // Extract player data from opponents
-            const extractPlayers = (opponents) => {
-              if (!opponents || opponents.length === 0) return [];
-              
-              return opponents.flatMap(opponent => {
-                if (opponent.opponent && opponent.opponent.players) {
-                  return opponent.opponent.players.map(player => ({
-                    nickname: player.name,
-                    player_id: player.id?.toString(),
-                    position: player.role || 'Player'
-                  }));
-                }
-                return [];
-              });
-            };
-
-            // Transform PandaScore match data with player information
-            const team1Players = detailedMatch.opponents?.[0]?.opponent?.players || [];
-            const team2Players = detailedMatch.opponents?.[1]?.opponent?.players || [];
+            if (team2Data?.id) {
+              team2Players = await fetchPlayersForGame(game, apiKey, team2Data.id.toString(), match.id.toString());
+              // Rate limiting delay
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
 
             const transformedMatch = {
-              match_id: detailedMatch.id.toString(),
+              match_id: match.id.toString(),
               esport_type: game,
               teams: {
                 team1: {
-                  id: detailedMatch.opponents?.[0]?.opponent?.id,
-                  name: detailedMatch.opponents?.[0]?.opponent?.name || 'TBD',
-                  logo: detailedMatch.opponents?.[0]?.opponent?.image_url,
-                  acronym: detailedMatch.opponents?.[0]?.opponent?.acronym,
-                  players: team1Players.map(player => ({
-                    nickname: player.name,
-                    player_id: player.id?.toString(),
-                    position: player.role || 'Player'
-                  }))
+                  id: team1Data?.id,
+                  name: team1Data?.name || 'TBD',
+                  logo: team1Data?.image_url,
+                  acronym: team1Data?.acronym,
+                  players: team1Players
                 },
                 team2: {
-                  id: detailedMatch.opponents?.[1]?.opponent?.id,
-                  name: detailedMatch.opponents?.[1]?.opponent?.name || 'TBD',
-                  logo: detailedMatch.opponents?.[1]?.opponent?.image_url,
-                  acronym: detailedMatch.opponents?.[1]?.opponent?.acronym,
-                  players: team2Players.map(player => ({
-                    nickname: player.name,
-                    player_id: player.id?.toString(),
-                    position: player.role || 'Player'
-                  }))
+                  id: team2Data?.id,
+                  name: team2Data?.name || 'TBD',
+                  logo: team2Data?.image_url,
+                  acronym: team2Data?.acronym,
+                  players: team2Players
                 }
               },
-              start_time: detailedMatch.begin_at || detailedMatch.scheduled_at,
-              end_time: detailedMatch.end_at,
-              tournament_id: detailedMatch.tournament?.id?.toString(),
-              tournament_name: detailedMatch.tournament?.name,
-              league_id: detailedMatch.league?.id?.toString(),
-              league_name: detailedMatch.league?.name,
-              serie_id: detailedMatch.serie?.id?.toString(),
-              serie_name: detailedMatch.serie?.name,
-              status: detailedMatch.status || 'scheduled',
-              match_type: detailedMatch.match_type,
-              number_of_games: detailedMatch.number_of_games,
-              raw_data: detailedMatch,
+              start_time: match.begin_at || match.scheduled_at,
+              end_time: match.end_at,
+              tournament_id: match.tournament?.id?.toString(),
+              tournament_name: match.tournament?.name,
+              league_id: match.league?.id?.toString(),
+              league_name: match.league?.name,
+              serie_id: match.serie?.id?.toString(),
+              serie_name: match.serie?.name,
+              status: match.status || 'scheduled',
+              match_type: match.match_type,
+              number_of_games: match.number_of_games,
+              raw_data: match,
               last_synced_at: new Date().toISOString()
             };
 
-            console.log(`👥 Match ${detailedMatch.id} - Team1: ${transformedMatch.teams.team1.players.length} players, Team2: ${transformedMatch.teams.team2.players.length} players`);
+            console.log(`👥 ${game} match ${match.id} - Team1: ${team1Players.length} players, Team2: ${team2Players.length} players`);
 
             // Upsert match data
             const { error: upsertError } = await supabase
@@ -160,7 +287,7 @@ serve(async (req) => {
               });
 
             if (upsertError) {
-              console.error(`Error upserting match ${detailedMatch.id}:`, upsertError);
+              console.error(`Error upserting match ${match.id}:`, upsertError);
               continue;
             }
 
@@ -170,7 +297,7 @@ serve(async (req) => {
             const { data: existing } = await supabase
               .from('pandascore_matches')
               .select('created_at, updated_at')
-              .eq('match_id', detailedMatch.id.toString())
+              .eq('match_id', match.id.toString())
               .single();
 
             if (existing && existing.created_at === existing.updated_at) {
@@ -204,7 +331,7 @@ serve(async (req) => {
       records_updated: totalUpdated
     }).eq('id', logId);
 
-    console.log(`✅ PandaScore upcoming matches sync completed with player data: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
+    console.log(`✅ PandaScore upcoming matches sync completed with game-specific player data: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
 
     return new Response(
       JSON.stringify({
