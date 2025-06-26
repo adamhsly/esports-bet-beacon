@@ -586,7 +586,7 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map(match => {
                               console.log(`🎮 Rendering LIVE MatchCard:`, {
                                 id: match.id,
@@ -618,7 +618,7 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map(match => {
                               console.log(`🎮 Rendering UPCOMING MatchCard:`, {
                                 id: match.id,
@@ -652,7 +652,7 @@ const Index = () => {
                           <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
                             {league}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map(match => {
                               console.log(`🎮 Rendering FINISHED MatchCard:`, {
                                 id: match.id,
