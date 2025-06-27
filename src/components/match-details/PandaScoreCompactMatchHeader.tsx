@@ -26,6 +26,7 @@ interface PandaScoreCompactMatchHeaderProps {
       score: number;
       team_id: number;
     }>;
+    rawData?: any;
   };
   isMobile?: boolean;
 }
@@ -86,8 +87,43 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     return teamResult ? teamResult.score : '-';
   };
 
+  const formatPrizePool = (prizePool: number | string) => {
+    if (!prizePool) return null;
+    
+    const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
+    if (isNaN(amount) || amount <= 0) return null;
+    
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(0)}K`;
+    } else {
+      return `$${amount}`;
+    }
+  };
+
+  const getTournamentInfo = () => {
+    const rawData = match.rawData;
+    let prizePool = null;
+    let tier = null;
+
+    if (rawData?.tournament) {
+      prizePool = rawData.tournament.prizepool;
+      tier = rawData.tournament.tier;
+    }
+    
+    if (rawData?.league && !prizePool) {
+      prizePool = rawData.league.prizepool;
+      tier = tier || rawData.league.tier;
+    }
+
+    return { prizePool, tier };
+  };
+
   const { date, time } = formatDateTime(match.startTime);
   const finished = isFinished();
+  const { prizePool, tier } = getTournamentInfo();
+  const formattedPrizePool = formatPrizePool(prizePool);
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
@@ -100,6 +136,17 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
               <Trophy size={10} className="mr-1" />
               PRO
             </Badge>
+            {formattedPrizePool && (
+              <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30 text-xs">
+                <Trophy size={10} className="mr-1" />
+                {formattedPrizePool}
+              </Badge>
+            )}
+            {tier && tier !== 'unranked' && (
+              <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-400/30 text-xs">
+                {tier.toUpperCase()}
+              </Badge>
+            )}
             {finished && (
               <Badge
                 variant="outline"

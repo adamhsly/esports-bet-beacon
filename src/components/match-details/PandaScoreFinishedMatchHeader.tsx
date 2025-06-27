@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, Users, Calendar, Crown } from 'lucide-react';
+import { CheckCircle, Clock, Users, Calendar, Crown, Trophy } from 'lucide-react';
 
 interface PandaScoreFinishedMatchHeaderProps {
   match: {
@@ -30,6 +30,7 @@ interface PandaScoreFinishedMatchHeaderProps {
       team_id: number;
     }>;
     status: string;
+    rawData?: any;
   };
 }
 
@@ -94,14 +95,63 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
     return `${getScore(0)} - ${getScore(1)}`;
   };
 
+  const formatPrizePool = (prizePool: number | string) => {
+    if (!prizePool) return null;
+    
+    const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
+    if (isNaN(amount) || amount <= 0) return null;
+    
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(0)}K`;
+    } else {
+      return `$${amount}`;
+    }
+  };
+
+  const getTournamentInfo = () => {
+    const rawData = match.rawData;
+    let prizePool = null;
+    let tier = null;
+
+    if (rawData?.tournament) {
+      prizePool = rawData.tournament.prizepool;
+      tier = rawData.tournament.tier;
+    }
+    
+    if (rawData?.league && !prizePool) {
+      prizePool = rawData.league.prizepool;
+      tier = tier || rawData.league.tier;
+    }
+
+    return { prizePool, tier };
+  };
+
+  const { prizePool, tier } = getTournamentInfo();
+  const formattedPrizePool = formatPrizePool(prizePool);
+
   return (
     <Card className="bg-blue-950/70 ring-1 ring-blue-400/30 border-0 rounded-xl shadow-none">
       <div className="flex flex-col gap-2 px-3 py-3">
         {/* Tournament info and finished status row */}
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-400 truncate max-w-[65%] font-medium">
-            {getTournamentName()}
-          </span>
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-sm text-gray-400 truncate max-w-[45%] font-medium">
+              {getTournamentName()}
+            </span>
+            {formattedPrizePool && (
+              <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30 text-xs">
+                <Trophy size={10} className="mr-1" />
+                {formattedPrizePool}
+              </Badge>
+            )}
+            {tier && tier !== 'unranked' && (
+              <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-400/30 text-xs">
+                {tier.toUpperCase()}
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
             <CheckCircle size={14} />
             <span>{getScoreDisplay()}</span>
