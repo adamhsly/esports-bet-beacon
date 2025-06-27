@@ -338,6 +338,129 @@ const Index = () => {
     return filtered;
   };
 
+  // Helper function to get tournament metadata from matches
+  const getTournamentMetadata = (matches: MatchInfo[]) => {
+    if (matches.length === 0) return null;
+    
+    // Get the first match to extract tournament data
+    const sampleMatch = matches[0];
+    let metadata: any = {};
+    
+    // Extract from rawData if it's a PandaScore match
+    if (sampleMatch.source === 'professional' && sampleMatch.rawData) {
+      const rawData = sampleMatch.rawData;
+      
+      // Extract tournament/league info from the raw data structure
+      if (rawData.tournament) {
+        metadata.prizePool = rawData.tournament.prizepool;
+        metadata.tier = rawData.tournament.tier;
+      }
+      
+      if (rawData.league) {
+        metadata.prizePool = metadata.prizePool || rawData.league.prizepool;
+        metadata.tier = metadata.tier || rawData.league.tier;
+      }
+      
+      // Extract serie info
+      if (rawData.serie) {
+        metadata.serieInfo = {
+          fullName: rawData.serie.full_name,
+          year: rawData.serie.year,
+          season: rawData.serie.season
+        };
+      }
+    }
+    
+    // Extract from FACEIT data
+    if (sampleMatch.source === 'amateur' && sampleMatch.faceitData) {
+      metadata.region = sampleMatch.faceitData.region;
+      metadata.competitionType = sampleMatch.faceitData.competitionType;
+      metadata.organizedBy = sampleMatch.faceitData.organizedBy;
+    }
+    
+    return Object.keys(metadata).length > 0 ? metadata : null;
+  };
+
+  // Helper function to format prize pool
+  const formatPrizePool = (prizePool: number | string) => {
+    if (!prizePool) return null;
+    
+    const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
+    if (isNaN(amount) || amount <= 0) return null;
+    
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(0)}K`;
+    } else {
+      return `$${amount}`;
+    }
+  };
+
+  // Helper function to render tournament metadata
+  const renderTournamentMetadata = (metadata: any) => {
+    if (!metadata) return null;
+    
+    const items = [];
+    
+    // Prize pool
+    if (metadata.prizePool) {
+      const formattedPrize = formatPrizePool(metadata.prizePool);
+      if (formattedPrize) {
+        items.push(
+          <span key="prize" className="flex items-center gap-1 text-xs text-green-400 font-medium">
+            <Trophy size={12} />
+            {formattedPrize}
+          </span>
+        );
+      }
+    }
+    
+    // Tournament tier
+    if (metadata.tier && metadata.tier !== 'unranked') {
+      items.push(
+        <span key="tier" className="text-xs text-blue-400 font-medium uppercase">
+          {metadata.tier}
+        </span>
+      );
+    }
+    
+    // Serie info for PandaScore
+    if (metadata.serieInfo) {
+      const { year, season } = metadata.serieInfo;
+      if (year || season) {
+        items.push(
+          <span key="serie" className="text-xs text-purple-400 font-medium">
+            {year && season ? `${year} ${season}` : year || season}
+          </span>
+        );
+      }
+    }
+    
+    // FACEIT specific info
+    if (metadata.region) {
+      items.push(
+        <span key="region" className="text-xs text-orange-400 font-medium uppercase">
+          {metadata.region}
+        </span>
+      );
+    }
+    
+    if (metadata.competitionType && metadata.competitionType !== 'Matchmaking') {
+      items.push(
+        <span key="compType" className="text-xs text-yellow-400 font-medium">
+          {metadata.competitionType}
+        </span>
+      );
+    }
+    
+    return items.length > 0 ? (
+      <div className="flex items-center gap-2 ml-2 mt-1">
+        {items}
+      </div>
+    ) : null;
+  };
+
   // Load date-filtered matches using the same unified dataset with enhanced logging and categorization
   useEffect(() => {
     async function loadDateFilteredMatches() {
@@ -533,6 +656,7 @@ const Index = () => {
                 </div>
               </h2>
             </div>
+            
             {/* GAME TYPE DROPDOWN FILTER */}
             <div className="max-w-xs mb-4 mx-2 md:mx-4">
               <Select value={selectedGameType} onValueChange={handleGameTypeChange}>
@@ -581,27 +705,33 @@ const Index = () => {
                       🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
-                      ([league, matches]) => (
-                        <div key={league} className="mb-6">
-                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
-                            {league}
+                      ([league, matches]) => {
+                        const metadata = getTournamentMetadata(matches);
+                        return (
+                          <div key={league} className="mb-6">
+                            <div className="ml-2 mb-2">
+                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>
+                              {renderTournamentMetadata(metadata)}
+                            </div>
+                            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                              {matches.map(match => {
+                                console.log(`🎮 Rendering LIVE MatchCard:`, {
+                                  id: match.id,
+                                  status: match.status,
+                                  hasResults: !!(match.faceitData?.results)
+                                });
+                                return (
+                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                    <MatchCard match={match} />
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                            {matches.map(match => {
-                              console.log(`🎮 Rendering LIVE MatchCard:`, {
-                                id: match.id,
-                                status: match.status,
-                                hasResults: !!(match.faceitData?.results)
-                              });
-                              return (
-                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                  <MatchCard match={match} />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )
+                        );
+                      }
                     )}
                   </div>
                 )}
@@ -613,29 +743,35 @@ const Index = () => {
                       📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
-                      ([league, matches]) => (
-                        <div key={league} className="mb-6">
-                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
-                            {league}
+                      ([league, matches]) => {
+                        const metadata = getTournamentMetadata(matches);
+                        return (
+                          <div key={league} className="mb-6">
+                            <div className="ml-2 mb-2">
+                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>
+                              {renderTournamentMetadata(metadata)}
+                            </div>
+                            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                              {matches.map(match => {
+                                console.log(`🎮 Rendering UPCOMING MatchCard:`, {
+                                  id: match.id,
+                                  status: match.status,
+                                  source: match.source,
+                                  esportType: match.esportType,
+                                  hasResults: !!(match.faceitData?.results)
+                                });
+                                return (
+                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                    <MatchCard match={match} />
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                            {matches.map(match => {
-                              console.log(`🎮 Rendering UPCOMING MatchCard:`, {
-                                id: match.id,
-                                status: match.status,
-                                source: match.source,
-                                esportType: match.esportType,
-                                hasResults: !!(match.faceitData?.results)
-                              });
-                              return (
-                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                  <MatchCard match={match} />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )
+                        );
+                      }
                     )}
                   </div>
                 )}
@@ -647,28 +783,34 @@ const Index = () => {
                       ✅ Finished ({dateFilteredFinishedMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(
-                      ([league, matches]) => (
-                        <div key={league} className="mb-6">
-                          <div className="font-semibold text-sm text-theme-purple mb-2 ml-2 uppercase tracking-wide">
-                            {league}
+                      ([league, matches]) => {
+                        const metadata = getTournamentMetadata(matches);
+                        return (
+                          <div key={league} className="mb-6">
+                            <div className="ml-2 mb-2">
+                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>
+                              {renderTournamentMetadata(metadata)}
+                            </div>
+                            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                              {matches.map(match => {
+                                console.log(`🎮 Rendering FINISHED MatchCard:`, {
+                                  id: match.id,
+                                  status: match.status,
+                                  hasResults: !!(match.faceitData?.results),
+                                  expectedRoute: `/faceit/finished/${match.id.replace('faceit_', '')}`
+                                });
+                                return (
+                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                    <MatchCard match={match} />
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                            {matches.map(match => {
-                              console.log(`🎮 Rendering FINISHED MatchCard:`, {
-                                id: match.id,
-                                status: match.status,
-                                hasResults: !!(match.faceitData?.results),
-                                expectedRoute: `/faceit/finished/${match.id.replace('faceit_', '')}`
-                              });
-                              return (
-                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                  <MatchCard match={match} />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )
+                        );
+                      }
                     )}
                   </div>
                 )}
