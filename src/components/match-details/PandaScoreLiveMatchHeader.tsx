@@ -26,9 +26,23 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
   const team2 = match.teams[1] || { name: 'Team 2' };
 
   const formatPrizePool = (prizePool: number | string) => {
+    console.log('🎯 Live Match Prize pool raw data:', prizePool, typeof prizePool);
+    
     if (!prizePool) return null;
     
-    const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
+    let amount: number;
+    
+    if (typeof prizePool === 'string') {
+      // Extract numbers from strings like "10000 United States Dollar"
+      const numberMatch = prizePool.match(/\d+/);
+      if (!numberMatch) return null;
+      amount = parseInt(numberMatch[0]);
+    } else {
+      amount = prizePool;
+    }
+    
+    console.log('🎯 Live Match Parsed prize pool amount:', amount);
+    
     if (isNaN(amount) || amount <= 0) return null;
     
     if (amount >= 1000000) {
@@ -45,14 +59,18 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
     let prizePool = null;
     let tier = null;
 
+    console.log('🎯 Live Match Raw data for tournament info:', rawData);
+
     if (rawData?.tournament) {
       prizePool = rawData.tournament.prizepool;
       tier = rawData.tournament.tier;
+      console.log('🎯 Live Match Tournament prize pool:', prizePool, 'tier:', tier);
     }
     
     if (rawData?.league && !prizePool) {
       prizePool = rawData.league.prizepool;
       tier = tier || rawData.league.tier;
+      console.log('🎯 Live Match League prize pool:', prizePool, 'tier:', tier);
     }
 
     return { prizePool, tier };
@@ -60,6 +78,8 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
 
   const { prizePool, tier } = getTournamentInfo();
   const formattedPrizePool = formatPrizePool(prizePool);
+
+  console.log('🎯 Live Match Final formatted prize pool:', formattedPrizePool);
 
   return (
     <Card className="bg-theme-gray-dark border-theme-gray-medium overflow-hidden border-l-4 border-l-red-500">

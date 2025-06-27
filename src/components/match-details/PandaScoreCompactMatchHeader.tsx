@@ -88,9 +88,23 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
   };
 
   const formatPrizePool = (prizePool: number | string) => {
+    console.log('🎯 Compact Match Prize pool raw data:', prizePool, typeof prizePool);
+    
     if (!prizePool) return null;
     
-    const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
+    let amount: number;
+    
+    if (typeof prizePool === 'string') {
+      // Extract numbers from strings like "10000 United States Dollar"
+      const numberMatch = prizePool.match(/\d+/);
+      if (!numberMatch) return null;
+      amount = parseInt(numberMatch[0]);
+    } else {
+      amount = prizePool;
+    }
+    
+    console.log('🎯 Compact Match Parsed prize pool amount:', amount);
+    
     if (isNaN(amount) || amount <= 0) return null;
     
     if (amount >= 1000000) {
@@ -107,14 +121,18 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     let prizePool = null;
     let tier = null;
 
+    console.log('🎯 Compact Match Raw data for tournament info:', rawData);
+
     if (rawData?.tournament) {
       prizePool = rawData.tournament.prizepool;
       tier = rawData.tournament.tier;
+      console.log('🎯 Compact Match Tournament prize pool:', prizePool, 'tier:', tier);
     }
     
     if (rawData?.league && !prizePool) {
       prizePool = rawData.league.prizepool;
       tier = tier || rawData.league.tier;
+      console.log('🎯 Compact Match League prize pool:', prizePool, 'tier:', tier);
     }
 
     return { prizePool, tier };
@@ -124,6 +142,8 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
   const finished = isFinished();
   const { prizePool, tier } = getTournamentInfo();
   const formattedPrizePool = formatPrizePool(prizePool);
+
+  console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool);
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">

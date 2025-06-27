@@ -96,9 +96,23 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   };
 
   const formatPrizePool = (prizePool: number | string) => {
+    console.log('🎯 Finished Match Prize pool raw data:', prizePool, typeof prizePool);
+    
     if (!prizePool) return null;
     
-    const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
+    let amount: number;
+    
+    if (typeof prizePool === 'string') {
+      // Extract numbers from strings like "10000 United States Dollar"
+      const numberMatch = prizePool.match(/\d+/);
+      if (!numberMatch) return null;
+      amount = parseInt(numberMatch[0]);
+    } else {
+      amount = prizePool;
+    }
+    
+    console.log('🎯 Finished Match Parsed prize pool amount:', amount);
+    
     if (isNaN(amount) || amount <= 0) return null;
     
     if (amount >= 1000000) {
@@ -115,14 +129,18 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
     let prizePool = null;
     let tier = null;
 
+    console.log('🎯 Finished Match Raw data for tournament info:', rawData);
+
     if (rawData?.tournament) {
       prizePool = rawData.tournament.prizepool;
       tier = rawData.tournament.tier;
+      console.log('🎯 Finished Match Tournament prize pool:', prizePool, 'tier:', tier);
     }
     
     if (rawData?.league && !prizePool) {
       prizePool = rawData.league.prizepool;
       tier = tier || rawData.league.tier;
+      console.log('🎯 Finished Match League prize pool:', prizePool, 'tier:', tier);
     }
 
     return { prizePool, tier };
@@ -130,6 +148,8 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
 
   const { prizePool, tier } = getTournamentInfo();
   const formattedPrizePool = formatPrizePool(prizePool);
+
+  console.log('🎯 Finished Match Final formatted prize pool:', formattedPrizePool);
 
   return (
     <Card className="bg-blue-950/70 ring-1 ring-blue-400/30 border-0 rounded-xl shadow-none">
