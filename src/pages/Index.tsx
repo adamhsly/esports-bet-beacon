@@ -131,20 +131,42 @@ const getPandaScoreStatusCategory = (status: string): 'live' | 'upcoming' | 'fin
   return null;
 };
 
-// Helper for grouping matches by tournament/league
+// Helper for grouping matches by tournament/league with clickable links
 function groupMatchesByLeague(matches: MatchInfo[]) {
-  // Use tournament_name or tournament as group key
-  return matches.reduce((acc: Record<string, MatchInfo[]>, match) => {
+  return matches.reduce((acc: Record<string, { matches: MatchInfo[]; tournamentId?: string }>, match) => {
     const league =
       match.tournament_name ||
       match.tournament ||
       match.league_name ||
       'Unknown League';
-    if (!acc[league]) acc[league] = [];
-    acc[league].push(match);
+    
+    if (!acc[league]) {
+      acc[league] = { 
+        matches: [],
+        tournamentId: generateTournamentId(match)
+      };
+    }
+    acc[league].matches.push(match);
     return acc;
   }, {});
 }
+
+// Generate tournament ID for navigation
+const generateTournamentId = (match: MatchInfo): string | undefined => {
+  if (match.source === 'professional') {
+    // Extract PandaScore tournament ID from match ID
+    const matchId = match.id.replace('pandascore_', '');
+    const tournamentId = match.rawData?.tournament?.id;
+    if (tournamentId) {
+      return `pandascore_${tournamentId}`;
+    }
+  } else if (match.source === 'amateur' && match.faceitData?.competition_name) {
+    // Generate FACEIT competition ID
+    const competitionName = match.faceitData.competition_name;
+    return `faceit_${competitionName.replace(/\s+/g, '_').toLowerCase()}`;
+  }
+  return undefined;
+};
 
 const GAME_TYPE_OPTIONS = [
   { label: 'All Games', value: 'all' },
@@ -705,14 +727,25 @@ const Index = () => {
                       🔴 Live Now ({dateFilteredLiveMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
-                      ([league, matches]) => {
+                      ([league, { matches, tournamentId }]) => {
                         const metadata = getTournamentMetadata(matches);
                         return (
                           <div key={league} className="mb-6">
                             <div className="ml-2 mb-2">
-                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
-                                {league}
-                              </div>
+                              {tournamentId ? (
+                                <Link 
+                                  to={`/tournament/${tournamentId}`}
+                                  className="hover:text-theme-purple transition-colors"
+                                >
+                                  <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
+                                    {league}
+                                  </div>
+                                </Link>
+                              ) : (
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                  {league}
+                                </div>
+                              )}
                               {renderTournamentMetadata(metadata)}
                             </div>
                             <div className="flex flex-col gap-4 max-w-2xl mx-auto">
@@ -743,14 +776,25 @@ const Index = () => {
                       📅 Upcoming ({dateFilteredUpcomingMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
-                      ([league, matches]) => {
+                      ([league, { matches, tournamentId }]) => {
                         const metadata = getTournamentMetadata(matches);
                         return (
                           <div key={league} className="mb-6">
                             <div className="ml-2 mb-2">
-                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
-                                {league}
-                              </div>
+                              {tournamentId ? (
+                                <Link 
+                                  to={`/tournament/${tournamentId}`}
+                                  className="hover:text-theme-purple transition-colors"
+                                >
+                                  <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
+                                    {league}
+                                  </div>
+                                </Link>
+                              ) : (
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                  {league}
+                                </div>
+                              )}
                               {renderTournamentMetadata(metadata)}
                             </div>
                             <div className="flex flex-col gap-4 max-w-2xl mx-auto">
@@ -783,14 +827,25 @@ const Index = () => {
                       ✅ Finished ({dateFilteredFinishedMatches.length})
                     </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(
-                      ([league, matches]) => {
+                      ([league, { matches, tournamentId }]) => {
                         const metadata = getTournamentMetadata(matches);
                         return (
                           <div key={league} className="mb-6">
                             <div className="ml-2 mb-2">
-                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
-                                {league}
-                              </div>
+                              {tournamentId ? (
+                                <Link 
+                                  to={`/tournament/${tournamentId}`}
+                                  className="hover:text-theme-purple transition-colors"
+                                >
+                                  <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
+                                    {league}
+                                  </div>
+                                </Link>
+                              ) : (
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                  {league}
+                                </div>
+                              )}
                               {renderTournamentMetadata(metadata)}
                             </div>
                             <div className="flex flex-col gap-4 max-w-2xl mx-auto">

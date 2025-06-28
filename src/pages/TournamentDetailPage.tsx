@@ -1,39 +1,28 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { 
   fetchTournamentById, 
-  fetchMatchesByTournamentId, 
-  fetchLeagueByName, 
-  fetchStandingsByLeagueId,
-  getCacheStats,
-  processTournamentData
-} from '@/lib/sportDevsApi';
+  UnifiedTournament, 
+  formatPrizePool 
+} from '@/lib/tournamentService';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trophy, Calendar, Users, Map } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import BracketView from '@/components/tournament/BracketView';
-import StandingsTable, { TeamStanding } from '@/components/tournament/StandingsTable';
-import { MatchInfo } from '@/components/MatchCard';
-import { MatchCard } from '@/components/MatchCard';
-import { getTeamImageUrl, getTournamentImageUrl } from '@/utils/cacheUtils';
+import { Badge } from '@/components/ui/badge';
+import TournamentBracket from '@/components/tournament/TournamentBracket';
+import LeagueStandings from '@/components/tournament/LeagueStandings';
+import { MatchInfo, MatchCard } from '@/components/MatchCard';
+import { supabase } from '@/integrations/supabase/client';
 
 const TournamentDetailPage: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
-  const [tournamentData, setTournamentData] = useState<any>(null);
+  const [tournament, setTournament] = useState<UnifiedTournament | null>(null);
   const [matches, setMatches] = useState<MatchInfo[]>([]);
-  const [standings, setStandings] = useState<TeamStanding[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cacheStats, setCacheStats] = useState<{ size: number; keys: string[] }>({ size: 0, keys: [] });
   const { toast } = useToast();
-  
-  // Debug function to show cache status
-  const updateCacheStats = () => {
-    const stats = getCacheStats();
-    setCacheStats(stats);
-    console.log('Current cache stats:', stats);
-  };
   
   useEffect(() => {
     async function loadTournamentData() {
@@ -45,50 +34,15 @@ const TournamentDetailPage: React.FC = () => {
         }
         
         // Fetch tournament details
-        const tournament = await fetchTournamentById(tournamentId);
-        
-        // Process tournament data to ensure images are cached
-        const processedTournament = processTournamentData(tournament);
-        setTournamentData(processedTournament);
-        
-        // Fetch tournament matches
-        const tournamentMatches = await fetchMatchesByTournamentId(tournamentId);
-        setMatches(tournamentMatches);
-        
-        // Try to fetch standings via league
-        try {
-          const league = await fetchLeagueByName(tournament.name);
-          if (league && league.id) {
-            const leagueStandings = await fetchStandingsByLeagueId(league.id);
-            
-            // Process standings data
-            const processedStandings: TeamStanding[] = leagueStandings.map((standing: any, index: number) => ({
-              id: `standing-${index}`,
-              position: standing.position || index + 1,
-              team: {
-                id: standing.team_id || `team-${index}`,
-                name: standing.team_name || `Team ${index + 1}`,
-                logo: standing.team_hash_image ? 
-                      getTeamImageUrl(standing.team_id, standing.team_hash_image) : 
-                      '/placeholder.svg'
-              },
-              matches_played: standing.matches_played || 0,
-              wins: standing.wins || 0,
-              draws: standing.draws || 0,
-              losses: standing.losses || 0,
-              points: standing.points || 0
-            }));
-            
-            setStandings(processedStandings);
-          }
-        } catch (error) {
-          console.error('Error fetching tournament standings:', error);
-          // Generate mock standings if API fails
-          generateMockStandings(tournamentMatches);
+        const tournamentData = await fetchTournamentById(tournamentId);
+        if (!tournamentData) {
+          throw new Error('Tournament not found');
         }
+        setTournament(tournamentData);
         
-        // Update cache stats after all fetches are complete
-        updateCacheStats();
+        // Fetch tournament matches based on source
+        const tournamentMatches = await fetchTournamentMatches(tournamentId, tournamentData);
+        setMatches(tournamentMatches);
         
       } catch (error) {
         console.error('Error loading tournament data:', error);
@@ -97,9 +51,6 @@ const TournamentDetailPage: React.FC = () => {
           description: "Could not fetch tournament information. Please try again later.",
           variant: "destructive",
         });
-        
-        // Generate mock tournament data
-        generateMockTournamentData();
       } finally {
         setLoading(false);
       }
@@ -107,119 +58,122 @@ const TournamentDetailPage: React.FC = () => {
     
     loadTournamentData();
   }, [tournamentId, toast]);
-  
-  const generateMockTournamentData = () => {
-    const mockTournament = {
-      id: tournamentId || '1',
-      name: 'ESL Pro League Season 16',
-      start_date: '2023-09-01',
-      end_date: '2023-10-15',
-      prize_pool: '$750,000',
-      image_url: '/placeholder.svg',
-      location: 'Online, Europe',
-      description: 'The ESL Pro League is a professional esports league for Counter-Strike: Global Offensive.'
-    };
-    
-    setTournamentData(mockTournament);
-    
-    // Generate mock matches
-    const teams = [
-      { name: 'Team Liquid', logo: '/placeholder.svg' },
-      { name: 'Cloud9', logo: '/placeholder.svg' },
-      { name: 'FaZe Clan', logo: '/placeholder.svg' },
-      { name: 'G2 Esports', logo: '/placeholder.svg' },
-      { name: 'Natus Vincere', logo: '/placeholder.svg' },
-      { name: 'Astralis', logo: '/placeholder.svg' },
-      { name: 'Vitality', logo: '/placeholder.svg' },
-      { name: 'ENCE', logo: '/placeholder.svg' }
-    ];
-    
-    const mockMatches: MatchInfo[] = [];
-    
-    // Generate 7 matches (for a single-elimination bracket with 8 teams)
-    for (let i = 0; i < 7; i++) {
-      const team1Index = i * 2 % teams.length;
-      const team2Index = (i * 2 + 1) % teams.length;
-      
-      let startDate = new Date();
-      // First 4 matches were 5 days ago, next 2 were 2 days ago, final is tomorrow
-      if (i < 4) startDate.setDate(startDate.getDate() - 5);
-      else if (i < 6) startDate.setDate(startDate.getDate() - 2);
-      else startDate.setDate(startDate.getDate() + 1);
-      
-      mockMatches.push({
-        id: `match-${i + 1}`,
-        teams: [
-          { name: teams[team1Index].name, logo: teams[team1Index].logo },
-          { name: teams[team2Index].name, logo: teams[team2Index].logo }
-        ],
-        startTime: startDate.toISOString(),
-        tournament: mockTournament.name,
-        esportType: 'csgo',
-        bestOf: i < 4 ? 3 : i < 6 ? 3 : 5
-      });
+
+  const fetchTournamentMatches = async (
+    tournamentId: string, 
+    tournament: UnifiedTournament
+  ): Promise<MatchInfo[]> => {
+    const [source, id] = tournamentId.split('_', 2);
+    let matches: MatchInfo[] = [];
+
+    try {
+      switch (source) {
+        case 'pandascore':
+          const { data: pandaMatches } = await supabase
+            .from('pandascore_matches')
+            .select('*')
+            .eq('tournament_id', id)
+            .order('start_time', { ascending: true });
+
+          if (pandaMatches) {
+            matches = pandaMatches.map(match => ({
+              id: `pandascore_${match.match_id}`,
+              teams: [
+                {
+                  name: (match.teams as any).team1?.name || 'TBD',
+                  logo: (match.teams as any).team1?.logo || '/placeholder.svg'
+                },
+                {
+                  name: (match.teams as any).team2?.name || 'TBD',
+                  logo: (match.teams as any).team2?.logo || '/placeholder.svg'
+                }
+              ] as [any, any],
+              startTime: match.start_time,
+              tournament: match.tournament_name || tournament.name,
+              esportType: match.esport_type,
+              bestOf: match.number_of_games || 3,
+              status: match.status,
+              source: 'professional' as const
+            }));
+          }
+          break;
+
+        case 'sportdevs':
+          const { data: sportMatches } = await supabase
+            .from('sportdevs_matches')
+            .select('*')
+            .eq('tournament_id', id)
+            .order('start_time', { ascending: true });
+
+          if (sportMatches) {
+            matches = sportMatches.map(match => ({
+              id: `sportdevs_${match.match_id}`,
+              teams: [
+                {
+                  name: (match.teams as any).team1?.name || 'TBD',
+                  logo: (match.teams as any).team1?.logo || '/placeholder.svg'
+                },
+                {
+                  name: (match.teams as any).team2?.name || 'TBD',
+                  logo: (match.teams as any).team2?.logo || '/placeholder.svg'
+                }
+              ] as [any, any],
+              startTime: match.start_time,
+              tournament: match.tournament_name || tournament.name,
+              esportType: match.esport_type,
+              bestOf: match.best_of || 3,
+              status: match.status,
+              source: 'professional' as const
+            }));
+          }
+          break;
+
+        case 'faceit':
+          const competitionName = id.replace(/_/g, ' ');
+          const { data: faceitMatches } = await supabase
+            .from('faceit_matches')
+            .select('*')
+            .eq('competition_name', competitionName)
+            .order('scheduled_at', { ascending: true });
+
+          if (faceitMatches) {
+            matches = faceitMatches.map(match => ({
+              id: `faceit_${match.match_id}`,
+              teams: [
+                {
+                  name: (match.teams as any).team1?.name || 'Team 1',
+                  logo: (match.teams as any).team1?.logo || '/placeholder.svg'
+                },
+                {
+                  name: (match.teams as any).team2?.name || 'Team 2',
+                  logo: (match.teams as any).team2?.logo || '/placeholder.svg'
+                }
+              ] as [any, any],
+              startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+              tournament: match.competition_name || tournament.name,
+              esportType: match.game || 'cs2',
+              bestOf: 3,
+              status: match.status,
+              source: 'amateur' as const,
+              faceitData: match.faceit_data
+            }));
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Error fetching tournament matches:', error);
     }
-    
-    setMatches(mockMatches);
-    generateMockStandings(mockMatches);
+
+    return matches;
   };
-  
-  const generateMockStandings = (matchData: MatchInfo[]) => {
-    // Extract unique teams from match data
-    const uniqueTeams = new Set<string>();
-    matchData.forEach(match => {
-      uniqueTeams.add(match.teams[0].name);
-      uniqueTeams.add(match.teams[1].name);
-    });
-    
-    const teamArray = Array.from(uniqueTeams);
-    
-    // Generate mock standings
-    const mockStandings: TeamStanding[] = teamArray.map((teamName, index) => {
-      const teamMatches = matchData.filter(match => 
-        match.teams[0].name === teamName || match.teams[1].name === teamName
-      );
-      
-      // Find team logo
-      const foundMatch = matchData.find(match => 
-        match.teams[0].name === teamName || match.teams[1].name === teamName
-      );
-      
-      const teamLogo = foundMatch ? 
-        foundMatch.teams[foundMatch.teams[0].name === teamName ? 0 : 1].logo || '/placeholder.svg' : 
-        '/placeholder.svg';
-      
-      // Generate random stats
-      const wins = Math.floor(Math.random() * 10) + 1;
-      const losses = Math.floor(Math.random() * 5);
-      const draws = Math.floor(Math.random() * 3);
-      const points = wins * 3 + draws;
-      
-      return {
-        id: `standing-${index}`,
-        position: index + 1,
-        team: {
-          id: `team-${index}`,
-          name: teamName,
-          logo: teamLogo
-        },
-        matches_played: wins + losses + draws,
-        wins,
-        draws,
-        losses,
-        points
-      };
-    });
-    
-    // Sort by points
-    mockStandings.sort((a, b) => b.points - a.points);
-    
-    // Reassign positions after sorting
-    mockStandings.forEach((standing, index) => {
-      standing.position = index + 1;
-    });
-    
-    setStandings(mockStandings);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500/20 text-green-400 border-green-400/30';
+      case 'upcoming': return 'bg-blue-500/20 text-blue-400 border-blue-400/30';
+      case 'finished': return 'bg-gray-500/20 text-gray-400 border-gray-400/30';
+      default: return 'bg-theme-purple/20 text-theme-purple border-theme-purple/30';
+    }
   };
 
   if (loading) {
@@ -235,103 +189,183 @@ const TournamentDetailPage: React.FC = () => {
     );
   }
 
+  if (!tournament) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SearchableNavbar />
+        <div className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
+          <div className="text-center">
+            <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+            <h1 className="text-2xl font-bold mb-2">Tournament Not Found</h1>
+            <p className="text-gray-400">The requested tournament could not be found.</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       <div className="flex-grow container mx-auto px-4 py-8">
-        {tournamentData ? (
-          <>
-            <div className="mb-8 flex flex-col md:flex-row items-center md:justify-between">
-              <div className="flex items-center mb-4 md:mb-0">
-                <img 
-                  src={
-                    tournamentData.hash_image 
-                      ? getTournamentImageUrl(tournamentData.id, tournamentData.hash_image)
-                      : (tournamentData.image_url || '/placeholder.svg')
-                  } 
-                  alt={tournamentData.name} 
-                  className="w-16 h-16 object-contain mr-4"
-                  onError={(e) => {
-                    // Fallback if image fails to load
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold">{tournamentData.name}</h1>
-                  <p className="text-gray-400">
-                    {tournamentData.start_date && tournamentData.end_date
-                      ? `${new Date(tournamentData.start_date).toLocaleDateString()} - ${new Date(tournamentData.end_date).toLocaleDateString()}`
-                      : "Dates not available"}
-                    {tournamentData.location ? ` • ${tournamentData.location}` : ""}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="text-center md:text-right">
-                <div className="text-xl font-bold text-theme-purple">{tournamentData.prize_pool || "Prize pool not available"}</div>
-                <p className="text-gray-400">Prize Pool</p>
-              </div>
-            </div>
-            
-            {tournamentData.description && (
-              <div className="mb-8 bg-theme-gray-dark/50 p-4 rounded-md">
-                <p>{tournamentData.description}</p>
-              </div>
-            )}
-            
-            <Tabs defaultValue="bracket" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="bracket">Bracket</TabsTrigger>
-                <TabsTrigger value="standings">Standings</TabsTrigger>
-                <TabsTrigger value="matches">Matches</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="bracket" className="pt-6">
-                <BracketView 
-                  matches={matches} 
-                  tournamentName={tournamentData.name}
-                />
-              </TabsContent>
-              
-              <TabsContent value="standings" className="pt-6">
-                {standings.length > 0 ? (
-                  <StandingsTable 
-                    standings={standings}
-                    title="Group Stage"
-                  />
+        {/* Tournament Header */}
+        <div className="mb-8 flex flex-col md:flex-row items-center md:justify-between">
+          <div className="flex items-center mb-4 md:mb-0">
+            <img 
+              src={tournament.imageUrl || '/placeholder.svg'} 
+              alt={tournament.name} 
+              className="w-16 h-16 object-contain mr-4"
+            />
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold">{tournament.name}</h1>
+                <Badge className={getStatusColor(tournament.status)}>
+                  {tournament.status.toUpperCase()}
+                </Badge>
+                {tournament.type === 'league' ? (
+                  <Users className="h-5 w-5 text-blue-400" />
                 ) : (
-                  <div className="text-center py-10 bg-theme-gray-dark/50 rounded-md">
-                    <p className="text-gray-400">No standings data available for this tournament.</p>
+                  <Trophy className="h-5 w-5 text-yellow-400" />
+                )}
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-4 text-gray-400">
+                {tournament.startDate && tournament.endDate && (
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span className="text-sm">
+                      {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+                    </span>
                   </div>
                 )}
-              </TabsContent>
-              
-              <TabsContent value="matches" className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {matches.length > 0 ? (
-                    matches.map(match => (
-                      <MatchCard key={match.id} match={match} />
-                    ))
-                  ) : (
-                    <div className="col-span-3 text-center py-10 bg-theme-gray-dark/50 rounded-md">
-                      <p className="text-gray-400">No match data available for this tournament.</p>
+                
+                {tournament.tier && (
+                  <div className="flex items-center">
+                    <Map className="h-4 w-4 mr-1" />
+                    <span className="text-sm capitalize">{tournament.tier}</span>
+                  </div>
+                )}
+                
+                <Badge className="bg-theme-purple">
+                  {tournament.esportType.toUpperCase()}
+                </Badge>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-center md:text-right">
+            {tournament.prizePool && (
+              <>
+                <div className="text-xl font-bold text-theme-purple">
+                  {formatPrizePool(tournament.prizePool)}
+                </div>
+                <p className="text-gray-400">Prize Pool</p>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {tournament.description && (
+          <div className="mb-8 bg-theme-gray-dark/50 p-4 rounded-md">
+            <p>{tournament.description}</p>
+          </div>
+        )}
+        
+        <Tabs defaultValue={tournament.type === 'league' ? 'standings' : 'bracket'} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value={tournament.type === 'league' ? 'standings' : 'bracket'}>
+              {tournament.type === 'league' ? 'Standings' : 'Bracket'}
+            </TabsTrigger>
+            <TabsTrigger value="matches">Matches</TabsTrigger>
+            <TabsTrigger value="info">Information</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={tournament.type === 'league' ? 'standings' : 'bracket'} className="pt-6">
+            {tournament.type === 'league' ? (
+              <LeagueStandings 
+                tournamentId={tournament.id}
+                tournamentName={tournament.name}
+                esportType={tournament.esportType}
+              />
+            ) : (
+              <TournamentBracket 
+                matches={matches} 
+                tournamentName={tournament.name}
+              />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="matches" className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {matches.length > 0 ? (
+                matches.map(match => (
+                  <MatchCard key={match.id} match={match} />
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-10 bg-theme-gray-dark/50 rounded-md">
+                  <p className="text-gray-400">No match data available for this tournament.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="info" className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-theme-gray-dark/50 p-6 rounded-md">
+                <h3 className="text-xl font-bold mb-4">Tournament Details</h3>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-gray-400">Type:</span>
+                    <span className="ml-2 font-medium capitalize">{tournament.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Game:</span>
+                    <span className="ml-2 font-medium uppercase">{tournament.esportType}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Source:</span>
+                    <span className="ml-2 font-medium capitalize">{tournament.source}</span>
+                  </div>
+                  {tournament.tier && (
+                    <div>
+                      <span className="text-gray-400">Tier:</span>
+                      <span className="ml-2 font-medium capitalize">{tournament.tier}</span>
                     </div>
                   )}
                 </div>
-              </TabsContent>
-            </Tabs>
-
-            {/* Debug info section showing cache statistics */}
-            <div className="mt-10 text-xs text-gray-500 border-t border-gray-800 pt-4">
-              <p>Cache items: {cacheStats.size}</p>
-              <p>Image cache keys: {cacheStats.keys.filter(k => k.includes('_image_')).join(', ')}</p>
+              </div>
+              
+              <div className="bg-theme-gray-dark/50 p-6 rounded-md">
+                <h3 className="text-xl font-bold mb-4">Statistics</h3>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-gray-400">Total Matches:</span>
+                    <span className="ml-2 font-medium">{matches.length}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Completed:</span>
+                    <span className="ml-2 font-medium">
+                      {matches.filter(m => m.status === 'finished' || m.status === 'completed').length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Live:</span>
+                    <span className="ml-2 font-medium">
+                      {matches.filter(m => m.status === 'live' || m.status === 'ongoing').length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Upcoming:</span>
+                    <span className="ml-2 font-medium">
+                      {matches.filter(m => m.status === 'scheduled' || m.status === 'upcoming').length}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-xl text-gray-400">Tournament not found.</p>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
       <Footer />
     </div>
