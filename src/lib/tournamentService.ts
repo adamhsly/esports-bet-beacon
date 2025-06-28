@@ -43,20 +43,23 @@ export async function fetchUnifiedTournaments(): Promise<UnifiedTournament[]> {
       .order('start_date', { ascending: false });
 
     if (pandascoreTournaments) {
-      tournaments.push(...pandascoreTournaments.map(t => ({
-        id: `pandascore_${t.tournament_id}`,
-        name: t.name,
-        type: 'tournament' as const,
-        source: 'pandascore' as const,
-        esportType: t.esport_type,
-        status: determineStatus(t.start_date, t.end_date, t.status),
-        startDate: t.start_date,
-        endDate: t.end_date,
-        prizePool: t.raw_data?.prizepool,
-        tier: t.raw_data?.tier,
-        imageUrl: t.image_url,
-        rawData: t.raw_data
-      })));
+      tournaments.push(...pandascoreTournaments.map(t => {
+        const rawData = t.raw_data as any;
+        return {
+          id: `pandascore_${t.tournament_id}`,
+          name: t.name,
+          type: 'tournament' as const,
+          source: 'pandascore' as const,
+          esportType: t.esport_type,
+          status: determineStatus(t.start_date, t.end_date, t.status),
+          startDate: t.start_date,
+          endDate: t.end_date,
+          prizePool: rawData?.prizepool || rawData?.tournament?.prizepool,
+          tier: rawData?.tier || rawData?.tournament?.tier,
+          imageUrl: t.image_url,
+          rawData: t.raw_data
+        };
+      }));
     }
 
     // Fetch SportDevs tournaments
@@ -132,6 +135,7 @@ export async function fetchTournamentById(tournamentId: string): Promise<Unified
           .single();
 
         if (pandaData) {
+          const rawData = pandaData.raw_data as any;
           return {
             id: tournamentId,
             name: pandaData.name,
@@ -141,10 +145,10 @@ export async function fetchTournamentById(tournamentId: string): Promise<Unified
             status: determineStatus(pandaData.start_date, pandaData.end_date, pandaData.status),
             startDate: pandaData.start_date,
             endDate: pandaData.end_date,
-            prizePool: pandaData.raw_data?.prizepool,
-            tier: pandaData.raw_data?.tier,
+            prizePool: rawData?.prizepool || rawData?.tournament?.prizepool,
+            tier: rawData?.tier || rawData?.tournament?.tier,
             imageUrl: pandaData.image_url,
-            description: pandaData.raw_data?.description,
+            description: rawData?.description || rawData?.tournament?.description,
             rawData: pandaData.raw_data
           };
         }

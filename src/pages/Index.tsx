@@ -160,10 +160,12 @@ const generateTournamentId = (match: MatchInfo): string | undefined => {
     if (tournamentId) {
       return `pandascore_${tournamentId}`;
     }
-  } else if (match.source === 'amateur' && match.faceitData?.competition_name) {
-    // Generate FACEIT competition ID
-    const competitionName = match.faceitData.competition_name;
-    return `faceit_${competitionName.replace(/\s+/g, '_').toLowerCase()}`;
+  } else if (match.source === 'amateur') {
+    // Generate FACEIT competition ID from competition_name in raw data
+    const competitionName = (match.rawData as any)?.competition_name;
+    if (competitionName) {
+      return `faceit_${competitionName.replace(/\s+/g, '_').toLowerCase()}`;
+    }
   }
   return undefined;
 };

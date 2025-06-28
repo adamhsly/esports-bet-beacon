@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -155,7 +154,13 @@ const TournamentDetailPage: React.FC = () => {
               bestOf: 3,
               status: match.status,
               source: 'amateur' as const,
-              faceitData: match.faceit_data
+              faceitData: {
+                region: (match.faceit_data as any)?.region,
+                competitionType: match.competition_type,
+                organizedBy: match.organized_by,
+                calculateElo: (match.faceit_data as any)?.calculateElo,
+                results: (match.faceit_data as any)?.results
+              }
             }));
           }
           break;
