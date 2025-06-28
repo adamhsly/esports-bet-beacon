@@ -56,7 +56,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/esports/:gameType" element={<EsportPage />} />
           <Route path="/tournaments" element={<TournamentsPage />} />
-          <Route path="/tournament/:id" element={<TournamentDetailPage />} />
+          <Route path="/tournament/:tournamentId" element={<TournamentDetailPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/team/:id" element={<TeamDetailPage />} />
           <Route path="/player/:id" element={<PlayerDetailPage />} />
