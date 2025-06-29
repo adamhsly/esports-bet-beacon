@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UnifiedTournament {
@@ -62,7 +63,7 @@ export async function fetchUnifiedTournaments(): Promise<UnifiedTournament[]> {
         })
         .map(t => {
           const rawData = t.raw_data as any;
-          console.log(`Processing PandaScore tournament: ${t.name}, status: ${t.status}`);
+          console.log(`Processing PandaScore tournament: ${t.name}, status: ${t.status}, ID: ${t.tournament_id}`);
           
           return {
             id: `pandascore_${t.tournament_id}`,
@@ -176,116 +177,152 @@ export async function fetchUnifiedTournaments(): Promise<UnifiedTournament[]> {
 }
 
 export async function fetchTournamentById(tournamentId: string): Promise<UnifiedTournament | null> {
+  console.log(`Fetching tournament by ID: ${tournamentId}`);
   const [source, id] = tournamentId.split('_', 2);
 
   try {
     switch (source) {
       case 'pandascore':
-        const { data: pandaData } = await supabase
+        console.log(`Looking for PandaScore tournament with ID: ${id}`);
+        const { data: pandaData, error: pandaError } = await supabase
           .from('pandascore_tournaments')
           .select('*')
           .eq('tournament_id', id)
-          .single();
+          .maybeSingle();
 
-        if (pandaData) {
-          const rawData = pandaData.raw_data as any;
-          return {
-            id: tournamentId,
-            name: pandaData.name,
-            type: 'tournament',
-            source: 'pandascore',
-            esportType: pandaData.esport_type,
-            status: determineStatus(pandaData.start_date, pandaData.end_date, pandaData.status),
-            startDate: pandaData.start_date,
-            endDate: pandaData.end_date,
-            prizePool: rawData?.prizepool || rawData?.tournament?.prizepool,
-            tier: rawData?.tier || rawData?.tournament?.tier,
-            imageUrl: pandaData.image_url,
-            description: rawData?.description || rawData?.tournament?.description,
-            rawData: pandaData.raw_data
-          };
+        if (pandaError) {
+          console.error('Error fetching PandaScore tournament:', pandaError);
+          throw pandaError;
         }
-        break;
+
+        if (!pandaData) {
+          console.warn(`PandaScore tournament with ID ${id} not found`);
+          return null;
+        }
+
+        const rawData = pandaData.raw_data as any;
+        return {
+          id: tournamentId,
+          name: pandaData.name,
+          type: 'tournament',
+          source: 'pandascore',
+          esportType: pandaData.esport_type,
+          status: determineStatusFromPandaScore(pandaData.start_date, pandaData.end_date, pandaData.status),
+          startDate: pandaData.start_date,
+          endDate: pandaData.end_date,
+          prizePool: rawData?.prizepool || rawData?.tournament?.prizepool,
+          tier: rawData?.tier || rawData?.tournament?.tier,
+          imageUrl: pandaData.image_url,
+          description: rawData?.description || rawData?.tournament?.description,
+          rawData: pandaData.raw_data
+        };
 
       case 'sportdevs':
-        const { data: sportData } = await supabase
+        console.log(`Looking for SportDevs tournament with ID: ${id}`);
+        const { data: sportData, error: sportError } = await supabase
           .from('sportdevs_tournaments')
           .select('*')
           .eq('tournament_id', id)
-          .single();
+          .maybeSingle();
 
-        if (sportData) {
-          return {
-            id: tournamentId,
-            name: sportData.name,
-            type: 'tournament',
-            source: 'sportdevs',
-            esportType: sportData.esport_type,
-            status: determineStatus(sportData.start_date, sportData.end_date, sportData.status),
-            startDate: sportData.start_date,
-            endDate: sportData.end_date,
-            imageUrl: sportData.image_url,
-            rawData: sportData.raw_data
-          };
+        if (sportError) {
+          console.error('Error fetching SportDevs tournament:', sportError);
+          throw sportError;
         }
-        break;
+
+        if (!sportData) {
+          console.warn(`SportDevs tournament with ID ${id} not found`);
+          return null;
+        }
+
+        return {
+          id: tournamentId,
+          name: sportData.name,
+          type: 'tournament',
+          source: 'sportdevs',
+          esportType: sportData.esport_type,
+          status: determineStatus(sportData.start_date, sportData.end_date, sportData.status),
+          startDate: sportData.start_date,
+          endDate: sportData.end_date,
+          imageUrl: sportData.image_url,
+          rawData: sportData.raw_data
+        };
 
       case 'faceit':
+        console.log(`Looking for FACEIT competition with ID: ${id}`);
         // For FACEIT, we need to reconstruct from the original competition name
         const competitionName = id.replace(/_/g, ' ');
-        const { data: faceitData } = await supabase
+        const { data: faceitData, error: faceitError } = await supabase
           .from('faceit_matches')
           .select('*')
           .eq('competition_name', competitionName)
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (faceitData) {
-          return {
-            id: tournamentId,
-            name: faceitData.competition_name,
-            type: faceitData.competition_type?.toLowerCase().includes('league') ? 'league' : 'tournament',
-            source: 'faceit',
-            esportType: faceitData.game || 'cs2',
-            status: 'active',
-            rawData: faceitData
-          };
+        if (faceitError) {
+          console.error('Error fetching FACEIT competition:', faceitError);
+          throw faceitError;
         }
-        break;
+
+        if (!faceitData) {
+          console.warn(`FACEIT competition with name "${competitionName}" not found`);
+          return null;
+        }
+
+        return {
+          id: tournamentId,
+          name: faceitData.competition_name,
+          type: faceitData.competition_type?.toLowerCase().includes('league') ? 'league' : 'tournament',
+          source: 'faceit',
+          esportType: faceitData.game || 'cs2',
+          status: 'active',
+          rawData: faceitData
+        };
+
+      default:
+        console.warn(`Unknown tournament source: ${source}`);
+        return null;
     }
   } catch (error) {
     console.error('Error fetching tournament by ID:', error);
+    throw error;
   }
-
-  return null;
 }
 
 function determineStatusFromPandaScore(startDate?: string, endDate?: string, apiStatus?: string): 'upcoming' | 'active' | 'finished' {
   const now = new Date();
+  
+  console.log(`Determining status for tournament - startDate: ${startDate}, endDate: ${endDate}, apiStatus: ${apiStatus}`);
   
   // Handle PandaScore-specific status codes
   switch (apiStatus) {
     case 'd': // done/finished
     case 'f': // finished
     case 'c': // cancelled
+      console.log('Status determined as finished based on API status');
       return 'finished';
     case 'b': // began/active
     case 'r': // running
+      console.log('Status determined as active based on API status');
       return 'active';
     case 's': // scheduled/upcoming
     case 'n': // not started
+      console.log('Status determined as upcoming based on API status');
       return 'upcoming';
   }
   
   // Fallback to date-based logic
   if (endDate && new Date(endDate) < now) {
+    console.log('Status determined as finished based on end date');
     return 'finished';
   }
   
   if (startDate && new Date(startDate) > now) {
+    console.log('Status determined as upcoming based on start date');
     return 'upcoming';
   }
   
+  console.log('Status determined as active (fallback)');
   return 'active';
 }
 
