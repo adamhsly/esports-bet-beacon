@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UnifiedTournament {
@@ -36,64 +35,114 @@ export async function fetchUnifiedTournaments(): Promise<UnifiedTournament[]> {
   const tournaments: UnifiedTournament[] = [];
 
   try {
+    console.log('Starting tournament fetch process...');
+
     // Fetch PandaScore tournaments
-    const { data: pandascoreTournaments } = await supabase
+    console.log('Fetching PandaScore tournaments...');
+    const { data: pandascoreTournaments, error: pandascoreError } = await supabase
       .from('pandascore_tournaments')
       .select('*')
       .order('start_date', { ascending: false });
 
+    if (pandascoreError) {
+      console.error('Error fetching PandaScore tournaments:', pandascoreError);
+      throw pandascoreError;
+    }
+
+    console.log(`Found ${pandascoreTournaments?.length || 0} PandaScore tournaments`);
+
     if (pandascoreTournaments) {
-      tournaments.push(...pandascoreTournaments.map(t => {
-        const rawData = t.raw_data as any;
-        return {
-          id: `pandascore_${t.tournament_id}`,
-          name: t.name,
-          type: 'tournament' as const,
-          source: 'pandascore' as const,
-          esportType: t.esport_type,
-          status: determineStatus(t.start_date, t.end_date, t.status),
-          startDate: t.start_date,
-          endDate: t.end_date,
-          prizePool: rawData?.prizepool || rawData?.tournament?.prizepool,
-          tier: rawData?.tier || rawData?.tournament?.tier,
-          imageUrl: t.image_url,
-          rawData: t.raw_data
-        };
-      }));
+      const processedPandaScore = pandascoreTournaments
+        .filter(t => {
+          if (!t.name || !t.tournament_id) {
+            console.warn('Skipping invalid PandaScore tournament:', t);
+            return false;
+          }
+          return true;
+        })
+        .map(t => {
+          const rawData = t.raw_data as any;
+          console.log(`Processing PandaScore tournament: ${t.name}, status: ${t.status}`);
+          
+          return {
+            id: `pandascore_${t.tournament_id}`,
+            name: t.name,
+            type: 'tournament' as const,
+            source: 'pandascore' as const,
+            esportType: t.esport_type,
+            status: determineStatusFromPandaScore(t.start_date, t.end_date, t.status),
+            startDate: t.start_date,
+            endDate: t.end_date,
+            prizePool: rawData?.prizepool || rawData?.tournament?.prizepool,
+            tier: rawData?.tier || rawData?.tournament?.tier,
+            imageUrl: t.image_url,
+            rawData: t.raw_data
+          };
+        });
+
+      tournaments.push(...processedPandaScore);
+      console.log(`Added ${processedPandaScore.length} PandaScore tournaments`);
     }
 
     // Fetch SportDevs tournaments
-    const { data: sportdevsTournaments } = await supabase
+    console.log('Fetching SportDevs tournaments...');
+    const { data: sportdevsTournaments, error: sportdevsError } = await supabase
       .from('sportdevs_tournaments')
       .select('*')
       .order('start_date', { ascending: false });
 
+    if (sportdevsError) {
+      console.error('Error fetching SportDevs tournaments:', sportdevsError);
+      throw sportdevsError;
+    }
+
+    console.log(`Found ${sportdevsTournaments?.length || 0} SportDevs tournaments`);
+
     if (sportdevsTournaments) {
-      tournaments.push(...sportdevsTournaments.map(t => ({
-        id: `sportdevs_${t.tournament_id}`,
-        name: t.name,
-        type: 'tournament' as const,
-        source: 'sportdevs' as const,
-        esportType: t.esport_type,
-        status: determineStatus(t.start_date, t.end_date, t.status),
-        startDate: t.start_date,
-        endDate: t.end_date,
-        imageUrl: t.image_url,
-        rawData: t.raw_data
-      })));
+      const processedSportDevs = sportdevsTournaments
+        .filter(t => {
+          if (!t.name || !t.tournament_id) {
+            console.warn('Skipping invalid SportDevs tournament:', t);
+            return false;
+          }
+          return true;
+        })
+        .map(t => ({
+          id: `sportdevs_${t.tournament_id}`,
+          name: t.name,
+          type: 'tournament' as const,
+          source: 'sportdevs' as const,
+          esportType: t.esport_type,
+          status: determineStatus(t.start_date, t.end_date, t.status),
+          startDate: t.start_date,
+          endDate: t.end_date,
+          imageUrl: t.image_url,
+          rawData: t.raw_data
+        }));
+
+      tournaments.push(...processedSportDevs);
+      console.log(`Added ${processedSportDevs.length} SportDevs tournaments`);
     }
 
     // Fetch unique FACEIT competitions
-    const { data: faceitCompetitions } = await supabase
+    console.log('Fetching FACEIT competitions...');
+    const { data: faceitCompetitions, error: faceitError } = await supabase
       .from('faceit_matches')
       .select('competition_name, competition_type, region, game')
       .not('competition_name', 'is', null)
       .neq('competition_name', 'Matchmaking');
 
+    if (faceitError) {
+      console.error('Error fetching FACEIT competitions:', faceitError);
+      throw faceitError;
+    }
+
+    console.log(`Found ${faceitCompetitions?.length || 0} FACEIT matches`);
+
     if (faceitCompetitions) {
       const uniqueCompetitions = faceitCompetitions.reduce((acc: any[], match) => {
         const existing = acc.find(c => c.competition_name === match.competition_name);
-        if (!existing) {
+        if (!existing && match.competition_name) {
           acc.push({
             id: `faceit_${match.competition_name?.replace(/\s+/g, '_').toLowerCase()}`,
             name: match.competition_name,
@@ -108,10 +157,14 @@ export async function fetchUnifiedTournaments(): Promise<UnifiedTournament[]> {
       }, []);
 
       tournaments.push(...uniqueCompetitions);
+      console.log(`Added ${uniqueCompetitions.length} unique FACEIT competitions`);
     }
+
+    console.log(`Total tournaments found: ${tournaments.length}`);
 
   } catch (error) {
     console.error('Error fetching tournaments:', error);
+    throw error; // Re-throw to ensure errors are visible
   }
 
   return tournaments.sort((a, b) => {
@@ -205,6 +258,35 @@ export async function fetchTournamentById(tournamentId: string): Promise<Unified
   }
 
   return null;
+}
+
+function determineStatusFromPandaScore(startDate?: string, endDate?: string, apiStatus?: string): 'upcoming' | 'active' | 'finished' {
+  const now = new Date();
+  
+  // Handle PandaScore-specific status codes
+  switch (apiStatus) {
+    case 'd': // done/finished
+    case 'f': // finished
+    case 'c': // cancelled
+      return 'finished';
+    case 'b': // began/active
+    case 'r': // running
+      return 'active';
+    case 's': // scheduled/upcoming
+    case 'n': // not started
+      return 'upcoming';
+  }
+  
+  // Fallback to date-based logic
+  if (endDate && new Date(endDate) < now) {
+    return 'finished';
+  }
+  
+  if (startDate && new Date(startDate) > now) {
+    return 'upcoming';
+  }
+  
+  return 'active';
 }
 
 function determineStatus(startDate?: string, endDate?: string, apiStatus?: string): 'upcoming' | 'active' | 'finished' {
