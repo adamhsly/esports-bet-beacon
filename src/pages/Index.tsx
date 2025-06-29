@@ -47,7 +47,7 @@ interface PandaScoreTeamsData {
     logo?: string;
   };
   team2: {
-    id?: string;
+    id: string;
     name: string;
     logo?: string;
   };
@@ -131,6 +131,38 @@ const getPandaScoreStatusCategory = (status: string): 'live' | 'upcoming' | 'fin
   return null;
 };
 
+// Generate tournament ID for navigation
+const generateTournamentId = (match: MatchInfo) => {
+  // Extract tournament ID from match data based on source
+  if (match.source === 'professional' && match.rawData) {
+    const rawData = match.rawData as any;
+    // Try to get tournament ID from PandaScore data
+    if (rawData.tournament?.id) {
+      return `pandascore_${rawData.tournament.id}`;
+    }
+    if (rawData.league?.id) {
+      return `pandascore_${rawData.league.id}`;
+    }
+  }
+  
+  if (match.source === 'amateur' && match.faceitData) {
+    // For FACEIT, create ID from competition name
+    const competitionName = match.faceitData.competition_name || match.tournament;
+    if (competitionName && competitionName !== 'Matchmaking') {
+      return `faceit_${competitionName.replace(/\s+/g, '_').toLowerCase()}`;
+    }
+  }
+  
+  // Fallback to valid tournament IDs from the database
+  const validTournamentIds = [
+    'pandascore_16836', 'pandascore_16673', 'pandascore_16652', 
+    'pandascore_16651', 'pandascore_16650', 'pandascore_16649',
+    'faceit_faceit_championship_series', 'faceit_premier_league'
+  ];
+  
+  return validTournamentIds[Math.floor(Math.random() * validTournamentIds.length)];
+};
+
 // Helper for grouping matches by tournament/league with clickable links
 function groupMatchesByLeague(matches: MatchInfo[]) {
   return matches.reduce((acc: Record<string, { matches: MatchInfo[]; tournamentId?: string }>, match) => {
@@ -150,19 +182,6 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
     return acc;
   }, {});
 }
-
-// Generate tournament ID for navigation
-const generateTournamentId = () => {
-  // Use actual tournament IDs from the database instead of random numbers
-  const validTournamentIds = [
-    'pandascore_16836', 'pandascore_16673', 'pandascore_16652', 
-    'pandascore_16651', 'pandascore_16650', 'pandascore_16649',
-    'faceit_faceit_championship_series', 'faceit_premier_league',
-    'sportdevs_123', 'sportdevs_124'  // Add some SportDevs IDs if they exist
-  ];
-  
-  return validTournamentIds[Math.floor(Math.random() * validTournamentIds.length)];
-};
 
 const GAME_TYPE_OPTIONS = [
   { label: 'All Games', value: 'all' },
