@@ -7,7 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Game-specific player fetching functions
+// Tournament rosters cache to avoid repeated API calls
+const tournamentRostersCache = new Map<string, any>();
+
+// Enhanced player data extraction using tournament rosters
 interface PlayerData {
   nickname: string;
   player_id: string;
@@ -15,101 +18,78 @@ interface PlayerData {
   role?: string;
 }
 
-// Game-specific fetcher functions
-const fetchPlayersForGame = async (game: string, apiKey: string, teamId: string, matchId: string): Promise<PlayerData[]> => {
-  console.log(`🎮 Fetching ${game} players for team ${teamId} (match ${matchId})...`);
+// Fetch tournament rosters using the correct endpoint structure
+const fetchTournamentRosters = async (tournamentId: string, apiKey: string): Promise<any> => {
+  console.log(`🏆 Fetching tournament rosters for tournament ${tournamentId}...`);
   
-  // Strategy 1: Try team roster endpoint
+  // Check cache first
+  if (tournamentRostersCache.has(tournamentId)) {
+    console.log(`📦 Using cached rosters for tournament ${tournamentId}`);
+    return tournamentRostersCache.get(tournamentId);
+  }
+  
   try {
-    const teamResponse = await fetch(`https://api.pandascore.co/${game}/teams/${teamId}`, {
+    const response = await fetch(`https://api.pandascore.co/tournaments/${tournamentId}/rosters`, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Accept': 'application/json'
       }
     });
 
-    if (teamResponse.ok) {
-      const teamData = await teamResponse.json();
-      const players = teamData.players || [];
-      
-      if (players.length > 0) {
-        console.log(`👥 ${game} team ${teamId}: ${players.length} players from roster`);
-        return players.map(player => ({
-          nickname: player.name,
-          player_id: player.id?.toString(),
-          position: mapPlayerRole(game, player.role || 'Player')
-        }));
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`⚠️ Tournament ${tournamentId} rosters not found (404) - tournament may not have roster data`);
+        return null;
       }
+      console.error(`❌ Failed to fetch tournament rosters: ${response.status} - ${response.statusText}`);
+      return null;
     }
+
+    const rostersResponse = await response.json();
+    
+    if (!rostersResponse || typeof rostersResponse !== 'object' || !rostersResponse.rosters) {
+      console.log(`⚠️ Unexpected roster response structure for tournament ${tournamentId}:`, rostersResponse);
+      return null;
+    }
+
+    // Cache the result
+    tournamentRostersCache.set(tournamentId, rostersResponse);
+    console.log(`✅ Successfully fetched and cached rosters for tournament ${tournamentId}`);
+    
+    return rostersResponse;
   } catch (error) {
-    console.log(`⚠️ ${game} team ${teamId} roster fetch failed:`, error);
+    console.error(`❌ Error fetching tournament rosters for ${tournamentId}:`, error);
+    return null;
+  }
+};
+
+// Extract players for a specific team from tournament rosters
+const getPlayersFromTournamentRosters = (rostersResponse: any, teamId: string): PlayerData[] => {
+  if (!rostersResponse || !rostersResponse.rosters) {
+    return [];
   }
 
-  // Strategy 2: Try match-specific player stats (for games that support it)
-  if (['lol', 'valorant'].includes(game)) {
-    try {
-      console.log(`🎯 Trying match player stats for ${game} match ${matchId}...`);
-      const statsResponse = await fetch(`https://api.pandascore.co/${game}/matches/${matchId}/players/stats`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (statsResponse.ok) {
-        const playerStats = await statsResponse.json();
-        const teamPlayers = playerStats.filter(stat => 
-          stat.team?.id?.toString() === teamId || stat.team?.name === teamId
-        );
-        
-        if (teamPlayers.length > 0) {
-          console.log(`👥 ${game} match ${matchId}: ${teamPlayers.length} players from stats`);
-          return teamPlayers.map(stat => ({
-            nickname: stat.player?.name || stat.name,
-            player_id: stat.player?.id?.toString() || stat.id?.toString(),
-            position: mapPlayerRole(game, stat.player?.role || stat.role || 'Player')
-          }));
-        }
-      }
-    } catch (error) {
-      console.log(`⚠️ ${game} match ${matchId} player stats fetch failed:`, error);
+  const rosters = rostersResponse.rosters;
+  
+  for (const roster of rosters) {
+    if (!roster || typeof roster !== 'object') {
+      continue;
     }
-  }
-
-  // Strategy 3: Extract from detailed match data
-  try {
-    console.log(`🔍 Extracting players from ${game} match ${matchId} data...`);
-    const matchResponse = await fetch(`https://api.pandascore.co/${game}/matches/${matchId}`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (matchResponse.ok) {
-      const matchData = await matchResponse.json();
+    
+    if (roster.id?.toString() === teamId.toString()) {
+      const players = roster.players || [];
+      console.log(`🎯 Found ${players.length} players for team ${teamId} in tournament rosters`);
       
-      // Look for the specific team in opponents
-      if (matchData.opponents) {
-        for (const opponent of matchData.opponents) {
-          if (opponent.opponent?.id?.toString() === teamId && opponent.opponent?.players) {
-            const players = opponent.opponent.players.map(player => ({
-              nickname: player.name,
-              player_id: player.id?.toString(),
-              position: mapPlayerRole(game, player.role || 'Player')
-            }));
-            
-            console.log(`👥 ${game} match ${matchId}: ${players.length} players from match data`);
-            return players;
-          }
-        }
-      }
+      return players.map((player: any) => ({
+        nickname: player.name || 'Unknown Player',
+        player_id: player.id?.toString() || '',
+        position: mapPlayerRole('default', player.role || 'Player'),
+        role: player.role || 'Player'
+      }));
     }
-  } catch (error) {
-    console.log(`⚠️ ${game} match ${matchId} detailed data fetch failed:`, error);
   }
-
-  console.log(`⚠️ No players found for ${game} team ${teamId}`);
+  
+  console.log(`⚠️ Team ${teamId} not found in tournament rosters`);
   return [];
 };
 
@@ -162,6 +142,50 @@ const mapPlayerRole = (game: string, role: string): string => {
   return mapping[role.toLowerCase()] || 'Player';
 };
 
+// Enhanced player fetching using tournament rosters as primary method
+const fetchPlayersForMatch = async (game: string, apiKey: string, match: any): Promise<{team1Players: PlayerData[], team2Players: PlayerData[]}> => {
+  console.log(`🎮 Fetching players for ${game} match ${match.id} using tournament rosters...`);
+  
+  let team1Players: PlayerData[] = [];
+  let team2Players: PlayerData[] = [];
+  
+  // Extract tournament ID from match
+  const tournament = match.tournament;
+  if (!tournament || !tournament.id) {
+    console.log(`⚠️ Match ${match.id} has no valid tournament data`);
+    return { team1Players, team2Players };
+  }
+  
+  const tournamentId = tournament.id.toString();
+  console.log(`🏆 Match ${match.id} belongs to tournament ${tournamentId}`);
+  
+  // Fetch tournament rosters
+  const rostersResponse = await fetchTournamentRosters(tournamentId, apiKey);
+  if (!rostersResponse) {
+    console.log(`⚠️ Could not fetch rosters for tournament ${tournamentId}`);
+    return { team1Players, team2Players };
+  }
+  
+  // Extract team IDs from match opponents
+  const team1Data = match.opponents?.[0]?.opponent;
+  const team2Data = match.opponents?.[1]?.opponent;
+  
+  if (team1Data?.id) {
+    team1Players = getPlayersFromTournamentRosters(rostersResponse, team1Data.id.toString());
+    console.log(`👥 Team 1 (${team1Data.name}): ${team1Players.length} players`);
+  }
+  
+  if (team2Data?.id) {
+    team2Players = getPlayersFromTournamentRosters(rostersResponse, team2Data.id.toString());
+    console.log(`👥 Team 2 (${team2Data.name}): ${team2Players.length} players`);
+  }
+  
+  // Add small delay to respect rate limits
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return { team1Players, team2Players };
+};
+
 // Fixed: Changed 'cs2' to 'csgo' for proper Counter-Strike syncing
 const SUPPORTED_GAMES = ['csgo', 'lol', 'dota2', 'valorant', 'ow'];
 
@@ -183,7 +207,7 @@ serve(async (req) => {
     id: logId,
     sync_type: 'matches',
     status: 'running',
-    metadata: { games: SUPPORTED_GAMES, endpoints: ['upcoming', 'past'] }
+    metadata: { games: SUPPORTED_GAMES, endpoints: ['upcoming', 'past'], usesTournamentRosters: true }
   });
 
   let totalProcessed = 0;
@@ -191,7 +215,7 @@ serve(async (req) => {
   let totalUpdated = 0;
 
   try {
-    console.log('🔄 Starting PandaScore matches sync with game-specific player data...');
+    console.log('🔄 Starting PandaScore matches sync with tournament rosters API...');
     
     const apiKey = Deno.env.get('PANDA_SCORE_API_KEY');
     if (!apiKey) {
@@ -200,7 +224,7 @@ serve(async (req) => {
 
     for (const game of SUPPORTED_GAMES) {
       try {
-        console.log(`📥 Syncing ${game} matches (upcoming + past)...`);
+        console.log(`📥 Syncing ${game} matches (upcoming + past) with tournament rosters...`);
         
         // Fetch both upcoming and past matches with better endpoint handling
         const endpoints = [
@@ -237,21 +261,8 @@ serve(async (req) => {
                 const team1Data = match.opponents?.[0]?.opponent;
                 const team2Data = match.opponents?.[1]?.opponent;
                 
-                // Fetch player data using game-specific strategies with rate limiting
-                let team1Players = [];
-                let team2Players = [];
-
-                if (team1Data?.id) {
-                  team1Players = await fetchPlayersForGame(game, apiKey, team1Data.id.toString(), match.id.toString());
-                  // Rate limiting delay
-                  await new Promise(resolve => setTimeout(resolve, 300));
-                }
-
-                if (team2Data?.id) {
-                  team2Players = await fetchPlayersForGame(game, apiKey, team2Data.id.toString(), match.id.toString());
-                  // Rate limiting delay
-                  await new Promise(resolve => setTimeout(resolve, 300));
-                }
+                // Fetch player data using tournament rosters API
+                const { team1Players, team2Players } = await fetchPlayersForMatch(game, apiKey, match);
 
                 // Map PandaScore status to our internal status
                 const mapStatus = (pandaStatus: string) => {
@@ -364,7 +375,7 @@ serve(async (req) => {
       records_updated: totalUpdated
     }).eq('id', logId);
 
-    console.log(`✅ PandaScore matches sync completed with game-specific player data: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
+    console.log(`✅ PandaScore matches sync completed with tournament rosters: ${totalProcessed} processed, ${totalAdded} added, ${totalUpdated} updated`);
 
     return new Response(
       JSON.stringify({
@@ -372,7 +383,8 @@ serve(async (req) => {
         processed: totalProcessed,
         added: totalAdded,
         updated: totalUpdated,
-        duration_ms: duration
+        duration_ms: duration,
+        usesTournamentRosters: true
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
