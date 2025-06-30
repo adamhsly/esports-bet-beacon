@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -81,7 +80,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   const rounds = groupMatchesIntoRounds();
 
-  // Unified status logic that matches the main app
+  // Unified status logic that matches the main app and TournamentDetailPage
   const getMatchStatus = (match: MatchInfo) => {
     const now = new Date();
     const matchTime = new Date(match.startTime);
@@ -127,8 +126,8 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   if (matches.length === 0) {
     return (
-      <div className="text-center py-10 bg-theme-gray-dark/50 rounded-md">
-        <Trophy className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+      <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
+        <Trophy className="h-10 w-10 mx-auto mb-3 text-gray-400" />
         <p className="text-gray-400">No matches found for this tournament.</p>
       </div>
     );
@@ -136,24 +135,24 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   return (
     <div className="w-full">
-      <h2 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2">
-        <Trophy className="h-5 w-5 text-theme-purple" />
+      <h2 className="text-lg font-bold mb-3 text-center flex items-center justify-center gap-2">
+        <Trophy className="h-4 w-4 text-theme-purple" />
         {tournamentName} - Tournament Bracket
       </h2>
       
       <div className="overflow-x-auto">
-        <div className="flex gap-4 min-w-max p-2">
+        <div className="flex gap-2 min-w-max p-1">
           {rounds.map((round, roundIndex) => (
             <div 
               key={`round-${roundIndex}`} 
-              className="flex flex-col space-y-3"
+              className="flex flex-col space-y-2"
               style={{ 
-                minWidth: '240px',
-                marginTop: roundIndex > 0 ? `${Math.pow(2, roundIndex) * 8}px` : '0'
+                minWidth: '200px',
+                marginTop: roundIndex > 0 ? `${Math.pow(2, roundIndex) * 4}px` : '0'
               }}
             >
-              <div className="text-center mb-2">
-                <Badge variant="outline" className="px-3 py-1 text-xs font-semibold">
+              <div className="text-center mb-1">
+                <Badge variant="outline" className="px-2 py-0.5 text-xs font-semibold bg-theme-purple/10 text-white border-theme-purple/30">
                   {round.roundName}
                 </Badge>
               </div>
@@ -170,9 +169,9 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     <Card className={`border hover:border-theme-purple/50 ${
                       status === 'live' ? 'border-red-500/50' : 'border-theme-gray-medium'
                     }`}>
-                      <CardContent className="p-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <Badge className={`text-xs ${getStatusColor(status)}`}>
+                      <CardContent className="p-2">
+                        <div className="flex justify-between items-center mb-1">
+                          <Badge className={`text-xs px-1.5 py-0.5 ${getStatusColor(status)}`}>
                             {status === 'live' ? '🔴 LIVE' : status.toUpperCase()}
                           </Badge>
                           <span className="text-xs text-gray-500">
@@ -181,27 +180,27 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                         </div>
 
                         {match.teams.map((team, idx) => (
-                          <div key={idx} className={`flex justify-between items-center py-1.5 ${
+                          <div key={idx} className={`flex justify-between items-center py-1 ${
                             idx === 0 ? 'border-b border-theme-gray-medium/50' : ''
                           }`}>
                             <div className="flex items-center">
                               <img 
                                 src={team.logo || '/placeholder.svg'} 
                                 alt={team.name} 
-                                className="w-5 h-5 mr-2 object-contain"
+                                className="w-4 h-4 mr-1.5 object-contain"
                               />
-                              <span className="truncate max-w-[140px] text-sm font-medium">
+                              <span className="truncate max-w-[120px] text-xs font-medium">
                                 {team.name}
                               </span>
                             </div>
-                            <div className="text-sm font-bold">
+                            <div className="text-xs font-bold">
                               {status === 'finished' ? Math.floor(Math.random() * 3) : '-'}
                             </div>
                           </div>
                         ))}
 
-                        <div className="flex items-center justify-center text-xs text-gray-500 mt-2 pt-1.5 border-t border-theme-gray-medium/30">
-                          <Calendar className="h-3 w-3 mr-1" />
+                        <div className="flex items-center justify-center text-xs text-gray-500 mt-1 pt-1 border-t border-theme-gray-medium/30">
+                          <Calendar className="h-2.5 w-2.5 mr-1" />
                           {status === 'finished' 
                             ? "Completed" 
                             : new Date(match.startTime).toLocaleDateString('en-US', { 
