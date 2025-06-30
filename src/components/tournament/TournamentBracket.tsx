@@ -81,15 +81,35 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   const rounds = groupMatchesIntoRounds();
 
+  // Unified status logic that matches the main app
   const getMatchStatus = (match: MatchInfo) => {
     const now = new Date();
     const matchTime = new Date(match.startTime);
     
-    if (match.status === 'finished' || match.status === 'completed') {
-      return 'finished';
-    } else if (match.status === 'live' || match.status === 'ongoing') {
-      return 'live';
-    } else if (matchTime > now) {
+    if (match.source === 'professional') {
+      // PandaScore status mapping
+      const status = match.status?.toLowerCase() || '';
+      if (['live', 'running', 'ongoing'].includes(status)) {
+        return 'live';
+      } else if (['finished', 'completed', 'cancelled', 'canceled', 'postponed', 'forfeit'].includes(status)) {
+        return 'finished';
+      } else if (['scheduled', 'upcoming', 'ready', 'not_started'].includes(status)) {
+        return 'upcoming';
+      }
+    } else {
+      // FACEIT status mapping
+      const status = match.status?.toLowerCase() || '';
+      if (['ongoing', 'running', 'live'].includes(status)) {
+        return 'live';
+      } else if (['finished', 'completed', 'cancelled', 'aborted'].includes(status)) {
+        return 'finished';
+      } else if (['upcoming', 'ready', 'scheduled', 'configured'].includes(status)) {
+        return 'upcoming';
+      }
+    }
+    
+    // Fallback to time-based logic
+    if (matchTime > now) {
       return 'upcoming';
     } else {
       return 'live';
@@ -116,24 +136,24 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
-        <Trophy className="h-6 w-6 text-theme-purple" />
+      <h2 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+        <Trophy className="h-5 w-5 text-theme-purple" />
         {tournamentName} - Tournament Bracket
       </h2>
       
       <div className="overflow-x-auto">
-        <div className="flex gap-8 min-w-max p-4">
+        <div className="flex gap-4 min-w-max p-2">
           {rounds.map((round, roundIndex) => (
             <div 
               key={`round-${roundIndex}`} 
-              className="flex flex-col space-y-6"
+              className="flex flex-col space-y-3"
               style={{ 
-                minWidth: '280px',
-                marginTop: roundIndex > 0 ? `${Math.pow(2, roundIndex) * 15}px` : '0'
+                minWidth: '240px',
+                marginTop: roundIndex > 0 ? `${Math.pow(2, roundIndex) * 8}px` : '0'
               }}
             >
-              <div className="text-center mb-4">
-                <Badge variant="outline" className="px-4 py-2 text-sm font-semibold">
+              <div className="text-center mb-2">
+                <Badge variant="outline" className="px-3 py-1 text-xs font-semibold">
                   {round.roundName}
                 </Badge>
               </div>
@@ -145,32 +165,32 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                   <Link 
                     to={`/match/${match.id}`}
                     key={match.id} 
-                    className="block transition-transform hover:scale-105"
+                    className="block transition-transform hover:scale-102"
                   >
                     <Card className={`border hover:border-theme-purple/50 ${
                       status === 'live' ? 'border-red-500/50' : 'border-theme-gray-medium'
                     }`}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-center mb-3">
-                          <Badge className={getStatusColor(status)}>
+                      <CardContent className="p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <Badge className={`text-xs ${getStatusColor(status)}`}>
                             {status === 'live' ? '🔴 LIVE' : status.toUpperCase()}
                           </Badge>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-500">
                             BO{match.bestOf || 3}
                           </span>
                         </div>
 
                         {match.teams.map((team, idx) => (
-                          <div key={idx} className={`flex justify-between items-center py-2 ${
+                          <div key={idx} className={`flex justify-between items-center py-1.5 ${
                             idx === 0 ? 'border-b border-theme-gray-medium/50' : ''
                           }`}>
                             <div className="flex items-center">
                               <img 
                                 src={team.logo || '/placeholder.svg'} 
                                 alt={team.name} 
-                                className="w-6 h-6 mr-3 object-contain"
+                                className="w-5 h-5 mr-2 object-contain"
                               />
-                              <span className="truncate max-w-[160px] font-medium">
+                              <span className="truncate max-w-[140px] text-sm font-medium">
                                 {team.name}
                               </span>
                             </div>
@@ -180,11 +200,14 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                           </div>
                         ))}
 
-                        <div className="flex items-center justify-center text-xs text-gray-400 mt-3 pt-2 border-t border-theme-gray-medium/30">
+                        <div className="flex items-center justify-center text-xs text-gray-500 mt-2 pt-1.5 border-t border-theme-gray-medium/30">
                           <Calendar className="h-3 w-3 mr-1" />
                           {status === 'finished' 
                             ? "Completed" 
-                            : new Date(match.startTime).toLocaleDateString()}
+                            : new Date(match.startTime).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
                         </div>
                       </CardContent>
                     </Card>
