@@ -145,9 +145,9 @@ const generateTournamentId = (match: MatchInfo) => {
     }
   }
   
-  if (match.source === 'amateur' && match.faceitData) {
-    // For FACEIT, create ID from competition name
-    const competitionName = match.faceitData.competition_name || match.tournament;
+  if (match.source === 'amateur') {
+    // For FACEIT, use the tournament property from the match
+    const competitionName = match.tournament;
     if (competitionName && competitionName !== 'Matchmaking') {
       return `faceit_${competitionName.replace(/\s+/g, '_').toLowerCase()}`;
     }
