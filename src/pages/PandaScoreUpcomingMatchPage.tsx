@@ -61,7 +61,12 @@ const PandaScoreUpcomingMatchPage = () => {
         throw new Error('PandaScore match not found in database');
       }
       
-      console.log('✅ PandaScore match details retrieved from database:', match);
+      console.log('✅ PandaScore match details retrieved from database:', {
+        matchId: match.match_id,
+        esportType: match.esport_type,
+        team1: { name: match.teams[0]?.name, playerCount: match.teams[0]?.players?.length || 0 },
+        team2: { name: match.teams[1]?.name, playerCount: match.teams[1]?.players?.length || 0 }
+      });
       return match;
     },
     enabled: !!matchId,
@@ -171,9 +176,15 @@ const PandaScoreUpcomingMatchPage = () => {
 
           {/* --- Player lineups & other info --- */}
           {isMobile ? (
-            <PandaScoreMobilePlayerLineup teams={matchDetails.teams} />
+            <PandaScoreMobilePlayerLineup 
+              teams={matchDetails.teams} 
+              esportType={matchDetails.esport_type}
+            />
           ) : (
-            <PandaScorePlayerLineupTable teams={matchDetails.teams} />
+            <PandaScorePlayerLineupTable 
+              teams={matchDetails.teams}
+              esportType={matchDetails.esport_type}
+            />
           )}
 
           {/* --- The rest of the content --- */}
@@ -242,7 +253,10 @@ const PandaScoreUpcomingMatchPage = () => {
               </TabsContent>
 
               <TabsContent value="rosters">
-                <PandaScorePlayerRoster teams={matchDetails.teams} />
+                <PandaScorePlayerRoster 
+                  teams={matchDetails.teams}
+                  esportType={matchDetails.esport_type}
+                />
               </TabsContent>
 
               <TabsContent value="stats">

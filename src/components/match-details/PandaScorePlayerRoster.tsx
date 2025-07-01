@@ -9,6 +9,12 @@ interface PandaScorePlayerRosterProps {
     name: string;
     logo?: string;
     id?: string;
+    players?: Array<{
+      nickname: string;
+      player_id: string;
+      position?: string;
+      role?: string;
+    }>;
     roster?: Array<{
       nickname: string;
       player_id: string;
@@ -16,13 +22,81 @@ interface PandaScorePlayerRosterProps {
       role?: string;
     }>;
   }>;
+  esportType?: string;
 }
 
-export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ teams }) => {
-  console.log('📋 PandaScore Player Roster received teams:', teams);
+export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ teams, esportType = 'csgo' }) => {
+  console.log('📋 PandaScore Player Roster received teams:', {
+    esportType,
+    teamsCount: teams?.length || 0,
+    team1: teams[0] ? {
+      name: teams[0].name,
+      playersFromPlayers: teams[0].players?.length || 0,
+      playersFromRoster: teams[0].roster?.length || 0
+    } : null,
+    team2: teams[1] ? {
+      name: teams[1].name,
+      playersFromPlayers: teams[1].players?.length || 0,
+      playersFromRoster: teams[1].roster?.length || 0
+    } : null
+  });
   
-  const team1 = teams[0] || { name: 'Team 1', roster: [] };
-  const team2 = teams[1] || { name: 'Team 2', roster: [] };
+  const team1 = teams[0] || { name: 'Team 1', players: [], roster: [] };
+  const team2 = teams[1] || { name: 'Team 2', players: [], roster: [] };
+
+  // Use players array first, fallback to roster array
+  const team1Players = team1.players || team1.roster || [];
+  const team2Players = team2.players || team2.roster || [];
+
+  console.log('📋 Final player arrays:', {
+    team1: { name: team1.name, playerCount: team1Players.length },
+    team2: { name: team2.name, playerCount: team2Players.length }
+  });
+
+  // Game-specific position colors
+  const getPositionColor = (position: string, game: string) => {
+    const colorMaps = {
+      'dota2': {
+        'Carry': 'bg-red-500/20 text-red-400 border-red-400/30',
+        'Mid': 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30',
+        'Offlaner': 'bg-orange-500/20 text-orange-400 border-orange-400/30',
+        'Support': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+        'Hard Support': 'bg-purple-500/20 text-purple-400 border-purple-400/30',
+        'Core': 'bg-green-500/20 text-green-400 border-green-400/30'
+      },
+      'csgo': {
+        'AWPer': 'bg-red-500/20 text-red-400 border-red-400/30',
+        'IGL': 'bg-purple-500/20 text-purple-400 border-purple-400/30',
+        'Entry Fragger': 'bg-orange-500/20 text-orange-400 border-orange-400/30',
+        'Support': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+        'Lurker': 'bg-green-500/20 text-green-400 border-green-400/30',
+        'Rifler': 'bg-gray-500/20 text-gray-400 border-gray-400/30'
+      },
+      'lol': {
+        'Top': 'bg-red-500/20 text-red-400 border-red-400/30',
+        'Jungle': 'bg-green-500/20 text-green-400 border-green-400/30',
+        'Mid': 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30',
+        'ADC': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+        'Support': 'bg-purple-500/20 text-purple-400 border-purple-400/30'
+      },
+      'valorant': {
+        'Duelist': 'bg-red-500/20 text-red-400 border-red-400/30',
+        'Controller': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+        'Initiator': 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30',
+        'Sentinel': 'bg-green-500/20 text-green-400 border-green-400/30',
+        'Flex': 'bg-purple-500/20 text-purple-400 border-purple-400/30'
+      },
+      'ow': {
+        'Tank': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+        'DPS': 'bg-red-500/20 text-red-400 border-red-400/30',
+        'Support': 'bg-green-500/20 text-green-400 border-green-400/30',
+        'Flex': 'bg-purple-500/20 text-purple-400 border-purple-400/30'
+      }
+    };
+    
+    const gameColors = colorMaps[game] || colorMaps['csgo'];
+    return gameColors[position] || 'bg-gray-500/20 text-gray-400 border-gray-400/30';
+  };
 
   const PlayerCard = ({ player, teamName }: { player: any; teamName: string }) => (
     <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
@@ -34,7 +108,10 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
           <h4 className="text-white font-semibold">{player.nickname || 'Unknown Player'}</h4>
           <div className="flex items-center gap-2 mt-1">
             {player.position && (
-              <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400 border-blue-400/30">
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${getPositionColor(player.position, esportType)}`}
+              >
                 {player.position}
               </Badge>
             )}
@@ -80,13 +157,16 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
               }}
             />
             <h3 className="text-xl font-bold text-white">{team1.name}</h3>
+            <Badge variant="outline" className="text-xs">
+              {esportType.toUpperCase()}
+            </Badge>
           </div>
           
-          <RosterStatus teamName={team1.name} playerCount={team1.roster?.length || 0} />
+          <RosterStatus teamName={team1.name} playerCount={team1Players.length} />
           
           <div className="space-y-3">
-            {team1.roster && team1.roster.length > 0 ? (
-              team1.roster.map((player, index) => (
+            {team1Players.length > 0 ? (
+              team1Players.map((player, index) => (
                 <PlayerCard key={`${player.player_id || index}`} player={player} teamName={team1.name} />
               ))
             ) : (
@@ -112,13 +192,16 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
               }}
             />
             <h3 className="text-xl font-bold text-white">{team2.name}</h3>
+            <Badge variant="outline" className="text-xs">
+              {esportType.toUpperCase()}
+            </Badge>
           </div>
           
-          <RosterStatus teamName={team2.name} playerCount={team2.roster?.length || 0} />
+          <RosterStatus teamName={team2.name} playerCount={team2Players.length} />
           
           <div className="space-y-3">
-            {team2.roster && team2.roster.length > 0 ? (
-              team2.roster.map((player, index) => (
+            {team2Players.length > 0 ? (
+              team2Players.map((player, index) => (
                 <PlayerCard key={`${player.player_id || index}`} player={player} teamName={team2.name} />
               ))
             ) : (
@@ -134,13 +217,14 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
         </div>
       </div>
       
-      {/* Debug info for development */}
+      {/* Enhanced debug info for development */}
       <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/30">
         <div className="text-xs text-gray-400">
-          <strong>🔧 Roster Debug Info:</strong><br />
-          Team 1 ({team1.name}): {team1.roster?.length || 0} players<br />
-          Team 2 ({team2.name}): {team2.roster?.length || 0} players<br />
-          Data Source: Tournament Rosters API
+          <strong>🔧 Enhanced Roster Debug Info:</strong><br />
+          Game: {esportType}<br />
+          Team 1 ({team1.name}): {team1Players.length} players (from {team1.players ? 'players' : 'roster'} array)<br />
+          Team 2 ({team2.name}): {team2Players.length} players (from {team2.players ? 'players' : 'roster'} array)<br />
+          Data Source: Tournament Rosters API + Database
         </div>
       </div>
     </div>
