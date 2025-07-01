@@ -17,6 +17,7 @@ import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import {
   Select,
   SelectTrigger,
@@ -200,14 +201,15 @@ const Index = () => {
   const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
   const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
   const [loadingAllMatches, setLoadingAllMatches] = useState(true);
+  const [hasInitializedDate, setHasInitializedDate] = useState(false);
   const { toast } = useToast();
   
   // Check if selected date is today
   const isSelectedDateToday = isToday(selectedDate);
   
-  // Updated unified match loading function to include finished PandaScore matches
+  // Updated unified match loading function with better date handling
   const loadAllMatchesFromDatabase = async (): Promise<MatchInfo[]> => {
-    console.log('🔄 Loading matches from database (FACEIT + PandaScore including finished)...');
+    console.log('🔄 Loading matches from database (FACEIT + PandaScore with improved date handling)...');
     
     // Fetch FACEIT matches with full data including status and results
     const faceitMatches = await fetchSupabaseFaceitAllMatches();
@@ -228,37 +230,27 @@ const Index = () => {
     // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
     console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
-    // 🔧 ENHANCED: Fetch more PandaScore matches with better status filtering and logging
+    // 🔧 ENHANCED: Fetch more PandaScore matches with no limit and better ordering
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .order('start_time', { ascending: true })
-      .limit(500); // Fetch up to 500 matches to ensure we get enough data
+      .order('start_time', { ascending: false }); // Order by most recent first
 
     if (pandascoreError) {
       console.error('Error loading PandaScore matches:', pandascoreError);
     }
 
-    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (all statuses)`);
+    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (all matches, no limit)`);
     
-    // 🔧 DEBUG: Log status distribution and sample data for PandaScore matches
+    // 🔧 DEBUG: Log date range information for PandaScore matches
     if (pandascoreMatches && pandascoreMatches.length > 0) {
-      const statusCounts = pandascoreMatches.reduce((acc: Record<string, number>, match) => {
-        const status = match.status || 'unknown';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {});
-      console.log('📊 PandaScore match status distribution:', statusCounts);
-      
-      // Log sample matches with different statuses for debugging
-      const sampleMatches = pandascoreMatches.slice(0, 5);
-      console.log('🔍 Sample PandaScore matches:', sampleMatches.map(m => ({
-        id: m.match_id,
-        status: m.status,
-        startTime: m.start_time,
-        esportType: m.esport_type,
-        teams: m.teams
-      })));
+      const dates = pandascoreMatches.map(m => m.start_time).filter(Boolean).sort();
+      console.log('📅 PandaScore match date range:', {
+        earliest: dates[dates.length - 1],
+        latest: dates[0],
+        totalMatches: pandascoreMatches.length,
+        sampleDates: dates.slice(0, 5)
+      });
     }
     
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
@@ -266,17 +258,10 @@ const Index = () => {
       const teamsData = match.teams as unknown as PandaScoreTeamsData;
       const matchId = `pandascore_${match.match_id}`;
       
-      console.log(`🔄 Homepage - PandaScore match transformed: ${match.match_id} -> ${matchId} (status: ${match.status}, esport: ${match.esport_type})`);
-      
       // 🔧 FIXED: Use actual team IDs from rawData with proper type casting
       const rawData = match.raw_data as any;
       const actualTeam1Id = rawData?.opponents?.[0]?.opponent?.id?.toString();
       const actualTeam2Id = rawData?.opponents?.[1]?.opponent?.id?.toString();
-      
-      console.log(`🎯 PandaScore team IDs - Team1: ${actualTeam1Id}, Team2: ${actualTeam2Id}`, {
-        rawDataWinner: rawData?.winner?.id,
-        rawDataResults: rawData?.results
-      });
       
       return {
         id: matchId, // Ensure consistent prefixing for homepage
@@ -300,7 +285,6 @@ const Index = () => {
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
         status: match.status, // Include status for proper categorization
-        // 🔧 FIXED: Remove finishedTime property as it doesn't exist in MatchInfo interface
         rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
       } satisfies MatchInfo;
     });
@@ -320,6 +304,14 @@ const Index = () => {
         
         setAllMatches(combinedMatches);
         
+        // 🔧 NEW: Initialize date to most recent match date if not already set
+        if (!hasInitializedDate && combinedMatches.length > 0) {
+          const mostRecentDate = getMostRecentMatchDate(combinedMatches);
+          console.log('📅 Setting initial date to most recent match date:', mostRecentDate.toDateString());
+          setSelectedDate(startOfDay(mostRecentDate));
+          setHasInitializedDate(true);
+        }
+        
         console.log('📊 Calendar counts updated from unified dataset');
       } catch (error) {
         console.error('Error loading all matches:', error);
@@ -330,7 +322,7 @@ const Index = () => {
     }
     
     loadAllMatches();
-  }, []);
+  }, [hasInitializedDate]);
 
   // 🔧 ENHANCED: Updated filtering function for game type with better csgo/cs2 handling
   const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
@@ -498,62 +490,53 @@ const Index = () => {
     ) : null;
   };
 
-  // Load date-filtered matches using the same unified dataset with enhanced logging and categorization
+  // 🔧 ENHANCED: Updated date filtering with improved timezone handling
   useEffect(() => {
     async function loadDateFilteredMatches() {
       setLoadingDateFiltered(true);
       try {
-        console.log('🗓️ Loading matches for selected date using unified dataset:', selectedDate.toDateString());
-        
-        const selectedDateStart = startOfDay(selectedDate);
-        const selectedDateEnd = endOfDay(selectedDate);
+        console.log('🗓️ Loading matches for selected date with improved timezone handling:', selectedDate.toDateString());
         
         // Use the same unified dataset for consistency
         const combinedMatches = await loadAllMatchesFromDatabase();
         console.log(`📊 Loaded ${combinedMatches.length} total matches from unified dataset`);
         
-        // 🔧 DEBUG: Log PandaScore matches before filtering
-        const pandaScoreMatches = combinedMatches.filter(m => m.source === 'professional');
-        console.log(`📊 PandaScore matches in unified dataset: ${pandaScoreMatches.length}`);
-        if (pandaScoreMatches.length > 0) {
-          console.log('🔍 Sample PandaScore matches in unified dataset:', pandaScoreMatches.slice(0, 3).map(m => ({
-            id: m.id,
-            status: m.status,
-            esportType: m.esportType,
-            startTime: m.startTime
-          })));
-        }
-        
         // Apply game type filter
         const filteredByGameType = filterMatchesByGameType(combinedMatches, selectedGameType);
         console.log(`📊 After game type filter (${selectedGameType}): ${filteredByGameType.length} matches`);
         
-        // 🔧 DEBUG: Log PandaScore matches after game type filtering
-        const pandaScoreAfterGameFilter = filteredByGameType.filter(m => m.source === 'professional');
-        console.log(`📊 PandaScore matches after game type filter: ${pandaScoreAfterGameFilter.length}`);
-        
-        // Filter matches by selected date
+        // 🔧 NEW: Enhanced date filtering with timezone-aware comparison
         const dateFilteredMatches = filteredByGameType.filter(match => {
-          const matchDate = new Date(match.startTime);
-          const isInDateRange = matchDate >= selectedDateStart && matchDate <= selectedDateEnd;
+          const isInRange = isDateInRange(match.startTime, selectedDate);
           
           if (match.source === 'professional') {
-            console.log(`🗓️ PandaScore match ${match.id} date check:`, {
-              matchDate: matchDate.toISOString(),
-              selectedStart: selectedDateStart.toISOString(),
-              selectedEnd: selectedDateEnd.toISOString(),
-              isInRange: isInDateRange
+            console.log(`🗓️ PandaScore match ${match.id} date filtering:`, {
+              matchStartTime: match.startTime,
+              selectedDate: selectedDate.toDateString(),
+              isInRange
             });
           }
           
-          return isInDateRange;
+          return isInRange;
         });
         
-        console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date from unified dataset`);
+        console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date (${selectedDate.toDateString()})`);
         
-        // 🔧 DEBUG: Log PandaScore matches after date filtering
-        const pandaScoreAfterDateFilter = dateFilteredMatches.filter(m => m.source === 'professional');
-        console.log(`📊 PandaScore matches after date filter: ${pandaScoreAfterDateFilter.length}`);
+        // 🔧 NEW: Add fallback logic when no matches found
+        if (dateFilteredMatches.length === 0) {
+          console.log('⚠️ No matches found for selected date, checking nearby dates...');
+          
+          // Find matches within 7 days of selected date
+          const nearbyMatches = filteredByGameType.filter(match => {
+            const matchDate = new Date(match.startTime);
+            const daysDiff = Math.abs(matchDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24);
+            return daysDiff <= 7;
+          });
+          
+          if (nearbyMatches.length > 0) {
+            console.log(`📅 Found ${nearbyMatches.length} matches within 7 days of selected date`);
+          }
+        }
 
         // Enhanced categorization with detailed logging for both FACEIT and PandaScore
         const liveMatches: MatchInfo[] = [];
@@ -561,67 +544,37 @@ const Index = () => {
         const finishedMatches: MatchInfo[] = [];
         
         dateFilteredMatches.forEach(match => {
-          console.log(`🔍 Processing match for categorization:`, {
-            id: match.id,
-            source: match.source,
-            status: match.status,
-            hasResults: !!(match.faceitData?.results),
-            teams: match.teams?.map(t => t.name)
-          });
-          
           if (match.source === 'amateur') {
             // FACEIT match categorization with enhanced logging
             const statusCategory = getFaceitStatusCategory(match.status || '', match.id);
             
-            console.log(`🎯 FACEIT match ${match.id} categorization result:`, {
-              originalStatus: match.status,
-              statusCategory,
-              hasResults: !!(match.faceitData?.results)
-            });
-            
             if (statusCategory === 'live') {
               liveMatches.push(match);
-              console.log(`➕ Added ${match.id} to LIVE matches`);
             } else if (statusCategory === 'finished') {
               finishedMatches.push(match);
-              console.log(`➕ Added ${match.id} to FINISHED matches`);
             } else {
               upcomingMatches.push(match);
-              console.log(`➕ Added ${match.id} to UPCOMING matches (fallback or upcoming status)`);
             }
           } else if (match.source === 'professional') {
-            // 🔧 ENHANCED: PandaScore match categorization with better logging
+            // PandaScore match categorization
             const statusCategory = getPandaScoreStatusCategory(match.status || '');
-            
-            console.log(`🎯 PandaScore match ${match.id} categorization result:`, {
-              originalStatus: match.status,
-              statusCategory,
-              esportType: match.esportType
-            });
             
             if (statusCategory === 'live') {
               liveMatches.push(match);
-              console.log(`➕ Added PandaScore match ${match.id} to LIVE matches`);
             } else if (statusCategory === 'finished') {
               finishedMatches.push(match);
-              console.log(`➕ Added PandaScore match ${match.id} to FINISHED matches`);
             } else if (statusCategory === 'upcoming') {
               upcomingMatches.push(match);
-              console.log(`➕ Added PandaScore match ${match.id} to UPCOMING matches`);
             } else {
-              console.log(`⚠️ PandaScore match ${match.id} with status ${match.status} was not categorized - adding to upcoming as fallback`);
               upcomingMatches.push(match);
             }
           }
         });
         
-        console.log(`📊 Final date-filtered categorization:`, {
+        console.log(`📊 Final date-filtered categorization for ${selectedDate.toDateString()}:`, {
           live: liveMatches.length,
           upcoming: upcomingMatches.length,
           finished: finishedMatches.length,
-          liveMatchIds: liveMatches.map(m => m.id),
-          upcomingMatchIds: upcomingMatches.map(m => m.id),
-          finishedMatchIds: finishedMatches.map(m => m.id),
           pandaScoreLive: liveMatches.filter(m => m.source === 'professional').length,
           pandaScoreUpcoming: upcomingMatches.filter(m => m.source === 'professional').length,
           pandaScoreFinished: finishedMatches.filter(m => m.source === 'professional').length
@@ -644,10 +597,14 @@ const Index = () => {
       }
     }
     
-    loadDateFilteredMatches();
-  }, [selectedDate, selectedGameType]);
+    // Only load date-filtered matches after initial date is set
+    if (hasInitializedDate) {
+      loadDateFilteredMatches();
+    }
+  }, [selectedDate, selectedGameType, hasInitializedDate]);
 
   const handleDateSelect = (date: Date) => {
+    console.log('📅 User selected date:', date.toDateString());
     setSelectedDate(startOfDay(date));
   };
 
@@ -721,14 +678,18 @@ const Index = () => {
                 </SelectContent>
               </Select>
             </div>
-            <DateMatchPicker
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              matchCounts={matchCounts}
-              detailedMatchCounts={detailedMatchCounts}
-            />
+            
+            {/* Only show DateMatchPicker after initial date is set */}
+            {hasInitializedDate && (
+              <DateMatchPicker
+                selectedDate={selectedDate}
+                onDateSelect={handleDateSelect}
+                matchCounts={matchCounts}
+                detailedMatchCounts={detailedMatchCounts}
+              />
+            )}
 
-            {loadingDateFiltered ? (
+            {loadingDateFiltered || !hasInitializedDate ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
                 <span>Loading matches for selected date...</span>
@@ -764,18 +725,11 @@ const Index = () => {
                               {renderTournamentMetadata(metadata)}
                             </div>
                             <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                              {matches.map(match => {
-                                console.log(`🎮 Rendering LIVE MatchCard:`, {
-                                  id: match.id,
-                                  status: match.status,
-                                  hasResults: !!(match.faceitData?.results)
-                                });
-                                return (
-                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                    <MatchCard match={match} />
-                                  </div>
-                                );
-                              })}
+                              {matches.map(match => (
+                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                  <MatchCard match={match} />
+                                </div>
+                              ))}
                             </div>
                           </div>
                         );
@@ -813,20 +767,11 @@ const Index = () => {
                               {renderTournamentMetadata(metadata)}
                             </div>
                             <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                              {matches.map(match => {
-                                console.log(`🎮 Rendering UPCOMING MatchCard:`, {
-                                  id: match.id,
-                                  status: match.status,
-                                  source: match.source,
-                                  esportType: match.esportType,
-                                  hasResults: !!(match.faceitData?.results)
-                                });
-                                return (
-                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                    <MatchCard match={match} />
-                                  </div>
-                                );
-                              })}
+                              {matches.map(match => (
+                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                  <MatchCard match={match} />
+                                </div>
+                              ))}
                             </div>
                           </div>
                         );
@@ -864,19 +809,11 @@ const Index = () => {
                               {renderTournamentMetadata(metadata)}
                             </div>
                             <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                              {matches.map(match => {
-                                console.log(`🎮 Rendering FINISHED MatchCard:`, {
-                                  id: match.id,
-                                  status: match.status,
-                                  hasResults: !!(match.faceitData?.results),
-                                  expectedRoute: `/faceit/finished/${match.id.replace('faceit_', '')}`
-                                });
-                                return (
-                                  <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                    <MatchCard match={match} />
-                                  </div>
-                                );
-                              })}
+                              {matches.map(match => (
+                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                  <MatchCard match={match} />
+                                </div>
+                              ))}
                             </div>
                           </div>
                         );
@@ -885,15 +822,20 @@ const Index = () => {
                   </div>
                 )}
 
-                {/* No Matches State */}
+                {/* Enhanced No Matches State with better feedback */}
                 {((!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && 
                   dateFilteredUpcomingMatches.length === 0 && 
                   dateFilteredFinishedMatches.length === 0) && (
                   <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
                     <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
-                    <p className="text-sm text-gray-500">
-                      Try selecting a different date or use the sync buttons at the bottom to refresh match data.
+                    <p className="text-sm text-gray-500 mb-4">
+                      Try selecting a different date or use the sync buttons below to refresh match data.
                     </p>
+                    {allMatches.length > 0 && (
+                      <p className="text-xs text-gray-600">
+                        {allMatches.length} total matches available in database
+                      </p>
+                    )}
                   </div>
                 )}
               </>
