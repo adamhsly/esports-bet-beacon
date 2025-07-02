@@ -6,48 +6,33 @@ interface PandaScoreMatch {
   id: string;
   match_id: string;
   esport_type: string;
-  teams: {
-    team1: {
-      id?: string;
-      name: string;
-      logo?: string;
-      acronym?: string;
-      players?: Array<{
-        nickname: string;
-        player_id: string;
-        position?: string;
-        role?: string;
-      }>;
-      roster?: Array<{
-        nickname: string;
-        player_id: string;
-        position?: string;
-        role?: string;
-      }>;
-    };
-    team2: {
-      id?: string;
-      name: string;
-      logo?: string;
-      acronym?: string;
-      players?: Array<{
-        nickname: string;
-        player_id: string;
-        position?: string;
-        role?: string;
-      }>;
-      roster?: Array<{
-        nickname: string;
-        player_id: string;
-        position?: string;
-        role?: string;
-      }>;
-    };
-  };
+  esportType: string; // Alias for component compatibility
+  teams: Array<{
+    id?: string;
+    name: string;
+    logo?: string;
+    acronym?: string;
+    players?: Array<{
+      nickname: string;
+      player_id: string;
+      position?: string;
+      role?: string;
+    }>;
+    roster?: Array<{
+      nickname: string;
+      player_id: string;
+      position?: string;
+      role?: string;
+    }>;
+  }>;
   start_time: string;
+  startTime: string; // Alias for component compatibility
   end_time?: string;
+  finishedTime?: string;
+  finished_at?: string;
   tournament_id?: string;
   tournament_name?: string;
+  tournament?: string; // String version for component compatibility
   league_id?: string;
   league_name?: string;
   serie_id?: string;
@@ -55,11 +40,12 @@ interface PandaScoreMatch {
   status: string;
   match_type?: string;
   number_of_games?: number;
+  bestOf?: number;
   rawData?: any;
-  tournament?: {
-    id?: string;
-    name?: string;
-  };
+  results?: Array<{
+    team_id: number;
+    score: number;
+  }>;
 }
 
 // Get PandaScore API key from localStorage or environment
@@ -186,8 +172,8 @@ const mapPlayerPosition = (esportType: string, role: string): string => {
 const fetchMissingRosterData = async (match: any): Promise<any> => {
   console.log(`🔍 Checking if roster data needs to be fetched for match ${match.match_id}...`);
   
-  const team1HasPlayers = match.teams?.team1?.players?.length > 0 || match.teams?.team1?.roster?.length > 0;
-  const team2HasPlayers = match.teams?.team2?.players?.length > 0 || match.teams?.team2?.roster?.length > 0;
+  const team1HasPlayers = match.teams?.[0]?.players?.length > 0;
+  const team2HasPlayers = match.teams?.[1]?.players?.length > 0;
   
   // If both teams already have player data, no need to fetch
   if (team1HasPlayers && team2HasPlayers) {
@@ -210,23 +196,23 @@ const fetchMissingRosterData = async (match: any): Promise<any> => {
       return match;
     }
     
-    const updatedMatch = { ...match };
+    const updatedMatch = { ...match, teams: [...match.teams] };
     
     // Update team1 players if missing
-    if (!team1HasPlayers && match.teams?.team1?.id) {
-      const team1Players = extractPlayersFromRosters(rostersResponse, match.teams.team1.id, match.esport_type);
+    if (!team1HasPlayers && match.teams?.[0]?.id) {
+      const team1Players = extractPlayersFromRosters(rostersResponse, match.teams[0].id, match.esport_type);
       if (team1Players.length > 0) {
-        updatedMatch.teams.team1.players = team1Players;
-        console.log(`✅ Added ${team1Players.length} players to team1 (${match.teams.team1.name})`);
+        updatedMatch.teams[0] = { ...updatedMatch.teams[0], players: team1Players };
+        console.log(`✅ Added ${team1Players.length} players to team1 (${match.teams[0].name})`);
       }
     }
     
     // Update team2 players if missing
-    if (!team2HasPlayers && match.teams?.team2?.id) {
-      const team2Players = extractPlayersFromRosters(rostersResponse, match.teams.team2.id, match.esport_type);
+    if (!team2HasPlayers && match.teams?.[1]?.id) {
+      const team2Players = extractPlayersFromRosters(rostersResponse, match.teams[1].id, match.esport_type);
       if (team2Players.length > 0) {
-        updatedMatch.teams.team2.players = team2Players;
-        console.log(`✅ Added ${team2Players.length} players to team2 (${match.teams.team2.name})`);
+        updatedMatch.teams[1] = { ...updatedMatch.teams[1], players: team2Players };
+        console.log(`✅ Added ${team2Players.length} players to team2 (${match.teams[1].name})`);
       }
     }
     
@@ -253,6 +239,7 @@ const transformMatchData = (dbMatch: any): PandaScoreMatch => {
     id: `pandascore_${dbMatch.match_id}`,
     match_id: dbMatch.match_id,
     esport_type: dbMatch.esport_type,
+    esportType: dbMatch.esport_type, // Alias for component compatibility
     teams: [
       {
         id: team1.id,
@@ -280,9 +267,13 @@ const transformMatchData = (dbMatch: any): PandaScoreMatch => {
       }
     ],
     start_time: dbMatch.start_time,
+    startTime: dbMatch.start_time, // Alias for component compatibility
     end_time: dbMatch.end_time,
+    finishedTime: dbMatch.end_time,
+    finished_at: dbMatch.end_time,
     tournament_id: dbMatch.tournament_id,
     tournament_name: dbMatch.tournament_name,
+    tournament: dbMatch.tournament_name || 'Pro Match', // String version for component compatibility
     league_id: dbMatch.league_id,
     league_name: dbMatch.league_name,
     serie_id: dbMatch.serie_id,
@@ -290,11 +281,9 @@ const transformMatchData = (dbMatch: any): PandaScoreMatch => {
     status: dbMatch.status,
     match_type: dbMatch.match_type,
     number_of_games: dbMatch.number_of_games,
+    bestOf: dbMatch.number_of_games || 3,
     rawData: dbMatch.raw_data,
-    tournament: {
-      id: dbMatch.tournament_id,
-      name: dbMatch.tournament_name
-    }
+    results: [] // Initialize empty results array
   };
   
   console.log(`✅ Transformed match data:`, {
