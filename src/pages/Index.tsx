@@ -5,7 +5,7 @@ import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, Users } from 'lucide-react';
+import { Loader2, Trophy, Users, Gamepad2, Filter, Clock, Zap, CheckCircle, Calendar } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
@@ -185,16 +185,31 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
 }
 
 const GAME_TYPE_OPTIONS = [
-  { label: 'All Games', value: 'all' },
-  { label: 'CS:GO / CS2', value: 'cs2' },
-  { label: 'League of Legends', value: 'lol' },
-  { label: 'Dota 2', value: 'dota2' },
-  { label: 'Valorant', value: 'valorant' },
+  { label: 'All Games', value: 'all', icon: Gamepad2 },
+  { label: 'CS:GO / CS2', value: 'cs2', icon: Zap },
+  { label: 'League of Legends', value: 'lol', icon: Trophy },
+  { label: 'Dota 2', value: 'dota2', icon: Users },
+  { label: 'Valorant', value: 'valorant', icon: Zap },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { label: 'All Matches', value: 'all', icon: Filter },
+  { label: 'Live', value: 'live', icon: Zap },
+  { label: 'Upcoming', value: 'upcoming', icon: Clock },
+  { label: 'Finished', value: 'finished', icon: CheckCircle },
+];
+
+const SOURCE_FILTER_OPTIONS = [
+  { label: 'All Sources', value: 'all', icon: Filter },
+  { label: 'Professional', value: 'professional', icon: Trophy },
+  { label: 'Amateur', value: 'amateur', icon: Users },
 ];
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedGameType, setSelectedGameType] = useState<string>('all');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
+  const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('all');
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredFinishedMatches, setDateFilteredFinishedMatches] = useState<MatchInfo[]>([]);
@@ -501,12 +516,12 @@ const Index = () => {
         const combinedMatches = await loadAllMatchesFromDatabase();
         console.log(`📊 Loaded ${combinedMatches.length} total matches from unified dataset`);
         
-        // Apply game type filter
-        const filteredByGameType = filterMatchesByGameType(combinedMatches, selectedGameType);
-        console.log(`📊 After game type filter (${selectedGameType}): ${filteredByGameType.length} matches`);
+        // Apply all filters (game type, status, source)
+        const filteredMatches = applyAllFilters(combinedMatches);
+        console.log(`📊 After all filters: ${filteredMatches.length} matches`);
         
         // 🔧 NEW: Enhanced date filtering with timezone-aware comparison
-        const dateFilteredMatches = filteredByGameType.filter(match => {
+        const dateFilteredMatches = filteredMatches.filter(match => {
           const isInRange = isDateInRange(match.startTime, selectedDate);
           
           if (match.source === 'professional') {
@@ -527,7 +542,7 @@ const Index = () => {
           console.log('⚠️ No matches found for selected date, checking nearby dates...');
           
           // Find matches within 7 days of selected date
-          const nearbyMatches = filteredByGameType.filter(match => {
+          const nearbyMatches = filteredMatches.filter(match => {
             const matchDate = new Date(match.startTime);
             const daysDiff = Math.abs(matchDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24);
             return daysDiff <= 7;
@@ -601,7 +616,7 @@ const Index = () => {
     if (hasInitializedDate) {
       loadDateFilteredMatches();
     }
-  }, [selectedDate, selectedGameType, hasInitializedDate]);
+  }, [selectedDate, selectedGameType, selectedStatusFilter, selectedSourceFilter, hasInitializedDate]);
 
   const handleDateSelect = (date: Date) => {
     console.log('📅 User selected date:', date.toDateString());
@@ -610,6 +625,36 @@ const Index = () => {
 
   const handleGameTypeChange = (value: string) => {
     setSelectedGameType(value);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setSelectedStatusFilter(value);
+  };
+
+  const handleSourceFilterChange = (value: string) => {
+    setSelectedSourceFilter(value);
+  };
+
+  // Enhanced filtering function that combines game type, status, and source filters
+  const applyAllFilters = (matches: MatchInfo[]) => {
+    let filtered = filterMatchesByGameType(matches, selectedGameType);
+    
+    // Apply status filter
+    if (selectedStatusFilter !== 'all') {
+      filtered = filtered.filter(match => {
+        const statusCategory = match.source === 'amateur' 
+          ? getFaceitStatusCategory(match.status || '', match.id)
+          : getPandaScoreStatusCategory(match.status || '');
+        return statusCategory === selectedStatusFilter;
+      });
+    }
+    
+    // Apply source filter
+    if (selectedSourceFilter !== 'all') {
+      filtered = filtered.filter(match => match.source === selectedSourceFilter);
+    }
+    
+    return filtered;
   };
 
   const homepageSEOContent = {
@@ -651,32 +696,117 @@ const Index = () => {
               </h2>
             </div>
             
-            {/* GAME TYPE DROPDOWN FILTER */}
-            <div className="max-w-xs mb-4 mx-2 md:mx-4">
-              <Select value={selectedGameType} onValueChange={handleGameTypeChange}>
-                <SelectTrigger
-                  className="w-full font-semibold text-theme-purple border border-theme-purple/40 bg-theme-gray-dark focus:ring-2 focus:ring-theme-purple focus:border-theme-purple
-                  transition duration-150 shadow-lg hover:bg-theme-gray rounded-md"
-                >
-                  <SelectValue
-                    placeholder="Select Game"
-                    className="text-theme-purple"
-                  />
-                </SelectTrigger>
-                <SelectContent
-                  className="bg-theme-gray-dark text-theme-purple border border-theme-purple/40 shadow-2xl rounded-lg z-50"
-                >
-                  {GAME_TYPE_OPTIONS.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="font-medium py-2 px-3 hover:bg-theme-purple/10 focus:bg-theme-purple/10 text-theme-purple data-[state=checked]:bg-theme-purple/30"
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* ENHANCED FILTERING SECTION */}
+            <div className="bg-card border border-border rounded-lg p-4 mb-6 mx-2 md:mx-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Filter Matches</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Game Type Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Gamepad2 className="h-4 w-4" />
+                    Game Type
+                  </label>
+                  <Select value={selectedGameType} onValueChange={handleGameTypeChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Game" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GAME_TYPE_OPTIONS.map((option) => {
+                        const IconComponent = option.icon;
+                        return (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className="h-4 w-4" />
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Match Status
+                  </label>
+                  <Select value={selectedStatusFilter} onValueChange={handleStatusFilterChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_FILTER_OPTIONS.map((option) => {
+                        const IconComponent = option.icon;
+                        return (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className="h-4 w-4" />
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Source Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Competition Level
+                  </label>
+                  <Select value={selectedSourceFilter} onValueChange={handleSourceFilterChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOURCE_FILTER_OPTIONS.map((option) => {
+                        const IconComponent = option.icon;
+                        return (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className="h-4 w-4" />
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Filter Summary */}
+              <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border">
+                <div className="text-xs text-muted-foreground">Active filters:</div>
+                {selectedGameType !== 'all' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Game: {GAME_TYPE_OPTIONS.find(opt => opt.value === selectedGameType)?.label}
+                  </Badge>
+                )}
+                {selectedStatusFilter !== 'all' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Status: {STATUS_FILTER_OPTIONS.find(opt => opt.value === selectedStatusFilter)?.label}
+                  </Badge>
+                )}
+                {selectedSourceFilter !== 'all' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Level: {SOURCE_FILTER_OPTIONS.find(opt => opt.value === selectedSourceFilter)?.label}
+                  </Badge>
+                )}
+                {selectedGameType === 'all' && selectedStatusFilter === 'all' && selectedSourceFilter === 'all' && (
+                  <Badge variant="outline" className="text-xs">
+                    No filters applied
+                  </Badge>
+                )}
+              </div>
             </div>
             
             {/* Only show DateMatchPicker after initial date is set */}
