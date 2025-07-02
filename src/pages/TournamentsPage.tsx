@@ -101,7 +101,7 @@ const TournamentsPage: React.FC = () => {
         
         <div className="mb-8">
           <p className="text-gray-300 mb-6">
-            Browse tournaments and leagues across all major esports titles. View brackets, standings, and match schedules.
+            Discover tournaments across all major esports titles. Track live events, upcoming competitions, and completed championships with detailed standings and match schedules.
           </p>
           
           {/* Filters */}
@@ -149,70 +149,112 @@ const TournamentsPage: React.FC = () => {
           </div>
         </div>
         
+        {/* Tournament Stats Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-theme-gray-dark border-theme-gray-medium p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-theme-purple">{filteredTournaments.length}</div>
+              <div className="text-sm text-gray-400">Total Events</div>
+            </div>
+          </Card>
+          <Card className="bg-theme-gray-dark border-theme-gray-medium p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-400">{filteredTournaments.filter(t => t.status === 'active').length}</div>
+              <div className="text-sm text-gray-400">Live Now</div>
+            </div>
+          </Card>
+          <Card className="bg-theme-gray-dark border-theme-gray-medium p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">{filteredTournaments.filter(t => t.status === 'upcoming').length}</div>
+              <div className="text-sm text-gray-400">Upcoming</div>
+            </div>
+          </Card>
+          <Card className="bg-theme-gray-dark border-theme-gray-medium p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-400">{[...new Set(filteredTournaments.map(t => t.esportType))].length}</div>
+              <div className="text-sm text-gray-400">Game Titles</div>
+            </div>
+          </Card>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTournaments.map(tournament => (
-            <Card key={tournament.id} className="bg-theme-gray-dark border-theme-gray-medium hover:border-theme-purple transition-colors">
+            <Card key={tournament.id} className="bg-theme-gray-dark border-theme-gray-medium hover:border-theme-purple transition-colors group">
               <CardContent className="p-0">
-                <div className="relative">
-                  <div className="h-32 bg-gradient-to-r from-theme-gray-medium to-theme-gray-dark flex items-center justify-center p-4">
+                <div className="relative overflow-hidden">
+                  <div className="h-32 bg-gradient-to-r from-theme-gray-medium to-theme-gray-dark flex items-center justify-center p-4 group-hover:scale-105 transition-transform duration-300">
                     <img 
                       src={tournament.imageUrl || '/placeholder.svg'} 
                       alt={tournament.name} 
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <Badge className={getStatusColor(tournament.status)}>
-                      {tournament.status.toUpperCase()}
+                  <div className="absolute top-3 right-3 flex gap-1 flex-col">
+                    <Badge className={`${getStatusColor(tournament.status)} text-xs`}>
+                      {tournament.status === 'active' ? 'LIVE' : tournament.status.toUpperCase()}
                     </Badge>
-                    <Badge className={getSourceColor(tournament.source)}>
+                    <Badge className={`${getSourceColor(tournament.source)} text-xs`}>
                       {tournament.source.toUpperCase()}
                     </Badge>
                   </div>
                   <div className="absolute top-3 left-3">
-                    <Badge className="bg-theme-purple">
+                    <Badge className="bg-theme-purple text-xs">
                       {tournament.esportType.toUpperCase()}
                     </Badge>
                   </div>
+                  {tournament.status === 'active' && (
+                    <div className="absolute bottom-2 left-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-white bg-red-500/80 px-2 py-1 rounded">LIVE</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold line-clamp-2 flex-1">{tournament.name}</h3>
-                    {tournament.type === 'league' ? (
-                      <Users className="h-4 w-4 text-blue-400" />
-                    ) : (
-                      <Trophy className="h-4 w-4 text-yellow-400" />
-                    )}
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <h3 className="text-lg font-bold line-clamp-2 flex-1 group-hover:text-theme-purple transition-colors">{tournament.name}</h3>
+                    <div className="flex-shrink-0">
+                      {tournament.type === 'league' ? (
+                        <Users className="h-4 w-4 text-blue-400" />
+                      ) : (
+                        <Trophy className="h-4 w-4 text-yellow-400" />
+                      )}
+                    </div>
                   </div>
                   
-                  {tournament.startDate && tournament.endDate && (
-                    <div className="flex items-center text-gray-400 mt-2">
-                      <Calendar size={14} className="mr-2" />
-                      <span className="text-sm">
-                        {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {tournament.prizePool && (
-                    <div className="flex items-center text-gray-400 mt-1.5">
-                      <Trophy size={14} className="mr-2" />
-                      <span className="text-sm">{formatPrizePool(tournament.prizePool)}</span>
-                    </div>
-                  )}
+                  <div className="space-y-2 mb-4">
+                    {tournament.startDate && tournament.endDate && (
+                      <div className="flex items-center text-gray-400">
+                        <Calendar size={14} className="mr-2 flex-shrink-0" />
+                        <span className="text-sm">
+                          {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      {tournament.prizePool && (
+                        <div className="flex items-center text-green-400">
+                          <Trophy size={14} className="mr-2" />
+                          <span className="text-sm font-medium">{formatPrizePool(tournament.prizePool)}</span>
+                        </div>
+                      )}
 
-                  {tournament.tier && (
-                    <div className="flex items-center text-gray-400 mt-1.5">
-                      <Map size={14} className="mr-2" />
-                      <span className="text-sm capitalize">{tournament.tier}</span>
+                      {tournament.tier && (
+                        <div className="flex items-center text-gray-400">
+                          <Map size={14} className="mr-1" />
+                          <span className="text-xs capitalize">{tournament.tier}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                   
                   <div className="mt-4">
-                    <Button asChild variant="ghost" className="w-full border border-theme-purple/30 text-theme-purple hover:bg-theme-purple/10">
+                    <Button asChild variant="ghost" className="w-full border border-theme-purple/30 text-theme-purple hover:bg-theme-purple/10 hover:border-theme-purple group-hover:bg-theme-purple/5">
                       <Link to={`/tournament/${tournament.id}`}>
-                        View {tournament.type === 'league' ? 'League' : 'Tournament'}
+                        {tournament.status === 'active' ? 'Watch Live' : `View ${tournament.type === 'league' ? 'League' : 'Tournament'}`}
                       </Link>
                     </Button>
                   </div>
@@ -223,8 +265,17 @@ const TournamentsPage: React.FC = () => {
         </div>
 
         {filteredTournaments.length === 0 && (
-          <div className="text-center py-10 bg-theme-gray-dark/50 rounded-md">
-            <p className="text-gray-400">No tournaments found matching your filters.</p>
+          <div className="text-center py-16 bg-theme-gray-dark/50 rounded-lg border-2 border-dashed border-theme-gray-medium">
+            <Trophy className="h-12 w-12 mx-auto mb-4 text-gray-500" />
+            <h3 className="text-xl font-semibold text-gray-300 mb-2">No tournaments found</h3>
+            <p className="text-gray-400 mb-4">Try adjusting your filters to see more results.</p>
+            <Button variant="outline" onClick={() => {
+              setGameFilter('all');
+              setStatusFilter('all');
+              setTypeFilter('all');
+            }}>
+              Clear All Filters
+            </Button>
           </div>
         )}
       </div>
