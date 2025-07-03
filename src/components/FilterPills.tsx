@@ -90,11 +90,11 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   const getPillIcon = (pillId: string) => {
     switch (pillId) {
       case 'game':
-        return <Gamepad2 className="h-4 w-4" />;
+        return <Gamepad2 className="h-3 w-3" />;
       case 'status':
-        return <Clock className="h-4 w-4" />;
+        return <Clock className="h-3 w-3" />;
       case 'source':
-        return <Trophy className="h-4 w-4" />;
+        return <Trophy className="h-3 w-3" />;
       default:
         return null;
     }
@@ -120,7 +120,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   ];
 
   return (
-    <div className="flex flex-wrap gap-3 mb-6">
+    <div className="flex flex-wrap gap-2">
       {pillConfigs.map(({ id, label }) => (
         <div
           key={id}
@@ -130,42 +130,41 @@ export const FilterPills: React.FC<FilterPillProps> = ({
           <button
             onClick={() => handlePillClick(id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all duration-200",
-              "bg-card hover:bg-accent text-card-foreground",
-              "border-border hover:border-primary/30",
-              "min-w-[140px] justify-between",
-              openPill === id && "border-primary bg-accent"
+              "flex items-center gap-2 px-3 py-2 rounded-full border transition-all duration-200",
+              "bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple",
+              "min-w-[100px] justify-between text-xs",
+              openPill === id && "border-theme-purple bg-theme-purple/20"
             )}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {getPillIcon(id)}
-              <span className="text-sm font-medium truncate">
+              <span className="text-xs font-medium truncate">
                 {getSelectedLabel(id)}
               </span>
             </div>
             <ChevronDown 
               className={cn(
-                "h-4 w-4 transition-transform duration-200 flex-shrink-0",
+                "h-3 w-3 transition-transform duration-200 flex-shrink-0",
                 openPill === id && "rotate-180"
               )} 
             />
           </button>
 
           {openPill === id && (
-            <div className="absolute top-full left-0 mt-2 w-full min-w-max bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+            <div className="absolute top-full left-0 mt-2 w-full min-w-max bg-theme-gray-dark border border-theme-gray-medium rounded-lg shadow-lg z-50 overflow-hidden">
               {getOptions(id).map((option) => (
                 <button
                   key={option.value}
                   onClick={() => handleOptionSelect(id, option.value)}
                   className={cn(
-                    "w-full px-4 py-2.5 text-left text-sm transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground",
+                    "w-full px-3 py-2 text-left text-xs transition-colors text-white",
+                    "hover:bg-theme-purple hover:text-white",
                     "flex items-center gap-2",
                     (
                       (id === 'game' && gameType === option.value) ||
                       (id === 'status' && statusFilter === option.value) ||
                       (id === 'source' && sourceFilter === option.value)
-                    ) && "bg-accent text-accent-foreground font-medium"
+                    ) && "bg-theme-purple text-white font-medium"
                   )}
                 >
                   {option.label}

@@ -12,13 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate, fetchSupabaseFaceitFinishedMatches } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
-import { DateMatchPicker } from '@/components/DateMatchPicker';
+
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -612,9 +615,11 @@ const Index = () => {
     }
   }, [selectedDate, selectedGameType, selectedStatusFilter, selectedSourceFilter, hasInitializedDate]);
 
-  const handleDateSelect = (date: Date) => {
-    console.log('📅 User selected date:', date.toDateString());
-    setSelectedDate(startOfDay(date));
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      console.log('📅 User selected date:', date.toDateString());
+      setSelectedDate(startOfDay(date));
+    }
   };
 
   const handleGameTypeChange = (value: string) => {
@@ -690,27 +695,46 @@ const Index = () => {
               </h2>
             </div>
             
-            {/* FILTER PILLS */}
+            {/* FILTER PILLS WITH CALENDAR */}
             <div className="mx-2 md:mx-4">
-              <FilterPills
-                gameType={selectedGameType}
-                statusFilter={selectedStatusFilter}
-                sourceFilter={selectedSourceFilter}
-                onGameTypeChange={handleGameTypeChange}
-                onStatusFilterChange={handleStatusFilterChange}
-                onSourceFilterChange={handleSourceFilterChange}
-              />
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <FilterPills
+                  gameType={selectedGameType}
+                  statusFilter={selectedStatusFilter}
+                  sourceFilter={selectedSourceFilter}
+                  onGameTypeChange={handleGameTypeChange}
+                  onStatusFilterChange={handleStatusFilterChange}
+                  onSourceFilterChange={handleSourceFilterChange}
+                />
+                {/* Calendar picker moved next to pills */}
+                {hasInitializedDate && (
+                  <div className="flex items-center">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple h-8 px-3 text-xs transition-all duration-200"
+                          aria-label="Open calendar"
+                        >
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {format(selectedDate, 'MMM dd')}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-theme-gray-dark border-theme-gray-medium" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={handleDateSelect}
+                          initialFocus
+                          className="bg-theme-gray-dark text-white"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+              </div>
             </div>
-            
-            {/* Only show DateMatchPicker after initial date is set */}
-            {hasInitializedDate && (
-              <DateMatchPicker
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-                matchCounts={matchCounts}
-                detailedMatchCounts={detailedMatchCounts}
-              />
-            )}
 
             {loadingDateFiltered || !hasInitializedDate ? (
               <div className="flex justify-center items-center py-10">
