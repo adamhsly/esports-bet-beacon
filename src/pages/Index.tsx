@@ -18,13 +18,7 @@ import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBrea
 import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from '@/components/ui/select';
+import { FilterPills } from '@/components/FilterPills';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -696,117 +690,16 @@ const Index = () => {
               </h2>
             </div>
             
-            {/* ENHANCED FILTERING SECTION */}
-            <div className="bg-card border border-border rounded-lg p-4 mb-6 mx-2 md:mx-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">Filter Matches</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Game Type Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Gamepad2 className="h-4 w-4" />
-                    Game Type
-                  </label>
-                  <Select value={selectedGameType} onValueChange={handleGameTypeChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Game" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GAME_TYPE_OPTIONS.map((option) => {
-                        const IconComponent = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className="h-4 w-4" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Status Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Match Status
-                  </label>
-                  <Select value={selectedStatusFilter} onValueChange={handleStatusFilterChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS_FILTER_OPTIONS.map((option) => {
-                        const IconComponent = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className="h-4 w-4" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Source Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Trophy className="h-4 w-4" />
-                    Competition Level
-                  </label>
-                  <Select value={selectedSourceFilter} onValueChange={handleSourceFilterChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOURCE_FILTER_OPTIONS.map((option) => {
-                        const IconComponent = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className="h-4 w-4" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Filter Summary */}
-              <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border">
-                <div className="text-xs text-muted-foreground">Active filters:</div>
-                {selectedGameType !== 'all' && (
-                  <Badge variant="secondary" className="text-xs">
-                    Game: {GAME_TYPE_OPTIONS.find(opt => opt.value === selectedGameType)?.label}
-                  </Badge>
-                )}
-                {selectedStatusFilter !== 'all' && (
-                  <Badge variant="secondary" className="text-xs">
-                    Status: {STATUS_FILTER_OPTIONS.find(opt => opt.value === selectedStatusFilter)?.label}
-                  </Badge>
-                )}
-                {selectedSourceFilter !== 'all' && (
-                  <Badge variant="secondary" className="text-xs">
-                    Level: {SOURCE_FILTER_OPTIONS.find(opt => opt.value === selectedSourceFilter)?.label}
-                  </Badge>
-                )}
-                {selectedGameType === 'all' && selectedStatusFilter === 'all' && selectedSourceFilter === 'all' && (
-                  <Badge variant="outline" className="text-xs">
-                    No filters applied
-                  </Badge>
-                )}
-              </div>
+            {/* FILTER PILLS */}
+            <div className="mx-2 md:mx-4">
+              <FilterPills
+                gameType={selectedGameType}
+                statusFilter={selectedStatusFilter}
+                sourceFilter={selectedSourceFilter}
+                onGameTypeChange={handleGameTypeChange}
+                onStatusFilterChange={handleStatusFilterChange}
+                onSourceFilterChange={handleSourceFilterChange}
+              />
             </div>
             
             {/* Only show DateMatchPicker after initial date is set */}
