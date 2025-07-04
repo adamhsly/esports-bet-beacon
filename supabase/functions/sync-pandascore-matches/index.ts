@@ -189,6 +189,178 @@ const fetchPlayersForMatch = async (game: string, apiKey: string, match: any): P
 // Fixed: Changed 'cs2' to 'csgo' for proper Counter-Strike syncing
 const SUPPORTED_GAMES = ['csgo', 'lol', 'dota2', 'valorant', 'ow'];
 
+// Calculate and store team statistics
+const calculateAndStoreTeamStats = async (supabase: any, games: string[]) => {
+  console.log('🧮 Starting team statistics calculation...');
+  
+  for (const game of games) {
+    try {
+      console.log(`📊 Calculating stats for ${game}...`);
+      
+      // Get all unique teams for this game
+      const { data: matches, error } = await supabase
+        .from('pandascore_matches')
+        .select('teams, raw_data, start_time')
+        .eq('esport_type', game)
+        .gte('start_time', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 6 months
+        .order('start_time', { ascending: false })
+        .limit(200);
+
+      if (error) {
+        console.error(`❌ Error fetching matches for ${game}:`, error);
+        continue;
+      }
+
+      const teamStats = new Map<string, any>();
+      const headToHeadMap = new Map<string, any>();
+
+      // Process matches to calculate team stats
+      for (const match of matches || []) {
+        const teams = match.teams as any;
+        const rawData = match.raw_data as any;
+        
+        if (!teams || !rawData) continue;
+
+        const team1 = teams.team1;
+        const team2 = teams.team2;
+        
+        if (!team1?.id || !team2?.id) continue;
+
+        const team1Id = String(team1.id);
+        const team2Id = String(team2.id);
+
+        // Initialize team stats if not exists
+        if (!teamStats.has(team1Id)) {
+          teamStats.set(team1Id, {
+            team_id: team1Id,
+            esport_type: game,
+            wins: 0,
+            losses: 0,
+            total_matches: 0,
+            recent_matches: [],
+            tournament_wins: new Set()
+          });
+        }
+
+        if (!teamStats.has(team2Id)) {
+          teamStats.set(team2Id, {
+            team_id: team2Id,
+            esport_type: game,
+            wins: 0,
+            losses: 0,
+            total_matches: 0,
+            recent_matches: [],
+            tournament_wins: new Set()
+          });
+        }
+
+        // Determine winner
+        const winnerId = String(rawData.winner_id || '');
+        const team1Won = winnerId === team1Id;
+        const team2Won = winnerId === team2Id;
+
+        // Update team stats
+        const team1Stats = teamStats.get(team1Id);
+        const team2Stats = teamStats.get(team2Id);
+
+        if (team1Won) {
+          team1Stats.wins++;
+          team2Stats.losses++;
+          team1Stats.recent_matches.push('W');
+          team2Stats.recent_matches.push('L');
+          if (match.tournament_name) {
+            team1Stats.tournament_wins.add(match.tournament_name);
+          }
+        } else if (team2Won) {
+          team2Stats.wins++;
+          team1Stats.losses++;
+          team2Stats.recent_matches.push('W');
+          team1Stats.recent_matches.push('L');
+          if (match.tournament_name) {
+            team2Stats.tournament_wins.add(match.tournament_name);
+          }
+        }
+
+        team1Stats.total_matches++;
+        team2Stats.total_matches++;
+
+        // Calculate head-to-head
+        const h2hKey = team1Id < team2Id ? `${team1Id}_${team2Id}` : `${team2Id}_${team1Id}`;
+        if (!headToHeadMap.has(h2hKey)) {
+          headToHeadMap.set(h2hKey, {
+            team1_id: team1Id < team2Id ? team1Id : team2Id,
+            team2_id: team1Id < team2Id ? team2Id : team1Id,
+            esport_type: game,
+            team1_wins: 0,
+            team2_wins: 0,
+            total_matches: 0
+          });
+        }
+
+        const h2hStats = headToHeadMap.get(h2hKey);
+        h2hStats.total_matches++;
+
+        if (team1Won) {
+          if (team1Id < team2Id) {
+            h2hStats.team1_wins++;
+          } else {
+            h2hStats.team2_wins++;
+          }
+        } else if (team2Won) {
+          if (team2Id < team1Id) {
+            h2hStats.team1_wins++;
+          } else {
+            h2hStats.team2_wins++;
+          }
+        }
+      }
+
+      // Store team statistics
+      for (const [teamId, stats] of teamStats) {
+        const winRate = stats.total_matches > 0 ? Math.round((stats.wins / stats.total_matches) * 100) : 0;
+        const recentForm = stats.recent_matches.slice(0, 5).join('-');
+
+        await supabase
+          .from('pandascore_team_stats')
+          .upsert({
+            team_id: teamId,
+            esport_type: game,
+            win_rate: winRate,
+            recent_form: recentForm,
+            tournament_wins: stats.tournament_wins.size,
+            total_matches: stats.total_matches,
+            wins: stats.wins,
+            losses: stats.losses,
+            last_calculated_at: new Date().toISOString()
+          }, {
+            onConflict: 'team_id,esport_type',
+            ignoreDuplicates: false
+          });
+      }
+
+      // Store head-to-head records
+      for (const [h2hKey, h2hStats] of headToHeadMap) {
+        await supabase
+          .from('pandascore_head_to_head')
+          .upsert({
+            ...h2hStats,
+            last_calculated_at: new Date().toISOString()
+          }, {
+            onConflict: 'team1_id,team2_id,esport_type',
+            ignoreDuplicates: false
+          });
+      }
+
+      console.log(`✅ Calculated stats for ${teamStats.size} teams and ${headToHeadMap.size} head-to-head records in ${game}`);
+      
+    } catch (error) {
+      console.error(`❌ Error calculating stats for ${game}:`, error);
+    }
+  }
+
+  console.log('✅ Team statistics calculation completed');
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -363,6 +535,10 @@ serve(async (req) => {
       }
     }
 
+    // Calculate and store team statistics after match sync
+    console.log('🧮 Starting team statistics calculation...');
+    await calculateAndStoreTeamStats(supabase, SUPPORTED_GAMES);
+    
     const duration = Date.now() - startTime;
     
     // Update sync log with success

@@ -923,6 +923,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pandascore_head_to_head: {
+        Row: {
+          created_at: string
+          esport_type: string
+          id: string
+          last_calculated_at: string
+          team1_id: string
+          team1_wins: number
+          team2_id: string
+          team2_wins: number
+          total_matches: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          esport_type: string
+          id?: string
+          last_calculated_at?: string
+          team1_id: string
+          team1_wins?: number
+          team2_id: string
+          team2_wins?: number
+          total_matches?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          esport_type?: string
+          id?: string
+          last_calculated_at?: string
+          team1_id?: string
+          team1_wins?: number
+          team2_id?: string
+          team2_wins?: number
+          total_matches?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pandascore_matches: {
         Row: {
           created_at: string
@@ -1034,6 +1073,51 @@ export type Database = {
           started_at?: string
           status?: string
           sync_type?: string
+        }
+        Relationships: []
+      }
+      pandascore_team_stats: {
+        Row: {
+          created_at: string
+          esport_type: string
+          id: string
+          last_calculated_at: string
+          losses: number
+          recent_form: string | null
+          team_id: string
+          total_matches: number
+          tournament_wins: number
+          updated_at: string
+          win_rate: number
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          esport_type: string
+          id?: string
+          last_calculated_at?: string
+          losses?: number
+          recent_form?: string | null
+          team_id: string
+          total_matches?: number
+          tournament_wins?: number
+          updated_at?: string
+          win_rate?: number
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          esport_type?: string
+          id?: string
+          last_calculated_at?: string
+          losses?: number
+          recent_form?: string | null
+          team_id?: string
+          total_matches?: number
+          tournament_wins?: number
+          updated_at?: string
+          win_rate?: number
+          wins?: number
         }
         Relationships: []
       }
