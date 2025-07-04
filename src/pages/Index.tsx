@@ -19,6 +19,7 @@ import { startOfDay, endOfDay, isToday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
+import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -735,6 +736,18 @@ const Index = () => {
                 )}
               </div>
             </div>
+
+            {/* HORIZONTAL DAY SELECTOR */}
+            {hasInitializedDate && (
+              <div className="mx-2 md:mx-4">
+                <DateMatchPicker
+                  selectedDate={selectedDate}
+                  onDateSelect={setSelectedDate}
+                  matchCounts={matchCounts}
+                  detailedMatchCounts={detailedMatchCounts}
+                />
+              </div>
+            )}
 
             {loadingDateFiltered || !hasInitializedDate ? (
               <div className="flex justify-center items-center py-10">
