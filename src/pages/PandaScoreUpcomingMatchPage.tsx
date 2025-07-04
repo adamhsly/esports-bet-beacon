@@ -193,6 +193,7 @@ const PandaScoreUpcomingMatchPage = () => {
               <PandaScorePreMatchStats
                 teams={matchDetails.teams}
                 tournament={matchDetails.tournament}
+                esportType={matchDetails.esport_type}
               />
 
               <Card className="bg-theme-gray-dark border-theme-gray-medium">
@@ -249,6 +250,7 @@ const PandaScoreUpcomingMatchPage = () => {
                 <PandaScorePreMatchStats
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
+                  esportType={matchDetails.esport_type}
                 />
               </TabsContent>
 
@@ -263,6 +265,7 @@ const PandaScoreUpcomingMatchPage = () => {
                 <PandaScorePreMatchStats
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
+                  esportType={matchDetails.esport_type}
                 />
               </TabsContent>
 
