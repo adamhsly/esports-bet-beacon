@@ -1028,6 +1028,162 @@ export type Database = {
         }
         Relationships: []
       }
+      pandascore_player_matches: {
+        Row: {
+          adr: number | null
+          assists: number | null
+          clutches_attempted: number | null
+          clutches_won: number | null
+          created_at: string
+          deaths: number | null
+          esport_type: string
+          id: string
+          kda_ratio: number | null
+          kills: number | null
+          map_name: string | null
+          match_date: string
+          match_id: string
+          mvp: boolean | null
+          opponent_team: string | null
+          player_id: string
+          rating: number | null
+          result: string | null
+          role_stats: Json | null
+          tournament_name: string | null
+        }
+        Insert: {
+          adr?: number | null
+          assists?: number | null
+          clutches_attempted?: number | null
+          clutches_won?: number | null
+          created_at?: string
+          deaths?: number | null
+          esport_type: string
+          id?: string
+          kda_ratio?: number | null
+          kills?: number | null
+          map_name?: string | null
+          match_date: string
+          match_id: string
+          mvp?: boolean | null
+          opponent_team?: string | null
+          player_id: string
+          rating?: number | null
+          result?: string | null
+          role_stats?: Json | null
+          tournament_name?: string | null
+        }
+        Update: {
+          adr?: number | null
+          assists?: number | null
+          clutches_attempted?: number | null
+          clutches_won?: number | null
+          created_at?: string
+          deaths?: number | null
+          esport_type?: string
+          id?: string
+          kda_ratio?: number | null
+          kills?: number | null
+          map_name?: string | null
+          match_date?: string
+          match_id?: string
+          mvp?: boolean | null
+          opponent_team?: string | null
+          player_id?: string
+          rating?: number | null
+          result?: string | null
+          role_stats?: Json | null
+          tournament_name?: string | null
+        }
+        Relationships: []
+      }
+      pandascore_players: {
+        Row: {
+          achievements: Json | null
+          active: boolean | null
+          avg_assists: number | null
+          avg_deaths: number | null
+          avg_kills: number | null
+          career_stats: Json | null
+          clutch_success_rate: number | null
+          created_at: string
+          earnings: number | null
+          esport_type: string
+          headshot_percentage: number | null
+          id: string
+          image_url: string | null
+          kda_ratio: number | null
+          last_synced_at: string
+          name: string
+          nationality: string | null
+          player_id: string
+          recent_stats: Json | null
+          role: string | null
+          slug: string | null
+          social_media: Json | null
+          team_id: string | null
+          team_name: string | null
+          tournament_stats: Json | null
+          updated_at: string
+        }
+        Insert: {
+          achievements?: Json | null
+          active?: boolean | null
+          avg_assists?: number | null
+          avg_deaths?: number | null
+          avg_kills?: number | null
+          career_stats?: Json | null
+          clutch_success_rate?: number | null
+          created_at?: string
+          earnings?: number | null
+          esport_type: string
+          headshot_percentage?: number | null
+          id?: string
+          image_url?: string | null
+          kda_ratio?: number | null
+          last_synced_at?: string
+          name: string
+          nationality?: string | null
+          player_id: string
+          recent_stats?: Json | null
+          role?: string | null
+          slug?: string | null
+          social_media?: Json | null
+          team_id?: string | null
+          team_name?: string | null
+          tournament_stats?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          achievements?: Json | null
+          active?: boolean | null
+          avg_assists?: number | null
+          avg_deaths?: number | null
+          avg_kills?: number | null
+          career_stats?: Json | null
+          clutch_success_rate?: number | null
+          created_at?: string
+          earnings?: number | null
+          esport_type?: string
+          headshot_percentage?: number | null
+          id?: string
+          image_url?: string | null
+          kda_ratio?: number | null
+          last_synced_at?: string
+          name?: string
+          nationality?: string | null
+          player_id?: string
+          recent_stats?: Json | null
+          role?: string | null
+          slug?: string | null
+          social_media?: Json | null
+          team_id?: string | null
+          team_name?: string | null
+          tournament_stats?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pandascore_sync_logs: {
         Row: {
           completed_at: string | null
@@ -1073,6 +1229,81 @@ export type Database = {
           started_at?: string
           status?: string
           sync_type?: string
+        }
+        Relationships: []
+      }
+      pandascore_team_detailed_stats: {
+        Row: {
+          average_round_length: number | null
+          created_at: string
+          ct_side_win_rate: number | null
+          current_roster: Json | null
+          eco_round_win_rate: number | null
+          esport_type: string
+          id: string
+          last_calculated_at: string
+          major_wins: number | null
+          map_stats: Json | null
+          pistol_round_win_rate: number | null
+          preferred_side: string | null
+          prize_money: number | null
+          recent_avg_rating: number | null
+          recent_matches_count: number | null
+          recent_win_rate: number | null
+          roster_changes: Json | null
+          save_round_win_rate: number | null
+          t_side_win_rate: number | null
+          team_id: string
+          tier1_wins: number | null
+          updated_at: string
+        }
+        Insert: {
+          average_round_length?: number | null
+          created_at?: string
+          ct_side_win_rate?: number | null
+          current_roster?: Json | null
+          eco_round_win_rate?: number | null
+          esport_type: string
+          id?: string
+          last_calculated_at?: string
+          major_wins?: number | null
+          map_stats?: Json | null
+          pistol_round_win_rate?: number | null
+          preferred_side?: string | null
+          prize_money?: number | null
+          recent_avg_rating?: number | null
+          recent_matches_count?: number | null
+          recent_win_rate?: number | null
+          roster_changes?: Json | null
+          save_round_win_rate?: number | null
+          t_side_win_rate?: number | null
+          team_id: string
+          tier1_wins?: number | null
+          updated_at?: string
+        }
+        Update: {
+          average_round_length?: number | null
+          created_at?: string
+          ct_side_win_rate?: number | null
+          current_roster?: Json | null
+          eco_round_win_rate?: number | null
+          esport_type?: string
+          id?: string
+          last_calculated_at?: string
+          major_wins?: number | null
+          map_stats?: Json | null
+          pistol_round_win_rate?: number | null
+          preferred_side?: string | null
+          prize_money?: number | null
+          recent_avg_rating?: number | null
+          recent_matches_count?: number | null
+          recent_win_rate?: number | null
+          roster_changes?: Json | null
+          save_round_win_rate?: number | null
+          t_side_win_rate?: number | null
+          team_id?: string
+          tier1_wins?: number | null
+          updated_at?: string
         }
         Relationships: []
       }

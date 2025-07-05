@@ -18,6 +18,32 @@ interface PlayerData {
   role?: string;
 }
 
+// Enhanced player profile data from PandaScore API
+interface EnhancedPlayerData extends PlayerData {
+  name?: string;
+  slug?: string;
+  image_url?: string;
+  nationality?: string;
+  team_id?: string;
+  team_name?: string;
+  career_stats?: any;
+  recent_stats?: any;
+  kda_ratio?: number;
+  avg_kills?: number;
+  avg_deaths?: number;
+  avg_assists?: number;
+}
+
+// Enhanced team statistics data
+interface EnhancedTeamData {
+  team_id: string;
+  esport_type: string;
+  map_stats?: any;
+  recent_stats?: any;
+  tournament_performance?: any;
+  roster_info?: any;
+}
+
 // Fetch tournament rosters using the correct endpoint structure
 const fetchTournamentRosters = async (tournamentId: string, apiKey: string): Promise<any> => {
   console.log(`🏆 Fetching tournament rosters for tournament ${tournamentId}...`);
@@ -184,6 +210,189 @@ const fetchPlayersForMatch = async (game: string, apiKey: string, match: any): P
   await new Promise(resolve => setTimeout(resolve, 300));
   
   return { team1Players, team2Players };
+};
+
+// Enhanced API fetching functions for detailed statistics
+
+// Fetch enhanced team statistics from PandaScore API
+const fetchTeamDetailedStats = async (teamId: string, game: string, apiKey: string): Promise<EnhancedTeamData | null> => {
+  console.log(`📊 Fetching detailed stats for team ${teamId} in ${game}...`);
+  
+  try {
+    // Fetch team statistics
+    const statsResponse = await fetch(`https://api.pandascore.co/${game}/teams/${teamId}/stats`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    let teamStats = null;
+    if (statsResponse.ok) {
+      teamStats = await statsResponse.json();
+      console.log(`✅ Retrieved team stats for ${teamId}`);
+    } else {
+      console.log(`⚠️ Team stats not available for ${teamId} (${statsResponse.status})`);
+    }
+
+    // Fetch team details and current roster
+    const teamResponse = await fetch(`https://api.pandascore.co/${game}/teams/${teamId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    let teamDetails = null;
+    if (teamResponse.ok) {
+      teamDetails = await teamResponse.json();
+      console.log(`✅ Retrieved team details for ${teamId}`);
+    }
+
+    // Combine the data
+    const enhancedData: EnhancedTeamData = {
+      team_id: teamId,
+      esport_type: game,
+      map_stats: teamStats?.maps || {},
+      recent_stats: teamStats?.recent || {},
+      tournament_performance: teamStats?.tournaments || {},
+      roster_info: {
+        current_roster: teamDetails?.players || [],
+        team_details: teamDetails
+      }
+    };
+
+    return enhancedData;
+  } catch (error) {
+    console.error(`❌ Error fetching enhanced team data for ${teamId}:`, error);
+    return null;
+  }
+};
+
+// Fetch enhanced player data from PandaScore API
+const fetchPlayerDetailedData = async (playerId: string, game: string, apiKey: string): Promise<EnhancedPlayerData | null> => {
+  console.log(`👤 Fetching detailed data for player ${playerId} in ${game}...`);
+  
+  try {
+    // Fetch player profile
+    const playerResponse = await fetch(`https://api.pandascore.co/${game}/players/${playerId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!playerResponse.ok) {
+      console.log(`⚠️ Player data not available for ${playerId} (${playerResponse.status})`);
+      return null;
+    }
+
+    const playerData = await playerResponse.json();
+    
+    // Fetch player statistics
+    const statsResponse = await fetch(`https://api.pandascore.co/${game}/players/${playerId}/stats`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    let playerStats = null;
+    if (statsResponse.ok) {
+      playerStats = await statsResponse.json();
+      console.log(`✅ Retrieved player stats for ${playerId}`);
+    }
+
+    const enhancedPlayer: EnhancedPlayerData = {
+      nickname: playerData.name || playerData.nickname || 'Unknown',
+      player_id: playerId,
+      name: playerData.name,
+      slug: playerData.slug,
+      image_url: playerData.image_url,
+      nationality: playerData.nationality,
+      role: playerData.role,
+      team_id: playerData.current_team?.id?.toString(),
+      team_name: playerData.current_team?.name,
+      career_stats: playerStats?.career || {},
+      recent_stats: playerStats?.recent || {},
+      kda_ratio: playerStats?.averages?.kda_ratio,
+      avg_kills: playerStats?.averages?.kills,
+      avg_deaths: playerStats?.averages?.deaths,
+      avg_assists: playerStats?.averages?.assists,
+      position: mapPlayerRole(game, playerData.role || 'Player')
+    };
+
+    return enhancedPlayer;
+  } catch (error) {
+    console.error(`❌ Error fetching enhanced player data for ${playerId}:`, error);
+    return null;
+  }
+};
+
+// Store enhanced team data in database
+const storeEnhancedTeamData = async (supabase: any, teamData: EnhancedTeamData) => {
+  try {
+    const dbData = {
+      team_id: teamData.team_id,
+      esport_type: teamData.esport_type,
+      map_stats: teamData.map_stats || {},
+      eco_round_win_rate: teamData.recent_stats?.eco_win_rate,
+      save_round_win_rate: teamData.recent_stats?.save_win_rate,
+      pistol_round_win_rate: teamData.recent_stats?.pistol_win_rate,
+      recent_matches_count: teamData.recent_stats?.matches_count || 0,
+      recent_win_rate: teamData.recent_stats?.win_rate,
+      recent_avg_rating: teamData.recent_stats?.avg_rating,
+      current_roster: teamData.roster_info?.current_roster || [],
+      roster_changes: teamData.roster_info?.recent_changes || [],
+      last_calculated_at: new Date().toISOString()
+    };
+
+    await supabase
+      .from('pandascore_team_detailed_stats')
+      .upsert(dbData, {
+        onConflict: 'team_id,esport_type',
+        ignoreDuplicates: false
+      });
+
+    console.log(`✅ Stored enhanced team data for ${teamData.team_id}`);
+  } catch (error) {
+    console.error(`❌ Error storing enhanced team data:`, error);
+  }
+};
+
+// Store enhanced player data in database
+const storeEnhancedPlayerData = async (supabase: any, playerData: EnhancedPlayerData, esportType: string) => {
+  try {
+    const dbData = {
+      player_id: playerData.player_id,
+      esport_type: esportType,
+      name: playerData.name || playerData.nickname,
+      slug: playerData.slug,
+      image_url: playerData.image_url,
+      nationality: playerData.nationality,
+      role: playerData.role,
+      team_id: playerData.team_id,
+      team_name: playerData.team_name,
+      career_stats: playerData.career_stats || {},
+      recent_stats: playerData.recent_stats || {},
+      kda_ratio: playerData.kda_ratio,
+      avg_kills: playerData.avg_kills,
+      avg_deaths: playerData.avg_deaths,
+      avg_assists: playerData.avg_assists,
+      last_synced_at: new Date().toISOString()
+    };
+
+    await supabase
+      .from('pandascore_players')
+      .upsert(dbData, {
+        onConflict: 'player_id,esport_type',
+        ignoreDuplicates: false
+      });
+
+    console.log(`✅ Stored enhanced player data for ${playerData.player_id}`);
+  } catch (error) {
+    console.error(`❌ Error storing enhanced player data:`, error);
+  }
 };
 
 // Fixed: Changed 'cs2' to 'csgo' for proper Counter-Strike syncing
@@ -435,6 +644,45 @@ serve(async (req) => {
                 
                 // Fetch player data using tournament rosters API
                 const { team1Players, team2Players } = await fetchPlayersForMatch(game, apiKey, match);
+
+                // Fetch enhanced team statistics (with rate limiting)
+                let enhancedTeam1Data = null;
+                let enhancedTeam2Data = null;
+                
+                if (team1Data?.id) {
+                  enhancedTeam1Data = await fetchTeamDetailedStats(team1Data.id.toString(), game, apiKey);
+                  await new Promise(resolve => setTimeout(resolve, 200)); // Rate limiting
+                }
+                
+                if (team2Data?.id) {
+                  enhancedTeam2Data = await fetchTeamDetailedStats(team2Data.id.toString(), game, apiKey);
+                  await new Promise(resolve => setTimeout(resolve, 200)); // Rate limiting
+                }
+
+                // Fetch enhanced player data for all players
+                const enhancedPlayers = [];
+                for (const players of [team1Players, team2Players]) {
+                  for (const player of players) {
+                    if (player.player_id) {
+                      const enhancedPlayer = await fetchPlayerDetailedData(player.player_id, game, apiKey);
+                      if (enhancedPlayer) {
+                        enhancedPlayers.push(enhancedPlayer);
+                      }
+                      await new Promise(resolve => setTimeout(resolve, 150)); // Rate limiting
+                    }
+                  }
+                }
+
+                // Store enhanced data
+                if (enhancedTeam1Data) {
+                  await storeEnhancedTeamData(supabase, enhancedTeam1Data);
+                }
+                if (enhancedTeam2Data) {
+                  await storeEnhancedTeamData(supabase, enhancedTeam2Data);
+                }
+                for (const enhancedPlayer of enhancedPlayers) {
+                  await storeEnhancedPlayerData(supabase, enhancedPlayer, game);
+                }
 
                 // Map PandaScore status to our internal status
                 const mapStatus = (pandaStatus: string) => {
