@@ -3,7 +3,7 @@ name: Deploy Supabase Functions
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main  # or your default branchs
 
 jobs:
   deploy:
