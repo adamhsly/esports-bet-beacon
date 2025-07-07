@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Users, GamepadIcon } from 'lucide-react';
+import { PlayerDetailsModal } from '@/components/PlayerDetailsModal';
 
 interface PandaScorePlayerLineupTableProps {
   teams: Array<{
@@ -19,8 +20,16 @@ interface PandaScorePlayerLineupTableProps {
 }
 
 export const PandaScorePlayerLineupTable: React.FC<PandaScorePlayerLineupTableProps> = ({ teams, esportType = 'csgo' }) => {
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  
   const team1 = teams[0] || { name: 'Team 1', players: [] };
   const team2 = teams[1] || { name: 'Team 2', players: [] };
+
+  const handlePlayerClick = (playerId: string) => {
+    setSelectedPlayerId(playerId);
+    setIsPlayerModalOpen(true);
+  };
 
   console.log('🎮 PandaScore Player Lineup - Enhanced data:', {
     esportType,
@@ -99,15 +108,20 @@ export const PandaScorePlayerLineupTable: React.FC<PandaScorePlayerLineupTablePr
         {team.players && team.players.length > 0 ? (
           team.players.map((player: any, index: number) => (
             <div key={`${player.player_id}-${index}`} className="flex items-center justify-between p-3 bg-theme-gray-medium/30 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <User className="h-4 w-4 text-gray-400" />
-                <div>
-                  <span className="text-white font-medium">{player.nickname}</span>
-                  {player.player_id && (
-                    <p className="text-xs text-gray-500">ID: {player.player_id}</p>
-                  )}
+                <div className="flex items-center space-x-3">
+                  <User className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <button
+                      onClick={() => handlePlayerClick(player.player_id)}
+                      className="text-white font-medium hover:text-blue-400 transition-colors cursor-pointer"
+                    >
+                      {player.nickname}
+                    </button>
+                    {player.player_id && (
+                      <p className="text-xs text-gray-500">ID: {player.player_id}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
               {player.position && (
                 <Badge 
                   variant="outline" 
@@ -164,6 +178,13 @@ export const PandaScorePlayerLineupTable: React.FC<PandaScorePlayerLineupTablePr
           </div>
         </div>
       </div>
+
+      <PlayerDetailsModal
+        isOpen={isPlayerModalOpen}
+        onClose={() => setIsPlayerModalOpen(false)}
+        playerId={selectedPlayerId}
+        esportType={esportType}
+      />
     </Card>
   );
 };

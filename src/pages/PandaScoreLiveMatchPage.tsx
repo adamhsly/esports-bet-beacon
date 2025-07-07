@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { PandaScoreLiveMatchHeader } from '@/components/match-details/PandaScoreLiveMatchHeader';
 import { PandaScoreLiveScorecard } from '@/components/match-details/PandaScoreLiveScorecard';
 import { PandaScorePlayerRoster } from '@/components/match-details/PandaScorePlayerRoster';
+import { EnhancedTeamComparison } from '@/components/EnhancedTeamComparison';
 import { fetchSupabasePandaScoreMatchDetails } from '@/lib/supabasePandaScoreApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -125,6 +126,12 @@ const PandaScoreLiveMatchPage = () => {
                 Team Rosters
               </TabsTrigger>
               <TabsTrigger 
+                value="analysis" 
+                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
+              >
+                Team Analysis
+              </TabsTrigger>
+              <TabsTrigger 
                 value="stream"
                 className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
               >
@@ -171,6 +178,14 @@ const PandaScoreLiveMatchPage = () => {
             
             <TabsContent value="rosters">
               <PandaScorePlayerRoster teams={matchDetails.teams} />
+            </TabsContent>
+
+            <TabsContent value="analysis">
+              <EnhancedTeamComparison
+                team1Id={matchDetails.teams[0]?.id || ''}
+                team2Id={matchDetails.teams[1]?.id || ''}
+                esportType={matchDetails.esport_type}
+              />
             </TabsContent>
 
             <TabsContent value="stream">

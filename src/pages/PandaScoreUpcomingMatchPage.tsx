@@ -15,6 +15,7 @@ import { PandaScorePlayerRoster } from '@/components/match-details/PandaScorePla
 import { PandaScoreMobilePlayerLineup } from '@/components/match-details/PandaScoreMobilePlayerLineup';
 import { PandaScorePreMatchStats } from '@/components/match-details/PandaScorePreMatchStats';
 import { PandaScorePlayerLineupTable } from '@/components/match-details/PandaScorePlayerLineupTable';
+import { EnhancedTeamComparison } from '@/components/EnhancedTeamComparison';
 import { fetchSupabasePandaScoreMatchDetails } from '@/lib/supabasePandaScoreApi';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -244,6 +245,12 @@ const PandaScoreUpcomingMatchPage = () => {
                 >
                   Community Vote
                 </TabsTrigger>
+                <TabsTrigger
+                  value="comparison"
+                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
+                >
+                  Team Analysis
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -265,6 +272,14 @@ const PandaScoreUpcomingMatchPage = () => {
                 <PandaScorePreMatchStats
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
+                  esportType={matchDetails.esport_type}
+                />
+              </TabsContent>
+
+              <TabsContent value="comparison">
+                <EnhancedTeamComparison
+                  team1Id={matchDetails.teams[0]?.id || ''}
+                  team2Id={matchDetails.teams[1]?.id || ''}
                   esportType={matchDetails.esport_type}
                 />
               </TabsContent>

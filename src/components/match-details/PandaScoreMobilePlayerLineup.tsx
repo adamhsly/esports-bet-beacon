@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Users, GamepadIcon } from 'lucide-react';
+import { PlayerDetailsModal } from '@/components/PlayerDetailsModal';
 
 interface PandaScoreMobilePlayerLineupProps {
   teams: Array<{
@@ -19,8 +20,16 @@ interface PandaScoreMobilePlayerLineupProps {
 }
 
 export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineupProps> = ({ teams, esportType = 'csgo' }) => {
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  
   const team1 = teams[0] || { name: 'Team 1', players: [] };
   const team2 = teams[1] || { name: 'Team 2', players: [] };
+
+  const handlePlayerClick = (playerId: string) => {
+    setSelectedPlayerId(playerId);
+    setIsPlayerModalOpen(true);
+  };
 
   // Game-specific position colors for mobile
   const getPositionColor = (position: string, game: string) => {
@@ -96,7 +105,12 @@ export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineup
               <div key={`${player.player_id}-${index}`} className="flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2">
                   <User className="h-3 w-3 text-gray-400" />
-                  <span className="text-white truncate">{player.nickname}</span>
+                  <button
+                    onClick={() => handlePlayerClick(player.player_id)}
+                    className="text-white truncate hover:text-blue-400 transition-colors cursor-pointer"
+                  >
+                    {player.nickname}
+                  </button>
                 </div>
                 {player.position && (
                   <Badge 
@@ -127,6 +141,13 @@ export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineup
     <div className="space-y-2">
       <TeamSection team={team1} />
       <TeamSection team={team2} />
+      
+      <PlayerDetailsModal
+        isOpen={isPlayerModalOpen}
+        onClose={() => setIsPlayerModalOpen(false)}
+        playerId={selectedPlayerId}
+        esportType={esportType}
+      />
     </div>
   );
 };

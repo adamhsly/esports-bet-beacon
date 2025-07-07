@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, AlertCircle, CheckCircle } from 'lucide-react';
+import { PlayerDetailsModal } from '@/components/PlayerDetailsModal';
 
 interface PandaScorePlayerRosterProps {
   teams: Array<{
@@ -26,6 +27,13 @@ interface PandaScorePlayerRosterProps {
 }
 
 export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ teams, esportType = 'csgo' }) => {
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  
+  const handlePlayerClick = (playerId: string) => {
+    setSelectedPlayerId(playerId);
+    setIsPlayerModalOpen(true);
+  };
   console.log('📋 PandaScore Player Roster received teams:', {
     esportType,
     teamsCount: teams?.length || 0,
@@ -105,7 +113,12 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
           <User className="h-5 w-5 text-gray-400" />
         </div>
         <div className="flex-1">
-          <h4 className="text-white font-semibold">{player.nickname || 'Unknown Player'}</h4>
+          <button
+            onClick={() => handlePlayerClick(player.player_id)}
+            className="text-white font-semibold hover:text-blue-400 transition-colors cursor-pointer"
+          >
+            {player.nickname || 'Unknown Player'}
+          </button>
           <div className="flex items-center gap-2 mt-1">
             {player.position && (
               <Badge 
@@ -227,6 +240,13 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
           Data Source: Tournament Rosters API + Database
         </div>
       </div>
+      
+      <PlayerDetailsModal
+        isOpen={isPlayerModalOpen}
+        onClose={() => setIsPlayerModalOpen(false)}
+        playerId={selectedPlayerId}
+        esportType={esportType}
+      />
     </div>
   );
 };
