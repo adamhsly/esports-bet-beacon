@@ -70,10 +70,10 @@ export const EnhancedTeamComparison: React.FC<TeamComparisonProps> = ({
       ]);
 
       if (team1Response.data) {
-        setTeam1Data(team1Response.data);
+        setTeam1Data(team1Response.data as TeamData);
       }
       if (team2Response.data) {
-        setTeam2Data(team2Response.data);
+        setTeam2Data(team2Response.data as TeamData);
       }
     } catch (error) {
       console.error('Error fetching team data:', error);
