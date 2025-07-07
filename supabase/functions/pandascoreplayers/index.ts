@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 
 serve(async (_req) => {
-  const PANDA_TOKEN = "kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk";
+  const PANDA_TOKEN = Deno.env.get("PANDA_API_KEY")!;
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
