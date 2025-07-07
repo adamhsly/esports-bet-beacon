@@ -1,0 +1,13 @@
+name: Trigger pandascoreplayers daily at 15:20 UK time
+
+on:
+  schedule:
+    - cron: '20 14 * * *'  # 14:20 UTC == 15:20 UK (BST)
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger pandascoreplayers function
+        run: |
+          curl -X POST https://zcjzeafelunqxmxzznos.functions.supabase.co/pandascoreplayers
