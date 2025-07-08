@@ -8,7 +8,7 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const PANDA_API_KEY = Deno.env.get("PANDASCORE_API_KEY");
+  const PANDA_API_KEY = Deno.env.get("PANDA_SCORE_API_KEY");
 
   if (!PANDA_API_KEY) {
     console.error("Missing Pandascore API key");
