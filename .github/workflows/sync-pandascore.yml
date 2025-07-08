@@ -1,0 +1,23 @@
+name: Sync PandaScore Matches
+
+on:
+  workflow_dispatch:       # Manual trigger
+  schedule:
+    - cron: '0 */6 * * *' # Every 6 hours, adjust as needed
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Supabase Edge Function to sync matches
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          RESPONSE=$(curl -s -X POST \
+            "${SUPABASE_URL}/functions/v1/pandascorematches" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json")
+
+          echo "Response: $RESPONSE"
