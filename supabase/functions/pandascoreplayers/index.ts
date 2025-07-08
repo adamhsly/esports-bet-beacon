@@ -55,12 +55,19 @@ serve(async (req) => {
 
     const { error } = await supabase.from("pandascore_players").upsert(formatted, { onConflict: "id" });
 
-    if (error) {
-      console.error("Supabase insert error", error);
-      return new Response(JSON.stringify({ error: "Database insert failed", details: error }), {
-        status: 500,
-      });
-    }
+if (error) {
+  console.error("Supabase insert error", error.message, error.details, error.hint);
+  return new Response(
+    JSON.stringify({
+      error: "Database insert failed",
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    }),
+    { status: 500 }
+  );
+}
+
 
     return new Response(JSON.stringify({ success: true, inserted: formatted.length }), {
       status: 200,
