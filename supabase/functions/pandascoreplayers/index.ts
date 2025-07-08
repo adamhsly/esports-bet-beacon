@@ -53,7 +53,7 @@ serve(async (req) => {
       videogame_name: player.current_videogame?.name ?? null,
     }));
 
-    const { error } = await supabase.from("players").upsert(formatted, { onConflict: "id" });
+    const { error } = await supabase.from("pandascore_players").upsert(formatted, { onConflict: "id" });
 
     if (error) {
       console.error("Supabase insert error", error);
