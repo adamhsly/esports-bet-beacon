@@ -26,7 +26,7 @@ serve(async () => {
       .eq("id", CHECKPOINT_ID)
       .single();
 
-    if (checkpointError && checkpointError.code !== "PGRST116") { // ignore no row found
+    if (checkpointError && checkpointError.code !== "PGRST116") { // ignore no row found error
       console.error("Error reading checkpoint", checkpointError);
       return new Response(JSON.stringify({ error: "Failed to read checkpoint" }), { status: 500 });
     }
@@ -103,17 +103,16 @@ serve(async () => {
       totalInserted += formatted.length;
       console.log(`Inserted ${formatted.length} players from page ${page}`);
 
-      // Save checkpoint
-      const { error: checkpointUpsertError } = await supabase
+      // Save checkpoint and log full result for debugging
+      const checkpointUpsertResult = await supabase
         .from("sync_checkpoints")
         .upsert({ id: CHECKPOINT_ID, last_page: page }, { onConflict: "id" });
 
-      if (checkpointUpsertError) {
-        console.error("Failed to update checkpoint", checkpointUpsertError);
-        return new Response(
-          JSON.stringify({ error: "Failed to update checkpoint" }),
-          { status: 500 }
-        );
+      if (checkpointUpsertResult.error) {
+        console.error("Failed to update checkpoint", checkpointUpsertResult.error);
+        // Don't abort sync here — just log and continue
+      } else {
+        console.log("Checkpoint upsert result:", checkpointUpsertResult);
       }
 
       page++;
