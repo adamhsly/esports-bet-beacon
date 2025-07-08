@@ -317,11 +317,11 @@ const Index = () => {
         
         setAllMatches(combinedMatches);
         
-        // 🔧 NEW: Initialize date to most recent match date if not already set
-        if (!hasInitializedDate && combinedMatches.length > 0) {
-          const mostRecentDate = getMostRecentMatchDate(combinedMatches);
-          console.log('📅 Setting initial date to most recent match date:', mostRecentDate.toDateString());
-          setSelectedDate(startOfDay(mostRecentDate));
+        // 🔧 NEW: Initialize date to today's date
+        if (!hasInitializedDate) {
+          const today = startOfDay(new Date());
+          console.log('📅 Setting initial date to today:', today.toDateString());
+          setSelectedDate(today);
           setHasInitializedDate(true);
         }
         

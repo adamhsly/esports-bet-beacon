@@ -1189,6 +1189,57 @@ export type Database = {
         }
         Relationships: []
       }
+      pandascore_players_master: {
+        Row: {
+          active: boolean | null
+          age: number | null
+          birthday: string | null
+          current_team: Json | null
+          current_videogame: Json | null
+          first_name: string | null
+          id: number
+          image_url: string | null
+          last_name: string | null
+          modified_at: string | null
+          name: string | null
+          nationality: string | null
+          role: string | null
+          slug: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          age?: number | null
+          birthday?: string | null
+          current_team?: Json | null
+          current_videogame?: Json | null
+          first_name?: string | null
+          id: number
+          image_url?: string | null
+          last_name?: string | null
+          modified_at?: string | null
+          name?: string | null
+          nationality?: string | null
+          role?: string | null
+          slug?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          age?: number | null
+          birthday?: string | null
+          current_team?: Json | null
+          current_videogame?: Json | null
+          first_name?: string | null
+          id?: number
+          image_url?: string | null
+          last_name?: string | null
+          modified_at?: string | null
+          name?: string | null
+          nationality?: string | null
+          role?: string | null
+          slug?: string | null
+        }
+        Relationships: []
+      }
       pandascore_sync_logs: {
         Row: {
           completed_at: string | null
