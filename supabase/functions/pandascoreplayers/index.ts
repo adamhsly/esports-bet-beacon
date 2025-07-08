@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const formatted = data.map((player: any) => ({
+    const formatted = data.map((pandascore_players_master: any) => ({
       id: player.id,
       name: player.name,
       slug: player.slug,
