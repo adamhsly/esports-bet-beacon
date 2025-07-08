@@ -9,19 +9,31 @@ serve(async () => {
   );
 
   const PANDA_API_KEY = Deno.env.get("PANDA_SCORE_API_KEY");
-
   if (!PANDA_API_KEY) {
     console.error("Missing Pandascore API key");
     return new Response(JSON.stringify({ error: "Missing API key" }), { status: 500 });
   }
 
   const PER_PAGE = 100;
-  const RATE_LIMIT_DELAY_MS = 3700; // ~3.7 seconds to respect 1000 req/hr limit
-
-  let page = 1;
-  let totalInserted = 0;
+  const RATE_LIMIT_DELAY_MS = 3700; // ~3.7 seconds for 1000 req/hr limit
+  const CHECKPOINT_ID = "pandascore_players";
 
   try {
+    // Load last checkpoint page
+    const { data: checkpointData, error: checkpointError } = await supabase
+      .from("sync_checkpoints")
+      .select("last_page")
+      .eq("id", CHECKPOINT_ID)
+      .single();
+
+    if (checkpointError && checkpointError.code !== "PGRST116") { // ignore no row found
+      console.error("Error reading checkpoint", checkpointError);
+      return new Response(JSON.stringify({ error: "Failed to read checkpoint" }), { status: 500 });
+    }
+
+    let page = checkpointData?.last_page ? checkpointData.last_page + 1 : 1;
+    let totalInserted = 0;
+
     while (true) {
       console.log(`Fetching page ${page}`);
 
@@ -44,9 +56,8 @@ serve(async () => {
       }
 
       const data = await response.json();
-
       if (data.length === 0) {
-        // No more players to fetch
+        console.log("No more players to fetch, sync complete");
         break;
       }
 
@@ -72,18 +83,18 @@ serve(async () => {
         videogame_name: player.current_videogame?.name ?? null,
       }));
 
-      const { error } = await supabase
+      const { error: upsertError } = await supabase
         .from("pandascore_players_master")
         .upsert(formatted, { onConflict: "id" });
 
-      if (error) {
-        console.error("Supabase insert error", error.message, error.details, error.hint);
+      if (upsertError) {
+        console.error("Supabase insert error", upsertError.message, upsertError.details, upsertError.hint);
         return new Response(
           JSON.stringify({
             error: "Database insert failed",
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
+            message: upsertError.message,
+            details: upsertError.details,
+            hint: upsertError.hint,
           }),
           { status: 500 }
         );
@@ -92,8 +103,20 @@ serve(async () => {
       totalInserted += formatted.length;
       console.log(`Inserted ${formatted.length} players from page ${page}`);
 
+      // Save checkpoint
+      const { error: checkpointUpsertError } = await supabase
+        .from("sync_checkpoints")
+        .upsert({ id: CHECKPOINT_ID, last_page: page }, { onConflict: "id" });
+
+      if (checkpointUpsertError) {
+        console.error("Failed to update checkpoint", checkpointUpsertError);
+        return new Response(
+          JSON.stringify({ error: "Failed to update checkpoint" }),
+          { status: 500 }
+        );
+      }
+
       page++;
-      // Wait to respect rate limit
       await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
     }
 
