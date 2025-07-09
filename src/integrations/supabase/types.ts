@@ -970,66 +970,105 @@ export type Database = {
       pandascore_matches: {
         Row: {
           created_at: string
+          detailed_stats: boolean | null
+          draw: boolean | null
           end_time: string | null
           esport_type: string
+          forfeit: boolean | null
           id: string
           last_synced_at: string
           league_id: string | null
           league_name: string | null
           match_id: string
           match_type: string | null
+          modified_at: string | null
           number_of_games: number | null
+          original_scheduled_at: string | null
           raw_data: Json | null
+          rescheduled: boolean | null
           serie_id: string | null
           serie_name: string | null
+          slug: string | null
           start_time: string
           status: string
+          stream_url_1: string | null
+          stream_url_2: string | null
           teams: Json
           tournament_id: string | null
           tournament_name: string | null
           updated_at: string
+          videogame_id: string | null
+          videogame_name: string | null
+          winner_id: string | null
+          winner_type: string | null
         }
         Insert: {
           created_at?: string
+          detailed_stats?: boolean | null
+          draw?: boolean | null
           end_time?: string | null
           esport_type: string
+          forfeit?: boolean | null
           id?: string
           last_synced_at?: string
           league_id?: string | null
           league_name?: string | null
           match_id: string
           match_type?: string | null
+          modified_at?: string | null
           number_of_games?: number | null
+          original_scheduled_at?: string | null
           raw_data?: Json | null
+          rescheduled?: boolean | null
           serie_id?: string | null
           serie_name?: string | null
+          slug?: string | null
           start_time: string
           status?: string
+          stream_url_1?: string | null
+          stream_url_2?: string | null
           teams?: Json
           tournament_id?: string | null
           tournament_name?: string | null
           updated_at?: string
+          videogame_id?: string | null
+          videogame_name?: string | null
+          winner_id?: string | null
+          winner_type?: string | null
         }
         Update: {
           created_at?: string
+          detailed_stats?: boolean | null
+          draw?: boolean | null
           end_time?: string | null
           esport_type?: string
+          forfeit?: boolean | null
           id?: string
           last_synced_at?: string
           league_id?: string | null
           league_name?: string | null
           match_id?: string
           match_type?: string | null
+          modified_at?: string | null
           number_of_games?: number | null
+          original_scheduled_at?: string | null
           raw_data?: Json | null
+          rescheduled?: boolean | null
           serie_id?: string | null
           serie_name?: string | null
+          slug?: string | null
           start_time?: string
           status?: string
+          stream_url_1?: string | null
+          stream_url_2?: string | null
           teams?: Json
           tournament_id?: string | null
           tournament_name?: string | null
           updated_at?: string
+          videogame_id?: string | null
+          videogame_name?: string | null
+          winner_id?: string | null
+          winner_type?: string | null
         }
         Relationships: []
       }
@@ -1195,6 +1234,12 @@ export type Database = {
           age: number | null
           birthday: string | null
           current_team: Json | null
+          current_team_acronym: string | null
+          current_team_id: number | null
+          current_team_image_url: string | null
+          current_team_location: string | null
+          current_team_name: string | null
+          current_team_slug: string | null
           current_videogame: Json | null
           first_name: string | null
           id: number
@@ -1205,12 +1250,20 @@ export type Database = {
           nationality: string | null
           role: string | null
           slug: string | null
+          videogame_id: number | null
+          videogame_name: string | null
         }
         Insert: {
           active?: boolean | null
           age?: number | null
           birthday?: string | null
           current_team?: Json | null
+          current_team_acronym?: string | null
+          current_team_id?: number | null
+          current_team_image_url?: string | null
+          current_team_location?: string | null
+          current_team_name?: string | null
+          current_team_slug?: string | null
           current_videogame?: Json | null
           first_name?: string | null
           id: number
@@ -1221,12 +1274,20 @@ export type Database = {
           nationality?: string | null
           role?: string | null
           slug?: string | null
+          videogame_id?: number | null
+          videogame_name?: string | null
         }
         Update: {
           active?: boolean | null
           age?: number | null
           birthday?: string | null
           current_team?: Json | null
+          current_team_acronym?: string | null
+          current_team_id?: number | null
+          current_team_image_url?: string | null
+          current_team_location?: string | null
+          current_team_name?: string | null
+          current_team_slug?: string | null
           current_videogame?: Json | null
           first_name?: string | null
           id?: number
@@ -1237,6 +1298,8 @@ export type Database = {
           nationality?: string | null
           role?: string | null
           slug?: string | null
+          videogame_id?: number | null
+          videogame_name?: string | null
         }
         Relationships: []
       }
@@ -1849,6 +1912,21 @@ export type Database = {
           pack_name?: string
           player_list?: Json
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_checkpoints: {
+        Row: {
+          id: string
+          last_page: number
+        }
+        Insert: {
+          id: string
+          last_page: number
+        }
+        Update: {
+          id?: string
+          last_page?: number
         }
         Relationships: []
       }

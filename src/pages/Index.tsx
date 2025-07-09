@@ -5,7 +5,7 @@ import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, Users, Gamepad2, Filter, Clock, Zap, CheckCircle, Calendar } from 'lucide-react';
+import { Loader2, Trophy, Users, Gamepad2, Filter, Clock, Zap, CheckCircle } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
@@ -20,9 +20,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -707,33 +704,6 @@ const Index = () => {
                   onStatusFilterChange={handleStatusFilterChange}
                   onSourceFilterChange={handleSourceFilterChange}
                 />
-                {/* Calendar picker moved next to pills */}
-                {hasInitializedDate && (
-                  <div className="flex items-center">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple h-8 px-3 text-xs transition-all duration-200"
-                          aria-label="Open calendar"
-                        >
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {format(selectedDate, 'MMM dd')}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-theme-gray-dark border-theme-gray-medium" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={handleDateSelect}
-                          initialFocus
-                          className="bg-theme-gray-dark text-white"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                )}
               </div>
             </div>
 
