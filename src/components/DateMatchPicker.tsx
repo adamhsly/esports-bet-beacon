@@ -92,7 +92,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple h-8 w-8 transition-all duration-200 rounded-full"
+              className="bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple h-8 w-8 transition-all duration-200 rounded-xl"
               aria-label="Open calendar"
             >
               <CalendarIcon size={16} />
@@ -128,7 +128,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               data-role="date-btn"
               onClick={() => onDateSelect(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[78px] max-w-[90px] w-[82px] h-14 rounded-md border-2 transition-all relative group
+                flex flex-col items-center justify-center min-w-[78px] max-w-[90px] w-[82px] h-14 rounded-xl border-2 transition-all relative group
                 ${isSelected
                   ? 'border-theme-purple bg-theme-purple/20 text-theme-purple'
                   : 'border-theme-gray-medium bg-theme-gray hover:border-theme-purple/50 text-white'

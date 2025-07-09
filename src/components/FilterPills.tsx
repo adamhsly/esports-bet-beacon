@@ -130,7 +130,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
           <button
             onClick={() => handlePillClick(id)}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-full border transition-all duration-200",
+              "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200",
               "bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple",
               "min-w-[100px] justify-between text-xs",
               openPill === id && "border-theme-purple bg-theme-purple/20"
@@ -151,7 +151,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
           </button>
 
           {openPill === id && (
-            <div className="absolute top-full left-0 mt-2 w-full min-w-max bg-theme-gray-dark border border-theme-gray-medium rounded-lg shadow-lg z-50 overflow-hidden">
+            <div className="absolute top-full left-0 mt-2 w-full min-w-max bg-theme-gray-dark border border-theme-gray-medium rounded-xl shadow-lg z-50 overflow-hidden">
               {getOptions(id).map((option) => (
                 <button
                   key={option.value}
