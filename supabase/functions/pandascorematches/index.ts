@@ -13,7 +13,7 @@ serve(async (req) => {
 
   const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_TOKEN')
   const BASE_URL = 'https://api.pandascore.co/valorant/matches'
-  const PER_PAGE = 50 // max allowed is 100 depending on plan
+  const PER_PAGE = 50
   let page = 1
   let totalFetched = 0
 
@@ -35,8 +35,25 @@ serve(async (req) => {
     if (matches.length === 0) break
 
     for (const match of matches) {
+      const match_id = match.id?.toString()
+
+      // Fetch existing match's modified_at
+      const { data: existing, error: fetchError } = await supabase
+        .from('pandascore_matches')
+        .select('modified_at')
+        .eq('match_id', match_id)
+        .maybeSingle()
+
+      const modifiedRemote = new Date(match.modified_at)
+      const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
+
+      // Skip if not modified
+      if (modifiedLocal && modifiedRemote <= modifiedLocal) {
+        continue
+      }
+
       const mapped = {
-        match_id: match.id?.toString(),
+        match_id,
         esport_type: match.videogame?.name ?? null,
         slug: match.slug,
         draw: match.draw,
@@ -64,9 +81,9 @@ serve(async (req) => {
         serie_name: match.serie?.name ?? null,
         teams: match.opponents ?? [],
         raw_data: match,
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         last_synced_at: new Date().toISOString(),
+        created_at: existing ? undefined : new Date().toISOString(), // preserve original if exists
       }
 
       const { error } = await supabase
@@ -74,14 +91,14 @@ serve(async (req) => {
         .upsert(mapped, { onConflict: ['match_id'] })
 
       if (error) {
-        console.error(`Insert failed for match ${match.id}:`, error)
+        console.error(`Insert failed for match ${match_id}:`, error)
       } else {
         totalFetched++
       }
     }
 
     page++
-    await sleep(1000) // throttle to avoid hitting rate limits (adjust to your tier)
+    await sleep(1000) // adjust based on your rate limit
   }
 
   return new Response(JSON.stringify({ status: 'done', total: totalFetched }), {
