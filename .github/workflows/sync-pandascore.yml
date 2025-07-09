@@ -9,15 +9,19 @@ jobs:
   sync:
     runs-on: ubuntu-latest
 
+    env:  # 👈 Environment variables injected for use in the shell
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_FUNCTION_SECRET: ${{ secrets.SUPABASE_FUNCTION_SECRET }}
+
     steps:
       - name: Call Supabase Edge Function to sync matches
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
+          echo "Calling: ${SUPABASE_URL}/functions/v1/pandascorematches"
+
           RESPONSE=$(curl -s -X POST \
             "${SUPABASE_URL}/functions/v1/pandascorematches" \
-            -H "Authorization: Bearer ${ secrets.SUPABASE_FUNCTION_SECRET }" \
+            -H "Authorization: Bearer ${SUPABASE_FUNCTION_SECRET}" \
             -H "Content-Type: application/json")
 
-          echo "Response: $RESPONSE"
+          echo "Response:"
+          echo "$RESPONSE"
