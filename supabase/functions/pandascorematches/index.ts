@@ -17,7 +17,7 @@ serve(async () => {
   let page = 1
   let totalFetched = 0
 
-  // Diagnostic: check total match count
+  // Optional: log total matches header
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   })
@@ -39,20 +39,28 @@ serve(async () => {
       break
     }
 
-    const matches = await res.json()
+    const text = await res.text()
+    console.log(`Raw response for page ${page}:`, text)
+
+    let matches
+    try {
+      matches = JSON.parse(text)
+    } catch (e) {
+      console.error('Failed to parse JSON:', e)
+      break
+    }
+
     console.log(`Fetched ${matches.length} matches on page ${page}`)
 
     if (matches.length === 0) break
 
     for (const match of matches) {
       const match_id = match.id?.toString()
-
       if (!match_id) {
         console.log('Skipping match with missing ID:', match)
         continue
       }
 
-      // Check if already exists & modified
       const { data: existing, error: fetchError } = await supabase
         .from('pandascore_matches')
         .select('modified_at')
@@ -62,7 +70,8 @@ serve(async () => {
       const modifiedRemote = new Date(match.modified_at)
       const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
 
-      // TEMP: Disable modified_at check for debug
+      // Skip if not modified
+      // Uncomment this block to enable skip logic again after testing
       // if (modifiedLocal && modifiedRemote <= modifiedLocal) {
       //   console.log(`Skipping match ${match_id}: not modified`)
       //   continue
@@ -115,7 +124,7 @@ serve(async () => {
     }
 
     page++
-    await sleep(1000) // adjust to avoid hitting rate limit
+    await sleep(1000)
   }
 
   return new Response(JSON.stringify({ status: 'done', total: totalFetched }), {
