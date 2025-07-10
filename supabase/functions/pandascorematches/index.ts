@@ -11,7 +11,7 @@ serve(async () => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_TOKEN')
+  const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_KEY')
   const BASE_URL = 'https://api.pandascore.co/matches'
   const PER_PAGE = 50
   let page = 1
@@ -19,7 +19,7 @@ serve(async () => {
 
   // Optional: log total matches header
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
-    headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
+    headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   })
   const total = testRes.headers.get('X-Total')
   console.log(`Total matches available: ${total}`)
