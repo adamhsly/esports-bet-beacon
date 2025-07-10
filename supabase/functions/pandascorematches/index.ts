@@ -19,7 +19,7 @@ serve(async () => {
 
   // Optional: log total matches header
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
-    headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+    headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
   })
   const total = testRes.headers.get('X-Total')
   console.log(`Total matches available: ${total}`)
