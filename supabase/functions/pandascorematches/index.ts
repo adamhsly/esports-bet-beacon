@@ -14,7 +14,7 @@ serve(async () => {
   const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_KEY')
   const BASE_URL = 'https://api.pandascore.co/matches'
   const PER_PAGE = 50
-  const PAGE_LIMIT = 5 // max pages to fetch per function run
+  const PAGE_LIMIT = 10 // max pages to fetch per function run
   let totalFetched = 0
 
   // Get last synced page from state table
