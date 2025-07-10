@@ -17,13 +17,31 @@ serve(async () => {
   let page = 1
   let totalFetched = 0
 
-  // Helper to extract player IDs from players array
-  function extractPlayerIds(players: any[]) {
-    if (!players) return []
-    return players.map((p) => p.id).filter(Boolean)
+  const teamCache: Record<string, number[]> = {} // cache to avoid refetching same team
+
+  // Fetch player IDs from team API
+  async function getTeamPlayerIds(teamId: number): Promise<number[]> {
+    if (!teamId) return []
+
+    if (teamCache[teamId]) return teamCache[teamId]
+
+    const res = await fetch(`https://api.pandascore.co/teams/${teamId}`, {
+      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+    })
+
+    if (!res.ok) {
+      console.error(`Failed to fetch team ${teamId}:`, await res.text())
+      return []
+    }
+
+    const data = await res.json()
+    const playerIds = (data.players ?? []).map((p: any) => p.id).filter(Boolean)
+    teamCache[teamId] = playerIds
+    await sleep(300) // avoid rate limit
+    return playerIds
   }
 
-  // Optional: log total matches header
+  // Optional: log total matches
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   })
@@ -32,12 +50,10 @@ serve(async () => {
 
   while (true) {
     const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&sort=modified_at`
-
     console.log(`Fetching page ${page}: ${url}`)
+
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${PANDA_API_TOKEN}`,
-      },
+      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
     })
 
     if (!res.ok) {
@@ -54,20 +70,13 @@ serve(async () => {
       break
     }
 
+    if (!Array.isArray(matches) || matches.length === 0) break
     console.log(`Fetched ${matches.length} matches on page ${page}`)
-    if (matches.length === 0) {
-      console.log('No more matches, stopping.')
-      break
-    }
 
     for (const match of matches) {
       const match_id = match.id?.toString()
-      if (!match_id) {
-        console.log('Skipping match with missing ID:', match)
-        continue
-      }
+      if (!match_id) continue
 
-      // Check existing record for modified_at timestamp
       const { data: existing, error: fetchError } = await supabase
         .from('pandascore_matches')
         .select('modified_at')
@@ -75,21 +84,21 @@ serve(async () => {
         .maybeSingle()
 
       if (fetchError) {
-        console.error(`Error fetching existing match ${match_id}:`, fetchError)
+        console.error(`Error checking match ${match_id}:`, fetchError)
+        continue
       }
 
       const modifiedRemote = new Date(match.modified_at)
       const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
 
-      // Optional: Skip if not modified (uncomment if desired)
-      // if (modifiedLocal && modifiedRemote <= modifiedLocal) {
-      //   console.log(`Skipping match ${match_id}: not modified`)
-      //   continue
-      // }
+      // Optional: skip unmodified matches
+      // if (modifiedLocal && modifiedRemote <= modifiedLocal) continue
 
-      // Extract player IDs for each team (assuming opponents array has players)
-      const teamAPlayerIds = extractPlayerIds(match.opponents?.[0]?.players ?? [])
-      const teamBPlayerIds = extractPlayerIds(match.opponents?.[1]?.players ?? [])
+      const teamAId = match.opponents?.[0]?.opponent?.id
+      const teamBId = match.opponents?.[1]?.opponent?.id
+
+      const teamAPlayerIds = await getTeamPlayerIds(teamAId)
+      const teamBPlayerIds = await getTeamPlayerIds(teamBId)
 
       const mapped = {
         match_id,
@@ -132,7 +141,7 @@ serve(async () => {
         .upsert(mapped, { onConflict: ['match_id'] })
 
       if (error) {
-        console.error(`Insert failed for match ${match_id}:`, error)
+        console.error(`Failed to upsert match ${match_id}:`, error)
       } else {
         console.log(`Upserted match ${match_id}`)
         totalFetched++
@@ -140,7 +149,7 @@ serve(async () => {
     }
 
     page++
-    await sleep(1000) // avoid hitting rate limits
+    await sleep(1000)
   }
 
   return new Response(JSON.stringify({ status: 'done', total: totalFetched }), {
