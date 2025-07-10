@@ -676,22 +676,6 @@ const Index = () => {
         <div className="w-full">
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-gaming flex items-center pl-2 md:pl-4">
-                <Trophy className="h-6 w-6 mr-2 text-blue-400" />
-                <span className="highlight-gradient">Esports</span> Matches
-                <div className="flex gap-2 ml-3">
-                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-                    <Trophy size={12} className="mr-1" />
-                    PRO
-                  </Badge>
-                  <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
-                    <Users size={12} className="mr-1" />
-                    AMATEUR
-                  </Badge>
-                </div>
-              </h2>
-            </div>
             
             {/* FILTER PILLS WITH CALENDAR */}
             <div className="mx-2 md:mx-4">
@@ -729,9 +713,6 @@ const Index = () => {
                 {/* Live Matches for Selected Date - Grouped by League */}
                 {isSelectedDateToday && dateFilteredLiveMatches.length > 0 && (
                   <div className="mb-8">
-                    <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
-                      🔴 Live Now ({dateFilteredLiveMatches.length})
-                    </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
                       ([league, { matches, tournamentId }]) => {
                         const metadata = getTournamentMetadata(matches);
@@ -771,9 +752,6 @@ const Index = () => {
                 {/* Upcoming Matches for Selected Date - Grouped by League */}
                 {dateFilteredUpcomingMatches.length > 0 && (
                   <div className="mb-8">
-                    <h4 className="text-md font-semibold text-blue-400 mb-4 flex items-center">
-                      📅 Upcoming ({dateFilteredUpcomingMatches.length})
-                    </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
                       ([league, { matches, tournamentId }]) => {
                         const metadata = getTournamentMetadata(matches);
@@ -813,9 +791,6 @@ const Index = () => {
                 {/* Finished Matches for Selected Date - Grouped by League */}
                 {dateFilteredFinishedMatches.length > 0 && (
                   <div className="mb-8">
-                    <h4 className="text-md font-semibold text-green-400 mb-4 flex items-center">
-                      ✅ Finished ({dateFilteredFinishedMatches.length})
-                    </h4>
                     {Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(
                       ([league, { matches, tournamentId }]) => {
                         const metadata = getTournamentMetadata(matches);
