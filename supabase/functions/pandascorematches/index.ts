@@ -14,44 +14,37 @@ serve(async () => {
   const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_KEY')
   const BASE_URL = 'https://api.pandascore.co/matches'
   const PER_PAGE = 50
-  let page = 1
-  let totalFetched = 0
 
-  const teamCache: Record<string, number[]> = {} // cache to avoid refetching same team
+  // Get last synced page from sync table
+  const { data: syncState, error: syncStateError } = await supabase
+    .from('pandascore_sync_state')
+    .select('last_page')
+    .eq('id', 'matches')
+    .maybeSingle()
 
-  // Fetch player IDs from team API
-  async function getTeamPlayerIds(teamId: number): Promise<number[]> {
-    if (!teamId) return []
-
-    if (teamCache[teamId]) return teamCache[teamId]
-
-    const res = await fetch(`https://api.pandascore.co/teams/${teamId}`, {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    })
-
-    if (!res.ok) {
-      console.error(`Failed to fetch team ${teamId}:`, await res.text())
-      return []
-    }
-
-    const data = await res.json()
-    const playerIds = (data.players ?? []).map((p: any) => p.id).filter(Boolean)
-    teamCache[teamId] = playerIds
-    await sleep(300) // avoid rate limit
-    return playerIds
+  if (syncStateError) {
+    console.error('Failed to fetch sync state:', syncStateError)
   }
 
-  // Optional: log total matches
+  let page = (syncState?.last_page ?? 0) + 1
+  let totalFetched = 0
+
+  // Optional: Log total matches header
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   })
   const total = testRes.headers.get('X-Total')
   console.log(`Total matches available: ${total}`)
 
+  function extractPlayerIds(players: any[]) {
+    if (!players) return []
+    return players.map((p) => p.id).filter(Boolean)
+  }
+
   while (true) {
     const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&sort=modified_at`
-    console.log(`Fetching page ${page}: ${url}`)
 
+    console.log(`Fetching page ${page}: ${url}`)
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
     })
@@ -70,8 +63,7 @@ serve(async () => {
       break
     }
 
-    if (!Array.isArray(matches) || matches.length === 0) break
-    console.log(`Fetched ${matches.length} matches on page ${page}`)
+    if (matches.length === 0) break
 
     for (const match of matches) {
       const match_id = match.id?.toString()
@@ -84,21 +76,15 @@ serve(async () => {
         .maybeSingle()
 
       if (fetchError) {
-        console.error(`Error checking match ${match_id}:`, fetchError)
-        continue
+        console.error(`Error fetching existing match ${match_id}:`, fetchError)
       }
 
       const modifiedRemote = new Date(match.modified_at)
       const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
 
-      // Optional: skip unmodified matches
-      // if (modifiedLocal && modifiedRemote <= modifiedLocal) continue
-
-      const teamAId = match.opponents?.[0]?.opponent?.id
-      const teamBId = match.opponents?.[1]?.opponent?.id
-
-      const teamAPlayerIds = await getTeamPlayerIds(teamAId)
-      const teamBPlayerIds = await getTeamPlayerIds(teamBId)
+      // Extract player IDs for each team
+      const teamAPlayerIds = extractPlayerIds(match.opponents?.[0]?.players ?? [])
+      const teamBPlayerIds = extractPlayerIds(match.opponents?.[1]?.players ?? [])
 
       const mapped = {
         match_id,
@@ -141,11 +127,24 @@ serve(async () => {
         .upsert(mapped, { onConflict: ['match_id'] })
 
       if (error) {
-        console.error(`Failed to upsert match ${match_id}:`, error)
+        console.error(`Insert failed for match ${match_id}:`, error)
       } else {
         console.log(`Upserted match ${match_id}`)
         totalFetched++
       }
+    }
+
+    // Update sync state after each successful page
+    const { error: syncUpdateError } = await supabase
+      .from('pandascore_sync_state')
+      .upsert({
+        id: 'matches',
+        last_page: page,
+        last_synced_at: new Date().toISOString(),
+      }, { onConflict: ['id'] })
+
+    if (syncUpdateError) {
+      console.error(`Failed to update sync state for page ${page}:`, syncUpdateError)
     }
 
     page++
