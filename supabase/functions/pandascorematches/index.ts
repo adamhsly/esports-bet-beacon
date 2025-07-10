@@ -12,7 +12,7 @@ serve(async (req) => {
   )
 
   const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_TOKEN')
-  const BASE_URL = 'https://api.pandascore.co/valorant/matches'
+  const BASE_URL = 'https://api.pandascore.co/matches'
   const PER_PAGE = 50
   let page = 1
   let totalFetched = 0
