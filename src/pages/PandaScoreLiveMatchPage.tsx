@@ -98,7 +98,7 @@ const PandaScoreLiveMatchPage = () => {
       <SearchableNavbar />
       
       <div className="flex-grow container mx-auto px-4 py-8">
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Alert className="bg-red-500/10 border-red-500/30">
             <Radio className="h-4 w-4 text-red-400 animate-pulse" />
             <AlertDescription className="text-red-400 font-semibold">
@@ -111,7 +111,7 @@ const PandaScoreLiveMatchPage = () => {
           <PandaScoreLiveScorecard match={matchDetails} />
           
           <Tabs defaultValue="live" className="w-full">
-            <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+            <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
               <TabsTrigger 
                 value="live" 
                 className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
@@ -139,8 +139,8 @@ const PandaScoreLiveMatchPage = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="live" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="live" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
                   <h3 className="text-xl font-bold text-white mb-4">Match Information</h3>
                   <div className="space-y-3">

@@ -149,7 +149,7 @@ const PandaScoreUpcomingMatchPage = () => {
       <SearchableNavbar />
 
       <div className={`flex-grow container mx-auto ${isMobile ? 'px-1 py-2' : 'px-4 py-8'}`}>
-        <div className={`space-y-${isMobile ? '2' : '8'}`}>
+        <div className={`space-y-${isMobile ? '4' : '8'}`}>
           {error && (
             <Alert className="bg-yellow-500/10 border-yellow-500/30">
               <AlertTriangle className="h-4 w-4" />
@@ -190,7 +190,7 @@ const PandaScoreUpcomingMatchPage = () => {
 
           {/* --- The rest of the content --- */}
           {isMobile ? (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <PandaScorePreMatchStats
                 teams={matchDetails.teams}
                 tournament={matchDetails.tournament}
@@ -220,7 +220,7 @@ const PandaScoreUpcomingMatchPage = () => {
             </div>
           ) : (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
                 <TabsTrigger
                   value="overview"
                   className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
@@ -253,7 +253,7 @@ const PandaScoreUpcomingMatchPage = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-6">
+              <TabsContent value="overview" className="space-y-8">
                 <PandaScorePreMatchStats
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
@@ -285,7 +285,7 @@ const PandaScoreUpcomingMatchPage = () => {
               </TabsContent>
 
               <TabsContent value="voting">
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <h3 className="text-xl font-bold text-white">Community Predictions</h3>
                   <MatchVotingWidget
                     matchId={matchDetails.id}

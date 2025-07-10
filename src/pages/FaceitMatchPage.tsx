@@ -150,7 +150,7 @@ const FaceitMatchPage = () => {
   const renderMainContent = () => {
     if (isMobile) {
       return (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {/* Live scorecard for live matches */}
           {headerType === 'live' && (
             <FaceitLiveScorecard match={matchDetails} />
@@ -195,7 +195,7 @@ const FaceitMatchPage = () => {
         case 'live':
           return (
             <Tabs defaultValue="live" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
                 <TabsTrigger value="live" className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4">
                   Live Match
                 </TabsTrigger>
@@ -207,7 +207,7 @@ const FaceitMatchPage = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="live" className="space-y-6">
+              <TabsContent value="live" className="space-y-8">
                 <FaceitLiveScorecard match={matchDetails} />
               </TabsContent>
               
@@ -228,7 +228,7 @@ const FaceitMatchPage = () => {
         case 'finished':
           return (
             <Tabs defaultValue="results" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
                 <TabsTrigger value="results" className="data-[state=active]:bg-green-500 data-[state=active]:text-white py-2 px-4">
                   Match Results
                 </TabsTrigger>
@@ -240,7 +240,7 @@ const FaceitMatchPage = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="results" className="space-y-6">
+              <TabsContent value="results" className="space-y-8">
                 <FaceitPreMatchStats 
                   teams={matchDetails.teams}
                   faceitData={matchDetails.faceitData}
@@ -264,7 +264,7 @@ const FaceitMatchPage = () => {
         default:
           return (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-6">
+              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4">
                   Overview
                 </TabsTrigger>
@@ -279,7 +279,7 @@ const FaceitMatchPage = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="overview" className="space-y-6">
+              <TabsContent value="overview" className="space-y-8">
                 <FaceitPreMatchStats 
                   teams={matchDetails.teams}
                   faceitData={matchDetails.faceitData}
@@ -298,7 +298,7 @@ const FaceitMatchPage = () => {
               </TabsContent>
               
               <TabsContent value="voting">
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <h3 className="text-xl font-bold text-white">Community Predictions</h3>
                   <MatchVotingWidget 
                     matchId={matchDetails.id}
@@ -331,7 +331,7 @@ const FaceitMatchPage = () => {
 
       <div className={`flex-grow w-full`}>
         <div className={`max-w-5xl mx-auto w-full px-2 md:px-8 ${isMobile ? 'py-2' : 'py-8'}`}>
-          <div className={`space-y-${isMobile ? '2' : '8'}`}>
+          <div className={`space-y-${isMobile ? '4' : '8'}`}>
             {/* Error Alert if there were issues */}
             {error && (
               <div className="px-2 md:px-8">

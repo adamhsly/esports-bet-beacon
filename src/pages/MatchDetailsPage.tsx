@@ -225,38 +225,39 @@ const MatchDetailsPage = () => {
       {/* Main content area with responsive padding */}
       <div className="flex-grow w-full">
         <div className="max-w-5xl mx-auto w-full px-2 md:px-8 py-8">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="h-10 w-10 animate-spin text-theme-purple" />
-            </div>
-          ) : matchDetails ? (
-            <>
-              <div className="mb-8 px-2 md:px-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <h1 className="text-3xl font-bold font-gaming">
-                    {matchDetails.teams && matchDetails.teams.length > 0
-                      ? `${matchDetails.teams[0].name} vs ${matchDetails.teams[1].name}`
-                      : 'Match Details'}
-                  </h1>
-                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-                    <Trophy size={16} className="mr-1" />
-                    Professional
-                  </Badge>
-                </div>
-                <div className="flex items-center text-gray-400 flex-wrap gap-4">
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    <span>{new Date(matchDetails.startTime).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Trophy className="h-4 w-4 mr-2" />
-                    <span>{matchDetails.tournament}</span>
-                  </div>
-                </div>
+          <div className="space-y-8">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-theme-purple" />
               </div>
+            ) : matchDetails ? (
+              <>
+                <div className="px-2 md:px-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h1 className="text-3xl font-bold font-gaming">
+                      {matchDetails.teams && matchDetails.teams.length > 0
+                        ? `${matchDetails.teams[0].name} vs ${matchDetails.teams[1].name}`
+                        : 'Match Details'}
+                    </h1>
+                    <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+                      <Trophy size={16} className="mr-1" />
+                      Professional
+                    </Badge>
+                  </div>
+                  <div className="flex items-center text-gray-400 flex-wrap gap-4">
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>{new Date(matchDetails.startTime).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Trophy className="h-4 w-4 mr-2" />
+                      <span>{matchDetails.tournament}</span>
+                    </div>
+                  </div>
+                </div>
               
               {/* Scoreboard Section */}
-              <div className="mb-8 px-2 md:px-8">
+              <div className="px-2 md:px-8">
                 <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
                   <div className="flex flex-col md:flex-row items-center justify-between">
                     {/* Team 1 */}
@@ -308,7 +309,7 @@ const MatchDetailsPage = () => {
               
               {/* Twitch Stream Embed - Only for professional matches */}
               {matchDetails.twitchChannel && (
-                <div className="mb-8 bg-theme-gray-dark border border-theme-gray-medium rounded-lg overflow-hidden px-2 md:px-8">
+                <div className="bg-theme-gray-dark border border-theme-gray-medium rounded-lg overflow-hidden px-2 md:px-8">
                   <div className="p-4 border-b border-theme-gray-medium">
                     <h2 className="text-lg font-bold text-white flex items-center">
                       <span className="h-2 w-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
@@ -329,9 +330,9 @@ const MatchDetailsPage = () => {
               )}
               
               {/* Match Information Tabs */}
-              <div className="mb-8 px-2 md:px-8">
-                <Tabs defaultValue="vote" className="mb-8">
-                  <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-4">
+              <div className="px-2 md:px-8">
+                <Tabs defaultValue="vote">
+                  <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
                     <TabsTrigger value="vote" className="data-[state=active]:bg-theme-purple data-[state=active]:text-white py-2 px-4">
                       Community Vote
                     </TabsTrigger>
@@ -470,11 +471,12 @@ const MatchDetailsPage = () => {
                 </div>
               )}
             </>
-          ) : (
-            <div className="text-center py-20">
-              <p className="text-xl text-gray-400">Match details not found.</p>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-20">
+                <p className="text-xl text-gray-400">Match details not found.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
