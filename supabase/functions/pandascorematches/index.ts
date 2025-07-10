@@ -17,7 +17,7 @@ serve(async () => {
   let page = 1
   let totalFetched = 0
 
-  // Helper to extract player IDs from opponents' players array
+  // Helper to extract player IDs from players array
   function extractPlayerIds(players: any[]) {
     if (!players) return []
     return players.map((p) => p.id).filter(Boolean)
@@ -55,7 +55,10 @@ serve(async () => {
     }
 
     console.log(`Fetched ${matches.length} matches on page ${page}`)
-    if (matches.length === 0) break
+    if (matches.length === 0) {
+      console.log('No more matches, stopping.')
+      break
+    }
 
     for (const match of matches) {
       const match_id = match.id?.toString()
@@ -84,7 +87,7 @@ serve(async () => {
       //   continue
       // }
 
-      // Extract player IDs for each team (assumes opponents[0] = team A, opponents[1] = team B)
+      // Extract player IDs for each team (assuming opponents array has players)
       const teamAPlayerIds = extractPlayerIds(match.opponents?.[0]?.players ?? [])
       const teamBPlayerIds = extractPlayerIds(match.opponents?.[1]?.players ?? [])
 
