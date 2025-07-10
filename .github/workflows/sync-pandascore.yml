@@ -3,7 +3,7 @@ name: Sync PandaScore Matches
 on:
   workflow_dispatch:       # Manual trigger
   schedule:
-    - cron: '0 */6 * * *' # Every 6 hours, adjust as needed
+    - cron: '*/10 * * * *' # Every 6 hours, adjust as needed
 
 jobs:
   sync:
