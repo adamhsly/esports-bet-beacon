@@ -5,7 +5,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-serve(async (req) => {
+serve(async () => {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -17,9 +17,17 @@ serve(async (req) => {
   let page = 1
   let totalFetched = 0
 
-  while (true) {
-    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}`
+  // Diagnostic: check total match count
+  const testRes = await fetch(`${BASE_URL}?per_page=1`, {
+    headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+  })
+  const total = testRes.headers.get('X-Total')
+  console.log(`Total matches available: ${total}`)
 
+  while (true) {
+    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&sort=modified_at`
+
+    console.log(`Fetching page ${page}: ${url}`)
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${PANDA_API_TOKEN}`,
@@ -32,12 +40,19 @@ serve(async (req) => {
     }
 
     const matches = await res.json()
+    console.log(`Fetched ${matches.length} matches on page ${page}`)
+
     if (matches.length === 0) break
 
     for (const match of matches) {
       const match_id = match.id?.toString()
 
-      // Fetch existing match's modified_at
+      if (!match_id) {
+        console.log('Skipping match with missing ID:', match)
+        continue
+      }
+
+      // Check if already exists & modified
       const { data: existing, error: fetchError } = await supabase
         .from('pandascore_matches')
         .select('modified_at')
@@ -47,10 +62,11 @@ serve(async (req) => {
       const modifiedRemote = new Date(match.modified_at)
       const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
 
-      // Skip if not modified
-      if (modifiedLocal && modifiedRemote <= modifiedLocal) {
-        continue
-      }
+      // TEMP: Disable modified_at check for debug
+      // if (modifiedLocal && modifiedRemote <= modifiedLocal) {
+      //   console.log(`Skipping match ${match_id}: not modified`)
+      //   continue
+      // }
 
       const mapped = {
         match_id,
@@ -83,7 +99,7 @@ serve(async (req) => {
         raw_data: match,
         updated_at: new Date().toISOString(),
         last_synced_at: new Date().toISOString(),
-        created_at: existing ? undefined : new Date().toISOString(), // preserve original if exists
+        created_at: existing ? undefined : new Date().toISOString(),
       }
 
       const { error } = await supabase
@@ -93,12 +109,13 @@ serve(async (req) => {
       if (error) {
         console.error(`Insert failed for match ${match_id}:`, error)
       } else {
+        console.log(`Upserted match ${match_id}`)
         totalFetched++
       }
     }
 
     page++
-    await sleep(1000) // adjust based on your rate limit
+    await sleep(1000) // adjust to avoid hitting rate limit
   }
 
   return new Response(JSON.stringify({ status: 'done', total: totalFetched }), {
