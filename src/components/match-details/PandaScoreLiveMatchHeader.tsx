@@ -82,7 +82,7 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
   console.log('🎯 Live Match Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className="bg-theme-gray-dark border-theme-gray-medium overflow-hidden border-l-4 border-l-red-500">
+    <Card className="mt-6 bg-theme-gray-dark border-theme-gray-medium overflow-hidden border-l-4 border-l-red-500">
       <div className="p-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex flex-col gap-2">

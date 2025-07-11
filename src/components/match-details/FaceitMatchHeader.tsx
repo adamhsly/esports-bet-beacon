@@ -48,7 +48,7 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
   const { date, time } = formatDateTime(match.startTime);
 
   return (
-    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
+    <Card className="mt-6 bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
       <div className="p-6">
         {/* Top Section - Tournament and Badges */}
         <div className="flex justify-between items-center mb-4">
