@@ -326,10 +326,31 @@ export async function fetchSupabasePandaScoreMatches(esportType: string): Promis
   try {
     console.log(`📥 Fetching PandaScore matches for ${esportType} from Supabase...`);
     
-    // Get matches from last 7 days to next 30 days to avoid loading all 215k+ matches
+    // STEP 1: Add detailed logging for debugging
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     
+    console.log(`🔍 DEBUG: Query parameters for ${esportType}:`);
+    console.log(`  - Start date (7 days ago): ${sevenDaysAgo}`);
+    console.log(`  - End date (30 days from now): ${thirtyDaysFromNow}`);
+    console.log(`  - Esport type: ${esportType}`);
+    
+    // STEP 2: Start with simple query first to test basic functionality
+    console.log(`🔍 DEBUG: Testing basic query without date filters...`);
+    const { data: testMatches, error: testError } = await supabase
+      .from('pandascore_matches')
+      .select('count(*)')
+      .eq('esport_type', esportType);
+    
+    if (testError) {
+      console.error(`❌ Basic test query failed:`, testError);
+      return [];
+    }
+    
+    console.log(`🔍 DEBUG: Basic query result for ${esportType}:`, testMatches);
+    
+    // STEP 3: Test with date filters
+    console.log(`🔍 DEBUG: Testing with date filters...`);
     const { data: matches, error } = await supabase
       .from('pandascore_matches')
       .select('*')
@@ -339,16 +360,32 @@ export async function fetchSupabasePandaScoreMatches(esportType: string): Promis
       .order('start_time', { ascending: true });
 
     if (error) {
-      console.error('❌ Error fetching PandaScore matches:', error);
-      throw error;
-    }
-
-    if (!matches || matches.length === 0) {
-      console.log(`⚠️ No PandaScore matches found for ${esportType}`);
+      console.error(`❌ Error fetching PandaScore matches for ${esportType}:`, error);
+      console.error(`❌ Full error details:`, JSON.stringify(error, null, 2));
       return [];
     }
 
-    console.log(`✅ Retrieved ${matches.length} PandaScore matches for ${esportType}`);
+    if (!matches || matches.length === 0) {
+      console.log(`⚠️ No PandaScore matches found for ${esportType} in date range`);
+      console.log('🔍 DEBUG: Query details:', {
+        esportType,
+        sevenDaysAgo,
+        thirtyDaysFromNow,
+        queryExecuted: true
+      });
+      return [];
+    }
+
+    console.log(`✅ Retrieved ${matches.length} PandaScore matches for ${esportType} in date range`);
+    console.log('🔍 DEBUG: Sample match data:', {
+      firstMatch: matches[0],
+      matchTypes: [...new Set(matches.map(m => m.esport_type))],
+      matchStatuses: [...new Set(matches.map(m => m.status))],
+      dateRange: {
+        earliest: Math.min(...matches.map(m => new Date(m.start_time).getTime())),
+        latest: Math.max(...matches.map(m => new Date(m.start_time).getTime()))
+      }
+    });
     
     // Transform and potentially fetch missing roster data
     const transformedMatches = await Promise.all(

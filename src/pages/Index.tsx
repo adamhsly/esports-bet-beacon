@@ -241,19 +241,53 @@ const Index = () => {
     console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
     // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
+    console.log('🔍 DEBUG: Starting PandaScore query with detailed logging...');
+    
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     
+    console.log('🔍 DEBUG: Date range for PandaScore query:');
+    console.log(`  - Seven days ago: ${sevenDaysAgo}`);
+    console.log(`  - Thirty days from now: ${thirtyDaysFromNow}`);
+    
+    // STEP 1: Test basic query first
+    console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
+    const { data: testPandaScore, error: testPandaError } = await supabase
+      .from('pandascore_matches')
+      .select('count(*), esport_type')
+      .limit(5);
+    
+    if (testPandaError) {
+      console.error('❌ Basic PandaScore test query failed:', testPandaError);
+    } else {
+      console.log('🔍 DEBUG: Basic PandaScore query result:', testPandaScore);
+    }
+    
+    // STEP 2: Test with simplified date filter only (no status filter)
+    console.log('🔍 DEBUG: Testing PandaScore query with date filter only...');
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
       .gte('start_time', sevenDaysAgo)
       .lte('start_time', thirtyDaysFromNow)
-      .in('status', ['not_started', 'scheduled', 'running', 'finished'])
-      .order('start_time', { ascending: false }); // Order by most recent first
+      .order('start_time', { ascending: false })
+      .limit(100); // Add limit to prevent huge queries
 
     if (pandascoreError) {
-      console.error('Error loading PandaScore matches:', pandascoreError);
+      console.error('❌ Error loading PandaScore matches:', pandascoreError);
+      console.error('❌ Full PandaScore error details:', JSON.stringify(pandascoreError, null, 2));
+    } else {
+      console.log(`✅ Successfully fetched ${pandascoreMatches?.length || 0} PandaScore matches`);
+      
+      // STEP 3: Log sample of the data to verify structure
+      if (pandascoreMatches && pandascoreMatches.length > 0) {
+        console.log('🔍 DEBUG: Sample PandaScore match structure:', {
+          sampleMatch: pandascoreMatches[0],
+          totalMatches: pandascoreMatches.length,
+          esportTypes: [...new Set(pandascoreMatches.map(m => m.esport_type))],
+          statuses: [...new Set(pandascoreMatches.map(m => m.status))]
+        });
+      }
     }
 
     console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (all matches, no limit)`);
