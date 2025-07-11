@@ -113,12 +113,22 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
           <User className="h-5 w-5 text-gray-400" />
         </div>
         <div className="flex-1">
-          <button
-            onClick={() => handlePlayerClick(player.player_id)}
-            className="text-white font-semibold hover:text-blue-400 transition-colors cursor-pointer"
-          >
-            {player.nickname || 'Unknown Player'}
-          </button>
+          <div className="flex items-center gap-2">
+            <img 
+              src={player.image_url || '/placeholder.svg'} 
+              alt={player.nickname}
+              className="w-6 h-6 rounded-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+            <button
+              onClick={() => handlePlayerClick(player.player_id)}
+              className="text-white font-semibold hover:text-blue-400 transition-colors cursor-pointer"
+            >
+              {player.nickname || 'Unknown Player'}
+            </button>
+          </div>
           <div className="flex items-center gap-2 mt-1">
             {player.position && (
               <Badge 

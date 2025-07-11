@@ -53,65 +53,93 @@ const getPandaScoreApiKey = (): string => {
   return localStorage.getItem('esports_pandascore_api_key') || "kYJELuXydUWktzw8lPtGygWUKp7K6nB8pM2k8-sITtzcqLG4OHk";
 };
 
-// Fetch tournament rosters from PandaScore API
-const fetchTournamentRosters = async (tournamentId: string): Promise<any> => {
-  console.log(`🏆 Fetching PandaScore tournament rosters for tournament ${tournamentId}...`);
+// Fetch players from pandascore_players_master table by IDs
+const fetchPlayersByIds = async (playerIds: number[]): Promise<any[]> => {
+  if (!playerIds || playerIds.length === 0) {
+    return [];
+  }
+  
+  console.log(`👥 Fetching ${playerIds.length} players from pandascore_players_master:`, playerIds);
   
   try {
-    const apiKey = getPandaScoreApiKey();
-    const response = await fetch(`https://api.pandascore.co/tournaments/${tournamentId}/rosters`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log(`⚠️ Tournament ${tournamentId} rosters not found (404) - tournament may not have roster data`);
-        return null;
-      }
-      console.error(`❌ Failed to fetch tournament rosters: ${response.status} - ${response.statusText}`);
-      return null;
-    }
-
-    const rostersResponse = await response.json();
-    console.log(`✅ Successfully fetched rosters for tournament ${tournamentId}:`, rostersResponse);
+    const { data: players, error } = await supabase
+      .from('pandascore_players_master')
+      .select('*')
+      .in('id', playerIds);
     
-    return rostersResponse;
+    if (error) {
+      console.error('❌ Error fetching players from pandascore_players_master:', error);
+      return [];
+    }
+    
+    if (!players || players.length === 0) {
+      console.log(`⚠️ No players found for IDs: ${playerIds.join(', ')}`);
+      return [];
+    }
+    
+    console.log(`✅ Retrieved ${players.length} players from pandascore_players_master`);
+    return players;
   } catch (error) {
-    console.error(`❌ Error fetching tournament rosters for ${tournamentId}:`, error);
-    return null;
+    console.error('❌ Error in fetchPlayersByIds:', error);
+    return [];
   }
 };
 
-// Extract player data from tournament rosters for a specific team
-const extractPlayersFromRosters = (rostersResponse: any, teamId: string, esportType: string): any[] => {
-  if (!rostersResponse || !rostersResponse.rosters || !Array.isArray(rostersResponse.rosters)) {
-    console.log(`⚠️ Invalid rosters response structure`);
-    return [];
-  }
+// Transform pandascore_players_master data to component format
+const transformPlayerData = (player: any, esportType: string): any => {
+  return {
+    nickname: player.name || 'Unknown Player',
+    player_id: player.id?.toString() || '',
+    position: mapPlayerPosition(esportType, player.role || 'Player'),
+    role: player.role || 'Player',
+    first_name: player.first_name,
+    last_name: player.last_name,
+    nationality: player.nationality,
+    age: player.age,
+    image_url: player.image_url,
+    current_team_name: player.current_team_name,
+    current_team_acronym: player.current_team_acronym
+  };
+};
 
-  for (const roster of rostersResponse.rosters) {
-    if (!roster || typeof roster !== 'object') {
-      continue;
-    }
-    
-    if (roster.id?.toString() === teamId.toString()) {
-      const players = roster.players || [];
-      console.log(`🎯 Found ${players.length} players for team ${teamId} in tournament rosters`);
-      
-      return players.map((player: any) => ({
-        nickname: player.name || 'Unknown Player',
-        player_id: player.id?.toString() || '',
-        position: mapPlayerPosition(esportType, player.role || 'Player'),
-        role: player.role || 'Player'
-      }));
-    }
-  }
+// Fetch roster data using team_a_player_ids and team_b_player_ids from match
+const fetchRosterDataFromPlayerIds = async (match: any): Promise<any> => {
+  console.log(`🔍 Fetching roster data using player IDs for match ${match.match_id}...`);
   
-  console.log(`⚠️ Team ${teamId} not found in tournament rosters`);
-  return [];
+  try {
+    const teamAPlayerIds = match.team_a_player_ids || [];
+    const teamBPlayerIds = match.team_b_player_ids || [];
+    
+    console.log(`👥 Team A player IDs:`, teamAPlayerIds);
+    console.log(`👥 Team B player IDs:`, teamBPlayerIds);
+    
+    // Fetch players for both teams
+    const [teamAPlayers, teamBPlayers] = await Promise.all([
+      fetchPlayersByIds(teamAPlayerIds),
+      fetchPlayersByIds(teamBPlayerIds)
+    ]);
+    
+    // Transform player data for components
+    const transformedTeamAPlayers = teamAPlayers.map(player => 
+      transformPlayerData(player, match.esport_type)
+    );
+    const transformedTeamBPlayers = teamBPlayers.map(player => 
+      transformPlayerData(player, match.esport_type)
+    );
+    
+    console.log(`✅ Retrieved ${transformedTeamAPlayers.length} players for Team A, ${transformedTeamBPlayers.length} players for Team B`);
+    
+    return {
+      teamAPlayers: transformedTeamAPlayers,
+      teamBPlayers: transformedTeamBPlayers
+    };
+  } catch (error) {
+    console.error(`❌ Error fetching roster data for match ${match.match_id}:`, error);
+    return {
+      teamAPlayers: [],
+      teamBPlayers: []
+    };
+  }
 };
 
 // Map player roles to position names based on game type
@@ -168,98 +196,16 @@ const mapPlayerPosition = (esportType: string, role: string): string => {
   return mapping[role.toLowerCase()] || 'Player';
 };
 
-// Fetch missing roster data from PandaScore API
-const fetchMissingRosterData = async (match: any): Promise<any> => {
-  console.log(`🔍 Checking if roster data needs to be fetched for match ${match.match_id}...`);
-  
-  const team1HasPlayers = match.teams?.[0]?.players?.length > 0;
-  const team2HasPlayers = match.teams?.[1]?.players?.length > 0;
-  
-  // If both teams already have player data, no need to fetch
-  if (team1HasPlayers && team2HasPlayers) {
-    console.log(`✅ Match ${match.match_id} already has complete roster data`);
-    return match;
-  }
-  
-  // Only fetch if we have tournament ID
-  if (!match.tournament_id) {
-    console.log(`⚠️ Match ${match.match_id} has no tournament ID, cannot fetch roster data`);
-    return match;
-  }
-  
-  console.log(`📥 Fetching missing roster data for match ${match.match_id} from tournament ${match.tournament_id}...`);
-  
-  try {
-    const rostersResponse = await fetchTournamentRosters(match.tournament_id);
-    if (!rostersResponse) {
-      console.log(`⚠️ Could not fetch rosters for tournament ${match.tournament_id}`);
-      return match;
-    }
-    
-    const updatedMatch = { ...match, teams: [...match.teams] };
-    
-    // Update team1 players if missing
-    if (!team1HasPlayers && match.teams?.[0]?.id) {
-      const team1Players = extractPlayersFromRosters(rostersResponse, match.teams[0].id, match.esport_type);
-      if (team1Players.length > 0) {
-        updatedMatch.teams[0] = { ...updatedMatch.teams[0], players: team1Players };
-        console.log(`✅ Added ${team1Players.length} players to team1 (${match.teams[0].name})`);
-      }
-    }
-    
-    // Update team2 players if missing
-    if (!team2HasPlayers && match.teams?.[1]?.id) {
-      const team2Players = extractPlayersFromRosters(rostersResponse, match.teams[1].id, match.esport_type);
-      if (team2Players.length > 0) {
-        updatedMatch.teams[1] = { ...updatedMatch.teams[1], players: team2Players };
-        console.log(`✅ Added ${team2Players.length} players to team2 (${match.teams[1].name})`);
-      }
-    }
-    
-    return updatedMatch;
-  } catch (error) {
-    console.error(`❌ Error fetching roster data for match ${match.match_id}:`, error);
-    return match;
-  }
-};
-
-// Helper function to extract team data from both legacy and new formats
-const extractTeamData = (teams: any, index: number) => {
-  if (!teams) return {};
-  
-  // New array format: [{"type": "Team", "opponent": {...}}, ...]
-  if (Array.isArray(teams)) {
-    const teamEntry = teams[index];
-    if (teamEntry?.opponent) {
-      return {
-        id: teamEntry.opponent.id?.toString(),
-        name: teamEntry.opponent.name,
-        logo: teamEntry.opponent.image_url,
-        image_url: teamEntry.opponent.image_url,
-        acronym: teamEntry.opponent.acronym,
-        slug: teamEntry.opponent.slug,
-        location: teamEntry.opponent.location
-      };
-    }
-    return {};
-  }
-  
-  // Legacy object format: {team1: {...}, team2: {...}}
-  const teamKey = index === 0 ? 'team1' : 'team2';
-  return teams[teamKey] || {};
-};
-
-// Transform database match data to component format
-const transformMatchData = (dbMatch: any): PandaScoreMatch => {
+// Transform database match data to component format with roster data from player IDs
+const transformMatchData = async (dbMatch: any): Promise<PandaScoreMatch> => {
   console.log(`🔄 Transforming match data for ${dbMatch.match_id}:`, dbMatch);
   
   // Extract team data using helper function (supports both formats)
   const team1 = extractTeamData(dbMatch.teams, 0);
   const team2 = extractTeamData(dbMatch.teams, 1);
   
-  // Use roster data as players if players array is empty
-  const team1Players = team1.players || team1.roster || [];
-  const team2Players = team2.players || team2.roster || [];
+  // Fetch roster data using player IDs from the match
+  const rosterData = await fetchRosterDataFromPlayerIds(dbMatch);
   
   const transformedMatch: PandaScoreMatch = {
     id: `pandascore_${dbMatch.match_id}`,
@@ -272,24 +218,14 @@ const transformMatchData = (dbMatch: any): PandaScoreMatch => {
         name: team1.name || 'Team 1',
         logo: team1.logo || team1.image_url,
         acronym: team1.acronym,
-        players: team1Players.map((player: any) => ({
-          nickname: player.nickname || player.name || 'Unknown Player',
-          player_id: player.player_id || player.id?.toString() || '',
-          position: player.position || mapPlayerPosition(dbMatch.esport_type, player.role || 'Player'),
-          role: player.role || 'Player'
-        }))
+        players: rosterData.teamAPlayers
       },
       {
         id: team2.id,
         name: team2.name || 'Team 2', 
         logo: team2.logo || team2.image_url,
         acronym: team2.acronym,
-        players: team2Players.map((player: any) => ({
-          nickname: player.nickname || player.name || 'Unknown Player',
-          player_id: player.player_id || player.id?.toString() || '',
-          position: player.position || mapPlayerPosition(dbMatch.esport_type, player.role || 'Player'),
-          role: player.role || 'Player'
-        }))
+        players: rosterData.teamBPlayers
       }
     ],
     start_time: dbMatch.start_time,
@@ -322,6 +258,31 @@ const transformMatchData = (dbMatch: any): PandaScoreMatch => {
   return transformedMatch;
 };
 
+// Helper function to extract team data from both legacy and new formats
+const extractTeamData = (teams: any, index: number) => {
+  if (!teams) return {};
+  
+  // New array format: [{"type": "Team", "opponent": {...}}, ...]
+  if (Array.isArray(teams)) {
+    const teamEntry = teams[index];
+    if (teamEntry?.opponent) {
+      return {
+        id: teamEntry.opponent.id?.toString(),
+        name: teamEntry.opponent.name,
+        logo: teamEntry.opponent.image_url,
+        image_url: teamEntry.opponent.image_url,
+        acronym: teamEntry.opponent.acronym,
+        slug: teamEntry.opponent.slug,
+        location: teamEntry.opponent.location
+      };
+    }
+    return {};
+  }
+  
+  // Legacy object format: {team1: {...}, team2: {...}}
+  const teamKey = index === 0 ? 'team1' : 'team2';
+  return teams[teamKey] || {};
+};
 export async function fetchSupabasePandaScoreMatches(esportType: string): Promise<PandaScoreMatch[]> {
   try {
     console.log(`📥 Fetching PandaScore matches for ${esportType} from Supabase...`);
@@ -387,12 +348,10 @@ export async function fetchSupabasePandaScoreMatches(esportType: string): Promis
       }
     });
     
-    // Transform and potentially fetch missing roster data
+    // Transform matches with roster data
     const transformedMatches = await Promise.all(
       matches.map(async (match) => {
-        const transformedMatch = transformMatchData(match);
-        // Attempt to fetch missing roster data if needed
-        return await fetchMissingRosterData(transformedMatch);
+        return await transformMatchData(match);
       })
     );
     
@@ -428,11 +387,10 @@ export async function fetchSupabasePandaScoreMatchDetails(matchId: string): Prom
 
     console.log(`✅ Retrieved PandaScore match details for ${matchId}:`, match);
     
-    // Transform the data and fetch missing roster data if needed
-    const transformedMatch = transformMatchData(match);
-    const finalMatch = await fetchMissingRosterData(transformedMatch);
+    // Transform the data with roster data from player IDs
+    const transformedMatch = await transformMatchData(match);
     
-    return finalMatch;
+    return transformedMatch;
   } catch (error) {
     console.error('❌ Error in fetchSupabasePandaScoreMatchDetails:', error);
     throw error;
@@ -465,11 +423,10 @@ export async function fetchSupabasePandaScoreUpcomingMatches(): Promise<PandaSco
 
     console.log(`✅ Retrieved ${matches.length} upcoming PandaScore matches`);
     
-    // Transform and fetch missing roster data
+    // Transform with roster data
     const transformedMatches = await Promise.all(
       matches.map(async (match) => {
-        const transformedMatch = transformMatchData(match);
-        return await fetchMissingRosterData(transformedMatch);
+        return await transformMatchData(match);
       })
     );
     
@@ -503,11 +460,10 @@ export async function fetchSupabasePandaScoreLiveMatches(): Promise<PandaScoreMa
 
     console.log(`✅ Retrieved ${matches.length} live PandaScore matches`);
     
-    // Transform and fetch missing roster data
+    // Transform with roster data
     const transformedMatches = await Promise.all(
       matches.map(async (match) => {
-        const transformedMatch = transformMatchData(match);
-        return await fetchMissingRosterData(transformedMatch);
+        return await transformMatchData(match);
       })
     );
     
