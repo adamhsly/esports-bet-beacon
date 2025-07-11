@@ -292,11 +292,20 @@ const Index = () => {
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
       const matchId = `pandascore_${match.match_id}`;
       
+      console.log(`🔄 Processing PandaScore match ${match.match_id}:`, { 
+        teams: match.teams, 
+        esport_type: match.esport_type,
+        status: match.status,
+        start_time: match.start_time 
+      });
+      
       // Extract team data using helper function (supports both formats)
       const team1Data = extractTeamData(match.teams, 0);
       const team2Data = extractTeamData(match.teams, 1);
       
-      return {
+      console.log(`🏆 Team data for match ${match.match_id}:`, { team1Data, team2Data });
+      
+      const transformedMatch = {
         id: matchId, // Ensure consistent prefixing for homepage
         teams: [
           {
@@ -320,6 +329,9 @@ const Index = () => {
         status: match.status, // Include status for proper categorization
         rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
       } satisfies MatchInfo;
+      
+      console.log(`✅ Transformed PandaScore match ${match.match_id}:`, transformedMatch);
+      return transformedMatch;
     });
 
     const combinedMatches = [...faceitMatches, ...transformedPandaScore];
@@ -373,12 +385,12 @@ const Index = () => {
       if (gameType === 'cs2') {
         // 🔧 ENHANCED: Also check for 'cs' and 'counter-strike' variations
         const isCS = ['csgo', 'cs2', 'cs', 'counter-strike'].includes(esportType);
-        console.log(`🎮 CS:GO/CS2 filter - Match ${match.id} esportType ${esportType} matches: ${isCS}`);
+        console.log(`🎮 CS:GO/CS2 filter - Match ${match.id} esportType "${esportType}" matches: ${isCS}`);
         return isCS;
       }
       if (gameType === 'lol') {
         const isLOL = ['lol', 'leagueoflegends', 'league-of-legends'].includes(esportType);
-        console.log(`🎮 LOL filter - Match ${match.id} esportType ${esportType} matches: ${isLOL}`);
+        console.log(`🎮 LOL filter - Match ${match.id} esportType "${esportType}" matches: ${isLOL}`);
         return isLOL;
       }
       if (gameType === 'valorant') {
@@ -387,8 +399,8 @@ const Index = () => {
         return isValorant;
       }
       if (gameType === 'dota2') {
-        const isDota = ['dota2', 'dota', 'dota-2'].includes(esportType);
-        console.log(`🎮 Dota2 filter - Match ${match.id} esportType ${esportType} matches: ${isDota}`);
+        const isDota = ['dota2', 'dota', 'dota-2', 'dota 2'].includes(esportType);
+        console.log(`🎮 Dota2 filter - Match ${match.id} esportType "${esportType}" matches: ${isDota}`);
         return isDota;
       }
       const matches = esportType === gameType;
