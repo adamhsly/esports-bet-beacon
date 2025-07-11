@@ -714,7 +714,7 @@ const Index = () => {
             
             {/* FILTER PILLS WITH CALENDAR */}
             <div className="mx-2 md:mx-4">
-              <div className="flex flex-wrap items-center gap-2 mb-6">
+              <div className="flex flex-wrap items-center gap-2 mb-6 p-4"">
                 <FilterPills
                   gameType={selectedGameType}
                   statusFilter={selectedStatusFilter}
