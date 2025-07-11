@@ -265,26 +265,26 @@ const Index = () => {
     
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
-      const teamsData = match.teams as unknown as PandaScoreTeamsData;
+      // 🔧 FIXED: Handle the actual database structure where teams is an array of opponents
+      const teamsArray = match.teams as any[];
       const matchId = `pandascore_${match.match_id}`;
       
-      // 🔧 FIXED: Use actual team IDs from rawData with proper type casting
-      const rawData = match.raw_data as any;
-      const actualTeam1Id = rawData?.opponents?.[0]?.opponent?.id?.toString();
-      const actualTeam2Id = rawData?.opponents?.[1]?.opponent?.id?.toString();
+      // Extract team data from the teams array (opponents structure)
+      const team1Data = teamsArray?.[0]?.opponent || {};
+      const team2Data = teamsArray?.[1]?.opponent || {};
       
       return {
         id: matchId, // Ensure consistent prefixing for homepage
         teams: [
           {
-            name: teamsData.team1?.name || 'TBD',
-            logo: teamsData.team1?.logo || '/placeholder.svg',
-            id: actualTeam1Id || `pandascore_team_${match.match_id}_1` // Use actual ID or fallback
+            name: team1Data.name || 'TBD',
+            logo: team1Data.image_url || '/placeholder.svg',
+            id: team1Data.id?.toString() || `pandascore_team_${match.match_id}_1`
           },
           {
-            name: teamsData.team2?.name || 'TBD',
-            logo: teamsData.team2?.logo || '/placeholder.svg',
-            id: actualTeam2Id || `pandascore_team_${match.match_id}_2` // Use actual ID or fallback
+            name: team2Data.name || 'TBD',
+            logo: team2Data.image_url || '/placeholder.svg',
+            id: team2Data.id?.toString() || `pandascore_team_${match.match_id}_2`
           }
         ] as [any, any],
         startTime: match.start_time,
