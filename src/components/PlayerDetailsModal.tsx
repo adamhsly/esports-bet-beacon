@@ -56,23 +56,31 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
   const fetchPlayerData = async () => {
     try {
       const { data, error } = await supabase
-        .from('pandascore_players')
+        .from('pandascore_players_master')
         .select('*')
-        .eq('player_id', playerId)
-        .eq('esport_type', esportType)
-        .single();
+        .eq('id', parseInt(playerId))
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching player data:', error);
         return;
       }
 
-      setPlayerData({
-        ...data,
-        career_stats: (data.career_stats as Record<string, any>) || {},
-        recent_stats: (data.recent_stats as Record<string, any>) || {},
-        achievements: (data.achievements as Record<string, any>[]) || []
-      });
+      if (data) {
+        setPlayerData({
+          player_id: data.id.toString(),
+          name: data.name || 'Unknown Player',
+          slug: data.slug || undefined,
+          image_url: data.image_url || undefined,
+          nationality: data.nationality || undefined,
+          role: data.role || undefined,
+          team_id: data.current_team_id?.toString() || undefined,
+          team_name: data.current_team_name || undefined,
+          career_stats: {},
+          recent_stats: {},
+          achievements: []
+        });
+      }
     } catch (error) {
       console.error('Error fetching player data:', error);
     } finally {
@@ -82,20 +90,9 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   const fetchRecentMatches = async () => {
     try {
-      const { data, error } = await supabase
-        .from('pandascore_player_matches')
-        .select('*')
-        .eq('player_id', playerId)
-        .eq('esport_type', esportType)
-        .order('match_date', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('Error fetching recent matches:', error);
-        return;
-      }
-
-      setRecentMatches(data || []);
+      // Since pandascore_player_matches doesn't exist, 
+      // we'll leave recent matches empty for now
+      setRecentMatches([]);
     } catch (error) {
       console.error('Error fetching recent matches:', error);
     }

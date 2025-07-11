@@ -84,26 +84,37 @@ export const EnhancedTeamComparison: React.FC<TeamComparisonProps> = ({
 
   const fetchHeadToHead = async () => {
     try {
+      // Since pandascore_head_to_head table doesn't exist, 
+      // we'll calculate head-to-head from match history
       const { data, error } = await supabase
-        .from('pandascore_head_to_head')
+        .from('pandascore_matches')
         .select('*')
         .eq('esport_type', esportType)
-        .or(`and(team1_id.eq.${team1Id},team2_id.eq.${team2Id}),and(team1_id.eq.${team2Id},team2_id.eq.${team1Id})`)
-        .single();
+        .or(`teams->>0.eq.${team1Id},teams->>1.eq.${team1Id}`)
+        .or(`teams->>0.eq.${team2Id},teams->>1.eq.${team2Id}`)
+        .eq('status', 'finished');
 
-      if (data) {
-        // Normalize the data based on the original team order
-        if (data.team1_id === team1Id) {
-          setHeadToHead({
-            team1_wins: data.team1_wins,
-            team2_wins: data.team2_wins,
-            total_matches: data.total_matches
+      if (data && data.length > 0) {
+        // Filter matches that involve both teams
+        const directMatches = data.filter(match => {
+          const teams = match.teams as any;
+          const teamIds = [teams[0]?.id, teams[1]?.id].filter(Boolean);
+          return teamIds.includes(team1Id) && teamIds.includes(team2Id);
+        });
+
+        if (directMatches.length > 0) {
+          let team1Wins = 0;
+          let team2Wins = 0;
+
+          directMatches.forEach(match => {
+            if (match.winner_id === team1Id) team1Wins++;
+            else if (match.winner_id === team2Id) team2Wins++;
           });
-        } else {
+
           setHeadToHead({
-            team1_wins: data.team2_wins,
-            team2_wins: data.team1_wins,
-            total_matches: data.total_matches
+            team1_wins: team1Wins,
+            team2_wins: team2Wins,
+            total_matches: directMatches.length
           });
         }
       }

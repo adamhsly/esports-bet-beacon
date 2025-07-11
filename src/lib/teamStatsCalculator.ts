@@ -87,60 +87,69 @@ export async function calculateTeamStats(teamId: string | number, esportType: st
 }
 
 /**
- * Get pre-calculated head-to-head record between two teams
+ * Get head-to-head record between two teams by analyzing match history
  */
 export async function getHeadToHeadRecord(team1Id: string | number, team2Id: string | number, esportType: string): Promise<{ team1Wins: number; team2Wins: number; totalMatches: number }> {
   try {
-    console.log(`🥊 Getting pre-calculated head-to-head record: ${team1Id} vs ${team2Id} in ${esportType}`);
+    console.log(`🥊 Calculating head-to-head record: ${team1Id} vs ${team2Id} in ${esportType}`);
     
     const team1IdStr = String(team1Id);
     const team2IdStr = String(team2Id);
     
-    // Order team IDs consistently for database lookup
-    const orderedTeam1 = team1IdStr < team2IdStr ? team1IdStr : team2IdStr;
-    const orderedTeam2 = team1IdStr < team2IdStr ? team2IdStr : team1IdStr;
-    
-    // Fetch pre-calculated head-to-head record from database
-    const { data: h2hRecord, error } = await supabase
-      .from('pandascore_head_to_head')
+    // Since pandascore_head_to_head table doesn't exist, 
+    // calculate from match history in pandascore_matches
+    const { data: matches, error } = await supabase
+      .from('pandascore_matches')
       .select('*')
-      .eq('team1_id', orderedTeam1)
-      .eq('team2_id', orderedTeam2)
       .eq('esport_type', esportType)
-      .single();
+      .eq('status', 'finished');
     
     if (error) {
-      console.error('❌ Error fetching head-to-head record:', error);
+      console.error('❌ Error fetching matches for head-to-head:', error);
       return { team1Wins: 0, team2Wins: 0, totalMatches: 0 };
     }
 
-    if (!h2hRecord) {
-      console.log(`⚠️ No pre-calculated head-to-head record found for ${team1Id} vs ${team2Id} in ${esportType}`);
+    if (!matches || matches.length === 0) {
+      console.log(`⚠️ No finished matches found for ${esportType}`);
       return { team1Wins: 0, team2Wins: 0, totalMatches: 0 };
     }
 
-    // Map the ordered results back to the original team order
-    let team1Wins, team2Wins;
-    if (team1IdStr < team2IdStr) {
-      // Original order matches database order
-      team1Wins = h2hRecord.team1_wins;
-      team2Wins = h2hRecord.team2_wins;
-    } else {
-      // Original order is reversed from database order
-      team1Wins = h2hRecord.team2_wins;
-      team2Wins = h2hRecord.team1_wins;
+    // Filter matches that involve both teams
+    const directMatches = matches.filter(match => {
+      const teams = match.teams as any;
+      if (!teams || !Array.isArray(teams) || teams.length < 2) return false;
+      
+      const teamIds = [teams[0]?.id, teams[1]?.id].filter(Boolean).map(String);
+      return teamIds.includes(team1IdStr) && teamIds.includes(team2IdStr);
+    });
+
+    if (directMatches.length === 0) {
+      console.log(`⚠️ No direct matches found between ${team1Id} and ${team2Id}`);
+      return { team1Wins: 0, team2Wins: 0, totalMatches: 0 };
     }
 
-    console.log(`🥊 Pre-calculated head-to-head: Team1(${team1Wins}) vs Team2(${team2Wins}) out of ${h2hRecord.total_matches} matches`);
+    // Count wins for each team
+    let team1Wins = 0;
+    let team2Wins = 0;
+
+    directMatches.forEach(match => {
+      if (match.winner_id === team1IdStr) {
+        team1Wins++;
+      } else if (match.winner_id === team2IdStr) {
+        team2Wins++;
+      }
+    });
+
+    console.log(`🥊 Head-to-head calculated: Team1(${team1Wins}) vs Team2(${team2Wins}) out of ${directMatches.length} matches`);
     
     return { 
-      team1Wins: team1Wins || 0, 
-      team2Wins: team2Wins || 0, 
-      totalMatches: h2hRecord.total_matches || 0 
+      team1Wins, 
+      team2Wins, 
+      totalMatches: directMatches.length 
     };
 
   } catch (error) {
-    console.error(`❌ Error getting head-to-head record:`, error);
+    console.error(`❌ Error calculating head-to-head record:`, error);
     return { team1Wins: 0, team2Wins: 0, totalMatches: 0 };
   }
 }
