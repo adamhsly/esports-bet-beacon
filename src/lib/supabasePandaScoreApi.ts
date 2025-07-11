@@ -223,13 +223,39 @@ const fetchMissingRosterData = async (match: any): Promise<any> => {
   }
 };
 
+// Helper function to extract team data from both legacy and new formats
+const extractTeamData = (teams: any, index: number) => {
+  if (!teams) return {};
+  
+  // New array format: [{"type": "Team", "opponent": {...}}, ...]
+  if (Array.isArray(teams)) {
+    const teamEntry = teams[index];
+    if (teamEntry?.opponent) {
+      return {
+        id: teamEntry.opponent.id?.toString(),
+        name: teamEntry.opponent.name,
+        logo: teamEntry.opponent.image_url,
+        image_url: teamEntry.opponent.image_url,
+        acronym: teamEntry.opponent.acronym,
+        slug: teamEntry.opponent.slug,
+        location: teamEntry.opponent.location
+      };
+    }
+    return {};
+  }
+  
+  // Legacy object format: {team1: {...}, team2: {...}}
+  const teamKey = index === 0 ? 'team1' : 'team2';
+  return teams[teamKey] || {};
+};
+
 // Transform database match data to component format
 const transformMatchData = (dbMatch: any): PandaScoreMatch => {
   console.log(`🔄 Transforming match data for ${dbMatch.match_id}:`, dbMatch);
   
-  // Fix data structure mismatch: ensure both roster and players are available
-  const team1 = dbMatch.teams?.team1 || {};
-  const team2 = dbMatch.teams?.team2 || {};
+  // Extract team data using helper function (supports both formats)
+  const team1 = extractTeamData(dbMatch.teams, 0);
+  const team2 = extractTeamData(dbMatch.teams, 1);
   
   // Use roster data as players if players array is empty
   const team1Players = team1.players || team1.roster || [];

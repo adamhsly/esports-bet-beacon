@@ -263,15 +263,38 @@ const Index = () => {
       });
     }
     
+    // Helper function to extract team data from both legacy and new formats
+    const extractTeamData = (teams: any, index: number) => {
+      if (!teams) return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      
+      // New array format: [{"type": "Team", "opponent": {...}}, ...]
+      if (Array.isArray(teams)) {
+        const teamEntry = teams[index];
+        if (teamEntry?.opponent) {
+          return {
+            id: teamEntry.opponent.id,
+            name: teamEntry.opponent.name,
+            image_url: teamEntry.opponent.image_url,
+            acronym: teamEntry.opponent.acronym,
+            slug: teamEntry.opponent.slug,
+            location: teamEntry.opponent.location
+          };
+        }
+        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      }
+      
+      // Legacy object format: {team1: {...}, team2: {...}}
+      const teamKey = index === 0 ? 'team1' : 'team2';
+      return teams[teamKey] || { name: 'TBD', image_url: '/placeholder.svg', id: null };
+    };
+
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
-      // 🔧 FIXED: Handle the actual database structure where teams is an array of opponents
-      const teamsArray = match.teams as any[];
       const matchId = `pandascore_${match.match_id}`;
       
-      // Extract team data from the teams array (opponents structure)
-      const team1Data = teamsArray?.[0]?.opponent || {};
-      const team2Data = teamsArray?.[1]?.opponent || {};
+      // Extract team data using helper function (supports both formats)
+      const team1Data = extractTeamData(match.teams, 0);
+      const team2Data = extractTeamData(match.teams, 1);
       
       return {
         id: matchId, // Ensure consistent prefixing for homepage
