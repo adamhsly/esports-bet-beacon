@@ -326,10 +326,16 @@ export async function fetchSupabasePandaScoreMatches(esportType: string): Promis
   try {
     console.log(`📥 Fetching PandaScore matches for ${esportType} from Supabase...`);
     
+    // Get matches from last 7 days to next 30 days to avoid loading all 215k+ matches
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    
     const { data: matches, error } = await supabase
       .from('pandascore_matches')
       .select('*')
       .eq('esport_type', esportType)
+      .gte('start_time', sevenDaysAgo)
+      .lte('start_time', thirtyDaysFromNow)
       .order('start_time', { ascending: true });
 
     if (error) {

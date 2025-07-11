@@ -240,10 +240,16 @@ const Index = () => {
     // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
     console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
-    // 🔧 ENHANCED: Fetch more PandaScore matches with no limit and better ordering
+    // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
+      .gte('start_time', sevenDaysAgo)
+      .lte('start_time', thirtyDaysFromNow)
+      .in('status', ['not_started', 'scheduled', 'running', 'finished'])
       .order('start_time', { ascending: false }); // Order by most recent first
 
     if (pandascoreError) {
@@ -383,13 +389,14 @@ const Index = () => {
       console.log(`🎮 Match ${match.id} has esportType: ${esportType}, checking against filter: ${gameType}`);
       
       if (gameType === 'cs2') {
-        // 🔧 ENHANCED: Also check for 'cs' and 'counter-strike' variations
-        const isCS = ['csgo', 'cs2', 'cs', 'counter-strike'].includes(esportType);
+        // 🔧 FIXED: Handle PandaScore's exact esport_type values
+        const isCS = ['csgo', 'cs2', 'cs', 'counter-strike', 'counterstrike'].includes(esportType) || esportType.includes('counter');
         console.log(`🎮 CS:GO/CS2 filter - Match ${match.id} esportType "${esportType}" matches: ${isCS}`);
         return isCS;
       }
       if (gameType === 'lol') {
-        const isLOL = ['lol', 'leagueoflegends', 'league-of-legends'].includes(esportType);
+        // 🔧 FIXED: Handle "LoL" and "League of Legends" from PandaScore
+        const isLOL = ['lol', 'leagueoflegends', 'league-of-legends', 'league of legends'].includes(esportType) || esportType.includes('league');
         console.log(`🎮 LOL filter - Match ${match.id} esportType "${esportType}" matches: ${isLOL}`);
         return isLOL;
       }
@@ -399,7 +406,8 @@ const Index = () => {
         return isValorant;
       }
       if (gameType === 'dota2') {
-        const isDota = ['dota2', 'dota', 'dota-2', 'dota 2'].includes(esportType);
+        // 🔧 FIXED: Handle "Dota 2" from PandaScore
+        const isDota = ['dota2', 'dota', 'dota-2', 'dota 2'].includes(esportType) || esportType.includes('dota');
         console.log(`🎮 Dota2 filter - Match ${match.id} esportType "${esportType}" matches: ${isDota}`);
         return isDota;
       }
@@ -714,7 +722,7 @@ const Index = () => {
             
             {/* FILTER PILLS WITH CALENDAR */}
             <div className="mx-2 md:mx-4">
-              <div className="flex flex-wrap items-center gap-2 mb-6 p-4"">
+              <div className="flex flex-wrap items-center gap-2 mb-6 p-4">
                 <FilterPills
                   gameType={selectedGameType}
                   statusFilter={selectedStatusFilter}
