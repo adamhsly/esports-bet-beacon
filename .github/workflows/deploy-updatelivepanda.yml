@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Call Supabase Edge Function to sync matches
         run: |
-          echo "Calling: ${SUPABASE_URL}/functions/v1/pandascorematches"
+          echo "Calling: ${SUPABASE_URL}/functions/v1/sync-pandascore-matches"
 
           RESPONSE=$(curl -s -X POST \
             "${SUPABASE_URL}/functions/v1/pandascorematches" \
