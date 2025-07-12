@@ -1,26 +1,27 @@
-name: Deploy updatelivepanda to Supabase
+name: Deploy Supabase Edge Functions
 
 on:
   push:
     branches:
-      - main
-    paths:
-      - "supabase/functions/updatelivepanda/**"
-  workflow_dispatch:
+      - main  # change if your default branch is different
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://cli.supabase.com/install.sh | sh
 
-      - name: Deploy Edge Function
-        run: supabase functions deploy updatelivepanda
+      - name: Deploy updatelivepanda function
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_FUNCTION_SECRET }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          PANDA_SCORE_API_KEY: ${{ secrets.PANDA_SCORE_API_KEY }}
+        run: |
+          supabase functions deploy updatelivepanda
