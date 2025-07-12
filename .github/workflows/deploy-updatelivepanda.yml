@@ -1,28 +1,26 @@
-name: Deploy Supabase Edge Functions
+name: Sync PandaScore Matches
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:  # Enables manual trigger from GitHub UI
+  workflow_dispatch:       # Manual trigger
+  schedule:
 
 jobs:
-  deploy:
+  sync:
     runs-on: ubuntu-latest
 
+    env:  # 👈 Environment variables injected for use in the shell
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_FUNCTION_SECRET: ${{ secrets.SUPABASE_FUNCTION_SECRET }}
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Supabase CLI
+      - name: Call Supabase Edge Function to sync matches
         run: |
-          curl -fsSL https://cli.supabase.com/install.sh | sh
+          echo "Calling: ${SUPABASE_URL}/functions/v1/pandascorematches"
 
-      - name: Deploy updatelivepanda function
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          PANDA_SCORE_API_KEY: ${{ secrets.PANDA_SCORE_API_KEY }}
-        run: |
-          supabase functions deploy updatelivepanda
+          RESPONSE=$(curl -s -X POST \
+            "${SUPABASE_URL}/functions/v1/pandascorematches" \
+            -H "Authorization: Bearer ${SUPABASE_FUNCTION_SECRET}" \
+            -H "Content-Type: application/json")
+
+          echo "Response:"
+          echo "$RESPONSE"
