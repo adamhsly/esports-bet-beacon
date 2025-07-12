@@ -104,7 +104,7 @@ serve(async () => {
       const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
 
       // Optional: skip unmodified matches
-      // if (modifiedLocal && modifiedRemote <= modifiedLocal) continue
+      if (modifiedLocal && modifiedRemote <= modifiedLocal) continue
 
       const teamAId = match.opponents?.[0]?.opponent?.id
       const teamBId = match.opponents?.[1]?.opponent?.id
