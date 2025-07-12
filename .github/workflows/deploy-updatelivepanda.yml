@@ -1,4 +1,4 @@
-name: Sync PandaScore Matches
+name: updatelive
 
 on:
   workflow_dispatch:       # Manual trigger
