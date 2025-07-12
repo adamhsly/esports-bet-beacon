@@ -2,7 +2,6 @@ name: Sync PandaScore Matches
 
 on:
   workflow_dispatch:       # Manual trigger
-  schedule:
 
 jobs:
   sync:
