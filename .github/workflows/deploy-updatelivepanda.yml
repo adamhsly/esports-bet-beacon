@@ -3,7 +3,8 @@ name: Deploy Supabase Edge Functions
 on:
   push:
     branches:
-      - main  # change if your default branch is different
+      - main
+  workflow_dispatch:  # Enables manual trigger from GitHub UI
 
 jobs:
   deploy:
