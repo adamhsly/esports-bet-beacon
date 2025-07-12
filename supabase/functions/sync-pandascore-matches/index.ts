@@ -30,6 +30,8 @@ serve(async (req) => {
 
     const lives = await res.json();
 
+    console.log("Pandascore live matches:", lives);
+
     const now = new Date().toISOString();
 
     const formatted = lives.map((match: any) => ({
