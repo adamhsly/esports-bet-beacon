@@ -195,6 +195,7 @@ const PandaScoreUpcomingMatchPage = () => {
                 teams={matchDetails.teams}
                 tournament={matchDetails.tournament}
                 esportType={matchDetails.esport_type}
+                matchId={matchDetails.match_id}
               />
 
               <Card className="bg-theme-gray-dark border-theme-gray-medium">
@@ -258,6 +259,7 @@ const PandaScoreUpcomingMatchPage = () => {
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
                   esportType={matchDetails.esport_type}
+                  matchId={matchDetails.match_id}
                 />
               </TabsContent>
 
@@ -273,6 +275,7 @@ const PandaScoreUpcomingMatchPage = () => {
                   teams={matchDetails.teams}
                   tournament={matchDetails.tournament}
                   esportType={matchDetails.esport_type}
+                  matchId={matchDetails.match_id}
                 />
               </TabsContent>
 

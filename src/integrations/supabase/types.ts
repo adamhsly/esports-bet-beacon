@@ -967,6 +967,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pandascore_match_team_stats: {
+        Row: {
+          calculated_at: string
+          created_at: string
+          esport_type: string
+          id: string
+          last_10_matches_detail: Json | null
+          league_performance: Json | null
+          losses: number
+          match_id: string
+          recent_form: string | null
+          recent_win_rate_30d: number | null
+          team_id: string
+          total_matches: number
+          tournament_wins: number
+          updated_at: string
+          win_rate: number
+          wins: number
+        }
+        Insert: {
+          calculated_at?: string
+          created_at?: string
+          esport_type: string
+          id?: string
+          last_10_matches_detail?: Json | null
+          league_performance?: Json | null
+          losses?: number
+          match_id: string
+          recent_form?: string | null
+          recent_win_rate_30d?: number | null
+          team_id: string
+          total_matches?: number
+          tournament_wins?: number
+          updated_at?: string
+          win_rate?: number
+          wins?: number
+        }
+        Update: {
+          calculated_at?: string
+          created_at?: string
+          esport_type?: string
+          id?: string
+          last_10_matches_detail?: Json | null
+          league_performance?: Json | null
+          losses?: number
+          match_id?: string
+          recent_form?: string | null
+          recent_win_rate_30d?: number | null
+          team_id?: string
+          total_matches?: number
+          tournament_wins?: number
+          updated_at?: string
+          win_rate?: number
+          wins?: number
+        }
+        Relationships: []
+      }
       pandascore_matches: {
         Row: {
           created_at: string

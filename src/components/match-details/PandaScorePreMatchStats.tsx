@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Trophy, Target, Loader2 } from 'lucide-react';
-import { calculateTeamStats, getHeadToHeadRecord } from '@/lib/teamStatsCalculator';
+import { calculateMatchSpecificTeamStats, getMatchSpecificHeadToHeadRecord } from '@/lib/teamStatsCalculator';
 
 interface PandaScorePreMatchStatsProps {
   teams: Array<{
@@ -13,6 +13,7 @@ interface PandaScorePreMatchStatsProps {
   }>;
   tournament?: string;
   esportType?: string;
+  matchId: string;
 }
 
 interface TeamStatsData {
@@ -25,7 +26,8 @@ interface TeamStatsData {
 export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = ({ 
   teams, 
   tournament, 
-  esportType = 'csgo' 
+  esportType = 'csgo',
+  matchId 
 }) => {
   const [team1Stats, setTeam1Stats] = useState<TeamStatsData | null>(null);
   const [team2Stats, setTeam2Stats] = useState<TeamStatsData | null>(null);
@@ -37,27 +39,29 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
 
   useEffect(() => {
     const fetchTeamStats = async () => {
+      if (!matchId) return;
+      
       setLoading(true);
       try {
         const promises = [];
 
         // Fetch team1 stats if we have an ID
         if (team1.id) {
-          promises.push(calculateTeamStats(team1.id, esportType));
+          promises.push(calculateMatchSpecificTeamStats(team1.id, esportType, matchId));
         } else {
           promises.push(Promise.resolve(null));
         }
 
         // Fetch team2 stats if we have an ID
         if (team2.id) {
-          promises.push(calculateTeamStats(team2.id, esportType));
+          promises.push(calculateMatchSpecificTeamStats(team2.id, esportType, matchId));
         } else {
           promises.push(Promise.resolve(null));
         }
 
         // Fetch head-to-head record if we have both IDs
         if (team1.id && team2.id) {
-          promises.push(getHeadToHeadRecord(team1.id, team2.id, esportType));
+          promises.push(getMatchSpecificHeadToHeadRecord(team1.id, team2.id, esportType, matchId));
         } else {
           promises.push(Promise.resolve(null));
         }
@@ -68,14 +72,14 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
         setTeam2Stats(stats2);
         setHeadToHead(h2h);
       } catch (error) {
-        console.error('Error fetching team stats:', error);
+        console.error('Error fetching match-specific team stats:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTeamStats();
-  }, [team1.id, team2.id, esportType]);
+  }, [team1.id, team2.id, esportType, matchId]);
 
   const TeamStatsCard = ({ team, stats, side }: { team: any; stats: TeamStatsData | null; side: string }) => (
     <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
