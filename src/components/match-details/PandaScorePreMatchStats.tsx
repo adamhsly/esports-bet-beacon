@@ -180,13 +180,26 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TeamStatsCard team={team1} stats={team1Stats} side="left" />
-        <TeamStatsCard team={team2} stats={team2Stats} side="right" />
+      {/* Overall Team Performance Section */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <TrendingUp className="h-5 w-5 text-theme-purple" />
+          <h4 className="text-lg font-bold text-white">Overall Team Performance</h4>
+        </div>
+        <p className="text-gray-400 text-sm">Individual team statistics from all historical matches</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TeamStatsCard team={team1} stats={team1Stats} side="left" />
+          <TeamStatsCard team={team2} stats={team2Stats} side="right" />
+        </div>
       </div>
 
+      {/* Head-to-Head History Section */}
       <Card className="bg-theme-gray-dark border-theme-gray-medium p-6">
-        <h4 className="text-lg font-bold text-white mb-4">Head-to-Head</h4>
+        <div className="flex items-center space-x-2 mb-4">
+          <Target className="h-5 w-5 text-theme-purple" />
+          <h4 className="text-lg font-bold text-white">Head-to-Head History</h4>
+        </div>
+        <p className="text-gray-400 text-sm mb-4">Direct matchup record between these teams</p>
         <div className="text-center">
           {loading ? (
             <div className="flex justify-center py-4">
@@ -194,23 +207,43 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
             </div>
           ) : headToHead && headToHead.totalMatches > 0 ? (
             <div>
-              <p className="text-gray-400 mb-2">Last {headToHead.totalMatches} matches</p>
+              <p className="text-gray-400 mb-2">Previous meetings: {headToHead.totalMatches} matches</p>
               <div className="flex items-center justify-center space-x-4">
-                <span className="text-white font-semibold">{team1.name}</span>
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-                  {headToHead.team1Wins}-{headToHead.team2Wins}
-                </Badge>
-                <span className="text-white font-semibold">{team2.name}</span>
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team1.name}</div>
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30 mt-1">
+                    {headToHead.team1Wins} wins
+                  </Badge>
+                </div>
+                <div className="text-gray-400 font-bold text-2xl">VS</div>
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team2.name}</div>
+                  <Badge className="bg-red-500/20 text-red-400 border-red-400/30 mt-1">
+                    {headToHead.team2Wins} wins
+                  </Badge>
+                </div>
               </div>
+              {headToHead.team1Wins !== headToHead.team2Wins && (
+                <p className="text-gray-400 text-sm mt-3">
+                  {headToHead.team1Wins > headToHead.team2Wins ? team1.name : team2.name} leads the series
+                </p>
+              )}
             </div>
           ) : (
             <div>
-              <p className="text-gray-400 mb-2">No historical matchup data available</p>
+              <p className="text-gray-400 mb-2">No previous matchups found</p>
               <div className="flex items-center justify-center space-x-4">
-                <span className="text-white font-semibold">{team1.name}</span>
-                <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30">0-0</Badge>
-                <span className="text-white font-semibold">{team2.name}</span>
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team1.name}</div>
+                  <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30 mt-1">0 wins</Badge>
+                </div>
+                <div className="text-gray-400 font-bold text-2xl">VS</div>
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team2.name}</div>
+                  <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30 mt-1">0 wins</Badge>
+                </div>
               </div>
+              <p className="text-gray-400 text-sm mt-3">This will be their first recorded meeting</p>
             </div>
           )}
         </div>
