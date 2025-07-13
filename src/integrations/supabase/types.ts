@@ -928,6 +928,45 @@ export type Database = {
         }
         Relationships: []
       }
+      panda_team_head_to_head: {
+        Row: {
+          created_at: string | null
+          draws: number
+          id: string
+          last_match_at: string | null
+          team_a_id: string
+          team_a_wins: number
+          team_b_id: string
+          team_b_wins: number
+          total_matches: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          draws?: number
+          id?: string
+          last_match_at?: string | null
+          team_a_id: string
+          team_a_wins?: number
+          team_b_id: string
+          team_b_wins?: number
+          total_matches?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          draws?: number
+          id?: string
+          last_match_at?: string | null
+          team_a_id?: string
+          team_a_wins?: number
+          team_b_id?: string
+          team_b_wins?: number
+          total_matches?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       pandascore_matches: {
         Row: {
           created_at: string
@@ -1933,6 +1972,10 @@ export type Database = {
           scoring_config: Json
         }
         Returns: number
+      }
+      update_panda_team_head_to_head: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
