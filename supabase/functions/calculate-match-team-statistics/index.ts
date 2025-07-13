@@ -1,10 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 interface TeamStatsData {
   teamId: string;
@@ -21,227 +21,194 @@ interface TeamStatsData {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    const { matchId, recalculateAll = false } = await req.json()
-
-    if (!matchId) {
-      return new Response(
-        JSON.stringify({ error: 'matchId is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Get the target match details
-    const { data: targetMatch, error: matchError } = await supabaseClient
+    // Fetch all matches from pandascore_matches
+    const { data: allMatches, error } = await supabase
       .from('pandascore_matches')
-      .select('match_id, start_time, esport_type, teams')
-      .eq('match_id', matchId)
-      .single()
+      .select('match_id, start_time, esport_type, teams, status')
+      .neq('status', 'not_started');
 
-    if (matchError || !targetMatch) {
-      return new Response(
-        JSON.stringify({ error: 'Match not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (error || !allMatches) {
+      throw new Error('Failed to fetch matches: ' + error?.message);
     }
 
-    const matchStartTime = targetMatch.start_time
-    const esportType = targetMatch.esport_type
-    const teams = targetMatch.teams as any[]
+    let processedCount = 0;
 
-    // Extract team IDs from the teams array
-    const teamIds = teams.map(team => {
-      if (team.opponent && team.opponent.id) {
-        return team.opponent.id.toString()
-      }
-      return team.id?.toString() || team.team_id?.toString()
-    }).filter(Boolean)
+    for (const match of allMatches) {
+      const matchId = match.match_id;
+      const matchStartTime = match.start_time;
+      const esportType = match.esport_type;
+      const teams = match.teams as any[];
 
-    console.log(`Calculating stats for match ${matchId}, teams:`, teamIds)
+      const teamIds = teams.map(team =>
+        team.opponent?.id?.toString() || team.id?.toString() || team.team_id?.toString()
+      ).filter(Boolean);
 
-    const statsResults: TeamStatsData[] = []
+      console.log(`Processing match ${matchId} | Teams: ${teamIds.join(', ')}`);
 
-    // Calculate stats for each team
-    for (const teamId of teamIds) {
-      // Check if stats already exist and don't need recalculation
-      if (!recalculateAll) {
-        const { data: existingStats } = await supabaseClient
+      for (const teamId of teamIds) {
+        // Check if stats already exist
+        const { data: existingStats } = await supabase
           .from('pandascore_match_team_stats')
-          .select('*')
+          .select('id')
           .eq('match_id', matchId)
           .eq('team_id', teamId)
-          .single()
+          .maybeSingle();
 
         if (existingStats) {
-          console.log(`Stats already exist for team ${teamId} in match ${matchId}`)
-          continue
+          console.log(`  Skipping team ${teamId}, already processed`);
+          continue;
+        }
+
+        // Get historical matches for this esport type before the match
+        const { data: historicalMatches, error: historyError } = await supabase
+          .from('pandascore_matches')
+          .select('*')
+          .eq('esport_type', esportType)
+          .lt('start_time', matchStartTime)
+          .eq('status', 'finished')
+          .order('start_time', { ascending: true });
+
+        if (historyError || !historicalMatches) {
+          console.error(`  Error fetching history for team ${teamId}:`, historyError);
+          continue;
+        }
+
+        const teamMatches = historicalMatches.filter(hm => {
+          const hTeams = hm.teams as any[];
+          return hTeams.some(t => (
+            t.opponent?.id?.toString() === teamId ||
+            t.id?.toString() === teamId ||
+            t.team_id?.toString() === teamId
+          ));
+        });
+
+        const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
+
+        const { error: insertError } = await supabase
+          .from('pandascore_match_team_stats')
+          .upsert({
+            match_id: matchId,
+            team_id: teamId,
+            esport_type: esportType,
+            win_rate: stats.winRate,
+            recent_form: stats.recentForm,
+            tournament_wins: stats.tournamentWins,
+            total_matches: stats.totalMatches,
+            wins: stats.wins,
+            losses: stats.losses,
+            league_performance: stats.leaguePerformance,
+            recent_win_rate_30d: stats.recentWinRate30d,
+            last_10_matches_detail: stats.last10MatchesDetail,
+            calculated_at: new Date().toISOString(),
+          });
+
+        if (insertError) {
+          console.error(`  Error storing stats for team ${teamId}:`, insertError);
+        } else {
+          console.log(`  Stored stats for team ${teamId}`);
+          processedCount++;
         }
       }
-
-      // Get all matches for this team BEFORE the target match start time
-      const { data: historicalMatches, error: historyError } = await supabaseClient
-        .from('pandascore_matches')
-        .select('*')
-        .eq('esport_type', esportType)
-        .lt('start_time', matchStartTime)
-        .eq('status', 'finished')
-        .order('start_time', { ascending: true })
-
-      if (historyError) {
-        console.error(`Error fetching historical matches for team ${teamId}:`, historyError)
-        continue
-      }
-
-      // Filter matches where this team participated
-      const teamMatches = historicalMatches?.filter(match => {
-        const matchTeams = match.teams as any[]
-        return matchTeams.some(team => {
-          const id = team.opponent?.id?.toString() || team.id?.toString() || team.team_id?.toString()
-          return id === teamId
-        })
-      }) || []
-
-      console.log(`Found ${teamMatches.length} historical matches for team ${teamId}`)
-
-      // Calculate statistics
-      const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime)
-      
-      // Store the calculated stats
-      const { error: insertError } = await supabaseClient
-        .from('pandascore_match_team_stats')
-        .upsert({
-          match_id: matchId,
-          team_id: teamId,
-          esport_type: esportType,
-          win_rate: stats.winRate,
-          recent_form: stats.recentForm,
-          tournament_wins: stats.tournamentWins,
-          total_matches: stats.totalMatches,
-          wins: stats.wins,
-          losses: stats.losses,
-          league_performance: stats.leaguePerformance,
-          recent_win_rate_30d: stats.recentWinRate30d,
-          last_10_matches_detail: stats.last10MatchesDetail,
-          calculated_at: new Date().toISOString()
-        })
-
-      if (insertError) {
-        console.error(`Error storing stats for team ${teamId}:`, insertError)
-      } else {
-        console.log(`Successfully stored stats for team ${teamId}`)
-        statsResults.push(stats)
-      }
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        matchId,
-        calculatedTeams: teamIds.length,
-        message: `Calculated stats for ${statsResults.length} teams` 
-      }),
+      JSON.stringify({ success: true, processed: processedCount }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
 
-  } catch (error) {
-    console.error('Error in calculate-match-team-statistics:', error)
+  } catch (err) {
+    console.error(err);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});
 
 function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string): TeamStatsData {
-  const totalMatches = matches.length
-  let wins = 0
-  let tournamentWins = 0
-  const leaguePerformance: Record<string, { wins: number, total: number }> = {}
-  
-  // Get matches from last 30 days before the target match
-  const thirtyDaysAgo = new Date(matchStartTime)
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  
-  let recentMatches30d = 0
-  let recentWins30d = 0
-  
-  // Get last 10 matches for recent form
-  const last10Matches = matches.slice(-10)
-  const recentFormArray: string[] = []
-  const last10MatchesDetail: any[] = []
+  const totalMatches = matches.length;
+  let wins = 0;
+  let tournamentWins = 0;
+  const leaguePerformance: Record<string, { wins: number, total: number }> = {};
 
-  matches.forEach(match => {
-    const isWin = match.winner_id === teamId
-    if (isWin) wins++
+  const thirtyDaysAgo = new Date(matchStartTime);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Check if it's a tournament win (could be determined by tournament type or match importance)
-    if (isWin && (match.tournament_name?.toLowerCase().includes('championship') || 
-                  match.tournament_name?.toLowerCase().includes('major') ||
-                  match.league_name?.toLowerCase().includes('championship'))) {
-      tournamentWins++
-    }
+  let recentMatches30d = 0;
+  let recentWins30d = 0;
 
-    // League performance tracking
-    const leagueName = match.league_name || match.tournament_name || 'Unknown'
+  const last10Matches = matches.slice(-10);
+  const recentFormArray: string[] = [];
+  const last10MatchesDetail: any[] = [];
+
+  for (const match of matches) {
+    const isWin = match.winner_id === teamId;
+    if (isWin) wins++;
+
+    const isMajor = match.tournament_name?.toLowerCase().includes('championship') ||
+                    match.tournament_name?.toLowerCase().includes('major') ||
+                    match.league_name?.toLowerCase().includes('championship');
+
+    if (isWin && isMajor) tournamentWins++;
+
+    const leagueName = match.league_name || match.tournament_name || 'Unknown';
     if (!leaguePerformance[leagueName]) {
-      leaguePerformance[leagueName] = { wins: 0, total: 0 }
+      leaguePerformance[leagueName] = { wins: 0, total: 0 };
     }
-    leaguePerformance[leagueName].total++
-    if (isWin) leaguePerformance[leagueName].wins++
+    leaguePerformance[leagueName].total++;
+    if (isWin) leaguePerformance[leagueName].wins++;
 
-    // Recent 30 days performance
-    const matchDate = new Date(match.start_time)
+    const matchDate = new Date(match.start_time);
     if (matchDate >= thirtyDaysAgo) {
-      recentMatches30d++
-      if (isWin) recentWins30d++
+      recentMatches30d++;
+      if (isWin) recentWins30d++;
     }
-  })
+  }
 
-  // Calculate recent form from last 10 matches
   last10Matches.forEach(match => {
-    const isWin = match.winner_id === teamId
-    recentFormArray.push(isWin ? 'W' : 'L')
-    
+    const isWin = match.winner_id === teamId;
+    recentFormArray.push(isWin ? 'W' : 'L');
+
     last10MatchesDetail.push({
       matchId: match.match_id,
       opponent: getOpponentName(teamId, match.teams),
       result: isWin ? 'W' : 'L',
       date: match.start_time,
-      tournament: match.tournament_name || match.league_name
-    })
-  })
+      tournament: match.tournament_name || match.league_name,
+    });
+  });
 
-  const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0
-  const recentWinRate30d = recentMatches30d > 0 ? Math.round((recentWins30d / recentMatches30d) * 100) : 0
-  const recentForm = recentFormArray.join('')
+  const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
+  const recentWinRate30d = recentMatches30d > 0 ? Math.round((recentWins30d / recentMatches30d) * 100) : 0;
 
   return {
     teamId,
     winRate,
-    recentForm,
+    recentForm: recentFormArray.join(''),
     tournamentWins,
     totalMatches,
     wins,
     losses: totalMatches - wins,
     leaguePerformance,
     recentWinRate30d,
-    last10MatchesDetail
-  }
+    last10MatchesDetail,
+  };
 }
 
 function getOpponentName(teamId: string, teams: any[]): string {
   const opponent = teams.find(team => {
-    const id = team.opponent?.id?.toString() || team.id?.toString() || team.team_id?.toString()
-    return id !== teamId
-  })
-  
-  return opponent?.opponent?.name || opponent?.name || 'Unknown'
+    const id = team.opponent?.id?.toString() || team.id?.toString() || team.team_id?.toString();
+    return id !== teamId;
+  });
+
+  return opponent?.opponent?.name || opponent?.name || 'Unknown';
 }
