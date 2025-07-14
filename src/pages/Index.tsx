@@ -181,10 +181,20 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
 
 const GAME_TYPE_OPTIONS = [
   { label: 'All Games', value: 'all', icon: Gamepad2 },
-  { label: 'CS:GO / CS2', value: 'cs2', icon: Zap },
+  { label: 'Counter-Strike', value: 'counter-strike', icon: Zap },
   { label: 'League of Legends', value: 'lol', icon: Trophy },
   { label: 'Dota 2', value: 'dota2', icon: Users },
+  { label: 'EA Sports FC', value: 'ea-sports-fc', icon: Users },
   { label: 'Valorant', value: 'valorant', icon: Zap },
+  { label: 'Rainbow 6 Siege', value: 'rainbow-6-siege', icon: Zap },
+  { label: 'Rocket League', value: 'rocket-league', icon: Users },
+  { label: 'StarCraft 2', value: 'starcraft-2', icon: Zap },
+  { label: 'Overwatch', value: 'overwatch', icon: Users },
+  { label: 'King of Glory', value: 'king-of-glory', icon: Trophy },
+  { label: 'Call of Duty', value: 'call-of-duty', icon: Zap },
+  { label: 'LoL Wild Rift', value: 'lol-wild-rift', icon: Trophy },
+  { label: 'PUBG', value: 'pubg', icon: Zap },
+  { label: 'Mobile Legends', value: 'mobile-legends', icon: Users },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -409,7 +419,7 @@ const Index = () => {
     loadAllMatches();
   }, [hasInitializedDate]);
 
-  // 🔧 ENHANCED: Updated filtering function for game type with better csgo/cs2 handling
+  // 🔧 ENHANCED: Updated filtering function for game type with comprehensive game support
   const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
     console.log(`🎮 Filtering ${matches.length} matches by game type: ${gameType}`);
     
@@ -420,33 +430,81 @@ const Index = () => {
     
     const filtered = matches.filter((match) => {
       const esportType = match.esportType?.toLowerCase?.() ?? '';
-      console.log(`🎮 Match ${match.id} has esportType: ${esportType}, checking against filter: ${gameType}`);
+      const originalEsportType = match.esportType ?? '';
+      console.log(`🎮 Match ${match.id} has esportType: "${originalEsportType}" (lowercase: "${esportType}"), checking against filter: ${gameType}`);
       
-      if (gameType === 'cs2') {
-        // 🔧 FIXED: Handle PandaScore's exact esport_type values
-        const isCS = ['csgo', 'cs2', 'cs', 'counter-strike', 'counterstrike'].includes(esportType) || esportType.includes('counter');
-        console.log(`🎮 CS:GO/CS2 filter - Match ${match.id} esportType "${esportType}" matches: ${isCS}`);
-        return isCS;
+      // Create comprehensive game type mappings
+      const gameMatches = {
+        'counter-strike': () => 
+          ['csgo', 'cs2', 'cs', 'counter-strike', 'counterstrike'].includes(esportType) || 
+          esportType.includes('counter') || 
+          originalEsportType === 'Counter-Strike',
+        
+        'lol': () => 
+          ['lol', 'leagueoflegends', 'league-of-legends', 'league of legends'].includes(esportType) || 
+          esportType.includes('league') || 
+          originalEsportType === 'LoL',
+        
+        'valorant': () => 
+          ['valorant', 'val'].includes(esportType) || 
+          originalEsportType === 'Valorant',
+        
+        'dota2': () => 
+          ['dota2', 'dota', 'dota-2', 'dota 2'].includes(esportType) || 
+          esportType.includes('dota') || 
+          originalEsportType === 'Dota 2',
+        
+        'ea-sports-fc': () => 
+          ['ea sports fc', 'easportsfc', 'fifa', 'football', 'soccer'].includes(esportType) || 
+          originalEsportType === 'EA Sports FC',
+        
+        'rainbow-6-siege': () => 
+          ['rainbow 6 siege', 'rainbow6siege', 'r6', 'siege'].includes(esportType) || 
+          originalEsportType === 'Rainbow 6 Siege',
+        
+        'rocket-league': () => 
+          ['rocket league', 'rocketleague', 'rl'].includes(esportType) || 
+          originalEsportType === 'Rocket League',
+        
+        'starcraft-2': () => 
+          ['starcraft 2', 'starcraft2', 'sc2'].includes(esportType) || 
+          originalEsportType === 'StarCraft 2',
+        
+        'overwatch': () => 
+          ['overwatch', 'ow'].includes(esportType) || 
+          originalEsportType === 'Overwatch',
+        
+        'king-of-glory': () => 
+          ['king of glory', 'kingofglory', 'kog'].includes(esportType) || 
+          originalEsportType === 'King of Glory',
+        
+        'call-of-duty': () => 
+          ['call of duty', 'callofduty', 'cod'].includes(esportType) || 
+          originalEsportType === 'Call of Duty',
+        
+        'lol-wild-rift': () => 
+          ['lol wild rift', 'lolwildrift', 'wild rift', 'wildrift'].includes(esportType) || 
+          originalEsportType === 'LoL Wild Rift',
+        
+        'pubg': () => 
+          ['pubg', 'playerunknowns battlegrounds'].includes(esportType) || 
+          originalEsportType === 'PUBG',
+        
+        'mobile-legends': () => 
+          ['mobile legends: bang bang', 'mobile legends', 'mobilelegends', 'ml', 'mlbb'].includes(esportType) || 
+          originalEsportType === 'Mobile Legends: Bang Bang'
+      };
+      
+      const matcher = gameMatches[gameType as keyof typeof gameMatches];
+      if (matcher) {
+        const matches = matcher();
+        console.log(`🎮 ${gameType} filter - Match ${match.id} esportType "${originalEsportType}" matches: ${matches}`);
+        return matches;
       }
-      if (gameType === 'lol') {
-        // 🔧 FIXED: Handle "LoL" and "League of Legends" from PandaScore
-        const isLOL = ['lol', 'leagueoflegends', 'league-of-legends', 'league of legends'].includes(esportType) || esportType.includes('league');
-        console.log(`🎮 LOL filter - Match ${match.id} esportType "${esportType}" matches: ${isLOL}`);
-        return isLOL;
-      }
-      if (gameType === 'valorant') {
-        const isValorant = ['valorant', 'val'].includes(esportType);
-        console.log(`🎮 Valorant filter - Match ${match.id} esportType ${esportType} matches: ${isValorant}`);
-        return isValorant;
-      }
-      if (gameType === 'dota2') {
-        // 🔧 FIXED: Handle "Dota 2" from PandaScore
-        const isDota = ['dota2', 'dota', 'dota-2', 'dota 2'].includes(esportType) || esportType.includes('dota');
-        console.log(`🎮 Dota2 filter - Match ${match.id} esportType "${esportType}" matches: ${isDota}`);
-        return isDota;
-      }
-      const matches = esportType === gameType;
-      console.log(`🎮 ${gameType} filter - Match ${match.id} esportType ${esportType} matches: ${matches}`);
+      
+      // Fallback for exact match
+      const matches = esportType === gameType || originalEsportType.toLowerCase() === gameType;
+      console.log(`🎮 ${gameType} filter (fallback) - Match ${match.id} esportType "${originalEsportType}" matches: ${matches}`);
       return matches;
     });
     
