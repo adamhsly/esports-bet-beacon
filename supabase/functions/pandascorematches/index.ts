@@ -12,7 +12,7 @@ serve(async () => {
   )
 
   const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_KEY')
-  const BASE_URL = 'https://api.pandascore.co/dota2/matches'
+  const BASE_URL = 'https://api.pandascore.co/lol/matches
   const PER_PAGE = 50
 
   // Team player cache
