@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate, fetchSupabaseFaceitFinishedMatches } from '@/lib/supabaseFaceitApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
+import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS } from '@/lib/gameTypes';
 
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
@@ -179,36 +180,7 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
   }, {});
 }
 
-const GAME_TYPE_OPTIONS = [
-  { label: 'All Games', value: 'all', icon: Gamepad2 },
-  { label: 'Counter-Strike', value: 'counter-strike', icon: Zap },
-  { label: 'League of Legends', value: 'lol', icon: Trophy },
-  { label: 'Dota 2', value: 'dota2', icon: Users },
-  { label: 'EA Sports FC', value: 'ea-sports-fc', icon: Users },
-  { label: 'Valorant', value: 'valorant', icon: Zap },
-  { label: 'Rainbow 6 Siege', value: 'rainbow-6-siege', icon: Zap },
-  { label: 'Rocket League', value: 'rocket-league', icon: Users },
-  { label: 'StarCraft 2', value: 'starcraft-2', icon: Zap },
-  { label: 'Overwatch', value: 'overwatch', icon: Users },
-  { label: 'King of Glory', value: 'king-of-glory', icon: Trophy },
-  { label: 'Call of Duty', value: 'call-of-duty', icon: Zap },
-  { label: 'LoL Wild Rift', value: 'lol-wild-rift', icon: Trophy },
-  { label: 'PUBG', value: 'pubg', icon: Zap },
-  { label: 'Mobile Legends', value: 'mobile-legends', icon: Users },
-];
-
-const STATUS_FILTER_OPTIONS = [
-  { label: 'All Matches', value: 'all', icon: Filter },
-  { label: 'Live', value: 'live', icon: Zap },
-  { label: 'Upcoming', value: 'upcoming', icon: Clock },
-  { label: 'Finished', value: 'finished', icon: CheckCircle },
-];
-
-const SOURCE_FILTER_OPTIONS = [
-  { label: 'All Sources', value: 'all', icon: Filter },
-  { label: 'Professional', value: 'professional', icon: Trophy },
-  { label: 'Amateur', value: 'amateur', icon: Users },
-];
+// Game type options are now imported from shared lib
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());

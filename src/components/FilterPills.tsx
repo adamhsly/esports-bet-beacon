@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Gamepad2, Clock, Trophy } from 'lucide-react';
+import { ChevronDown, Clock, Trophy, Gamepad2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS, GameTypeOption } from '@/lib/gameTypes';
 
 export interface FilterPillProps {
   gameType: string;
@@ -10,27 +11,6 @@ export interface FilterPillProps {
   onStatusFilterChange: (value: string) => void;
   onSourceFilterChange: (value: string) => void;
 }
-
-const GAME_TYPE_OPTIONS = [
-  { label: 'All Games', value: 'all' },
-  { label: 'CS:GO / CS2', value: 'cs2' },
-  { label: 'League of Legends', value: 'lol' },
-  { label: 'Dota 2', value: 'dota2' },
-  { label: 'Valorant', value: 'valorant' },
-];
-
-const STATUS_FILTER_OPTIONS = [
-  { label: 'All Matches', value: 'all' },
-  { label: 'Live', value: 'live' },
-  { label: 'Upcoming', value: 'upcoming' },
-  { label: 'Finished', value: 'finished' },
-];
-
-const SOURCE_FILTER_OPTIONS = [
-  { label: 'All Sources', value: 'all' },
-  { label: 'Professional', value: 'professional' },
-  { label: 'Amateur', value: 'amateur' },
-];
 
 export const FilterPills: React.FC<FilterPillProps> = ({
   gameType,
@@ -167,6 +147,10 @@ export const FilterPills: React.FC<FilterPillProps> = ({
                     ) && "bg-theme-purple text-white font-medium"
                   )}
                 >
+                  {id === 'game' && 'icon' in option && (() => {
+                    const Icon = (option as GameTypeOption).icon;
+                    return <Icon className="h-3 w-3" />;
+                  })()}
                   {option.label}
                 </button>
               ))}
