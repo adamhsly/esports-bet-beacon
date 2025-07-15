@@ -444,7 +444,7 @@ export async function fetchSupabasePandaScoreLiveMatches(): Promise<PandaScoreMa
     const { data: matches, error } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .in('status', ['running', 'live', 'ongoing'])
+      .eq('status', 'running')
       .order('start_time', { ascending: true })
       .limit(20);
 
