@@ -56,27 +56,27 @@ serve(async (req) => {
       const matchStartTime = match.start_time;
       const teams = match.teams as any[];
 
-      // Check if stats already exist
-      const { data: existingStats } = await supabaseClient
-        .from("pandascore_match_team_stats")
-        .select("id")
-        .eq("match_id", matchId)
-        .maybeSingle();
-
-      if (existingStats) {
-        console.log(`Skipping already-processed match: ${matchId}`);
+      if (!teams || teams.length === 0) {
+        console.warn(`No teams for match ${matchId}`);
         continue;
       }
 
-      // Get team IDs
-      const teamIds = teams.map(team => {
-        if (team.opponent?.id) return team.opponent.id.toString();
-        return team.id?.toString() || team.team_id?.toString();
-      }).filter(Boolean);
+      for (const team of teams) {
+        const teamId = team.opponent?.id?.toString();
+        if (!teamId) continue;
 
-      const statsResults: TeamStatsData[] = [];
+        const { data: existingStat } = await supabaseClient
+          .from("pandascore_match_team_stats")
+          .select("id")
+          .eq("match_id", matchId)
+          .eq("team_id", teamId)
+          .maybeSingle();
 
-      for (const teamId of teamIds) {
+        if (existingStat) {
+          console.log(`Skipping team ${teamId} for match ${matchId} (already processed)`);
+          continue;
+        }
+
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
@@ -91,9 +91,8 @@ serve(async (req) => {
         }
 
         const teamMatches = historicalMatches.filter(m => {
-          const matchTeams = m.teams as any[];
-          return matchTeams.some(t => {
-            const id = t.opponent?.id?.toString() || t.id?.toString() || t.team_id?.toString();
+          return (m.teams ?? []).some(t => {
+            const id = t.opponent?.id?.toString();
             return id === teamId;
           });
         });
@@ -116,17 +115,15 @@ serve(async (req) => {
             recent_win_rate_30d: stats.recentWinRate30d,
             last_10_matches_detail: stats.last10MatchesDetail,
             calculated_at: new Date().toISOString(),
-          });
+          }, { onConflict: ['match_id', 'team_id'] });
 
         if (insertError) {
-          console.error(`Error inserting stats for ${teamId} in match ${matchId}`, insertError);
+          console.error(`Error inserting stats for team ${teamId} in match ${matchId}`, insertError);
         } else {
-          statsResults.push(stats);
+          console.log(`Processed stats for team ${teamId} in match ${matchId}`);
+          results.push({ matchId, teamId });
         }
       }
-
-      console.log(`Processed match ${matchId} - calculated stats for ${statsResults.length} teams`);
-      results.push({ matchId, teamsProcessed: statsResults.length });
     }
 
     return new Response(
@@ -159,7 +156,7 @@ function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime:
   const last10MatchesDetail: any[] = [];
 
   matches.forEach((match) => {
-    const isWin = match.winner_id === teamId;
+    const isWin = match.winner_id?.toString() === teamId;
     if (isWin) wins++;
 
     if (
@@ -186,7 +183,7 @@ function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime:
   });
 
   last10Matches.forEach((match) => {
-    const isWin = match.winner_id === teamId;
+    const isWin = match.winner_id?.toString() === teamId;
     recentFormArray.push(isWin ? "W" : "L");
 
     last10MatchesDetail.push({
@@ -217,9 +214,9 @@ function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime:
 }
 
 function getOpponentName(teamId: string, teams: any[]): string {
-  const opponent = teams.find((team) => {
-    const id = team.opponent?.id?.toString() || team.id?.toString() || team.team_id?.toString();
-    return id !== teamId;
+  const opponent = teams?.find((team) => {
+    const id = team.opponent?.id?.toString();
+    return id && id !== teamId;
   });
 
   return opponent?.opponent?.name || opponent?.name || "Unknown";
