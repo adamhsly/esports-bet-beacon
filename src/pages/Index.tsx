@@ -225,12 +225,12 @@ const Index = () => {
     // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
     console.log('🔍 DEBUG: Starting PandaScore query with detailed logging...');
     
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const twoMonthsAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const twoMonthsFromNow = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
     
     console.log('🔍 DEBUG: Date range for PandaScore query:');
-    console.log(`  - Seven days ago: ${sevenDaysAgo}`);
-    console.log(`  - Thirty days from now: ${thirtyDaysFromNow}`);
+    console.log(`  - Two months ago: ${twoMonthsAgo}`);
+    console.log(`  - Two months from now: ${twoMonthsFromNow}`);
     
     // STEP 1: Test basic query first
     console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
@@ -250,10 +250,10 @@ const Index = () => {
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .gte('start_time', sevenDaysAgo)
-      .lte('start_time', thirtyDaysFromNow)
+      .gte('start_time', twoMonthsAgo)
+      .lte('start_time', twoMonthsFromNow)
       .order('start_time', { ascending: false })
-      .limit(100); // Add limit to prevent huge queries
+      .limit(2000); // Increased limit to handle more matches per month
 
     if (pandascoreError) {
       console.error('❌ Error loading PandaScore matches:', pandascoreError);
