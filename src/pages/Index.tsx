@@ -163,11 +163,18 @@ const generateTournamentId = (match: MatchInfo) => {
 // Helper for grouping matches by tournament/league with clickable links
 function groupMatchesByLeague(matches: MatchInfo[]) {
   return matches.reduce((acc: Record<string, { matches: MatchInfo[]; tournamentId?: string }>, match) => {
-    const league =
-      match.tournament_name ||
-      match.tournament ||
-      match.league_name ||
-      'Unknown League';
+    let league: string;
+    
+    // For PandaScore matches, combine league and tournament names
+    if (match.source === 'professional' && match.league_name && match.tournament_name) {
+      league = `${match.league_name} - ${match.tournament_name}`;
+    } else {
+      // Fallback to existing logic for other sources
+      league = match.tournament_name ||
+               match.tournament ||
+               match.league_name ||
+               'Unknown League';
+    }
     
     if (!acc[league]) {
       acc[league] = { 
