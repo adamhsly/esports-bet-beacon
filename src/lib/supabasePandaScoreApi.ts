@@ -62,13 +62,11 @@ const fetchPlayersByIds = async (playerIds: number[]): Promise<any[]> => {
   console.log(`👥 Fetching ${playerIds.length} players from pandascore_players_master:`, playerIds);
   
   try {
-    // Convert numbers to bigint for proper database query
-    const bigintPlayerIds = playerIds.map(id => Number(id));
-    
+    // Use playerIds directly - no conversion needed for bigint column
     const { data: players, error } = await supabase
       .from('pandascore_players_master')
       .select('*')
-      .in('id', bigintPlayerIds);
+      .in('id', playerIds);
     
     if (error) {
       console.error('❌ Error fetching players from pandascore_players_master:', error);
@@ -85,7 +83,7 @@ const fetchPlayersByIds = async (playerIds: number[]): Promise<any[]> => {
         const { data: singlePlayer, error: singleError } = await supabase
           .from('pandascore_players_master')
           .select('id, name')
-          .eq('id', Number(id))
+          .eq('id', id)
           .limit(1);
         
         if (singleError) {
