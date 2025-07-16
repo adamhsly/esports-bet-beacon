@@ -62,18 +62,38 @@ const fetchPlayersByIds = async (playerIds: number[]): Promise<any[]> => {
   console.log(`👥 Fetching ${playerIds.length} players from pandascore_players_master:`, playerIds);
   
   try {
+    // Convert numbers to bigint for proper database query
+    const bigintPlayerIds = playerIds.map(id => Number(id));
+    
     const { data: players, error } = await supabase
       .from('pandascore_players_master')
       .select('*')
-      .in('id', playerIds);
+      .in('id', bigintPlayerIds);
     
     if (error) {
       console.error('❌ Error fetching players from pandascore_players_master:', error);
+      console.error('❌ Error details:', error.details, error.hint, error.message);
       return [];
     }
     
+    console.log(`📊 Query executed successfully. Found ${players?.length || 0} players`);
+    
     if (!players || players.length === 0) {
       console.log(`⚠️ No players found for IDs: ${playerIds.join(', ')}`);
+      // Let's try a different approach - query each ID individually to debug
+      for (const id of playerIds) {
+        const { data: singlePlayer, error: singleError } = await supabase
+          .from('pandascore_players_master')
+          .select('id, name')
+          .eq('id', Number(id))
+          .limit(1);
+        
+        if (singleError) {
+          console.error(`❌ Error fetching single player ${id}:`, singleError);
+        } else {
+          console.log(`🔍 Single player query for ID ${id}:`, singlePlayer);
+        }
+      }
       return [];
     }
     
