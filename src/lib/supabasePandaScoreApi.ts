@@ -128,14 +128,18 @@ const fetchRosterDataFromPlayerIds = async (match: any): Promise<any> => {
     const teamAPlayerIds = match.team_a_player_ids || [];
     const teamBPlayerIds = match.team_b_player_ids || [];
     
-    console.log(`👥 Team A player IDs:`, teamAPlayerIds);
-    console.log(`👥 Team B player IDs:`, teamBPlayerIds);
+    console.log(`👥 Team A player IDs (${teamAPlayerIds.length}):`, teamAPlayerIds);
+    console.log(`👥 Team B player IDs (${teamBPlayerIds.length}):`, teamBPlayerIds);
     
     // Fetch players for both teams
     const [teamAPlayers, teamBPlayers] = await Promise.all([
       fetchPlayersByIds(teamAPlayerIds),
       fetchPlayersByIds(teamBPlayerIds)
     ]);
+    
+    console.log(`📊 Raw players fetched - Team A: ${teamAPlayers.length}, Team B: ${teamBPlayers.length}`);
+    console.log(`📊 Team A raw players:`, teamAPlayers);
+    console.log(`📊 Team B raw players:`, teamBPlayers);
     
     // Transform player data for components
     const transformedTeamAPlayers = teamAPlayers.map(player => 
@@ -146,6 +150,8 @@ const fetchRosterDataFromPlayerIds = async (match: any): Promise<any> => {
     );
     
     console.log(`✅ Retrieved ${transformedTeamAPlayers.length} players for Team A, ${transformedTeamBPlayers.length} players for Team B`);
+    console.log(`📊 Transformed Team A players:`, transformedTeamAPlayers);
+    console.log(`📊 Transformed Team B players:`, transformedTeamBPlayers);
     
     return {
       teamAPlayers: transformedTeamAPlayers,
