@@ -228,8 +228,20 @@ const transformMatchData = async (dbMatch: any): Promise<PandaScoreMatch> => {
   const team1 = extractTeamData(dbMatch.teams, 0);
   const team2 = extractTeamData(dbMatch.teams, 1);
   
+  console.log(`🏆 Extracted team data:`, {
+    team1: { id: team1.id, name: team1.name },
+    team2: { id: team2.id, name: team2.name }
+  });
+  
   // Fetch roster data using player IDs from the match
+  console.log(`🔍 About to fetch roster data from player IDs...`);
   const rosterData = await fetchRosterDataFromPlayerIds(dbMatch);
+  console.log(`✅ Roster data fetched:`, {
+    teamAPlayers: rosterData.teamAPlayers?.length || 0,
+    teamBPlayers: rosterData.teamBPlayers?.length || 0,
+    teamAData: rosterData.teamAPlayers,
+    teamBData: rosterData.teamBPlayers
+  });
   
   const transformedMatch: PandaScoreMatch = {
     id: `pandascore_${dbMatch.match_id}`,
@@ -412,7 +424,16 @@ export async function fetchSupabasePandaScoreMatchDetails(matchId: string): Prom
     console.log(`✅ Retrieved PandaScore match details for ${matchId}:`, match);
     
     // Transform the data with roster data from player IDs
+    console.log(`🔄 About to transform match data for ${matchId}...`);
     const transformedMatch = await transformMatchData(match);
+    
+    console.log(`✅ Final transformed match data for ${matchId}:`, {
+      teams: transformedMatch.teams.map(team => ({
+        name: team.name,
+        playerCount: team.players?.length || 0,
+        players: team.players
+      }))
+    });
     
     return transformedMatch;
   } catch (error) {
