@@ -1,120 +1,97 @@
+// File: supabase/functions/update-match-changes/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PANDASCORE_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY")!;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-serve(async (_req) => {
+serve(async () => {
   try {
-    const res = await fetch("https://api.pandascore.co/changes", {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const PANDA_SCORE_API_KEY = Deno.env.get("PANDA_SCORE_API_KEY");
+    if (!PANDA_SCORE_API_KEY) {
+      throw new Error("Missing PANDA_SCORE_API_KEY");
+    }
+
+    const response = await fetch("https://api.pandascore.co/changes", {
       headers: {
-        Authorization: `Bearer ${PANDASCORE_API_TOKEN}`,
-        Accept: "application/json",
+        Authorization: `Bearer ${PANDA_SCORE_API_KEY}`,
       },
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Failed to fetch changes:", errorText);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch changes", details: errorText }),
-        { status: 500, headers: corsHeaders }
-      );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`PandaScore API error: ${errorText}`);
     }
 
-    const payload = await res.json();
+    const payload = await response.json();
 
     if (!Array.isArray(payload)) {
-      console.error("❌ Invalid response format. Expected an array.", payload);
-      return new Response(
-        JSON.stringify({ error: "Invalid response format", details: payload }),
-        { status: 500, headers: corsHeaders }
-      );
+      throw new Error("Expected payload to be an array");
     }
 
     const updatedMatches: number[] = [];
 
     for (const change of payload) {
-      if (change.type === "tournament" && Array.isArray(change.object?.matches)) {
-        for (const match of change.object.matches) {
-          const matchId = match.id;
+      if (change.type !== "match") continue;
 
-          const { data: existingMatch, error: fetchError } = await supabase
-            .from("pandascore_matches")
-            .select("*")
-            .eq("match_id", matchId)
-            .maybeSingle();
+      const match = change.object;
+      const match_id = match.id;
 
-          if (fetchError) {
-            console.error(`❌ Error fetching match ${matchId}`, fetchError);
-            continue;
-          }
+      const { data: existingMatch, error: fetchError } = await supabase
+        .from("pandascore_matches")
+        .select("*")
+        .eq("match_id", match_id.toString())
+        .maybeSingle();
 
-          if (!existingMatch) {
-            console.log(`⚠️ Match ${matchId} not found in DB. Skipping.`);
-            continue;
-          }
+      if (fetchError) {
+        console.error(`Failed to fetch match ${match_id}:`, fetchError);
+        continue;
+      }
 
-          const dbModified = new Date(existingMatch.modified_at).getTime();
-          const apiModified = new Date(match.modified_at).getTime();
+      // Skip if match does not exist in DB
+      if (!existingMatch) continue;
 
-          if (apiModified > dbModified) {
-            const { error: updateError } = await supabase
-              .from("pandascore_matches")
-              .update({
-                name: match.name,
-                status: match.status,
-                begin_at: match.begin_at,
-                end_at: match.end_at,
-                winner_id: match.winner_id,
-                scheduled_at: match.scheduled_at,
-                original_scheduled_at: match.original_scheduled_at,
-                modified_at: match.modified_at,
-                slug: match.slug,
-                streams_list: match.streams_list,
-                number_of_games: match.number_of_games,
-                rescheduled: match.rescheduled,
-                match_type: match.match_type,
-              })
-              .eq("match_id", matchId);
-
-            if (updateError) {
-              console.error(`❌ Failed to update match ${matchId}`, updateError);
-              continue;
-            }
-
-            console.log(`✅ Match ${matchId} updated`);
-            updatedMatches.push(matchId);
-          } else {
-            console.log(`⏭️ Match ${matchId} unchanged`);
-          }
+      // Only update fields that changed
+      const updatedFields: Record<string, any> = {};
+      for (const key in match) {
+        if (
+          key in existingMatch &&
+          JSON.stringify(match[key]) !== JSON.stringify(existingMatch[key])
+        ) {
+          updatedFields[key] = match[key];
         }
+      }
+
+      if (Object.keys(updatedFields).length === 0) continue;
+
+      updatedFields.match_id = match_id.toString(); // Required for upsert
+      updatedFields.updated_at = new Date().toISOString();
+
+      const { error: updateError } = await supabase
+        .from("pandascore_matches")
+        .upsert(updatedFields, { onConflict: ["match_id"] });
+
+      if (updateError) {
+        console.error(`Error updating match ${match_id}:`, updateError);
+      } else {
+        console.log(`✅ Updated match ${match_id}`);
+        updatedMatches.push(match_id);
       }
     }
 
     return new Response(
-      JSON.stringify({
-        message: `Processed ${updatedMatches.length} updated match(es).`,
-        updatedMatches,
-      }),
+      JSON.stringify({ success: true, updated_matches: updatedMatches }),
       {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
-    console.error("❌ Unexpected error:", error);
+  } catch (err) {
+    console.error("❌ Function error:", err);
     return new Response(
-      JSON.stringify({ error: error.message || error.toString() }),
-      { status: 500, headers: corsHeaders }
+      JSON.stringify({ error: true, message: String(err) }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 });
