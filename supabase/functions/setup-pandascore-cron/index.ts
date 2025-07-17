@@ -1,77 +1,106 @@
+// /supabase/functions/update-match-changes/index.ts
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const PANDASCORE_API_TOKEN = Deno.env.get("PANDASCORE_API_TOKEN")!;
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  )
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+serve(async (_req) => {
   try {
-    console.log('⚙️ Setting up optimized PandaScore cron jobs...');
-    
-    const projectRef = Deno.env.get('SUPABASE_URL')?.split('//')[1]?.split('.')[0];
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    
-    if (!projectRef || !anonKey) {
-      throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY');
-    }
-
-    // Enable required extensions
-    await supabase.rpc('sql', {
-      query: `
-        CREATE EXTENSION IF NOT EXISTS pg_cron;
-        CREATE EXTENSION IF NOT EXISTS pg_net;
-      `
+    const response = await fetch("https://api.pandascore.co/changes", {
+      headers: {
+        Authorization: `Bearer ${PANDASCORE_API_TOKEN}`,
+        Accept: "application/json",
+      },
     });
 
-    // Remove old cron jobs
-    const oldJobs = [
-      'pandascore-upcoming-matches-sync',
-      'pandascore-matches-sync',
-      'pandascore-teams-sync',
-      'pandascore-tournaments-sync'
-    ];
+    const payload = await response.json();
 
-    for (const job of oldJobs) {
-      await supabase.rpc('sql', {
-        query: `SELECT cron.unschedule('${job}');`
-      }).catch(() => {}); // Ignore errors if job doesn't exist
+    const updatedMatches: any[] = [];
+
+    for (const change of payload) {
+      if (change.type === "tournament" && Array.isArray(change.object?.matches)) {
+        for (const match of change.object.matches) {
+          const matchId = match.id;
+
+          const { data: existingMatch, error: fetchError } = await supabase
+            .from("pandascore_matches")
+            .select("*")
+            .eq("match_id", matchId)
+            .maybeSingle();
+
+          if (fetchError) {
+            console.error(`❌ Error fetching match ${matchId}`, fetchError);
+            continue;
+          }
+
+          if (!existingMatch) {
+            console.log(`⚠️ Match ${matchId} not found in DB. Skipping.`);
+            continue;
+          }
+
+          // Compare modified_at to determine change
+          const dbModified = new Date(existingMatch.modified_at).getTime();
+          const apiModified = new Date(match.modified_at).getTime();
+
+          if (apiModified > dbModified) {
+            const { error: updateError } = await supabase
+              .from("pandascore_matches")
+              .update({
+                name: match.name,
+                status: match.status,
+                begin_at: match.begin_at,
+                end_at: match.end_at,
+                winner_id: match.winner_id,
+                scheduled_at: match.scheduled_at,
+                original_scheduled_at: match.original_scheduled_at,
+                modified_at: match.modified_at,
+                slug: match.slug,
+                streams_list: match.streams_list,
+                number_of_games: match.number_of_games,
+                rescheduled: match.rescheduled,
+                match_type: match.match_type,
+              })
+              .eq("match_id", matchId);
+
+            if (updateError) {
+              console.error(`❌ Failed to update match ${matchId}`, updateError);
+              continue;
+            }
+
+            console.log(`✅ Match ${matchId} updated`);
+            updatedMatches.push(matchId);
+          } else {
+            console.log(`⏭️ Match ${matchId} unchanged`);
+          }
+        }
+      }
     }
-
-    console.log('✅ Optimized PandaScore cron jobs configured (using centralized midnight sync)');
 
     return new Response(
       JSON.stringify({
-        success: true,
-        message: 'PandaScore cron jobs optimized successfully',
-        note: 'PandaScore syncing is now handled by the centralized midnight master sync and dynamic match-specific syncs'
+        message: `Processed ${updatedMatches.length} updated match(es).`,
+        updatedMatches,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('❌ Error setting up PandaScore cron jobs:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
+    );
+  } catch (error) {
+    console.error("❌ Unexpected error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || error.toString() }),
+      { status: 500, headers: corsHeaders }
     );
   }
 });
