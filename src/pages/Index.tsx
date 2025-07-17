@@ -366,7 +366,16 @@ const Index = () => {
     const combinedMatches = [...faceitMatches, ...transformedPandaScore];
     console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
     
-    return combinedMatches;
+    // Filter out matches with placeholder team names
+    const filteredMatches = combinedMatches.filter(match => {
+      const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+      // Hide matches where any team is TBC or TBD
+      return !teamNames.some(name => name === 'tbc' || name === 'tbd');
+    });
+    
+    console.log(`📊 After filtering TBC/TBD: ${filteredMatches.length} matches (removed ${combinedMatches.length - filteredMatches.length})`);
+    
+    return filteredMatches;
   };
 
   // Load all matches for counting (unified dataset)
