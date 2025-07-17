@@ -841,7 +841,7 @@ const Index = () => {
                         const metadata = getTournamentMetadata(matches);
                         return (
                           <div key={league} className="mb-6">
-                            <div className="ml-2 mb-2">
+                            <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
                               {tournamentId ? (
                                 <Link 
                                   to={`/tournament/${tournamentId}`}
@@ -880,7 +880,7 @@ const Index = () => {
                         const metadata = getTournamentMetadata(matches);
                         return (
                           <div key={league} className="mb-6">
-                            <div className="ml-2 mb-2">
+                            <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
                               {tournamentId ? (
                                 <Link 
                                   to={`/tournament/${tournamentId}`}
@@ -919,7 +919,7 @@ const Index = () => {
                         const metadata = getTournamentMetadata(matches);
                         return (
                           <div key={league} className="mb-6">
-                            <div className="ml-2 mb-2">
+                            <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
                               {tournamentId ? (
                                 <Link 
                                   to={`/tournament/${tournamentId}`}
