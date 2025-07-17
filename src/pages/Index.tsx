@@ -617,7 +617,7 @@ const Index = () => {
     }
     
     return items.length > 0 ? (
-      <div className="flex items-center gap-2 ml-2 mt-1">
+      <div className="flex items-center justify-center gap-2 ml-2 mt-1">
         {items}
       </div>
     ) : null;

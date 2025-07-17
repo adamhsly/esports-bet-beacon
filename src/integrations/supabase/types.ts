@@ -1263,16 +1263,19 @@ export type Database = {
           id: string
           last_page: number | null
           last_synced_at: string | null
+          max_page: number | null
         }
         Insert: {
           id: string
           last_page?: number | null
           last_synced_at?: string | null
+          max_page?: number | null
         }
         Update: {
           id?: string
           last_page?: number | null
           last_synced_at?: string | null
+          max_page?: number | null
         }
         Relationships: []
       }
