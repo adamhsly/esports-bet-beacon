@@ -19,7 +19,7 @@ interface PandaScoreMobilePlayerLineupProps {
   esportType?: string;
 }
 
-export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineupProps> = ({ teams, esportType = 'csgo' }) => {
+export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineupProps> = ({ teams, esportType = 'Dota 2' }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   
@@ -34,7 +34,7 @@ export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineup
   // Game-specific position colors for mobile
   const getPositionColor = (position: string, game: string) => {
     const colorMaps = {
-      'csgo': {
+      'Dota 2': {
         'AWPer': 'bg-red-500/20 text-red-400',
         'IGL': 'bg-purple-500/20 text-purple-400',
         'Entry Fragger': 'bg-orange-500/20 text-orange-400',
@@ -72,7 +72,7 @@ export const PandaScoreMobilePlayerLineup: React.FC<PandaScoreMobilePlayerLineup
       }
     };
     
-    const gameColors = colorMaps[game] || colorMaps['csgo'];
+    const gameColors = colorMaps[game] || colorMaps['Dota 2'];
     return gameColors[position] || 'bg-gray-500/20 text-gray-400';
   };
 
