@@ -1,97 +1,113 @@
-// File: supabase/functions/update-match-changes/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
 serve(async () => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  )
+
+  const PANDA_API_KEY = Deno.env.get('PANDA_SCORE_API_KEY')!
+  const CHANGES_URL = 'https://api.pandascore.co/changes'
+
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // Fetch changes from PandaScore
+    const res = await fetch(CHANGES_URL, {
+      headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
+    })
 
-    const PANDA_SCORE_API_KEY = Deno.env.get("PANDA_SCORE_API_KEY");
-    if (!PANDA_SCORE_API_KEY) {
-      throw new Error("Missing PANDA_SCORE_API_KEY");
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('❌ PandaScore fetch error:', errText)
+      return new Response('Failed to fetch PandaScore changes', { status: 500 })
     }
 
-    const response = await fetch("https://api.pandascore.co/changes", {
-      headers: {
-        Authorization: `Bearer ${PANDA_SCORE_API_KEY}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`PandaScore API error: ${errorText}`);
-    }
-
-    const payload = await response.json();
+    const payload = await res.json()
 
     if (!Array.isArray(payload)) {
-      throw new Error("Expected payload to be an array");
+      console.error('❌ Payload is not an array:', payload)
+      return new Response('Invalid payload structure', { status: 500 })
     }
 
-    const updatedMatches: number[] = [];
+    let updatedCount = 0
 
     for (const change of payload) {
-      if (change.type !== "match") continue;
+      if (change.type !== 'match') continue
 
-      const match = change.object;
-      const match_id = match.id;
+      const match = change.object
+      const matchId = match?.id?.toString()
+      if (!matchId) continue
 
-      const { data: existingMatch, error: fetchError } = await supabase
-        .from("pandascore_matches")
-        .select("*")
-        .eq("match_id", match_id.toString())
-        .maybeSingle();
+      const { data: existing, error: fetchError } = await supabase
+        .from('pandascore_matches')
+        .select('*')
+        .eq('match_id', matchId)
+        .maybeSingle()
 
       if (fetchError) {
-        console.error(`Failed to fetch match ${match_id}:`, fetchError);
-        continue;
+        console.error(`❌ Error fetching match ${matchId}:`, fetchError)
+        continue
       }
 
-      // Skip if match does not exist in DB
-      if (!existingMatch) continue;
+      if (!existing) continue // Skip if no record exists
 
-      // Only update fields that changed
-      const updatedFields: Record<string, any> = {};
-      for (const key in match) {
+      // Define map from API fields to DB columns
+      const fieldMap: Record<string, string> = {
+        begin_at: 'start_time',
+        end_at: 'end_time',
+        modified_at: 'modified_at',
+        winner_id: 'winner_id',
+        winner_type: 'winner_type',
+        status: 'status',
+        number_of_games: 'number_of_games',
+        match_type: 'match_type',
+        rescheduled: 'rescheduled',
+        detailed_stats: 'detailed_stats',
+        forfeit: 'forfeit',
+        draw: 'draw',
+        slug: 'slug',
+        original_scheduled_at: 'original_scheduled_at',
+        streams_list: 'streams_list',
+      }
+
+      const updatedFields: Record<string, any> = {}
+
+      for (const apiKey in fieldMap) {
+        const dbKey = fieldMap[apiKey]
+        const newValue = match[apiKey]
+        const oldValue = existing[dbKey]
+
         if (
-          key in existingMatch &&
-          JSON.stringify(match[key]) !== JSON.stringify(existingMatch[key])
+          newValue !== undefined &&
+          JSON.stringify(newValue) !== JSON.stringify(oldValue)
         ) {
-          updatedFields[key] = match[key];
+          updatedFields[dbKey] = newValue
         }
       }
 
-      if (Object.keys(updatedFields).length === 0) continue;
+      if (Object.keys(updatedFields).length > 0) {
+        updatedFields.updated_at = new Date().toISOString()
 
-      updatedFields.match_id = match_id.toString(); // Required for upsert
-      updatedFields.updated_at = new Date().toISOString();
+        const { error: updateError } = await supabase
+          .from('pandascore_matches')
+          .update(updatedFields)
+          .eq('match_id', matchId)
 
-      const { error: updateError } = await supabase
-        .from("pandascore_matches")
-        .upsert(updatedFields, { onConflict: ["match_id"] });
-
-      if (updateError) {
-        console.error(`Error updating match ${match_id}:`, updateError);
-      } else {
-        console.log(`✅ Updated match ${match_id}`);
-        updatedMatches.push(match_id);
+        if (updateError) {
+          console.error(`❌ Failed to update match ${matchId}`, updateError)
+        } else {
+          console.log(`✅ Updated match ${matchId}`, updatedFields)
+          updatedCount++
+        }
       }
     }
 
     return new Response(
-      JSON.stringify({ success: true, updated_matches: updatedMatches }),
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+      JSON.stringify({ status: 'ok', updated: updatedCount }),
+      { headers: { 'Content-Type': 'application/json' } }
+    )
   } catch (err) {
-    console.error("❌ Function error:", err);
-    return new Response(
-      JSON.stringify({ error: true, message: String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error('❌ Unexpected error:', err)
+    return new Response('Unexpected server error', { status: 500 })
   }
-});
+})
