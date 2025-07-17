@@ -1,5 +1,3 @@
-// /supabase/functions/update-match-changes/index.ts
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -16,16 +14,33 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 serve(async (_req) => {
   try {
-    const response = await fetch("https://api.pandascore.co/changes", {
+    const res = await fetch("https://api.pandascore.co/changes", {
       headers: {
         Authorization: `Bearer ${PANDASCORE_API_TOKEN}`,
         Accept: "application/json",
       },
     });
 
-    const payload = await response.json();
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Failed to fetch changes:", errorText);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch changes", details: errorText }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
-    const updatedMatches: any[] = [];
+    const payload = await res.json();
+
+    if (!Array.isArray(payload)) {
+      console.error("❌ Invalid response format. Expected an array.", payload);
+      return new Response(
+        JSON.stringify({ error: "Invalid response format", details: payload }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    const updatedMatches: number[] = [];
 
     for (const change of payload) {
       if (change.type === "tournament" && Array.isArray(change.object?.matches)) {
@@ -48,7 +63,6 @@ serve(async (_req) => {
             continue;
           }
 
-          // Compare modified_at to determine change
           const dbModified = new Date(existingMatch.modified_at).getTime();
           const apiModified = new Date(match.modified_at).getTime();
 
