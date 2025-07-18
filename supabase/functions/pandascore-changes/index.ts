@@ -72,7 +72,7 @@ serve(async () => {
 
   // Fetch pages
   while (true) {
-    const url = `${BASE_URL}?filter[object_type]=${FILTER_OBJECT_TYPE}&per_page=${PER_PAGE}&page=${currentPage}&range[updated_at][gte]=${encodeURIComponent(yesterday)}`
+    const url = `${BASE_URL}?filter[object_type]=${FILTER_OBJECT_TYPE}&filter[updated_at]=${encodeURIComponent(yesterday)}&page=${currentPage}&per_page=${PER_PAGE}`
     console.log(`Fetching page ${currentPage}: ${url}`)
 
     const res = await fetch(url, {
