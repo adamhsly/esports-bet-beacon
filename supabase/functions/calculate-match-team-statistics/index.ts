@@ -51,7 +51,7 @@ serve(async (req) => {
     const results: any[] = [];
 
     for (const match of matches) {
-      const matchId = match.match_id;
+      const matchId = match.match_id.toString();  // <-- ensure string
       const esportType = match.esport_type;
       const matchStartTime = match.start_time;
       const teams = match.teams as any[];
@@ -62,9 +62,10 @@ serve(async (req) => {
       }
 
       for (const team of teams) {
-        const teamId = team.opponent?.id?.toString();
+        const teamId = team.opponent?.id?.toString(); // <-- ensure string
         if (!teamId) continue;
 
+        // Check if this team's stats for this match are already processed
         const { data: existingStat } = await supabaseClient
           .from("pandascore_match_team_stats")
           .select("id")
@@ -77,6 +78,7 @@ serve(async (req) => {
           continue;
         }
 
+        // Fetch historical matches for stats calculation
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
@@ -90,6 +92,7 @@ serve(async (req) => {
           continue;
         }
 
+        // Filter matches involving the current team
         const teamMatches = historicalMatches.filter(m => {
           return (m.teams ?? []).some(t => {
             const id = t.opponent?.id?.toString();
@@ -97,8 +100,10 @@ serve(async (req) => {
           });
         });
 
+        // Calculate stats
         const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
+        // Upsert stats into the database
         const { error: insertError } = await supabaseClient
           .from("pandascore_match_team_stats")
           .upsert({
