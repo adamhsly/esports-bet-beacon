@@ -292,15 +292,30 @@ const Index = () => {
       });
     }
     
-    // Helper function to extract team data from both legacy and new formats
-    const extractTeamData = (teams: any, index: number) => {
-      if (!teams) return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+    // Enhanced helper function to extract team data from both legacy and new formats with detailed logging
+    const extractTeamData = (teams: any, index: number, matchId?: string) => {
+      const logPrefix = matchId ? `[Match ${matchId}]` : '';
+      console.log(`${logPrefix} 🔍 Extracting team ${index + 1} from teams data:`, teams);
       
-      // New array format: [{"type": "Team", "opponent": {...}}, ...]
+      if (!teams) {
+        console.log(`${logPrefix} ⚠️ No teams data provided, returning TBD`);
+        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      }
+      
+      // Handle array format: [{"type": "Team", "opponent": {...}}, ...]
       if (Array.isArray(teams)) {
+        console.log(`${logPrefix} 📋 Teams is array with length: ${teams.length}`);
+        
+        if (teams.length === 0) {
+          console.log(`${logPrefix} ⚠️ Empty teams array, returning TBD`);
+          return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+        }
+        
         const teamEntry = teams[index];
+        console.log(`${logPrefix} 🎯 Team entry at index ${index}:`, teamEntry);
+        
         if (teamEntry?.opponent) {
-          return {
+          const extractedData = {
             id: teamEntry.opponent.id,
             name: teamEntry.opponent.name,
             image_url: teamEntry.opponent.image_url,
@@ -308,13 +323,41 @@ const Index = () => {
             slug: teamEntry.opponent.slug,
             location: teamEntry.opponent.location
           };
+          console.log(`${logPrefix} ✅ Successfully extracted team data:`, extractedData);
+          return extractedData;
+        } else if (teamEntry?.type === 'Team' && !teamEntry.opponent) {
+          // Handle case where team entry exists but opponent is missing
+          console.log(`${logPrefix} ⚠️ Team entry exists but opponent data missing`);
+          return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+        } else {
+          console.log(`${logPrefix} ⚠️ Invalid team entry structure, returning TBD`);
+          return { name: 'TBD', image_url: '/placeholder.svg', id: null };
         }
-        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
       }
       
-      // Legacy object format: {team1: {...}, team2: {...}}
-      const teamKey = index === 0 ? 'team1' : 'team2';
-      return teams[teamKey] || { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      // Handle legacy object format: {team1: {...}, team2: {...}}
+      if (typeof teams === 'object' && teams !== null) {
+        console.log(`${logPrefix} 📦 Teams is object, checking legacy format`);
+        const teamKey = index === 0 ? 'team1' : 'team2';
+        const teamData = teams[teamKey];
+        console.log(`${logPrefix} 🔑 Checking key '${teamKey}':`, teamData);
+        
+        if (teamData) {
+          const extractedData = {
+            id: teamData.id,
+            name: teamData.name,
+            image_url: teamData.image_url || teamData.logo,
+            acronym: teamData.acronym,
+            slug: teamData.slug,
+            location: teamData.location
+          };
+          console.log(`${logPrefix} ✅ Successfully extracted legacy team data:`, extractedData);
+          return extractedData;
+        }
+      }
+      
+      console.log(`${logPrefix} ❌ Unable to extract team data, returning TBD. Teams structure:`, teams);
+      return { name: 'TBD', image_url: '/placeholder.svg', id: null };
     };
 
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
@@ -329,8 +372,8 @@ const Index = () => {
       });
       
       // Extract team data using helper function (supports both formats)
-      const team1Data = extractTeamData(match.teams, 0);
-      const team2Data = extractTeamData(match.teams, 1);
+      const team1Data = extractTeamData(match.teams, 0, match.match_id);
+      const team2Data = extractTeamData(match.teams, 1, match.match_id);
       
       console.log(`🏆 Team data for match ${match.match_id}:`, { team1Data, team2Data });
       
