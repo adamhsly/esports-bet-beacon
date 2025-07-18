@@ -1,10 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 serve(async () => {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -13,37 +9,17 @@ serve(async () => {
 
   const PANDA_API_TOKEN = Deno.env.get('PANDA_SCORE_API_KEY')
   const BASE_URL = 'https://api.pandascore.co/changes'
-  const PER_PAGE = 50
-  const SYNC_ID = 'match_changes'
+  const PAGE_SIZE = 50
 
   const headers = {
     Authorization: `Bearer ${PANDA_API_TOKEN}`,
   }
 
-  // STEP 1: Fetch total pages
-  const paramsForTotal = new URLSearchParams({
-    type: 'match',
-    'page[size]': '1',
-  })
-
-  const totalRes = await fetch(`${BASE_URL}?${paramsForTotal.toString()}`, {
-    headers,
-  })
-
-  if (!totalRes.ok) {
-    const err = await totalRes.text()
-    console.error('❌ Failed to get total pages:', err)
-    return new Response(`Failed to get total pages: ${err}`, { status: 500 })
-  }
-
-  const totalPages = parseInt(totalRes.headers.get('X-Total-Pages') ?? '1', 10)
-  console.log(`📊 Total pages available: ${totalPages}`)
-
-  // STEP 2: Get last page from sync state
+  // Get current sync state
   const { data: syncState, error: syncError } = await supabase
     .from('pandascore_sync_state')
-    .select('last_page, total_pages')
-    .eq('id', SYNC_ID)
+    .select('last_page, max_page')
+    .eq('id', 'match_changes')
     .maybeSingle()
 
   if (syncError) {
@@ -51,57 +27,65 @@ serve(async () => {
     return new Response('Failed to fetch sync state', { status: 500 })
   }
 
-  let lastPage = syncState?.last_page ?? 0
-  const storedTotalPages = syncState?.total_pages ?? 1
+  let currentPage = (syncState?.last_page ?? 0) + 1
+  let maxPage = syncState?.max_page ?? null
 
-  // STEP 3: Reset if necessary
-  if (lastPage >= storedTotalPages) {
-    console.log('🔁 Reached end, resetting page counter to 1')
-    lastPage = 0
-  }
+  console.log(`🔁 Starting from page ${currentPage} (max page: ${maxPage ?? 'unknown'})`)
 
-  const currentPage = lastPage + 1
+  // Fetch current page of changes
+  const url = `${BASE_URL}?type=match&page[size]=${PAGE_SIZE}&page[number]=${currentPage}`
 
-  const params = new URLSearchParams({
-    type: 'match',
-    'page[size]': PER_PAGE.toString(),
-    'page[number]': currentPage.toString(),
-  })
-
-  const res = await fetch(`${BASE_URL}?${params.toString()}`, {
-    headers,
-  })
+  const res = await fetch(url, { headers })
 
   if (!res.ok) {
-    const err = await res.text()
-    console.error('❌ Failed to fetch page', currentPage, ':', err)
-    return new Response(`Failed to fetch changes: ${err}`, { status: 500 })
+    const errorText = await res.text()
+    console.error('❌ Failed to fetch changes:', errorText)
+    return new Response(`Failed to fetch changes: ${errorText}`, { status: 500 })
   }
 
   const changes = await res.json()
-  console.log(`✅ Fetched page ${currentPage} with ${changes.length} change(s)`)
 
-  // 🛠️ TODO: Process the `changes` array here...
+  // Handle empty or unexpected response
+  if (!Array.isArray(changes) || changes.length === 0) {
+    console.log(`ℹ️ No changes returned on page ${currentPage}.`)
+    return new Response(JSON.stringify({ status: 'done', message: 'No changes on page' }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 
-  // STEP 4: Update sync state
-  const { error: syncUpdateError } = await supabase
+  // TODO: Process match changes here
+  console.log(`✅ Received ${changes.length} match changes on page ${currentPage}`)
+
+  // Extract new max page from headers
+  const totalHeader = res.headers.get('X-Total')
+  const newMaxPage = totalHeader ? Math.ceil(parseInt(totalHeader) / PAGE_SIZE) : maxPage
+
+  // Reset page count if we've reached or passed the last page
+  let nextPage = currentPage >= newMaxPage ? 1 : currentPage
+
+  // Update sync state
+  const { error: updateError } = await supabase
     .from('pandascore_sync_state')
-    .upsert(
-      {
-        id: SYNC_ID,
-        last_page: currentPage,
-        total_pages: totalPages,
-        last_synced_at: new Date().toISOString(),
-      },
-      { onConflict: ['id'] }
-    )
+    .upsert({
+      id: 'match_changes',
+      last_page: nextPage,
+      max_page: newMaxPage,
+      last_synced_at: new Date().toISOString(),
+    }, { onConflict: ['id'] })
 
-  if (syncUpdateError) {
-    console.error('❌ Failed to update sync state:', syncUpdateError)
+  if (updateError) {
+    console.error('❌ Failed to update sync state:', updateError)
     return new Response('Failed to update sync state', { status: 500 })
   }
 
-  return new Response(JSON.stringify({ status: 'done', page: currentPage, count: changes.length }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({
+      status: 'success',
+      currentPage,
+      nextPage,
+      newMaxPage,
+      changeCount: changes.length,
+    }),
+    { headers: { 'Content-Type': 'application/json' } }
+  )
 })
