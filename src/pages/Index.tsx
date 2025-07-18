@@ -50,15 +50,33 @@ interface PandaScoreTeamsData {
   };
 }
 
-// 🔧 FIXED: Case-insensitive status categorization for FACEIT matches
-const getFaceitStatusCategory = (status: string, matchId: string): 'live' | 'upcoming' | 'finished' | null => {
+// 🔧 ENHANCED: Time-based status categorization for FACEIT matches
+const getFaceitStatusCategory = (status: string, matchId: string, startTime?: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
   
   console.log(`🔍 Categorizing match ${matchId} with status: ${status} (normalized: ${lowerStatus})`);
   
-  // Live match statuses
+  // Finished match statuses (always respect finished status)
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+    console.log(`✅ Match ${matchId} categorized as FINISHED`);
+    return 'finished';
+  }
+  
+  // Time-based live status determination
+  if (startTime) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    if (hasStarted && !['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+      console.log(`✅ Match ${matchId} categorized as LIVE (past start time: ${startTime})`);
+      return 'live';
+    }
+  }
+  
+  // Default live status fallback for explicit live statuses
   if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
-    console.log(`✅ Match ${matchId} categorized as LIVE`);
+    console.log(`✅ Match ${matchId} categorized as LIVE (explicit status)`);
     return 'live';
   }
   
@@ -68,21 +86,31 @@ const getFaceitStatusCategory = (status: string, matchId: string): 'live' | 'upc
     return 'upcoming';
   }
   
-  // Finished match statuses
-  if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
-    console.log(`✅ Match ${matchId} categorized as FINISHED`);
-    return 'finished';
-  }
-  
   console.log(`⚠️ Match ${matchId} status ${status} not recognized, returning null`);
   return null;
 };
 
-// Helper function to map SportDevs statuses to display categories
-const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+// Helper function to map SportDevs statuses to display categories with time-based logic
+const getSportDevsStatusCategory = (status: string, startTime?: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
   
-  // Live match statuses for SportDevs
+  // Finished match statuses (always respect finished status)
+  if (['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+    return 'finished';
+  }
+  
+  // Time-based live status determination
+  if (startTime) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    if (hasStarted && !['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+      return 'live';
+    }
+  }
+  
+  // Default live status fallback for explicit live statuses
   if (['live', 'running', 'ongoing'].includes(lowerStatus)) {
     return 'live';
   }
@@ -92,23 +120,36 @@ const getSportDevsStatusCategory = (status: string): 'live' | 'upcoming' | 'fini
     return 'upcoming';
   }
   
-  // Finished match statuses for SportDevs
-  if (['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
-    return 'finished';
-  }
-  
   return null;
 };
 
-// 🔧 ENHANCED: Updated PandaScore status categorization to properly handle all statuses
-const getPandaScoreStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+// 🔧 ENHANCED: Time-based PandaScore status categorization
+const getPandaScoreStatusCategory = (status: string, startTime?: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
   
   console.log(`🎯 PandaScore status categorization for status: ${status} (normalized: ${lowerStatus})`);
   
-  // Live match statuses for PandaScore
+  // Finished match statuses (always respect finished status)
+  if (['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+    console.log(`✅ PandaScore status ${status} categorized as FINISHED`);
+    return 'finished';
+  }
+  
+  // Time-based live status determination
+  if (startTime) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    if (hasStarted && !['finished', 'completed', 'cancelled'].includes(lowerStatus)) {
+      console.log(`✅ PandaScore status ${status} categorized as LIVE (past start time: ${startTime})`);
+      return 'live';
+    }
+  }
+  
+  // Default live status fallback for explicit live statuses
   if (['live', 'running', 'ongoing'].includes(lowerStatus)) {
-    console.log(`✅ PandaScore status ${status} categorized as LIVE`);
+    console.log(`✅ PandaScore status ${status} categorized as LIVE (explicit status)`);
     return 'live';
   }
   
@@ -723,8 +764,8 @@ const Index = () => {
         
         dateFilteredMatches.forEach(match => {
           if (match.source === 'amateur') {
-            // FACEIT match categorization with enhanced logging
-            const statusCategory = getFaceitStatusCategory(match.status || '', match.id);
+            // FACEIT match categorization with time-based logic
+            const statusCategory = getFaceitStatusCategory(match.status || '', match.id, match.startTime);
             
             if (statusCategory === 'live') {
               liveMatches.push(match);
@@ -734,8 +775,8 @@ const Index = () => {
               upcomingMatches.push(match);
             }
           } else if (match.source === 'professional') {
-            // PandaScore match categorization
-            const statusCategory = getPandaScoreStatusCategory(match.status || '');
+            // PandaScore match categorization with time-based logic
+            const statusCategory = getPandaScoreStatusCategory(match.status || '', match.startTime);
             
             if (statusCategory === 'live') {
               liveMatches.push(match);
@@ -808,8 +849,8 @@ const Index = () => {
     if (selectedStatusFilter !== 'all') {
       filtered = filtered.filter(match => {
         const statusCategory = match.source === 'amateur' 
-          ? getFaceitStatusCategory(match.status || '', match.id)
-          : getPandaScoreStatusCategory(match.status || '');
+          ? getFaceitStatusCategory(match.status || '', match.id, match.startTime)
+          : getPandaScoreStatusCategory(match.status || '', match.startTime);
         return statusCategory === selectedStatusFilter;
       });
     }

@@ -49,11 +49,27 @@ export interface PlayerMatchHistory {
   faceit_elo_change?: number;
 }
 
-// Helper function to map FACEIT statuses to display categories
-const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finished' | null => {
+// Helper function to map FACEIT statuses to display categories with time-based logic
+const getFaceitStatusCategory = (status: string, startTime?: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
   
-  // Live match statuses
+  // Finished match statuses (always respect finished status)
+  if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+    return 'finished';
+  }
+  
+  // Time-based live status determination
+  if (startTime) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    if (hasStarted && !['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
+      return 'live';
+    }
+  }
+  
+  // Default live status fallback for explicit live statuses
   if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
     return 'live';
   }
@@ -63,24 +79,30 @@ const getFaceitStatusCategory = (status: string): 'live' | 'upcoming' | 'finishe
     return 'upcoming';
   }
   
-  // Finished match statuses
-  if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
-    return 'finished';
-  }
-  
   return null;
 };
 
-// Helper function to determine header type (same logic as FaceitMatchPage)
-const getHeaderType = (status: string): 'finished' | 'live' | 'upcoming' => {
+// Helper function to determine header type with time-based logic
+const getHeaderType = (status: string, startTime?: string): 'finished' | 'live' | 'upcoming' => {
   const normalizedStatus = status?.toLowerCase() || '';
   
-  // Finished match statuses
+  // Finished match statuses (always respect finished status)
   if (['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
     return 'finished';
   }
   
-  // Live match statuses
+  // Time-based live status determination
+  if (startTime) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    if (hasStarted && !['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
+      return 'live';
+    }
+  }
+  
+  // Default live status fallback for explicit live statuses
   if (['ongoing', 'running', 'live'].includes(normalizedStatus)) {
     return 'live';
   }
@@ -700,22 +722,22 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
       } satisfies MatchInfo;
     });
 
-    // Separate live, upcoming, and finished matches using correct status mapping
+    // Separate live, upcoming, and finished matches using time-based status mapping
     const live = transformedMatches.filter(match => {
       const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
-      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
+      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status, matchRecord.scheduled_at) : null;
       return statusCategory === 'live';
     });
 
     const upcoming = transformedMatches.filter(match => {
       const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
-      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
+      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status, matchRecord.scheduled_at) : null;
       return statusCategory === 'upcoming';
     });
 
     const finished = transformedMatches.filter(match => {
       const matchRecord = matches?.find(m => m.match_id === match.id.replace('faceit_', ''));
-      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status) : null;
+      const statusCategory = matchRecord ? getFaceitStatusCategory(matchRecord.status, matchRecord.scheduled_at) : null;
       return statusCategory === 'finished';
     });
 
@@ -727,7 +749,7 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
         const teams = match.teams as any;
         const team1Name = teams.faction1?.name || teams.team1?.name || 'Team 1';
         const team2Name = teams.faction2?.name || teams.team2?.name || 'Team 2';
-        console.log(`🎮 FACEIT Match: ${team1Name} vs ${team2Name} - Status: ${match.status} - Category: ${getFaceitStatusCategory(match.status)}`);
+        console.log(`🎮 FACEIT Match: ${team1Name} vs ${team2Name} - Status: ${match.status} - Category: ${getFaceitStatusCategory(match.status, match.scheduled_at)}`);
       });
     }
     

@@ -25,15 +25,26 @@ import { toast } from '@/hooks/use-toast';
 import { useMobile } from '@/hooks/useMobile';
 
 // Helper function to determine header type based on match status
-const getHeaderType = (status: string): 'finished' | 'live' | 'upcoming' => {
+const getHeaderType = (status: string, startTime?: string): 'finished' | 'live' | 'upcoming' => {
   const normalizedStatus = status?.toLowerCase() || '';
   
-  // Finished match statuses
+  // Finished match statuses (always respect finished status)
   if (['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
     return 'finished';
   }
   
-  // Live match statuses
+  // Time-based live status determination
+  if (startTime) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    if (hasStarted && !['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus)) {
+      return 'live';
+    }
+  }
+  
+  // Default live status fallback for explicit live statuses
   if (['ongoing', 'running', 'live'].includes(normalizedStatus)) {
     return 'live';
   }
@@ -119,8 +130,8 @@ const FaceitMatchPage = () => {
     );
   }
 
-  // Determine which header and content to render based on match status
-  const headerType = getHeaderType(matchDetails.status);
+  // Determine which header and content to render based on match status and time
+  const headerType = getHeaderType(matchDetails.status, matchDetails.startTime);
   console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchDetails.status}`);
 
   const renderMatchHeader = () => {

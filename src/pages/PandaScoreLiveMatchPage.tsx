@@ -34,10 +34,16 @@ const PandaScoreLiveMatchPage = () => {
         throw new Error('PandaScore match not found in database');
       }
       
-      const isLive = match.status === 'running' || match.status === 'live';
+      // Time-based live status determination
+      const now = new Date();
+      const matchStart = new Date(match.start_time);
+      const hasStarted = now >= matchStart;
+      const isFinished = ['finished', 'completed', 'cancelled'].includes(match.status?.toLowerCase() || '');
+      
+      const isLive = hasStarted && !isFinished;
       
       if (!isLive) {
-        console.log('⚠️ Match is not live, redirecting to upcoming page');
+        console.log('⚠️ Match is not live (time-based check), redirecting to upcoming page');
         navigate(`/pandascore/match/${matchId}`, { replace: true });
         return null;
       }
