@@ -57,10 +57,17 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
     return startTime.getTime() < now.getTime();
   };
 
-  // Check if this is a finished match
+  // Time-based live status determination
   const isFinished = () => {
     const status = match.status?.toLowerCase() || '';
     return ['finished', 'completed', 'cancelled', 'aborted'].includes(status);
+  };
+
+  const isLive = () => {
+    if (isFinished()) return false;
+    const now = new Date();
+    const matchStart = new Date(match.startTime);
+    return now >= matchStart;
   };
 
   // Helper functions for finished matches
@@ -83,7 +90,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
   const finishedTime = match.finishedTime || match.finished_at;
 
   return (
-    <Card className={`${isFinished() ? 'bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border-green-500/30' : 'bg-theme-gray-dark border-theme-gray-medium'} overflow-hidden`}>
+    <Card className={`${isFinished() ? 'bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border-green-500/30' : isLive() ? 'bg-gradient-to-r from-red-900/20 via-red-800/20 to-red-900/20 border-red-500/30' : 'bg-theme-gray-dark border-theme-gray-medium'} overflow-hidden`}>
       <div className="p-3">
         {/* Tournament and Platform Badge */}
         <div className="flex items-center justify-between mb-3">

@@ -61,9 +61,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData, rawData } = match;
   const matchDate = new Date(startTime);
   
-  // 🔧 FIXED: Case-insensitive status comparison for both FACEIT and PandaScore
+  // 🔧 ENHANCED: Time-based status determination
   const normalizedStatus = status?.toLowerCase() || '';
   const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
+  
+  // Time-based live status determination
+  const now = new Date();
+  const matchStart = new Date(startTime);
+  const hasStarted = now >= matchStart;
+  const isLive = hasStarted && !isFinished;
 
   // Enhanced logging for routing decisions AND winner/score data
   console.log(`🎯 MatchCard rendering for ${id}:`, {
@@ -263,6 +269,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
               <div className="flex items-center gap-1 text-xs text-green-400 font-semibold">
                 <CheckCircle size={12} />
                 <span>{finalScore}</span>
+              </div>
+            ) : isLive ? (
+              <div className="flex items-center gap-1 text-xs text-red-400 font-semibold">
+                <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
+                <span>LIVE</span>
               </div>
             ) : (
               <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
