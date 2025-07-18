@@ -148,8 +148,8 @@ const PandaScoreUpcomingMatchPage = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
 
-      <div className={`flex-grow container mx-auto ${isMobile ? 'px-1 py-2' : 'px-4 py-8'}`}>
-        <div className={`space-y-${isMobile ? '4' : '8'}`}>
+      <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
+        <div className="space-y-4 md:space-y-8">
           {error && (
             <Alert className="bg-yellow-500/10 border-yellow-500/30">
               <AlertTriangle className="h-4 w-4" />
@@ -159,156 +159,96 @@ const PandaScoreUpcomingMatchPage = () => {
             </Alert>
           )}
 
-          {/* --- Dynamic Match Header based on status --- */}
+          {/* Dynamic Match Header based on status */}
           {renderMatchHeader()}
 
-          {/* --- StreamViewer widget for non-finished matches --- */}
+          {/* StreamViewer widget for non-finished matches */}
           {hasStreams && headerType !== 'finished' && (
-            <Card className="bg-theme-gray-dark border border-theme-gray-medium p-3 mb-4">
-              <h3 className="text-base lg:text-xl font-bold text-white mb-3">
-                {isMobile ? 'Match Streams' : 'Streams'}
-              </h3>
-              <StreamViewer streams={streams} showTabs={!isMobile} />
-              <p className="text-xs text-gray-400 mt-2">
-                Streams will be available closer to match time. Check back before the match starts!
-              </p>
+            <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+              <div className="p-4">
+                <h3 className="text-lg font-bold text-white mb-4">Match Streams</h3>
+                <StreamViewer streams={streams} showTabs={false} />
+                <p className="text-xs text-gray-400 mt-2">
+                  Streams will be available closer to match time. Check back before the match starts!
+                </p>
+              </div>
             </Card>
           )}
 
-          {/* --- Player lineups & other info --- */}
-          {isMobile ? (
-            <PandaScoreMobilePlayerLineup 
-              teams={matchDetails.teams} 
-              esportType={matchDetails.esport_type}
-            />
-          ) : (
-            <PandaScorePlayerLineupTable 
-              teams={matchDetails.teams}
-              esportType={matchDetails.esport_type}
-            />
-          )}
+          {/* Player lineups */}
+          <div className="px-2 md:px-0">
+            {isMobile ? (
+              <PandaScoreMobilePlayerLineup 
+                teams={matchDetails.teams} 
+                esportType={matchDetails.esport_type}
+              />
+            ) : (
+              <PandaScorePlayerLineupTable 
+                teams={matchDetails.teams}
+                esportType={matchDetails.esport_type}
+              />
+            )}
+          </div>
 
-          {/* --- The rest of the content --- */}
-          {isMobile ? (
-            <div className="space-y-4">
+          {/* Pre-Match Stats */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Pre-Match Statistics</h3>
               <PandaScorePreMatchStats
                 teams={matchDetails.teams}
                 tournament={matchDetails.tournament}
                 esportType={matchDetails.esport_type}
                 matchId={matchDetails.match_id}
               />
-
-              <Card className="bg-theme-gray-dark border-theme-gray-medium">
-                <div className="p-2">
-                  <h3 className="text-sm font-bold text-white mb-2">Community Predictions</h3>
-                  <MatchVotingWidget
-                    matchId={matchDetails.id}
-                    teams={[
-                      {
-                        id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1',
-                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                      },
-                      {
-                        id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2',
-                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                      }
-                    ]}
-                  />
-                </div>
-              </Card>
             </div>
-          ) : (
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
-                <TabsTrigger
-                  value="overview"
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger
-                  value="rosters"
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Team Rosters
-                </TabsTrigger>
-                <TabsTrigger
-                  value="stats"
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Pre-Match Analysis
-                </TabsTrigger>
-                <TabsTrigger
-                  value="voting"
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Community Vote
-                </TabsTrigger>
-                <TabsTrigger
-                  value="comparison"
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white py-2 px-4"
-                >
-                  Team Analysis
-                </TabsTrigger>
-              </TabsList>
+          </Card>
 
-              <TabsContent value="overview" className="space-y-8">
-                <PandaScorePreMatchStats
-                  teams={matchDetails.teams}
-                  tournament={matchDetails.tournament}
-                  esportType={matchDetails.esport_type}
-                  matchId={matchDetails.match_id}
+          {/* Community Predictions for upcoming matches */}
+          {headerType === 'upcoming' && (
+            <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+              <div className="p-4">
+                <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
+                <MatchVotingWidget
+                  matchId={matchDetails.id}
+                  teams={[
+                    {
+                      id: matchDetails.teams[0]?.id || 'team1',
+                      name: matchDetails.teams[0]?.name || 'Team 1',
+                      logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                    },
+                    {
+                      id: matchDetails.teams[1]?.id || 'team2',
+                      name: matchDetails.teams[1]?.name || 'Team 2',
+                      logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                    }
+                  ]}
                 />
-              </TabsContent>
-
-              <TabsContent value="rosters">
-                <PandaScorePlayerRoster 
-                  teams={matchDetails.teams}
-                  esportType={matchDetails.esport_type}
-                />
-              </TabsContent>
-
-              <TabsContent value="stats">
-                <PandaScorePreMatchStats
-                  teams={matchDetails.teams}
-                  tournament={matchDetails.tournament}
-                  esportType={matchDetails.esport_type}
-                  matchId={matchDetails.match_id}
-                />
-              </TabsContent>
-
-              <TabsContent value="comparison">
-                <EnhancedTeamComparison
-                  team1Id={matchDetails.teams[0]?.id || ''}
-                  team2Id={matchDetails.teams[1]?.id || ''}
-                  esportType={matchDetails.esport_type}
-                />
-              </TabsContent>
-
-              <TabsContent value="voting">
-                <div className="space-y-8">
-                  <h3 className="text-xl font-bold text-white">Community Predictions</h3>
-                  <MatchVotingWidget
-                    matchId={matchDetails.id}
-                    teams={[
-                      {
-                        id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1',
-                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                      },
-                      {
-                        id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2',
-                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                      }
-                    ]}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </Card>
           )}
+
+          {/* Team Rosters */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
+              <PandaScorePlayerRoster 
+                teams={matchDetails.teams}
+                esportType={matchDetails.esport_type}
+              />
+            </div>
+          </Card>
+
+          {/* Team Analysis */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Team Analysis</h3>
+              <EnhancedTeamComparison
+                team1Id={matchDetails.teams[0]?.id || ''}
+                team2Id={matchDetails.teams[1]?.id || ''}
+                esportType={matchDetails.esport_type}
+              />
+            </div>
+          </Card>
         </div>
       </div>
 

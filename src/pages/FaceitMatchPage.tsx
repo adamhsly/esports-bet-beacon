@@ -124,7 +124,7 @@ const FaceitMatchPage = () => {
   console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchDetails.status}`);
 
   const renderMatchHeader = () => {
-    // For finished matches, always use the full finished header to show scores and winners
+    // Use mobile-style compact header for all devices now
     if (headerType === 'finished') {
       return <FaceitFinishedMatchHeader match={{
         ...matchDetails,
@@ -132,237 +132,115 @@ const FaceitMatchPage = () => {
       }} />;
     }
 
-    // For mobile non-finished matches, use compact header
-    if (isMobile) {
-      return <FaceitCompactMatchHeader match={matchDetails} isMobile={true} />;
-    }
-
-    // Desktop headers for live and upcoming matches
-    switch (headerType) {
-      case 'live':
-        return <FaceitLiveMatchHeader match={matchDetails} />;
-      case 'upcoming':
-      default:
-        return <FaceitMatchHeader match={matchDetails} />;
-    }
+    // Use compact header for all devices
+    return <FaceitCompactMatchHeader match={matchDetails} isMobile={false} />;
   };
 
   const renderMainContent = () => {
-    if (isMobile) {
-      return (
-        <div className="space-y-4">
-          {/* Live scorecard for live matches */}
-          {headerType === 'live' && (
-            <FaceitLiveScorecard match={matchDetails} />
-          )}
-          
-          {/* Pre-Match Stats for upcoming/finished */}
-          <FaceitPreMatchStats 
-            teams={matchDetails.teams}
-            faceitData={matchDetails.faceitData}
-          />
-          
-          {/* Community Voting for upcoming matches */}
-          {headerType === 'upcoming' && (
-            <Card className="bg-theme-gray-dark border-theme-gray-medium">
-              <div className="p-2">
-                <h3 className="text-sm font-bold text-white mb-2">Community Predictions</h3>
-                <MatchVotingWidget 
-                  matchId={matchDetails.id}
-                  teams={[
-                    { 
-                      id: matchDetails.teams[0]?.id || 'team1',
-                      name: matchDetails.teams[0]?.name || 'Team 1', 
-                      logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                    },
-                    { 
-                      id: matchDetails.teams[1]?.id || 'team2',
-                      name: matchDetails.teams[1]?.name || 'Team 2', 
-                      logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                    }
-                  ]}
-                />
-              </div>
-            </Card>
-          )}
-        </div>
-      );
-    }
+    // Use mobile-style layout for all devices
+    return (
+      <div className="space-y-4">
+        {/* Live scorecard for live matches */}
+        {headerType === 'live' && (
+          <FaceitLiveScorecard match={matchDetails} />
+        )}
+        
+        {/* Pre-Match Stats for all match types */}
+        <FaceitPreMatchStats 
+          teams={matchDetails.teams}
+          faceitData={matchDetails.faceitData}
+        />
+        
+        {/* Community Voting for upcoming matches */}
+        {headerType === 'upcoming' && (
+          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
+              <MatchVotingWidget 
+                matchId={matchDetails.id}
+                teams={[
+                  { 
+                    id: matchDetails.teams[0]?.id || 'team1',
+                    name: matchDetails.teams[0]?.name || 'Team 1', 
+                    logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
+                  },
+                  { 
+                    id: matchDetails.teams[1]?.id || 'team2',
+                    name: matchDetails.teams[1]?.name || 'Team 2', 
+                    logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
+                  }
+                ]}
+              />
+            </div>
+          </Card>
+        )}
 
-    // Desktop tabs based on match status
-    const getTabsForStatus = () => {
-      switch (headerType) {
-        case 'live':
-          return (
-            <Tabs defaultValue="live" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
-                <TabsTrigger value="live" className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4">
-                  Live Match
-                </TabsTrigger>
-                <TabsTrigger value="rosters" className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4">
-                  Team Rosters
-                </TabsTrigger>
-                <TabsTrigger value="room" className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4">
-                  Match Room
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="live" className="space-y-8">
-                <FaceitLiveScorecard match={matchDetails} />
-              </TabsContent>
-              
-              <TabsContent value="rosters">
-                <FaceitPlayerRoster teams={matchDetails.teams} />
-              </TabsContent>
-              
-              <TabsContent value="room">
-                <FaceitLiveRoomAccess 
-                  matchId={matchDetails.id}
-                  teams={matchDetails.teams}
-                  status="live"
-                />
-              </TabsContent>
-            </Tabs>
-          );
+        {/* Live Room Access for live matches */}
+        {headerType === 'live' && (
+          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Match Room Access</h3>
+              <FaceitLiveRoomAccess 
+                matchId={matchDetails.id}
+                teams={matchDetails.teams}
+                status="live"
+              />
+            </div>
+          </Card>
+        )}
 
-        case 'finished':
-          return (
-            <Tabs defaultValue="results" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
-                <TabsTrigger value="results" className="data-[state=active]:bg-green-500 data-[state=active]:text-white py-2 px-4">
-                  Match Results
-                </TabsTrigger>
-                <TabsTrigger value="performance" className="data-[state=active]:bg-green-500 data-[state=active]:text-white py-2 px-4">
-                  Player Performance
-                </TabsTrigger>
-                <TabsTrigger value="rosters" className="data-[state=active]:bg-green-500 data-[state=active]:text-white py-2 px-4">
-                  Team Rosters
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="results" className="space-y-8">
-                <FaceitPreMatchStats 
-                  teams={matchDetails.teams}
-                  faceitData={matchDetails.faceitData}
-                />
-              </TabsContent>
-              
-              <TabsContent value="performance">
-                <FaceitPlayerPerformanceTable 
-                  teams={matchDetails.teams} 
-                  matchResult={matchDetails.faceitData?.results}
-                />
-              </TabsContent>
-              
-              <TabsContent value="rosters">
-                <FaceitPlayerRoster teams={matchDetails.teams} />
-              </TabsContent>
-            </Tabs>
-          );
+        {/* Player Performance for finished matches */}
+        {headerType === 'finished' && (
+          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Player Performance</h3>
+              <FaceitPlayerPerformanceTable 
+                teams={matchDetails.teams} 
+                matchResult={matchDetails.faceitData?.results}
+              />
+            </div>
+          </Card>
+        )}
 
-        case 'upcoming':
-        default:
-          return (
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4">
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="rosters" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4">
-                  Team Rosters
-                </TabsTrigger>
-                <TabsTrigger value="stats" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4">
-                  Pre-Match Analysis
-                </TabsTrigger>
-                <TabsTrigger value="voting" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white py-2 px-4">
-                  Community Vote
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="overview" className="space-y-8">
-                <FaceitPreMatchStats 
-                  teams={matchDetails.teams}
-                  faceitData={matchDetails.faceitData}
-                />
-              </TabsContent>
-              
-              <TabsContent value="rosters">
-                <FaceitPlayerRoster teams={matchDetails.teams} />
-              </TabsContent>
-              
-              <TabsContent value="stats">
-                <FaceitPreMatchStats 
-                  teams={matchDetails.teams}
-                  faceitData={matchDetails.faceitData}
-                />
-              </TabsContent>
-              
-              <TabsContent value="voting">
-                <div className="space-y-8">
-                  <h3 className="text-xl font-bold text-white">Community Predictions</h3>
-                  <MatchVotingWidget 
-                    matchId={matchDetails.id}
-                    teams={[
-                      { 
-                        id: matchDetails.teams[0]?.id || 'team1',
-                        name: matchDetails.teams[0]?.name || 'Team 1', 
-                        logo: matchDetails.teams[0]?.logo || '/placeholder.svg'
-                      },
-                      { 
-                        id: matchDetails.teams[1]?.id || 'team2',
-                        name: matchDetails.teams[1]?.name || 'Team 2', 
-                        logo: matchDetails.teams[1]?.logo || '/placeholder.svg'
-                      }
-                    ]}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-          );
-      }
-    };
-
-    return getTabsForStatus();
+        {/* Team Rosters - Always show */}
+        <Card className="bg-theme-gray-dark border-theme-gray-medium">
+          <div className="p-4">
+            <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
+            <FaceitPlayerRoster teams={matchDetails.teams} />
+          </div>
+        </Card>
+      </div>
+    );
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
 
-      <div className={`flex-grow w-full`}>
-        <div className={`max-w-5xl mx-auto w-full px-2 md:px-8 ${isMobile ? 'py-2' : 'py-8'}`}>
-          <div className={`space-y-${isMobile ? '4' : '8'}`}>
-            {/* Error Alert if there were issues */}
-            {error && (
-              <div className="px-2 md:px-8">
-                <Alert className="bg-yellow-500/10 border-yellow-500/30">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-yellow-400">
-                    Some data may be incomplete. Displaying available information from our database.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
+      <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
+        <div className="space-y-4 md:space-y-8">
+          {/* Error Alert if there were issues */}
+          {error && (
+            <Alert className="bg-yellow-500/10 border-yellow-500/30">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-yellow-400">
+                Some data may be incomplete. Displaying available information from our database.
+              </AlertDescription>
+            </Alert>
+          )}
 
-            {/* Dynamic Match Header based on status */}
-            <div className="px-2 md:px-8">
-              {renderMatchHeader()}
-            </div>
-            
-            {/* Player Lineup - Use mobile-optimized component on mobile */}
-            <div className="px-2 md:px-8">
-              {isMobile ? (
-                <FaceitMobilePlayerLineup teams={matchDetails.teams} />
-              ) : (
-                <FaceitPlayerLineupTable teams={matchDetails.teams} />
-              )}
-            </div>
-            
-            {/* Main Content - Changes based on match status */}
-            <div className="px-2 md:px-8">
-              {renderMainContent()}
-            </div>
-          </div>
+          {/* Dynamic Match Header based on status */}
+          {renderMatchHeader()}
+          
+          {/* Player Lineup - Use mobile-optimized component for all devices */}
+          {isMobile ? (
+            <FaceitMobilePlayerLineup teams={matchDetails.teams} />
+          ) : (
+            <FaceitPlayerLineupTable teams={matchDetails.teams} />
+          )}
+          
+          {/* Main Content - Card-based layout for all devices */}
+          {renderMainContent()}
         </div>
       </div>
       

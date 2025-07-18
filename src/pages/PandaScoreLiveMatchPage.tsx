@@ -97,8 +97,8 @@ const PandaScoreLiveMatchPage = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       
-      <div className="flex-grow container mx-auto px-4 py-8">
-        <div className="space-y-8">
+      <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
+        <div className="space-y-4 md:space-y-8">
           <Alert className="bg-red-500/10 border-red-500/30">
             <Radio className="h-4 w-4 text-red-400 animate-pulse" />
             <AlertDescription className="text-red-400 font-semibold">
@@ -110,91 +110,70 @@ const PandaScoreLiveMatchPage = () => {
           
           <PandaScoreLiveScorecard match={matchDetails} />
           
-          <Tabs defaultValue="live" className="w-full">
-            <TabsList className="bg-theme-gray-dark border border-theme-gray-light w-full flex justify-start p-1 mb-8">
-              <TabsTrigger 
-                value="live" 
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                <Radio className="h-4 w-4 mr-2" />
-                Live Match
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rosters" 
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Team Rosters
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analysis" 
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                Team Analysis
-              </TabsTrigger>
-              <TabsTrigger 
-                value="stream"
-                className="data-[state=active]:bg-red-500 data-[state=active]:text-white py-2 px-4"
-              >
-                🎥 Live Stream
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="live" className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">Match Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Tournament:</span>
-                      <span className="text-white">{matchDetails.tournament || 'Pro Match'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Format:</span>
-                      <span className="text-white">Best of {matchDetails.bestOf || 3}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Status:</span>
-                      <Badge className="bg-red-500 text-white">
-                        <Radio className="h-3 w-3 mr-1 animate-pulse" />
-                        LIVE
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => refetch()}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold"
-                    >
-                      Refresh Live Data
-                    </button>
-                  </div>
-                </Card>
+          {/* Match Information Card */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Match Information</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Tournament:</span>
+                  <span className="text-white">{matchDetails.tournament || 'Pro Match'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Format:</span>
+                  <span className="text-white">Best of {matchDetails.bestOf || 3}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Status:</span>
+                  <Badge className="bg-red-500 text-white">
+                    <Radio className="h-3 w-3 mr-1 animate-pulse" />
+                    LIVE
+                  </Badge>
+                </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="rosters">
-              <PandaScorePlayerRoster teams={matchDetails.teams} />
-            </TabsContent>
+            </div>
+          </Card>
 
-            <TabsContent value="analysis">
+          {/* Quick Actions Card */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
+              <button
+                onClick={() => refetch()}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors"
+              >
+                Refresh Live Data
+              </button>
+            </div>
+          </Card>
+
+          {/* Team Rosters Card */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
+              <PandaScorePlayerRoster teams={matchDetails.teams} />
+            </div>
+          </Card>
+
+          {/* Team Analysis Card */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Team Analysis</h3>
               <EnhancedTeamComparison
                 team1Id={matchDetails.teams[0]?.id || ''}
                 team2Id={matchDetails.teams[1]?.id || ''}
                 esportType={matchDetails.esport_type}
               />
-            </TabsContent>
+            </div>
+          </Card>
 
-            <TabsContent value="stream">
-              <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
-                <h3 className="text-xl font-bold text-white mb-4">Official Streams</h3>
-                <StreamViewer streams={extractStreamsFromRawData(matchDetails.rawData)} />
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {/* Official Streams Card */}
+          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Official Streams</h3>
+              <StreamViewer streams={extractStreamsFromRawData(matchDetails.rawData)} />
+            </div>
+          </Card>
         </div>
       </div>
       
