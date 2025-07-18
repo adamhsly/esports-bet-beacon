@@ -41,10 +41,10 @@ serve(async () => {
     return playerIds;
   }
 
-  // Get last synced page for upcoming matches
+  // Get last synced page for upcoming matches and max page if stored
   const { data: syncState, error: syncStateError } = await supabase
     .from("pandascore_sync_state")
-    .select("last_page")
+    .select("last_page, max_page")
     .eq("id", "matches")
     .maybeSingle();
 
@@ -53,17 +53,34 @@ serve(async () => {
   }
 
   let page = (syncState?.last_page ?? 0) + 1;
-  let totalFetched = 0;
 
-  // Get total available pages (to reset page count when needed)
+  // Fetch total matches to calculate max pages
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   });
-  const totalMatches = Number(testRes.headers.get("X-Total") ?? "0");
-  const maxPage = Math.ceil(totalMatches / PER_PAGE);
 
-  // Reset page to 1 if exceeded max page
-  if (page > maxPage) page = 1;
+  if (!testRes.ok) {
+    console.error("Failed to fetch total matches for page calculation:", await testRes.text());
+    return new Response(
+      JSON.stringify({ error: "Failed to get total matches count" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log("Test fetch status:", testRes.status);
+  const totalMatches = Number(testRes.headers.get("X-Total") ?? "0");
+  console.log("Total upcoming matches:", totalMatches);
+
+  const maxPage = Math.ceil(totalMatches / PER_PAGE);
+  console.log("Calculated maxPage:", maxPage);
+
+  // Reset page if exceeded maxPage
+  if (page > maxPage) {
+    page = 1;
+    console.log("Page reset to 1 due to maxPage change");
+  }
+
+  let totalFetched = 0;
 
   while (true) {
     if (page > maxPage) {
@@ -171,6 +188,7 @@ serve(async () => {
         {
           id: "matches",
           last_page: page,
+          max_page: maxPage,
           last_synced_at: new Date().toISOString(),
         },
         { onConflict: ["id"] }
