@@ -15,7 +15,7 @@ serve(async () => {
     Authorization: `Bearer ${PANDA_API_TOKEN}`,
   }
 
-  // Get current sync state
+  // Fetch sync state
   const { data: syncState, error: syncError } = await supabase
     .from('pandascore_sync_state')
     .select('last_page, max_page')
@@ -32,7 +32,7 @@ serve(async () => {
 
   console.log(`🔁 Starting from page ${currentPage} (max page: ${maxPage ?? 'unknown'})`)
 
-  // Fetch current page of changes
+  // Build URL
   const url = `${BASE_URL}?type=match&page[size]=${PAGE_SIZE}&page[number]=${currentPage}`
 
   const res = await fetch(url, { headers })
@@ -45,7 +45,6 @@ serve(async () => {
 
   const changes = await res.json()
 
-  // Handle empty or unexpected response
   if (!Array.isArray(changes) || changes.length === 0) {
     console.log(`ℹ️ No changes returned on page ${currentPage}.`)
     return new Response(JSON.stringify({ status: 'done', message: 'No changes on page' }), {
@@ -53,17 +52,15 @@ serve(async () => {
     })
   }
 
-  // TODO: Process match changes here
-  console.log(`✅ Received ${changes.length} match changes on page ${currentPage}`)
+  // TODO: process the `changes` array here
 
-  // Extract new max page from headers
+  // Get new max page if X-Total header exists
   const totalHeader = res.headers.get('X-Total')
   const newMaxPage = totalHeader ? Math.ceil(parseInt(totalHeader) / PAGE_SIZE) : maxPage
 
-  // Reset page count if we've reached or passed the last page
-  let nextPage = currentPage >= newMaxPage ? 1 : currentPage
+  // Determine next page (reset if we've hit max)
+  const nextPage = currentPage >= (newMaxPage ?? currentPage) ? 1 : currentPage
 
-  // Update sync state
   const { error: updateError } = await supabase
     .from('pandascore_sync_state')
     .upsert({
@@ -83,7 +80,7 @@ serve(async () => {
       status: 'success',
       currentPage,
       nextPage,
-      newMaxPage,
+      maxPage: newMaxPage,
       changeCount: changes.length,
     }),
     { headers: { 'Content-Type': 'application/json' } }
