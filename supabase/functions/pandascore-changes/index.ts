@@ -20,21 +20,7 @@ serve(async () => {
     Authorization: `Bearer ${PANDA_API_TOKEN}`,
   }
 
-  // Get last page from sync state
-  const { data: syncState, error: syncError } = await supabase
-    .from('pandascore_sync_state')
-    .select('last_page')
-    .eq('id', SYNC_ID)
-    .maybeSingle()
-
-  if (syncError) {
-    console.error('❌ Failed to fetch sync state:', syncError)
-    return new Response('Failed to fetch sync state', { status: 500 })
-  }
-
-  let page = (syncState?.last_page ?? 0) + 1
-
-  // Get total pages from headers
+  // STEP 1: Fetch total pages
   const paramsForTotal = new URLSearchParams({
     type: 'match',
     'page[size]': '1',
@@ -44,18 +30,42 @@ serve(async () => {
     headers,
   })
 
-  const totalPages = parseInt(totalRes.headers.get('X-Total-Pages') ?? '1', 10)
-  console.log(`🔢 Total pages: ${totalPages}`)
-
-  // Reset page if over limit
-  if (page > totalPages) {
-    page = 1
+  if (!totalRes.ok) {
+    const err = await totalRes.text()
+    console.error('❌ Failed to get total pages:', err)
+    return new Response(`Failed to get total pages: ${err}`, { status: 500 })
   }
+
+  const totalPages = parseInt(totalRes.headers.get('X-Total-Pages') ?? '1', 10)
+  console.log(`📊 Total pages available: ${totalPages}`)
+
+  // STEP 2: Get last page from sync state
+  const { data: syncState, error: syncError } = await supabase
+    .from('pandascore_sync_state')
+    .select('last_page, total_pages')
+    .eq('id', SYNC_ID)
+    .maybeSingle()
+
+  if (syncError) {
+    console.error('❌ Failed to fetch sync state:', syncError)
+    return new Response('Failed to fetch sync state', { status: 500 })
+  }
+
+  let lastPage = syncState?.last_page ?? 0
+  const storedTotalPages = syncState?.total_pages ?? 1
+
+  // STEP 3: Reset if necessary
+  if (lastPage >= storedTotalPages) {
+    console.log('🔁 Reached end, resetting page counter to 1')
+    lastPage = 0
+  }
+
+  const currentPage = lastPage + 1
 
   const params = new URLSearchParams({
     type: 'match',
     'page[size]': PER_PAGE.toString(),
-    'page[number]': page.toString(),
+    'page[number]': currentPage.toString(),
   })
 
   const res = await fetch(`${BASE_URL}?${params.toString()}`, {
@@ -63,24 +73,24 @@ serve(async () => {
   })
 
   if (!res.ok) {
-    const errText = await res.text()
-    console.error('❌ Failed to fetch changes:', errText)
-    return new Response(`Failed to fetch changes: ${errText}`, { status: 500 })
+    const err = await res.text()
+    console.error('❌ Failed to fetch page', currentPage, ':', err)
+    return new Response(`Failed to fetch changes: ${err}`, { status: 500 })
   }
 
   const changes = await res.json()
+  console.log(`✅ Fetched page ${currentPage} with ${changes.length} change(s)`)
 
-  console.log(`✅ Fetched page ${page} with ${changes.length} change(s)`)
+  // 🛠️ TODO: Process the `changes` array here...
 
-  // TODO: Add your match update logic here using `changes`
-
-  // Update sync state
+  // STEP 4: Update sync state
   const { error: syncUpdateError } = await supabase
     .from('pandascore_sync_state')
     .upsert(
       {
         id: SYNC_ID,
-        last_page: page,
+        last_page: currentPage,
+        total_pages: totalPages,
         last_synced_at: new Date().toISOString(),
       },
       { onConflict: ['id'] }
@@ -91,7 +101,7 @@ serve(async () => {
     return new Response('Failed to update sync state', { status: 500 })
   }
 
-  return new Response(JSON.stringify({ status: 'done', page, count: changes.length }), {
+  return new Response(JSON.stringify({ status: 'done', page: currentPage, count: changes.length }), {
     headers: { 'Content-Type': 'application/json' },
   })
 })
