@@ -1,102 +1,54 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js"
 
 function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 serve(async () => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  )
 
-  const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY")!;
-  const BASE_URL = "https://api.pandascore.co/changes";
-  const PER_PAGE = 50;
+  const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY")
+  const BASE_URL = "https://api.pandascore.co/changes"
+  const PER_PAGE = 50
 
-  const teamCache: Record<string, number[]> = {};
-
-  async function getTeamPlayerIds(teamId: number): Promise<number[]> {
-    if (!teamId) return [];
-    if (teamCache[teamId]) return teamCache[teamId];
-
-    const res = await fetch(`https://api.pandascore.co/teams/${teamId}`, {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    });
-
-    if (!res.ok) {
-      console.error(`Failed to fetch team ${teamId}:`, await res.text());
-      return [];
-    }
-
-    const data = await res.json();
-    const playerIds = (data.players ?? []).map((p: any) => p.id).filter(Boolean);
-    teamCache[teamId] = playerIds;
-    await sleep(300);
-    return playerIds;
-  }
-
-  const { data: syncState } = await supabase
+  // Track sync state
+  const { data: syncState, error: syncStateError } = await supabase
     .from("pandascore_sync_state")
-    .select("*")
+    .select("last_page")
     .eq("id", "match_changes")
-    .maybeSingle();
+    .maybeSingle()
 
-  let lastSyncedAt = syncState?.last_synced_at
-    ? new Date(syncState.last_synced_at)
-    : new Date(Date.now() - 24 * 60 * 60 * 1000); // default: 1 day ago
+  let page = (syncState?.last_page ?? 0) + 1
+  let totalUpserted = 0
 
-  let page = syncState?.last_page ?? 1;
-  let keepFetching = true;
-  let totalProcessed = 0;
-
-  while (keepFetching) {
-    const url = `${BASE_URL}?filter[object_type]=match&page=${page}&per_page=${PER_PAGE}`;
+  while (true) {
+    const url = `${BASE_URL}?type=match&page[size]=${PER_PAGE}&page[number]=${page}`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    });
+    })
 
     if (!res.ok) {
-      console.error("Failed to fetch changes:", await res.text());
-      break;
+      const err = await res.text()
+      console.error(`Failed to fetch changes:`, err)
+      break
     }
 
-    const changes = await res.json();
+    const changes = await res.json()
 
     if (!Array.isArray(changes) || changes.length === 0) {
-      console.log("No more changes found");
-      break;
+      console.log("✅ No more changes.")
+      page = 0 // reset for next run
+      break
     }
 
     for (const change of changes) {
-      const match = change.object;
-      if (!match || !match.id || !match.modified_at) continue;
-
-      const matchModified = new Date(match.modified_at);
-      if (matchModified <= lastSyncedAt) {
-        keepFetching = false;
-        break;
-      }
-
-      const match_id = match.id.toString();
-
-      const { data: existing } = await supabase
-        .from("pandascore_matches")
-        .select("modified_at")
-        .eq("match_id", match_id)
-        .maybeSingle();
-
-      const modifiedLocal = existing?.modified_at
-        ? new Date(existing.modified_at)
-        : null;
-
-      if (modifiedLocal && matchModified <= modifiedLocal) continue;
-
-      const teamAId = match.opponents?.[0]?.opponent?.id;
-      const teamBId = match.opponents?.[1]?.opponent?.id;
-      const teamAPlayerIds = await getTeamPlayerIds(teamAId);
-      const teamBPlayerIds = await getTeamPlayerIds(teamBId);
+      const match = change.object
+      const match_id = match.id?.toString()
+      if (!match_id) continue
 
       const mapped = {
         match_id,
@@ -119,51 +71,50 @@ serve(async () => {
         status: match.status,
         match_type: match.match_type,
         number_of_games: match.number_of_games,
-        tournament_id: match.tournament?.id?.toString() ?? null,
+        tournament_id: match.tournament_id?.toString() ?? null,
         tournament_name: match.tournament?.name ?? null,
-        league_id: match.league?.id?.toString() ?? null,
+        league_id: match.league_id?.toString() ?? null,
         league_name: match.league?.name ?? null,
-        serie_id: match.serie?.id?.toString() ?? null,
+        serie_id: match.serie_id?.toString() ?? null,
         serie_name: match.serie?.name ?? null,
         teams: match.opponents ?? [],
-        team_a_player_ids: teamAPlayerIds,
-        team_b_player_ids: teamBPlayerIds,
         raw_data: match,
         updated_at: new Date().toISOString(),
         last_synced_at: new Date().toISOString(),
-        created_at: existing ? undefined : new Date().toISOString(),
-      };
+        created_at: new Date().toISOString(),
+      }
 
       const { error } = await supabase
         .from("pandascore_matches")
-        .upsert(mapped, { onConflict: ["match_id"] });
+        .upsert(mapped, { onConflict: ["match_id"] })
 
       if (error) {
-        console.error(`❌ Failed to upsert match ${match_id}`, error);
+        console.error(`❌ Failed to upsert match ${match_id}:`, error)
       } else {
-        console.log(`✅ Upserted match ${match_id}`);
-        totalProcessed++;
+        console.log(`✅ Upserted match ${match_id}`)
+        totalUpserted++
       }
     }
 
-    page++;
-    await sleep(500);
+    // Update sync state
+    const { error: syncError } = await supabase
+      .from("pandascore_sync_state")
+      .upsert({
+        id: "match_changes",
+        last_page: page,
+        last_synced_at: new Date().toISOString(),
+      }, { onConflict: ["id"] })
+
+    if (syncError) {
+      console.error("❌ Failed to update sync state:", syncError)
+    }
+
+    page++
+    await sleep(500) // to avoid hitting rate limit
   }
 
-  // Save sync state
-  await supabase.from("pandascore_sync_state").upsert(
-    {
-      id: "match_changes",
-      last_page: page,
-      last_synced_at: new Date().toISOString(),
-    },
-    { onConflict: ["id"] }
-  );
-
   return new Response(
-    JSON.stringify({ status: "done", processed: totalProcessed }),
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
-});
+    JSON.stringify({ status: "done", total: totalUpserted }),
+    { headers: { "Content-Type": "application/json" } }
+  )
+})
