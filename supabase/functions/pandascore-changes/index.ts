@@ -12,8 +12,19 @@ serve(async () => {
   );
 
   const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY")!;
-  const BASE_URL = "https://api.pandascore.co/matches/upcoming";
   const PER_PAGE = 50;
+
+  // Calculate today's date range in UTC
+  const today = new Date();
+  const yyyy = today.getUTCFullYear();
+  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(today.getUTCDate()).padStart(2, "0");
+
+  const startOfDay = `${yyyy}-${mm}-${dd}T00:00:00Z`;
+  const endOfDay = `${yyyy}-${mm}-${dd}T23:59:59Z`;
+
+  // Base URL with filter for matches that begin today
+  const BASE_URL = `https://api.pandascore.co/matches?filter[begin_at]=${startOfDay},${endOfDay}`;
 
   // Cache team players to reduce API calls
   const teamCache: Record<string, number[]> = {};
@@ -41,11 +52,11 @@ serve(async () => {
     return playerIds;
   }
 
-  // Get last synced page for upcoming matches and max page if stored
+  // Get last synced page and max page from sync state table
   const { data: syncState, error: syncStateError } = await supabase
     .from("pandascore_sync_state")
     .select("last_page, max_page")
-    .eq("id", "matches")
+    .eq("id", "matches_today")
     .maybeSingle();
 
   if (syncStateError) {
@@ -54,8 +65,8 @@ serve(async () => {
 
   let page = (syncState?.last_page ?? 0) + 1;
 
-  // Fetch total matches to calculate max pages
-  const testRes = await fetch(`${BASE_URL}?per_page=1`, {
+  // Fetch total matches count to calculate max pages
+  const testRes = await fetch(`${BASE_URL}&per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   });
 
@@ -67,28 +78,22 @@ serve(async () => {
     );
   }
 
-  console.log("Test fetch status:", testRes.status);
   const totalMatches = Number(testRes.headers.get("X-Total") ?? "0");
-  console.log("Total upcoming matches:", totalMatches);
-
   const maxPage = Math.ceil(totalMatches / PER_PAGE);
-  console.log("Calculated maxPage:", maxPage);
 
   // Reset page if exceeded maxPage
   if (page > maxPage) {
     page = 1;
-    console.log("Page reset to 1 due to maxPage change");
   }
 
   let totalFetched = 0;
 
   while (true) {
     if (page > maxPage) {
-      page = 1; // Reset paging
-      console.log("Resetting page to 1");
+      page = 1;
     }
 
-    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&sort=modified_at`;
+    const url = `${BASE_URL}&per_page=${PER_PAGE}&page=${page}&sort=modified_at`;
     console.log(`Fetching page ${page}: ${url}`);
 
     const res = await fetch(url, {
@@ -120,9 +125,7 @@ serve(async () => {
       }
 
       const modifiedRemote = new Date(match.modified_at);
-      const modifiedLocal = existing?.modified_at
-        ? new Date(existing.modified_at)
-        : null;
+      const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null;
 
       // Skip unmodified matches
       if (modifiedLocal && modifiedRemote <= modifiedLocal) continue;
@@ -186,7 +189,7 @@ serve(async () => {
       .from("pandascore_sync_state")
       .upsert(
         {
-          id: "matches",
+          id: "matches_today",
           last_page: page,
           max_page: maxPage,
           last_synced_at: new Date().toISOString(),
