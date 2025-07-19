@@ -136,7 +136,7 @@ serve(async (req) => {
       throw new Error('FACEIT_API_KEY not found in secrets');
     }
 
-    console.log('🔄 Starting FACEIT upcoming matches sync (ongoing championships only)...');
+    console.log('🔄 Starting FACEIT upcoming matches sync (ongoing and upcoming championships)...');
 
     const allUpcomingMatches: FaceitMatch[] = [];
     const allMatchStatuses = new Set();
@@ -148,103 +148,110 @@ serve(async (req) => {
     for (const game of games) {
       console.log(`🎮 Processing game: ${game.toUpperCase()}`);
       
-      // Step 1: Fetch ONLY ongoing championships for this game
-      console.log(`📋 Fetching ongoing ${game.toUpperCase()} championships...`);
-      const championshipsUrl = new URL('https://open.faceit.com/data/v4/championships');
-      championshipsUrl.searchParams.set('game', game);
-      championshipsUrl.searchParams.set('type', 'ongoing');
+      // Step 1: Fetch both ongoing and upcoming championships for this game
+      const championshipTypes = ['ongoing', 'upcoming'];
+      
+      for (const type of championshipTypes) {
+        console.log(`📋 Fetching ${type} ${game.toUpperCase()} championships...`);
+        const championshipsUrl = new URL('https://open.faceit.com/data/v4/championships');
+        championshipsUrl.searchParams.set('game', game);
+        championshipsUrl.searchParams.set('type', type);
 
-      const championshipsResponse = await fetch(championshipsUrl.toString(), {
-        headers: {
-          'Authorization': `Bearer ${faceitApiKey}`,
-          'Content-Type': 'application/json'
+        const championshipsResponse = await fetch(championshipsUrl.toString(), {
+          headers: {
+            'Authorization': `Bearer ${faceitApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!championshipsResponse.ok) {
+          const errorText = await championshipsResponse.text();
+          console.error(`FACEIT Championships API error for ${game} (${type}):`, errorText);
+          continue; // Skip this type and continue with others
         }
-      });
 
-      if (!championshipsResponse.ok) {
-        const errorText = await championshipsResponse.text();
-        console.error(`FACEIT Championships API error for ${game}:`, errorText);
-        continue; // Skip this game and continue with others
-      }
+        const championshipsData: FaceitChampionshipsResponse = await championshipsResponse.json();
+        console.log(`📋 Retrieved ${championshipsData.items.length} ${type} championships for ${game.toUpperCase()}`);
+        totalChampionshipsFound += championshipsData.items.length;
 
-      const championshipsData: FaceitChampionshipsResponse = await championshipsResponse.json();
-      console.log(`📋 Retrieved ${championshipsData.items.length} ongoing championships for ${game.toUpperCase()}`);
-      totalChampionshipsFound += championshipsData.items.length;
+        // Debug: Log championship details
+        championshipsData.items.forEach(champ => {
+          console.log(`🏆 Championship: ${champ.name} (${champ.championship_id}) - Status: ${champ.status}, Type: ${champ.type}, Game: ${champ.game}`);
+        });
 
-      // Debug: Log championship details
-      championshipsData.items.forEach(champ => {
-        console.log(`🏆 Championship: ${champ.name} (${champ.championship_id}) - Status: ${champ.status}, Type: ${champ.type}, Game: ${champ.game}`);
-      });
+        // Step 2: For each championship, fetch ALL matches and championship details
+        for (const championship of championshipsData.items) {
+          championshipsProcessed++;
+          // Fetch detailed championship info (for stream URL and raw data)
+          let championshipDetails = null;
+          try {
+            const champResp = await fetch(
+              `https://open.faceit.com/data/v4/championships/${championship.championship_id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${faceitApiKey}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            if (champResp.ok) {
+              championshipDetails = await champResp.json();
+            }
+          } catch (err) {
+            console.warn(`⚠️ Could not fetch championship details for ${championship.championship_id}`, err);
+          }
+          championshipDetailsMap.set(championship.championship_id, championshipDetails);
 
-      // Step 2: For each ongoing championship, fetch ALL matches and championship details
-      for (const championship of championshipsData.items) {
-        championshipsProcessed++;
-        // Fetch detailed championship info (for stream URL and raw data)
-        let championshipDetails = null;
-        try {
-          const champResp = await fetch(
-            `https://open.faceit.com/data/v4/championships/${championship.championship_id}`,
-            {
+          console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id})`);
+
+          try {
+            const matchesResponse = await fetch(`https://open.faceit.com/data/v4/championships/${championship.championship_id}/matches`, {
               headers: {
                 'Authorization': `Bearer ${faceitApiKey}`,
                 'Content-Type': 'application/json'
               }
+            });
+
+            if (!matchesResponse.ok) {
+              console.error(`❌ Error fetching matches for championship ${championship.championship_id}: ${matchesResponse.status}`);
+              continue;
             }
-          );
-          if (champResp.ok) {
-            championshipDetails = await champResp.json();
-          }
-        } catch (err) {
-          console.warn(`⚠️ Could not fetch championship details for ${championship.championship_id}`, err);
-        }
-        championshipDetailsMap.set(championship.championship_id, championshipDetails);
 
-        console.log(`🏆 Processing championship: ${championship.name} (${championship.championship_id})`);
+            const matchesData: FaceitMatchesResponse = await matchesResponse.json();
+            console.log(`🎮 Found ${matchesData.items.length} total matches in ${championship.name}`);
 
-        try {
-          const matchesResponse = await fetch(`https://open.faceit.com/data/v4/championships/${championship.championship_id}/matches`, {
-            headers: {
-              'Authorization': `Bearer ${faceitApiKey}`,
-              'Content-Type': 'application/json'
-            }
-          });
+            // Debug: Log all match statuses we encounter
+            matchesData.items.forEach(match => {
+              allMatchStatuses.add(match.status);
+              const teams = match.teams ? `${match.teams.faction1.name} vs ${match.teams.faction2.name}` : 'N/A';
+              const scheduledTime = convertFaceitTimestamp(match.scheduled_at);
+              console.log(`  • ${match.match_id} | ${match.status} | ${teams} | Scheduled: ${scheduledTime} | Game: ${match.game}`);
+            });
 
-          if (!matchesResponse.ok) {
-            console.error(`❌ Error fetching matches for championship ${championship.championship_id}: ${matchesResponse.status}`);
+            // Filter for upcoming/scheduled matches only
+            const upcomingMatches = matchesData.items.filter(match => {
+              const status = match.status.toLowerCase();
+              const isUpcomingStatus = status === 'scheduled' || status === 'ready' || status === 'upcoming' || status === 'configured';
+              const notStarted = !match.started_at || new Date(convertFaceitTimestamp(match.started_at) || 0) > new Date();
+              const notFinished = !match.finished_at;
+              
+              return isUpcomingStatus && notStarted && notFinished;
+            });
+
+            console.log(`📅 Found ${upcomingMatches.length} upcoming matches in ${championship.name}`);
+            allUpcomingMatches.push(...upcomingMatches);
+
+            // Add delay between requests to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (error) {
+            console.error(`❌ Error processing championship ${championship.championship_id}:`, error);
             continue;
           }
-
-          const matchesData: FaceitMatchesResponse = await matchesResponse.json();
-          console.log(`🎮 Found ${matchesData.items.length} total matches in ${championship.name}`);
-
-          // Debug: Log all match statuses we encounter
-          matchesData.items.forEach(match => {
-            allMatchStatuses.add(match.status);
-            const teams = match.teams ? `${match.teams.faction1.name} vs ${match.teams.faction2.name}` : 'N/A';
-            const scheduledTime = convertFaceitTimestamp(match.scheduled_at);
-            console.log(`  • ${match.match_id} | ${match.status} | ${teams} | Scheduled: ${scheduledTime} | Game: ${match.game}`);
-          });
-
-          // Filter for upcoming/scheduled matches only
-          const upcomingMatches = matchesData.items.filter(match => {
-            const status = match.status.toLowerCase();
-            const isUpcomingStatus = status === 'scheduled' || status === 'ready' || status === 'upcoming' || status === 'configured';
-            const notStarted = !match.started_at || new Date(convertFaceitTimestamp(match.started_at) || 0) > new Date();
-            const notFinished = !match.finished_at;
-            
-            return isUpcomingStatus && notStarted && notFinished;
-          });
-
-          console.log(`📅 Found ${upcomingMatches.length} upcoming matches in ${championship.name}`);
-          allUpcomingMatches.push(...upcomingMatches);
-
-          // Add delay between requests to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-        } catch (error) {
-          console.error(`❌ Error processing championship ${championship.championship_id}:`, error);
-          continue;
         }
+
+        // Add delay between championship types to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
 
       // Add delay between games to respect rate limits
