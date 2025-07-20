@@ -553,7 +553,18 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
       console.log('📊 FACEIT match status distribution:', statusCounts);
     }
 
-    return (matches || []).map(match => {
+    // Filter out matches with TBC/TBD teams before transformation
+    const filteredMatches = (matches || []).filter(match => {
+      const teams = match.teams as any;
+      const team1Name = (teams.faction1?.name || teams.team1?.name || '').toLowerCase();
+      const team2Name = (teams.faction2?.name || teams.team2?.name || '').toLowerCase();
+      return team1Name !== 'tbc' && team1Name !== 'tbd' && 
+             team2Name !== 'tbc' && team2Name !== 'tbd';
+    });
+
+    console.log(`📊 After filtering TBC/TBD: ${filteredMatches.length} FACEIT matches (removed ${(matches?.length || 0) - filteredMatches.length})`);
+
+    return filteredMatches.map(match => {
       const teams = match.teams as any;
       const rawData = match.raw_data as any;
       

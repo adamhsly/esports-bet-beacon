@@ -384,9 +384,20 @@ export async function fetchSupabasePandaScoreMatches(esportType: string): Promis
       }
     });
     
+    // Filter out matches with TBC/TBD teams before transformation
+    const filteredMatches = matches.filter(match => {
+      const teams = match.teams as any;
+      const team1Name = (teams?.team1?.name || '').toLowerCase();
+      const team2Name = (teams?.team2?.name || '').toLowerCase();
+      return team1Name !== 'tbc' && team1Name !== 'tbd' && 
+             team2Name !== 'tbc' && team2Name !== 'tbd';
+    });
+
+    console.log(`📊 After filtering TBC/TBD: ${filteredMatches.length} PandaScore matches (removed ${matches.length - filteredMatches.length})`);
+    
     // Transform matches with roster data
     const transformedMatches = await Promise.all(
-      matches.map(async (match) => {
+      filteredMatches.map(async (match) => {
         return await transformMatchData(match);
       })
     );
