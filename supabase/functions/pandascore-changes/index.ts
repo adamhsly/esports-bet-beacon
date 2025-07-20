@@ -1,81 +1,31 @@
-// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+serve(async (req) => {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
 
-serve(async () => {
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY");
-
-  // 🔍 Log which env vars are loaded (not values)
-  console.log("SUPABASE_URL present:", !!SUPABASE_URL);
-  console.log("SERVICE_ROLE_KEY present:", !!SERVICE_ROLE_KEY);
-  console.log("PANDA_SCORE_API_KEY present:", !!PANDA_API_TOKEN);
-
-  // 🔥 Exit early if missing any required env vars
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !PANDA_API_TOKEN) {
-    return new Response(
-      JSON.stringify({
-        error: "Missing one or more required environment variables.",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-  // 👀 Quick connection check
-  const { error: testError } = await supabase
-    .from("pandascore_matches")
-    .select("match_id")
-    .limit(1);
-
-  if (testError) {
-    console.error("❌ Supabase connection test failed:", testError);
-    return new Response(
-      JSON.stringify({ error: "Supabase credentials appear to be invalid." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  const BASE_URL = "https://api.pandascore.co/matches/upcoming";
+  const BASE_URL = "https://api.pandascore.co/matches";
   const PER_PAGE = 50;
-  const teamCache: Record<string, number[]> = {};
 
-  async function getTeamPlayerIds(teamId: number): Promise<number[]> {
-    if (!teamId) return [];
-
-    if (teamCache[teamId]) return teamCache[teamId];
-
-    const res = await fetch(`https://api.pandascore.co/teams/${teamId}`, {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    });
-
-    if (!res.ok) {
-      console.error(`Failed to fetch team ${teamId}:`, await res.text());
-      return [];
-    }
-
-    const data = await res.json();
-    const playerIds = (data.players ?? []).map((p: any) => p.id).filter(Boolean);
-    teamCache[teamId] = playerIds;
-    await sleep(300);
-    return playerIds;
+  if (!PANDA_API_TOKEN) {
+    return new Response(JSON.stringify({ error: "Missing API key" }), { status: 500 });
   }
 
+  // Get the current sync state
   const { data: syncState } = await supabase
     .from("pandascore_sync_state")
-    .select("last_page")
+    .select("last_page, max_page")
     .eq("id", "matches")
     .maybeSingle();
 
   let page = (syncState?.last_page ?? 0) + 1;
   let totalFetched = 0;
 
+  // Get total matches available (optional, for logging or max_page logic)
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   });
@@ -126,30 +76,15 @@ serve(async () => {
 
       if (modifiedLocal && modifiedRemote <= modifiedLocal) continue;
 
-      const teamAId = match.opponents?.[0]?.opponent?.id;
-      const teamBId = match.opponents?.[1]?.opponent?.id;
-
-      const teamAPlayerIds = await getTeamPlayerIds(teamAId);
-      const teamBPlayerIds = await getTeamPlayerIds(teamBId);
+      const teamAPlayerIds = match.opponents?.[0]?.opponent?.players?.map((p: any) => p.id) ?? [];
+      const teamBPlayerIds = match.opponents?.[1]?.opponent?.players?.map((p: any) => p.id) ?? [];
 
       const mapped = {
         match_id,
-        esport_type: match.videogame?.name ?? null,
+        begin_at: match.begin_at,
+        end_at: match.end_at,
+        name: match.name,
         slug: match.slug,
-        draw: match.draw,
-        forfeit: match.forfeit,
-        start_time: match.begin_at,
-        end_time: match.end_at,
-        original_scheduled_at: match.original_scheduled_at,
-        rescheduled: match.rescheduled,
-        detailed_stats: match.detailed_stats,
-        winner_id: match.winner_id?.toString() ?? null,
-        winner_type: match.winner_type ?? null,
-        videogame_id: match.videogame?.id?.toString() ?? null,
-        videogame_name: match.videogame?.name ?? null,
-        stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
-        stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
-        modified_at: match.modified_at,
         status: match.status,
         match_type: match.match_type,
         number_of_games: match.number_of_games,
@@ -162,6 +97,9 @@ serve(async () => {
         teams: match.opponents ?? [],
         team_a_player_ids: teamAPlayerIds,
         team_b_player_ids: teamBPlayerIds,
+        stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
+        stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
+        modified_at: match.modified_at,
         raw_data: match,
         updated_at: new Date().toISOString(),
         last_synced_at: new Date().toISOString(),
@@ -196,8 +134,26 @@ serve(async () => {
     }
 
     page++;
-    await sleep(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Sleep to respect rate limits
   }
+
+  // After cycling through all pages, reset last_page and max_page to 0
+  await supabase
+    .from("pandascore_sync_state")
+    .upsert(
+      {
+        id: "matches",
+        last_page: 0,
+        max_page: 0,
+        last_synced_at: new Date().toISOString(),
+      },
+      { onConflict: ["id"] }
+    );
+
+  return new Response(JSON.stringify({ status: "done", total: totalFetched }), {
+    headers: { "Content-Type": "application/json" },
+  });
+});
 
   return new Response(JSON.stringify({ status: "done", total: totalFetched }), {
     headers: { "Content-Type": "application/json" },
