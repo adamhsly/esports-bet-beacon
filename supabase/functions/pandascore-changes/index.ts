@@ -6,7 +6,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const PANDA_API_TOKEN = Deno.env.get("PANDASCORE_API_TOKEN")!;
+const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_TOKEN")!;
 const BASE_URL = "https://api.pandascore.co/csgo/matches";
 
 function extractKeyMatchData(match: any) {
