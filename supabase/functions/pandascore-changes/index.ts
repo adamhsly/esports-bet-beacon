@@ -77,7 +77,6 @@ serve(async (_req) => {
         begin_at: match.begin_at,
         status: match.status,
         name: match.name,
-        modified_at: match.modified_at,
         start_time: match.begin_at,
         end_time: match.end_at,
       });
