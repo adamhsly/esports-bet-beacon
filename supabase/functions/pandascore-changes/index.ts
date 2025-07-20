@@ -16,6 +16,7 @@ serve(async () => {
   console.log("SERVICE_ROLE_KEY present:", !!SERVICE_ROLE_KEY);
   console.log("PANDA_SCORE_API_KEY present:", !!PANDA_API_TOKEN);
 
+  // 🔥 Exit early if missing any required env vars
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !PANDA_API_TOKEN) {
     return new Response(
       JSON.stringify({
@@ -27,7 +28,7 @@ serve(async () => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  // 🔌 Test Supabase connection
+  // 👀 Quick connection check
   const { error: testError } = await supabase
     .from("pandascore_matches")
     .select("match_id")
@@ -179,7 +180,6 @@ serve(async () => {
       }
     }
 
-    // Update sync state mid-run
     const { error: syncUpdateError } = await supabase
       .from("pandascore_sync_state")
       .upsert(
@@ -197,22 +197,6 @@ serve(async () => {
 
     page++;
     await sleep(1000);
-  }
-
-  // ✅ Reset sync state for next run
-  const { error: finalResetError } = await supabase
-    .from("pandascore_sync_state")
-    .upsert(
-      {
-        id: "matches",
-        last_page: 0,
-        last_synced_at: new Date().toISOString(),
-      },
-      { onConflict: ["id"] }
-    );
-
-  if (finalResetError) {
-    console.error("❌ Failed to reset sync state at end of cycle:", finalResetError);
   }
 
   return new Response(JSON.stringify({ status: "done", total: totalFetched }), {

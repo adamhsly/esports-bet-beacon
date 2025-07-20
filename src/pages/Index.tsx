@@ -10,7 +10,6 @@ import SearchableNavbar from '@/components/SearchableNavbar';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import { Badge } from '@/components/ui/badge';
 import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate, fetchSupabaseFaceitFinishedMatches } from '@/lib/supabaseFaceitApi';
-import { fetchSupabasePandaScoreMatches } from '@/lib/supabasePandaScoreApi';
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
 import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS } from '@/lib/gameTypes';
@@ -271,15 +270,56 @@ const Index = () => {
     // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
     console.log(`📊 FACEIT matches already have correct IDs for routing`);
     
-    // 🔧 OPTIMIZED: Use the filtered PandaScore API function instead of direct DB query
-    console.log('🔍 Loading PandaScore matches using filtered API...');
+    // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
+    console.log('🔍 DEBUG: Starting PandaScore query with detailed logging...');
     
-    const pandascoreMatches = await fetchSupabasePandaScoreMatches('Counter-Strike');
-    console.log(`📊 Loaded ${pandascoreMatches.length} filtered PandaScore matches`);
+    // 🔧 ENHANCED: Create dynamic date range based on selected date for better relevance  
+    const selectedDateStart = startOfDay(selectedDate);
+    const oneWeekBefore = new Date(selectedDateStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAfter = new Date(selectedDateStart.getTime() + 30 * 24 * 60 * 60 * 1000);
     
-    // Debug: Log sample of the data to verify TBC/TBD filtering
-    if (pandascoreMatches.length > 0) {
-      console.log('🔍 Sample PandaScore match (after TBC/TBD filtering):', pandascoreMatches[0]);
+    console.log('🔍 DEBUG: Date range for PandaScore query based on selected date:');
+    console.log(`  - Selected Date: ${selectedDate.toDateString()}`);
+    console.log(`  - Query Range: ${oneWeekBefore.toISOString()} to ${oneMonthAfter.toISOString()}`);
+    
+    // STEP 1: Test basic query first
+    console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
+    const { data: testPandaScore, error: testPandaError } = await supabase
+      .from('pandascore_matches')
+      .select('count(*), esport_type')
+      .limit(5);
+    
+    if (testPandaError) {
+      console.error('❌ Basic PandaScore test query failed:', testPandaError);
+    } else {
+      console.log('🔍 DEBUG: Basic PandaScore query result:', testPandaScore);
+    }
+    
+    // STEP 2: Enhanced query with selected date-based filtering
+    console.log('🔍 DEBUG: Testing PandaScore query with selected date-based filter...');
+    const { data: pandascoreMatches, error: pandascoreError } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .gte('start_time', oneWeekBefore.toISOString())
+      .lte('start_time', oneMonthAfter.toISOString())
+      .order('start_time', { ascending: true }) // Changed to ascending to get closest matches first
+      .limit(3000); // Increased limit
+
+    if (pandascoreError) {
+      console.error('❌ Error loading PandaScore matches:', pandascoreError);
+      console.error('❌ Full PandaScore error details:', JSON.stringify(pandascoreError, null, 2));
+    } else {
+      console.log(`✅ Successfully fetched ${pandascoreMatches?.length || 0} PandaScore matches`);
+      
+      // STEP 3: Log sample of the data to verify structure
+      if (pandascoreMatches && pandascoreMatches.length > 0) {
+        console.log('🔍 DEBUG: Sample PandaScore match structure:', {
+          sampleMatch: pandascoreMatches[0],
+          totalMatches: pandascoreMatches.length,
+          esportTypes: [...new Set(pandascoreMatches.map(m => m.esport_type))],
+          statuses: [...new Set(pandascoreMatches.map(m => m.status))]
+        });
+      }
     }
 
     console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (all matches, no limit)`);
@@ -363,48 +403,49 @@ const Index = () => {
       return { name: 'TBD', image_url: '/placeholder.svg', id: null };
     };
 
-    // Transform PandaScore matches to MatchInfo format (they're already filtered for TBC/TBD)
+    // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
-      const matchId = `pandascore_${match.id}`;
+      const matchId = `pandascore_${match.match_id}`;
       
-      console.log(`🔄 Processing filtered PandaScore match ${match.id}:`, { 
+      console.log(`🔄 Processing PandaScore match ${match.match_id}:`, { 
         teams: match.teams, 
         esport_type: match.esport_type,
         status: match.status,
         start_time: match.start_time 
       });
       
-      // Extract team data from the teams array
-      const teams = match.teams || [];
-      const team1 = teams[0] as any || {};
-      const team2 = teams[1] as any || {};
+      // Extract team data using helper function (supports both formats)
+      const team1Data = extractTeamData(match.teams, 0, match.match_id);
+      const team2Data = extractTeamData(match.teams, 1, match.match_id);
+      
+      console.log(`🏆 Team data for match ${match.match_id}:`, { team1Data, team2Data });
       
       const transformedMatch = {
-        id: matchId,
+        id: matchId, // Ensure consistent prefixing for homepage
         teams: [
           {
-            name: team1.name || 'Team 1',
-            logo: team1.logo || '/placeholder.svg',
-            id: team1.id?.toString() || `pandascore_team_${match.id}_1`
+            name: team1Data.name || 'TBD',
+            logo: team1Data.image_url || '/placeholder.svg',
+            id: team1Data.id?.toString() || `pandascore_team_${match.match_id}_1`
           },
           {
-            name: team2.name || 'Team 2',
-            logo: team2.logo || '/placeholder.svg',
-            id: team2.id?.toString() || `pandascore_team_${match.id}_2`
+            name: team2Data.name || 'TBD',
+            logo: team2Data.image_url || '/placeholder.svg',
+            id: team2Data.id?.toString() || `pandascore_team_${match.match_id}_2`
           }
         ] as [any, any],
         startTime: match.start_time,
         tournament: match.tournament_name || match.league_name || 'Professional Tournament',
         tournament_name: match.tournament_name,
         league_name: match.league_name,
-        esportType: match.esport_type || 'Counter-Strike',
+        esportType: match.esport_type,
         bestOf: match.number_of_games || 3,
         source: 'professional' as const,
-        status: match.status,
-        rawData: match.rawData
+        status: match.status, // Include status for proper categorization
+        rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
       } satisfies MatchInfo;
       
-      console.log(`✅ Transformed filtered PandaScore match ${match.id}:`, transformedMatch);
+      console.log(`✅ Transformed PandaScore match ${match.match_id}:`, transformedMatch);
       return transformedMatch;
     });
 
