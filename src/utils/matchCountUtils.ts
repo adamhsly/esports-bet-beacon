@@ -1,6 +1,7 @@
 
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { MatchInfo } from '@/components/MatchCard';
+import { fromUTCString } from './timezoneUtils';
 
 export interface MatchCountBreakdown {
   total: number;
@@ -14,8 +15,9 @@ export const getDetailedMatchCountsByDate = (matches: MatchInfo[]): Record<strin
   const counts: Record<string, MatchCountBreakdown> = {};
   
   matches.forEach(match => {
-    const dateKey = format(new Date(match.startTime), 'yyyy-MM-dd');
-    const matchDate = new Date(match.startTime);
+    // Use consistent timezone-aware date parsing to match the display filtering logic
+    const matchDate = fromUTCString(match.startTime);
+    const dateKey = format(matchDate, 'yyyy-MM-dd');
     const now = new Date();
     
     if (!counts[dateKey]) {
