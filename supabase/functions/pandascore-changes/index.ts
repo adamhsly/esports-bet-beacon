@@ -26,7 +26,6 @@ serve(async () => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  // Quick connection test
   const { error: testError } = await supabase
     .from("pandascore_matches")
     .select("match_id")
@@ -43,66 +42,66 @@ serve(async () => {
   const BASE_URL = "https://api.pandascore.co/matches";
   const PER_PAGE = 50;
 
-  // Calculate date range: yesterday, today, tomorrow
+  // Calculate date range: yesterday 00:00:00 UTC to day after tomorrow 00:00:00 UTC
   const now = new Date();
-  const yesterdayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
-  const dayAfterTomorrowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2));
-  const dateRangeStr = `${yesterdayStart.toISOString().slice(0, 10)},${dayAfterTomorrowStart.toISOString().slice(0, 10)}`;
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+  const dayAfterTomorrowStart = new Date(todayStart);
+  dayAfterTomorrowStart.setUTCDate(dayAfterTomorrowStart.getUTCDate() + 2);
 
-  // Get current sync state
+  const dateRangeStr = `${yesterdayStart.toISOString().slice(0, 10)},${dayAfterTomorrowStart
+    .toISOString()
+    .slice(0, 10)}`;
+
+  // Load sync state from Supabase
   const { data: syncState } = await supabase
     .from("pandascore_sync_state")
-    .select("last_page, max_page")
+    .select("last_page", "max_page")
     .eq("id", "matches")
     .maybeSingle();
 
-  let lastPage = syncState?.last_page ?? 0;
-  let maxPage = syncState?.max_page ?? 0;
+  let lastPage = (syncState?.last_page ?? 0) + 1;
+  const maxPage = syncState?.max_page ?? 0;
 
-  // If lastPage is 0 or exceeds maxPage, reset to 1 to start fresh
-  if (lastPage === 0 || (maxPage && lastPage > maxPage)) {
-    lastPage = 1;
-  }
-
-  let totalFetched = 0;
-
-  // Fetch total count and max page from headers
+  // Get total matches count to calculate max page
   const headRes = await fetch(
-    `${BASE_URL}?per_page=1&range[begin_at]=${dateRangeStr}`,
+    `${BASE_URL}?per_page=1&range[scheduled_at]=${dateRangeStr}`,
     {
       headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
     }
   );
 
   if (!headRes.ok) {
-    console.error("Failed to fetch total count:", await headRes.text());
+    console.error("Failed to fetch total matches count:", await headRes.text());
     return new Response(
-      JSON.stringify({ error: "Failed to get total matches count" }),
+      JSON.stringify({ error: "Failed to fetch total matches count" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  const totalCount = parseInt(headRes.headers.get("X-Total") ?? "0", 10);
-  maxPage = Math.ceil(totalCount / PER_PAGE);
-  console.log(`Total matches in date range: ${totalCount}, max pages: ${maxPage}`);
+  const totalMatches = Number(headRes.headers.get("X-Total") ?? 0);
+  const computedMaxPage = Math.ceil(totalMatches / PER_PAGE);
 
-  // Update maxPage in sync state early
-  const { error: syncMaxPageError } = await supabase
-    .from("pandascore_sync_state")
-    .upsert(
-      {
-        id: "matches",
-        max_page: maxPage,
-      },
-      { onConflict: ["id"] }
-    );
+  console.log(`Total matches: ${totalMatches}, Max page: ${computedMaxPage}`);
 
-  if (syncMaxPageError) {
-    console.error("❌ Failed to update max_page in sync state:", syncMaxPageError);
+  // Update max_page if needed
+  if (computedMaxPage !== maxPage) {
+    const { error: maxPageError } = await supabase
+      .from("pandascore_sync_state")
+      .upsert(
+        { id: "matches", max_page: computedMaxPage },
+        { onConflict: ["id"] }
+      );
+    if (maxPageError) {
+      console.error("Failed to update max_page in sync_state:", maxPageError);
+    }
   }
 
-  while (lastPage <= maxPage) {
-    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${lastPage}&range[begin_at]=${dateRangeStr}`;
+  let totalFetched = 0;
+
+  while (lastPage <= computedMaxPage) {
+    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${lastPage}&range[scheduled_at]=${dateRangeStr}`;
     console.log(`Fetching page ${lastPage}: ${url}`);
 
     const res = await fetch(url, {
@@ -114,7 +113,7 @@ serve(async () => {
       break;
     }
 
-    let matches: any[];
+    let matches;
     try {
       matches = await res.json();
     } catch (e) {
@@ -123,7 +122,7 @@ serve(async () => {
     }
 
     if (!Array.isArray(matches) || matches.length === 0) {
-      console.log("No more matches found, ending sync.");
+      console.log("No more matches to process.");
       break;
     }
 
@@ -131,7 +130,7 @@ serve(async () => {
       const match_id = match.id?.toString();
       if (!match_id) continue;
 
-      // Only check 'status' field for changes
+      // Fetch existing match by match_id
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
         .select("status")
@@ -143,33 +142,37 @@ serve(async () => {
         continue;
       }
 
-      if (existing && existing.status === match.status) {
-        // No status change, skip update
+      // Only update if status changed or match is new
+      const existingStatus = existing?.status ?? null;
+      const apiStatus = match.status ?? null;
+
+      if (existingStatus === apiStatus) {
+        // No change, skip updating
         continue;
       }
 
-      // Prepare mapped data
+      // Prepare data to upsert
       const mapped = {
         match_id,
         esport_type: match.videogame?.name ?? null,
-        slug: match.slug,
-        draw: match.draw,
-        forfeit: match.forfeit,
-        start_time: match.begin_at,
-        end_time: match.end_at,
-        original_scheduled_at: match.original_scheduled_at,
-        rescheduled: match.rescheduled,
-        detailed_stats: match.detailed_stats,
+        slug: match.slug ?? null,
+        draw: match.draw ?? null,
+        forfeit: match.forfeit ?? null,
+        start_time: match.begin_at ?? null,
+        end_time: match.end_at ?? null,
+        original_scheduled_at: match.original_scheduled_at ?? null,
+        rescheduled: match.rescheduled ?? null,
+        detailed_stats: match.detailed_stats ?? null,
         winner_id: match.winner_id?.toString() ?? null,
         winner_type: match.winner_type ?? null,
         videogame_id: match.videogame?.id?.toString() ?? null,
         videogame_name: match.videogame?.name ?? null,
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
-        modified_at: match.modified_at,
-        status: match.status,
-        match_type: match.match_type,
-        number_of_games: match.number_of_games,
+        modified_at: match.modified_at ?? null,
+        status: match.status ?? null,
+        match_type: match.match_type ?? null,
+        number_of_games: match.number_of_games ?? null,
         tournament_id: match.tournament?.id?.toString() ?? null,
         tournament_name: match.tournament?.name ?? null,
         league_id: match.league?.id?.toString() ?? null,
@@ -195,15 +198,15 @@ serve(async () => {
       }
     }
 
-    // Update sync state with last page and timestamp
+    // Update sync state with last processed page
     const { error: syncUpdateError } = await supabase
       .from("pandascore_sync_state")
       .upsert(
         {
           id: "matches",
           last_page: lastPage,
+          max_page: computedMaxPage,
           last_synced_at: new Date().toISOString(),
-          max_page: maxPage,
         },
         { onConflict: ["id"] }
       );
@@ -213,10 +216,10 @@ serve(async () => {
     }
 
     lastPage++;
-    await sleep(1000); // Rate limit friendly delay
+    await sleep(1000);
   }
 
-  // Reset last_page after full sync
+  // Reset last_page back to 0 for next full sync cycle
   const { error: resetError } = await supabase
     .from("pandascore_sync_state")
     .upsert(
@@ -229,11 +232,11 @@ serve(async () => {
     );
 
   if (resetError) {
-    console.error("❌ Failed to reset last_page after sync:", resetError);
+    console.error("❌ Failed to reset last_page in sync_state:", resetError);
   }
 
   return new Response(
-    JSON.stringify({ status: "done", total_matches_processed: totalFetched }),
+    JSON.stringify({ status: "done", total: totalFetched }),
     { headers: { "Content-Type": "application/json" } }
   );
 });
