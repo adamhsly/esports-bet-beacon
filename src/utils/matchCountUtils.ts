@@ -14,7 +14,13 @@ export interface MatchCountBreakdown {
 export const getDetailedMatchCountsByDate = (matches: MatchInfo[]): Record<string, MatchCountBreakdown> => {
   const counts: Record<string, MatchCountBreakdown> = {};
   
-  matches.forEach(match => {
+  // Filter out matches with TBC/TBD teams (same logic as in Index.tsx)
+  const filteredMatches = matches.filter(match => {
+    const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+    return !teamNames.some(name => name === 'tbc' || name === 'tbd');
+  });
+  
+  filteredMatches.forEach(match => {
     // Use consistent timezone-aware date parsing to match the display filtering logic
     const matchDate = fromUTCString(match.startTime);
     const dateKey = format(matchDate, 'yyyy-MM-dd');
