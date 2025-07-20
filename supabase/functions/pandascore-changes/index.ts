@@ -1,169 +1,100 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
+
+const PANDA_API_TOKEN = Deno.env.get("PANDASCORE_API_TOKEN")!;
+const BASE_URL = "https://api.pandascore.co/csgo/matches";
+
+function extractKeyMatchData(match: any) {
+  return {
+    status: match.status,
+    winner_id: match.winner_id,
+    results: match.results?.map((r: any) => ({ team_id: r.team_id, score: r.score })) ?? [],
+    opponents: match.opponents?.map((o: any) => o.opponent?.id).sort() ?? [],
+    games: match.games?.map((g: any) => ({
+      id: g.id,
+      status: g.status,
+      winner_id: g.winner?.id ?? null,
+      end_at: g.end_at ?? null,
+    })) ?? [],
+  };
 }
 
-serve(async () => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+function isMatchChanged(remote: any, local: any): boolean {
+  const a = extractKeyMatchData(remote);
+  const b = extractKeyMatchData(local?.raw_data ?? {});
+  return JSON.stringify(a) !== JSON.stringify(b);
+}
 
-  const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY")!;
-  const PER_PAGE = 50;
-
-  // Today's UTC range
-  const today = new Date();
-  const yyyy = today.getUTCFullYear();
-  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(today.getUTCDate()).padStart(2, "0");
-  const startOfDay = `${yyyy}-${mm}-${dd}T00:00:00Z`;
-  const endOfDay = `${yyyy}-${mm}-${dd}T23:59:59Z`;
-
-  const BASE_URL = `https://api.pandascore.co/matches?filter[begin_at]=${startOfDay},${endOfDay}`;
-
-  const teamCache: Record<string, number[]> = {};
-
-  async function getTeamPlayerIds(teamId: number): Promise<number[]> {
-    if (!teamId) return [];
-    if (teamCache[teamId]) return teamCache[teamId];
-
-    const res = await fetch(`https://api.pandascore.co/teams/${teamId}`, {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    });
-
-    if (!res.ok) {
-      console.error(`Failed to fetch team ${teamId}:`, await res.text());
-      return [];
-    }
-
-    const data = await res.json();
-    const playerIds = (data.players ?? []).map((p: any) => p.id).filter(Boolean);
-    teamCache[teamId] = playerIds;
-    await sleep(300);
-    return playerIds;
-  }
-
-  // Determine page range
-  const countRes = await fetch(`${BASE_URL}&per_page=1`, {
-    headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+async function fetchMatches(page = 1): Promise<any[]> {
+  const res = await fetch(`${BASE_URL}?range[begin_at]=${new Date().toISOString().slice(0, 10)}T00:00:00Z,${new Date().toISOString().slice(0, 10)}T23:59:59Z&page=${page}&per_page=50`, {
+    headers: {
+      Authorization: `Bearer ${PANDA_API_TOKEN}`,
+    },
   });
 
-  if (!countRes.ok) {
-    console.error("Failed to count matches:", await countRes.text());
-    return new Response("Error counting matches", { status: 500 });
+  if (!res.ok) {
+    console.error("Failed to fetch matches", await res.text());
+    return [];
   }
 
-  const totalMatches = Number(countRes.headers.get("X-Total") ?? "0");
-  const maxPage = Math.ceil(totalMatches / PER_PAGE);
-  let totalFetched = 0;
+  return await res.json();
+}
 
-  for (let page = 1; page <= maxPage; page++) {
-    const url = `${BASE_URL}&per_page=${PER_PAGE}&page=${page}`;
-    console.log(`Fetching page ${page}: ${url}`);
+serve(async (_req) => {
+  let page = 1;
+  let updated = 0;
+  let skipped = 0;
 
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    });
-
-    if (!res.ok) {
-      console.error(`Error fetching page ${page}:`, await res.text());
-      break;
-    }
-
-    const matches = await res.json();
-    if (!Array.isArray(matches) || matches.length === 0) break;
+  while (true) {
+    const matches = await fetchMatches(page);
+    if (!matches.length) break;
 
     for (const match of matches) {
-      const match_id = match.id?.toString();
-      if (!match_id) continue;
-
-      const { data: existing, error: fetchError } = await supabase
+      const { data: existing, error } = await supabase
         .from("pandascore_matches")
-        .select("status, teams")
-        .eq("match_id", match_id)
+        .select("raw_data")
+        .eq("id", match.id)
         .maybeSingle();
 
-      if (fetchError) {
-        console.error(`Error checking match ${match_id}:`, fetchError);
+      if (error) {
+        console.error(`Error fetching match ${match.id}`, error);
         continue;
       }
 
-      // Extract team IDs
-      const teamAId = match.opponents?.[0]?.opponent?.id;
-      const teamBId = match.opponents?.[1]?.opponent?.id;
-      const newTeamIds = [teamAId, teamBId].filter(Boolean).sort();
-
-      const existingTeamIds = (existing?.teams ?? [])
-        .map((t: any) => t?.opponent?.id)
-        .filter(Boolean)
-        .sort();
-
-      const statusChanged = existing?.status !== match.status;
-      const teamsChanged =
-        JSON.stringify(newTeamIds) !== JSON.stringify(existingTeamIds);
-
-      if (!statusChanged && !teamsChanged) {
+      if (existing && !isMatchChanged(match, existing)) {
+        skipped++;
         continue;
       }
 
-      const teamAPlayerIds = await getTeamPlayerIds(teamAId);
-      const teamBPlayerIds = await getTeamPlayerIds(teamBId);
-
-      const mapped = {
-        match_id,
-        esport_type: match.videogame?.name ?? null,
-        slug: match.slug,
-        draw: match.draw,
-        forfeit: match.forfeit,
+      const { error: upsertError } = await supabase.from("pandascore_matches").upsert({
+        id: match.id,
+        raw_data: match,
+        begin_at: match.begin_at,
+        status: match.status,
+        name: match.name,
+        modified_at: match.modified_at,
         start_time: match.begin_at,
         end_time: match.end_at,
-        original_scheduled_at: match.original_scheduled_at,
-        rescheduled: match.rescheduled,
-        detailed_stats: match.detailed_stats,
-        winner_id: match.winner_id?.toString() ?? null,
-        winner_type: match.winner_type ?? null,
-        videogame_id: match.videogame?.id?.toString() ?? null,
-        videogame_name: match.videogame?.name ?? null,
-        stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
-        stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
-        modified_at: match.modified_at,
-        status: match.status,
-        match_type: match.match_type,
-        number_of_games: match.number_of_games,
-        tournament_id: match.tournament?.id?.toString() ?? null,
-        tournament_name: match.tournament?.name ?? null,
-        league_id: match.league?.id?.toString() ?? null,
-        league_name: match.league?.name ?? null,
-        serie_id: match.serie?.id?.toString() ?? null,
-        serie_name: match.serie?.name ?? null,
-        teams: match.opponents ?? [],
-        team_a_player_ids: teamAPlayerIds,
-        team_b_player_ids: teamBPlayerIds,
-        raw_data: match,
-        updated_at: new Date().toISOString(),
-        last_synced_at: new Date().toISOString(),
-        created_at: existing ? undefined : new Date().toISOString(),
-      };
+      });
 
-      const { error } = await supabase
-        .from("pandascore_matches")
-        .upsert(mapped, { onConflict: ["match_id"] });
-
-      if (error) {
-        console.error(`Upsert failed for ${match_id}:`, error);
-      } else {
-        console.log(`Upserted match ${match_id}`);
-        totalFetched++;
+      if (upsertError) {
+        console.error(`Error upserting match ${match.id}`, upsertError);
+        continue;
       }
+
+      updated++;
     }
 
-    await sleep(1000);
+    page++;
   }
 
-  return new Response(JSON.stringify({ status: "done", total: totalFetched }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ updated, skipped }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 });
