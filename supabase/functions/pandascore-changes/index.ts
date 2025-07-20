@@ -6,6 +6,21 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Utility to compare teams arrays (opponents)
+function teamsAreDifferent(apiTeams: any[], dbTeams: any[]): boolean {
+  // Simple check: if lengths differ, definitely changed
+  if (!apiTeams || !dbTeams) return true;
+  if (apiTeams.length !== dbTeams.length) return true;
+
+  // Compare stringified JSON of each opponent — order matters here
+  for (let i = 0; i < apiTeams.length; i++) {
+    if (JSON.stringify(apiTeams[i]) !== JSON.stringify(dbTeams[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 serve(async () => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -133,7 +148,7 @@ serve(async () => {
       // Fetch existing match by match_id
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
-        .select("status")
+        .select("status", "teams")
         .eq("match_id", match_id)
         .maybeSingle();
 
@@ -142,16 +157,18 @@ serve(async () => {
         continue;
       }
 
-      // Only update if status changed or match is new
       const existingStatus = existing?.status ?? null;
-      const apiStatus = match.status ?? null;
+      const existingTeams = existing?.teams ?? [];
 
-      if (existingStatus === apiStatus) {
-        // No change, skip updating
+      const apiStatus = match.status ?? null;
+      const apiTeams = match.opponents ?? [];
+
+      // Update if status changed OR teams changed
+      if (existingStatus === apiStatus && !teamsAreDifferent(apiTeams, existingTeams)) {
+        // No relevant change, skip update
         continue;
       }
 
-      // Prepare data to upsert
       const mapped = {
         match_id,
         esport_type: match.videogame?.name ?? null,
