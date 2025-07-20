@@ -43,18 +43,16 @@ serve(async () => {
   const BASE_URL = "https://api.pandascore.co/matches";
   const PER_PAGE = 50;
 
-  // Calculate today's date range in ISO strings (UTC)
+  // Calculate date range from yesterday 00:00 UTC to day after tomorrow 00:00 UTC
   const now = new Date();
-  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0)).toISOString();
-  const tomorrowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0)).toISOString();
+  const yesterdayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1, 0, 0, 0)).toISOString();
+  const dayAfterTomorrowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2, 0, 0, 0)).toISOString();
 
   let page = 1;
   let totalFetched = 0;
 
   while (true) {
-    // Filter matches beginning from today 00:00:00 to before tomorrow 00:00:00
-    // PandaScore API filters use "begin_at" with 'gte' and 'lt' operators
-    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&filter[begin_at][gte]=${todayStart}&filter[begin_at][lt]=${tomorrowStart}`;
+    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&filter[begin_at][gte]=${yesterdayStart}&filter[begin_at][lt]=${dayAfterTomorrowStart}`;
 
     console.log(`Fetching page ${page}: ${url}`);
 
@@ -79,7 +77,6 @@ serve(async () => {
       const match_id = match.id?.toString();
       if (!match_id) continue;
 
-      // Fetch existing record's status
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
         .select("status")
@@ -91,13 +88,10 @@ serve(async () => {
         continue;
       }
 
-      // Only update if status is different or no existing record
       if (existing && existing.status === match.status) {
-        // No update needed
         continue;
       }
 
-      // Map fields per your DB schema
       const mapped = {
         match_id,
         esport_type: match.videogame?.name ?? null,
@@ -132,8 +126,8 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at ? new Date(match.modified_at).toISOString() : null,
-        team_a_player_ids: null, // Not fetched here
-        team_b_player_ids: null, // Not fetched here
+        team_a_player_ids: null,
+        team_b_player_ids: null,
       };
 
       const { error } = await supabase
@@ -148,13 +142,12 @@ serve(async () => {
       }
     }
 
-    // Stop if fewer than PER_PAGE returned (last page)
     if (matches.length < PER_PAGE) {
       break;
     }
 
     page++;
-    await sleep(1000); // polite delay
+    await sleep(1000);
   }
 
   return new Response(JSON.stringify({ status: "done", total: totalFetched }), {
