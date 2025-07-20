@@ -15,7 +15,13 @@ export const filterMatchesByDate = (matches: MatchInfo[], selectedDate: Date): M
 export const getMatchCountsByDate = (matches: MatchInfo[]): Record<string, number> => {
   const counts: Record<string, number> = {};
   
-  matches.forEach(match => {
+  // Filter out matches with TBC/TBD teams (same logic as in Index.tsx)
+  const filteredMatches = matches.filter(match => {
+    const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+    return !teamNames.some(name => name === 'tbc' || name === 'tbd');
+  });
+  
+  filteredMatches.forEach(match => {
     const dateKey = format(new Date(match.startTime), 'yyyy-MM-dd');
     counts[dateKey] = (counts[dateKey] || 0) + 1;
   });
