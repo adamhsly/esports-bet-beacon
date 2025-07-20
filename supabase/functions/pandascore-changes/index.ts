@@ -6,26 +6,6 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function normalizeTeamIds(opponents: any[]): string[] {
-  return opponents
-    .map((o) => o.opponent?.id?.toString())
-    .filter(Boolean)
-    .sort(); // sort for consistent comparison
-}
-
-function resultsChanged(local: any[], remote: any[]): boolean {
-  if (local.length !== remote.length) return true;
-  for (let i = 0; i < local.length; i++) {
-    if (
-      local[i].team_id?.toString() !== remote[i].team_id?.toString() ||
-      local[i].score !== remote[i].score
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
 serve(async () => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -46,7 +26,7 @@ serve(async () => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  // Quick connection test
+  // Test Supabase connection
   const { error: testError } = await supabase
     .from("pandascore_matches")
     .select("match_id")
@@ -64,13 +44,10 @@ serve(async () => {
   const PER_PAGE = 50;
 
   const today = new Date();
-  const isoToday = today.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
 
-  // We'll filter matches for today using date range query params 'range[begin_at]'
-  // from pandascore API docs: range[begin_at]=YYYY-MM-DDT00:00:00Z,YYYY-MM-DDT23:59:59Z
-
-  const rangeParam = `range[begin_at]=${isoToday}T00:00:00Z,${isoToday}T23:59:59Z`;
-
+  // Get sync state
   const { data: syncState } = await supabase
     .from("pandascore_sync_state")
     .select("last_page")
@@ -81,8 +58,7 @@ serve(async () => {
   let totalFetched = 0;
 
   while (true) {
-    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&${rangeParam}&sort=modified_at`;
-
+    const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&range[begin_at]=${startOfDay},${endOfDay}&sort=begin_at`;
     console.log(`Fetching page ${page}: ${url}`);
 
     const res = await fetch(url, {
@@ -94,14 +70,7 @@ serve(async () => {
       break;
     }
 
-    const text = await res.text();
-    let matches;
-    try {
-      matches = JSON.parse(text);
-    } catch (e) {
-      console.error("Failed to parse JSON:", e);
-      break;
-    }
+    const matches = await res.json();
 
     if (!Array.isArray(matches) || matches.length === 0) {
       console.log("No more matches found, ending sync.");
@@ -112,38 +81,27 @@ serve(async () => {
       const match_id = match.id?.toString();
       if (!match_id) continue;
 
+      // Fetch existing match record to check status
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
-        .select("status, start_time, end_time, teams, results")
+        .select("status")
         .eq("match_id", match_id)
         .maybeSingle();
 
       if (fetchError) {
-        console.error(`Error checking match ${match_id}:`, fetchError);
+        console.error(`Error fetching existing match ${match_id}:`, fetchError);
         continue;
       }
 
-      const remoteTeamIds = normalizeTeamIds(match.opponents ?? []);
-      const localTeamIds = normalizeTeamIds(existing?.teams ?? []);
-      const localResults = existing?.results ?? [];
-      const remoteResults = match.results ?? [];
-
-      const changed =
-        !existing ||
-        existing.status !== match.status ||
-        existing.start_time !== match.begin_at ||
-        existing.end_time !== match.end_at ||
-        JSON.stringify(localTeamIds) !== JSON.stringify(remoteTeamIds) ||
-        resultsChanged(localResults, remoteResults);
-
-      if (!changed) {
-        console.log(`⏭️ Skipping unchanged match ${match_id}`);
+      // Only update if status changed or new record
+      if (existing && existing.status === match.status) {
+        console.log(`Skipping match ${match_id}, status unchanged (${match.status}).`);
         continue;
       }
 
-      // Map data for upsert
       const mapped = {
         match_id,
+        status: match.status,
         esport_type: match.videogame?.name ?? null,
         slug: match.slug,
         draw: match.draw,
@@ -159,7 +117,7 @@ serve(async () => {
         videogame_name: match.videogame?.name ?? null,
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
-        status: match.status,
+        modified_at: match.modified_at,
         match_type: match.match_type,
         number_of_games: match.number_of_games,
         tournament_id: match.tournament?.id?.toString() ?? null,
@@ -169,7 +127,6 @@ serve(async () => {
         serie_id: match.serie?.id?.toString() ?? null,
         serie_name: match.serie?.name ?? null,
         teams: match.opponents ?? [],
-        results: match.results ?? [],
         raw_data: match,
         updated_at: new Date().toISOString(),
         last_synced_at: new Date().toISOString(),
@@ -183,7 +140,7 @@ serve(async () => {
       if (error) {
         console.error(`❌ Failed to upsert match ${match_id}:`, error);
       } else {
-        console.log(`✅ Upserted match ${match_id}`);
+        console.log(`✅ Upserted match ${match_id} with status ${match.status}`);
         totalFetched++;
       }
     }
@@ -208,7 +165,7 @@ serve(async () => {
     await sleep(1000);
   }
 
-  // Reset last_page to 0 at end so next run starts fresh
+  // Reset last_page so next run starts fresh
   const { error: resetError } = await supabase
     .from("pandascore_sync_state")
     .upsert(
@@ -221,7 +178,7 @@ serve(async () => {
     );
 
   if (resetError) {
-    console.error("❌ Failed to reset last_page to 0:", resetError);
+    console.error("❌ Failed to reset last_page in sync state:", resetError);
   } else {
     console.log("🔄 Reset last_page to 0");
   }
