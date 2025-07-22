@@ -6,7 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BATCH_SIZE = 100;
 const SYNC_ID = "match_stats";
 
 serve(async (req) => {
@@ -20,110 +19,102 @@ serve(async (req) => {
   );
 
   try {
-    // Get sync state
-    const { data: syncState, error: syncError } = await supabase
+    // 1. Load last match ID processed
+    const { data: syncRow, error: syncErr } = await supabase
       .from("pandascore_sync_state")
-      .select("last_page")
+      .select("last_match_id")
       .eq("id", SYNC_ID)
       .maybeSingle();
 
-    if (syncError) throw new Error("Failed to read sync state");
+    const lastMatchId = syncRow?.last_match_id ?? 0;
 
-    const lastPage = syncState?.last_page ?? 0;
-    const offset = lastPage * BATCH_SIZE;
-
-    const { data: matches, error: fetchError } = await supabase
+    // 2. Get next match after that
+    const { data: matches, error: matchErr } = await supabase
       .from("pandascore_matches")
       .select("match_id, start_time, esport_type, teams, status")
-      .in("status", ["finished", "not_started", "running", "canceled"])
-      .order("start_time", { ascending: true })
-      .range(offset, offset + BATCH_SIZE - 1);
+      .in("status", ["finished", "not_started"])
+      .gt("match_id", lastMatchId)
+      .order("match_id", { ascending: true })
+      .limit(1);
 
-    if (fetchError || !matches || matches.length === 0) {
-      return new Response(JSON.stringify({ done: true, message: "No more matches" }), {
+    const match = matches?.[0];
+    if (!match) {
+      return new Response(JSON.stringify({ done: true, message: "No new matches." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const matchId = match.match_id.toString();
+    const esportType = match.esport_type;
+    const matchStartTime = match.start_time;
+    const matchStatus = match.status;
+    const teams = match.teams ?? [];
+
     const results = [];
 
-    for (const match of matches) {
-      const matchId = match.match_id.toString();
-      const esportType = match.esport_type;
-      const matchStartTime = match.start_time;
-      const teams = match.teams as any[];
-      const matchStatus = match.status;
+    for (const team of teams) {
+      const teamId = team.opponent?.id?.toString();
+      if (!teamId) continue;
 
-      if (!teams || teams.length === 0) continue;
+      const { data: existing } = await supabase
+        .from("pandascore_match_team_stats")
+        .select("id")
+        .eq("match_id", matchId)
+        .eq("team_id", teamId)
+        .maybeSingle();
 
-      for (const team of teams) {
-        const teamId = team.opponent?.id?.toString();
-        if (!teamId) continue;
+      if (existing) continue;
 
-        const { data: existingStat } = await supabase
-          .from("pandascore_match_team_stats")
-          .select("id")
-          .eq("match_id", matchId)
-          .eq("team_id", teamId)
-          .maybeSingle();
+      const { data: history, error: histErr } = await supabase
+        .from("pandascore_matches")
+        .select("*")
+        .eq("esport_type", esportType)
+        .lt("start_time", matchStartTime)
+        .eq("status", "finished")
+        .order("start_time", { ascending: true });
 
-        if (existingStat) continue;
+      if (histErr || !history) continue;
 
-        const { data: historicalMatches, error: historyError } = await supabase
-          .from("pandascore_matches")
-          .select("*")
-          .eq("esport_type", esportType)
-          .lt("start_time", matchStartTime)
-          .eq("status", "finished")
-          .order("start_time", { ascending: true });
+      const teamMatches = history.filter(m =>
+        (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId)
+      );
 
-        if (historyError || !historicalMatches) continue;
+      const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
-        const teamMatches = historicalMatches.filter(m => {
-          return (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId);
-        });
+      const { error: insertError } = await supabase
+        .from("pandascore_match_team_stats")
+        .upsert({
+          match_id: matchId,
+          team_id: teamId,
+          esport_type: esportType,
+          win_rate: stats.winRate,
+          recent_form: stats.recentForm,
+          tournament_wins: stats.tournamentWins,
+          total_matches: stats.totalMatches,
+          wins: stats.wins,
+          losses: stats.losses,
+          league_performance: stats.leaguePerformance,
+          recent_win_rate_30d: stats.recentWinRate30d,
+          last_10_matches_detail: stats.last10MatchesDetail,
+          calculated_at: new Date().toISOString(),
+        }, { onConflict: ["match_id", "team_id"] });
 
-        const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
-
-        const { error: insertError } = await supabase
-          .from("pandascore_match_team_stats")
-          .upsert({
-            match_id: matchId,
-            team_id: teamId,
-            esport_type: esportType,
-            win_rate: stats.winRate,
-            recent_form: stats.recentForm,
-            tournament_wins: stats.tournamentWins,
-            total_matches: stats.totalMatches,
-            wins: stats.wins,
-            losses: stats.losses,
-            league_performance: stats.leaguePerformance,
-            recent_win_rate_30d: stats.recentWinRate30d,
-            last_10_matches_detail: stats.last10MatchesDetail,
-            calculated_at: new Date().toISOString(),
-          }, { onConflict: ["match_id", "team_id"] });
-
-        if (!insertError) {
-          results.push({ matchId, teamId });
-        }
+      if (!insertError) {
+        results.push({ matchId, teamId });
       }
     }
 
-    // Update sync state
+    // 3. Update sync progress to this match
     await supabase
       .from("pandascore_sync_state")
-      .upsert({ id: SYNC_ID, last_page: lastPage + 1, last_synced_at: new Date().toISOString() });
+      .upsert({ id: SYNC_ID, last_match_id: parseInt(matchId), last_synced_at: new Date().toISOString() });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        processedMatches: results.length,
-        nextPage: lastPage + 1,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, matchId, processed: results.length }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   } catch (err) {
-    console.error("Fatal error:", err);
+    console.error("Error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
