@@ -6,8 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper: convert Faceit timestamps to ISO
-function convertFaceitTimestamp(timestamp: any): string | null {
+function convertFaceitTimestamp(timestamp) {
   if (!timestamp) return null;
   if (typeof timestamp === "string" && timestamp.includes("T")) return timestamp;
   const unixSeconds = typeof timestamp === "string" ? parseInt(timestamp, 10) : timestamp;
@@ -46,6 +45,8 @@ serve(async (req) => {
   const allMatchStatuses = new Set();
   const championshipDetailsMap = new Map();
 
+  const now = new Date();
+
   for (const game of games) {
     for (const type of ["ongoing", "upcoming"]) {
       console.log(`🎮 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
@@ -54,30 +55,23 @@ serve(async (req) => {
       championshipsUrl.searchParams.set("type", type);
 
       const response = await fetch(championshipsUrl, {
-        headers: {
-          Authorization: `Bearer ${faceitApiKey}`,
-        },
+        headers: { Authorization: `Bearer ${faceitApiKey}` },
       });
 
-      if (!response.ok) {
-        console.error(`Failed to fetch championships for ${game} (${type}):`, response.statusText);
-        continue;
-      }
-
+      if (!response.ok) continue;
       const { items: championships } = await response.json();
 
       for (const championship of championships) {
-        console.log(`➡️ Championship ${championship.championship_id} (${championship.name})`);
-
+        const champId = championship.championship_id;
         const champDetailsResp = await fetch(
-          `https://open.faceit.com/data/v4/championships/${championship.championship_id}`,
+          `https://open.faceit.com/data/v4/championships/${champId}`,
           { headers: { Authorization: `Bearer ${faceitApiKey}` } }
         );
-        const championshipDetails = champDetailsResp.ok ? await champDetailsResp.json() : null;
-        championshipDetailsMap.set(championship.championship_id, championshipDetails);
+        const details = champDetailsResp.ok ? await champDetailsResp.json() : null;
+        championshipDetailsMap.set(champId, details);
 
         const matchesResp = await fetch(
-          `https://open.faceit.com/data/v4/championships/${championship.championship_id}/matches`,
+          `https://open.faceit.com/data/v4/championships/${champId}/matches`,
           { headers: { Authorization: `Bearer ${faceitApiKey}` } }
         );
         if (!matchesResp.ok) continue;
@@ -86,24 +80,28 @@ serve(async (req) => {
 
         for (const match of matches) {
           const status = (match.status || "").toLowerCase();
-          const sch = convertFaceitTimestamp(match.scheduled_at);
-          const started = convertFaceitTimestamp(match.started_at);
+          const scheduledAt = convertFaceitTimestamp(match.scheduled_at);
+          const startedAt = convertFaceitTimestamp(match.started_at);
+          const finishedAt = convertFaceitTimestamp(match.finished_at);
 
           allMatchStatuses.add(status);
 
-          console.log(`   • Match ${match.match_id} | status=${status} | scheduled_at=${sch} | started_at=${started}`);
+          const allowedStatuses = [
+            "scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"
+          ];
 
-          // Match passes loose filter
-          const isFutureMatch = !match.finished_at && (!match.started_at || new Date(started) > new Date());
-          const isViableStatus = [
-            "created", "configured", "scheduled", "ready", "upcoming", "joined", "locked", "starting"
-          ].includes(status);
-
-          if (isFutureMatch && isViableStatus) {
-            allUpcomingMatches.push({ match, championshipDetails });
-          } else {
-            console.log(`     ⚠️ Skipping due to status or time`);
+          if (!allowedStatuses.includes(status)) {
+            console.log(`⚠️ Skipping ${match.match_id} due to unknown status: ${status}`);
+            continue;
           }
+
+          if (finishedAt && new Date(finishedAt) <= now) {
+            console.log(`📌 Skipping ${match.match_id}: already finished at ${finishedAt}`);
+            continue;
+          }
+
+          console.log(`✅ Including match ${match.match_id} (status: ${status})`);
+          allUpcomingMatches.push({ match, championshipDetails: details });
         }
       }
     }
@@ -142,8 +140,7 @@ serve(async (req) => {
 
     const { error } = await supabase
       .from("faceit_matches")
-      .upsert(matchData, { onConflict: "match_id", ignoreDuplicates: false })
-      .select("id");
+      .upsert(matchData, { onConflict: "match_id", ignoreDuplicates: false });
 
     if (error) {
       console.error(`❌ Error upserting match ${match.match_id}:`, error);
