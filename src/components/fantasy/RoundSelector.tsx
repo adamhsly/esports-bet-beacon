@@ -34,7 +34,11 @@ export const RoundSelector: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRounds(data || []);
+  setRounds(data?.map(round => ({
+        ...round,
+        type: round.type as 'daily' | 'weekly' | 'monthly',
+        status: round.status as 'open' | 'active' | 'finished'
+      })) || []);
     } catch (error) {
       console.error('Error fetching rounds:', error);
       toast.error('Failed to load fantasy rounds');

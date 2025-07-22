@@ -70,13 +70,16 @@ export const InProgressRounds: React.FC = () => {
 
           return {
             id: pick.round_id,
-            type: pick.fantasy_rounds.type,
+            type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
             total_score: pick.total_score,
-            team_picks: pick.team_picks || [],
+            team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
-            scores: scores || []
+            scores: (scores || []).map(score => ({
+              ...score,
+              team_type: score.team_type as 'pro' | 'amateur'
+            }))
           };
         })
       );

@@ -81,13 +81,16 @@ export const FinishedRounds: React.FC = () => {
 
           return {
             id: pick.round_id,
-            type: pick.fantasy_rounds.type,
+            type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
             total_score: pick.total_score,
-            team_picks: pick.team_picks || [],
+            team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
-            scores: scores || []
+            scores: (scores || []).map(score => ({
+              ...score,
+              team_type: score.team_type as 'pro' | 'amateur'
+            }))
           };
         })
       );
@@ -109,16 +112,16 @@ export const FinishedRounds: React.FC = () => {
         .select(`
           user_id,
           total_score,
-          profiles!inner(username)
+          profiles:profiles(username)
         `)
         .eq('round_id', roundId)
         .order('total_score', { ascending: false });
 
       if (error) throw error;
 
-      const leaderboardWithRanks = (leaderboard || []).map((entry, index) => ({
+      const leaderboardWithRanks = (leaderboard || []).map((entry: any, index) => ({
         user_id: entry.user_id,
-        username: entry.profiles?.username || 'Anonymous',
+        username: entry.profiles?.[0]?.username || 'Anonymous',
         total_score: entry.total_score,
         rank: index + 1
       }));

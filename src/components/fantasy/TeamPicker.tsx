@@ -83,7 +83,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       // Fetch amateur teams from Faceit matches
       const { data: faceitMatches, error: faceitError } = await supabase
         .from('faceit_matches')
-        .select('team_one_name, team_two_name, team_one_id, team_two_id')
+        .select('teams')
         .gte('match_date', round.start_date)
         .lte('match_date', round.end_date);
 
@@ -93,13 +93,13 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       const amateurTeamMap = new Map<string, { name: string; count: number }>();
       
       faceitMatches?.forEach(match => {
-        if (match.team_one_name && match.team_one_id) {
-          const current = amateurTeamMap.get(match.team_one_id) || { name: match.team_one_name, count: 0 };
-          amateurTeamMap.set(match.team_one_id, { ...current, count: current.count + 1 });
-        }
-        if (match.team_two_name && match.team_two_id) {
-          const current = amateurTeamMap.get(match.team_two_id) || { name: match.team_two_name, count: 0 };
-          amateurTeamMap.set(match.team_two_id, { ...current, count: current.count + 1 });
+        if (match.teams && Array.isArray(match.teams)) {
+          match.teams.forEach((team: any) => {
+            if (team.name && team.id) {
+              const current = amateurTeamMap.get(team.id) || { name: team.name, count: 0 };
+              amateurTeamMap.set(team.id, { ...current, count: current.count + 1 });
+            }
+          });
         }
       });
 
@@ -152,13 +152,27 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
     try {
       setSubmitting(true);
 
+      // Need to convert team objects to plain objects for Supabase
+      const teamPicksData = selectedTeams.map(team => ({
+        id: team.id,
+        name: team.name,
+        type: team.type,
+        logo_url: team.logo_url
+      }));
+      
+      const benchTeamData = benchTeam ? {
+        id: benchTeam.id, 
+        name: benchTeam.name,
+        type: benchTeam.type
+      } : null;
+      
       const { error } = await supabase
         .from('fantasy_round_picks')
         .insert({
           user_id: user.id,
           round_id: round.id,
-          team_picks: selectedTeams,
-          bench_team: benchTeam
+          team_picks: teamPicksData,
+          bench_team: benchTeamData
         });
 
       if (error) throw error;
