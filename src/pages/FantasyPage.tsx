@@ -1,91 +1,66 @@
-
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState } from 'react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import { FantasyTeamBuilder } from '@/components/fantasy/FantasyTeamBuilder';
-import { TournamentCreator } from '@/components/fantasy/TournamentCreator';
-import { LeagueBrowser } from '@/components/fantasy/LeagueBrowser';
-import { FantasyLeaderboard } from '@/components/fantasy/FantasyLeaderboard';
-import { LiveMatchTracker } from '@/components/fantasy/LiveMatchTracker';
-import { SocialPage } from '@/components/fantasy/SocialPage';
-import { MyTeamsList } from '@/components/fantasy/MyTeamsList';
-import { Users, Trophy, Target, BarChart3, Zap, Globe } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { RoundSelector } from '@/components/fantasy/RoundSelector';
+import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
+import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
+import { Calendar, Clock, Trophy } from 'lucide-react';
 
 const FantasyPage: React.FC = () => {
-  // Using a demo tournament ID for now - in a real app this would come from context or URL params
-  const demoTournamentId = "demo-tournament-1";
+  const [activeTab, setActiveTab] = useState('join');
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
       <SearchableNavbar />
-      <div className="flex-grow container mx-auto px-4 py-8">
+      
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-4">
-            <span className="highlight-gradient">Fantasy</span> Esports
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-theme-purple to-theme-green bg-clip-text text-transparent">
+              Fantasy Esports
+            </span>
           </h1>
-          <p className="text-gray-300 max-w-2xl">
-            Build your dream CS2 team using your NFT player cards. Compete in fantasy tournaments 
-            and leagues with real match performance scoring and live updates.
+          <p className="text-muted-foreground text-lg max-w-2xl">
+            Create teams mixing pro and amateur teams. Higher risk, higher reward with amateur teams getting 25% bonus points.
           </p>
         </div>
 
-        <Tabs defaultValue="team-builder" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="team-builder" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Team Builder
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="join" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Join a Round
             </TabsTrigger>
-            <TabsTrigger value="live-matches" className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              Live Matches
+            <TabsTrigger value="in-progress" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              In Progress
             </TabsTrigger>
-            <TabsTrigger value="tournaments" className="flex items-center gap-2">
+            <TabsTrigger value="finished" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
-              Tournaments
-            </TabsTrigger>
-            <TabsTrigger value="leaderboards" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Leaderboards
-            </TabsTrigger>
-            <TabsTrigger value="social" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Social
-            </TabsTrigger>
-            <TabsTrigger value="my-teams" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              My Teams
+              Finished
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="team-builder">
-            <FantasyTeamBuilder />
+          <TabsContent value="join">
+            <RoundSelector />
           </TabsContent>
 
-          <TabsContent value="live-matches">
-            <LiveMatchTracker tournamentId={demoTournamentId} />
+          <TabsContent value="in-progress">
+            <ProtectedRoute>
+              <InProgressRounds />
+            </ProtectedRoute>
           </TabsContent>
 
-          <TabsContent value="tournaments">
-            <div className="space-y-6">
-              <TournamentCreator />
-              <LeagueBrowser />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="leaderboards">
-            <FantasyLeaderboard />
-          </TabsContent>
-
-          <TabsContent value="social">
-            <SocialPage />
-          </TabsContent>
-
-          <TabsContent value="my-teams">
-            <MyTeamsList />
+          <TabsContent value="finished">
+            <ProtectedRoute>
+              <FinishedRounds />
+            </ProtectedRoute>
           </TabsContent>
         </Tabs>
       </div>
+
       <Footer />
     </div>
   );

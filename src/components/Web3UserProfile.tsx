@@ -41,9 +41,9 @@ const Web3UserProfile: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // Get fantasy teams count
+      // Get fantasy round picks count
       const { count: teamsCount } = await supabase
-        .from('fantasy_teams')
+        .from('fantasy_round_picks')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 

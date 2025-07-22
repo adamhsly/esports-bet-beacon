@@ -124,6 +124,33 @@ export type Database = {
           },
         ]
       }
+      esports_news: {
+        Row: {
+          created_at: string | null
+          id: string
+          published_at: string | null
+          source: string
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          source: string
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          source?: string
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
       faceit_matches: {
         Row: {
           calculate_elo: boolean | null
@@ -477,250 +504,138 @@ export type Database = {
         }
         Relationships: []
       }
-      fantasy_league_participants: {
+      fantasy_round_picks: {
         Row: {
-          current_rank: number | null
-          current_score: number | null
-          fantasy_team_id: string | null
-          id: string
-          joined_at: string | null
-          tournament_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          current_rank?: number | null
-          current_score?: number | null
-          fantasy_team_id?: string | null
-          id?: string
-          joined_at?: string | null
-          tournament_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          current_rank?: number | null
-          current_score?: number | null
-          fantasy_team_id?: string | null
-          id?: string
-          joined_at?: string | null
-          tournament_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fantasy_league_participants_fantasy_team_id_fkey"
-            columns: ["fantasy_team_id"]
-            isOneToOne: false
-            referencedRelation: "fantasy_teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fantasy_league_participants_tournament_id_fkey"
-            columns: ["tournament_id"]
-            isOneToOne: false
-            referencedRelation: "tournaments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fantasy_live_sessions: {
-        Row: {
+          bench_team: Json | null
           created_at: string
           id: string
-          match_id: string
-          scoring_config: Json
-          session_end: string | null
-          session_start: string
-          status: string
-          tournament_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          match_id: string
-          scoring_config?: Json
-          session_end?: string | null
-          session_start?: string
-          status?: string
-          tournament_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          match_id?: string
-          scoring_config?: Json
-          session_end?: string | null
-          session_start?: string
-          status?: string
-          tournament_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fantasy_live_sessions_tournament_id_fkey"
-            columns: ["tournament_id"]
-            isOneToOne: false
-            referencedRelation: "tournaments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fantasy_match_scores: {
-        Row: {
-          created_at: string | null
-          fantasy_team_id: string | null
-          id: string
-          match_date: string | null
-          match_id: string
-          player_card_id: string | null
-          player_performance: Json | null
-          points_earned: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          fantasy_team_id?: string | null
-          id?: string
-          match_date?: string | null
-          match_id: string
-          player_card_id?: string | null
-          player_performance?: Json | null
-          points_earned?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          fantasy_team_id?: string | null
-          id?: string
-          match_date?: string | null
-          match_id?: string
-          player_card_id?: string | null
-          player_performance?: Json | null
-          points_earned?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fantasy_match_scores_fantasy_team_id_fkey"
-            columns: ["fantasy_team_id"]
-            isOneToOne: false
-            referencedRelation: "fantasy_teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fantasy_match_scores_player_card_id_fkey"
-            columns: ["player_card_id"]
-            isOneToOne: false
-            referencedRelation: "nft_cards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fantasy_teams: {
-        Row: {
-          active_lineup: Json
-          bench_lineup: Json
-          created_at: string
-          formation: string
-          formation_positions: Json | null
-          id: string
-          is_active: boolean | null
-          performance_score: number | null
-          salary_cap: number | null
-          salary_used: number | null
-          team_chemistry_bonus: number | null
-          team_name: string
-          total_team_value: number | null
-          tournament_id: string | null
+          round_id: string
+          submitted_at: string
+          team_picks: Json
+          total_score: number
           updated_at: string
           user_id: string
         }
         Insert: {
-          active_lineup?: Json
-          bench_lineup?: Json
+          bench_team?: Json | null
           created_at?: string
-          formation?: string
-          formation_positions?: Json | null
           id?: string
-          is_active?: boolean | null
-          performance_score?: number | null
-          salary_cap?: number | null
-          salary_used?: number | null
-          team_chemistry_bonus?: number | null
-          team_name: string
-          total_team_value?: number | null
-          tournament_id?: string | null
+          round_id: string
+          submitted_at?: string
+          team_picks?: Json
+          total_score?: number
           updated_at?: string
           user_id: string
         }
         Update: {
-          active_lineup?: Json
-          bench_lineup?: Json
+          bench_team?: Json | null
           created_at?: string
-          formation?: string
-          formation_positions?: Json | null
           id?: string
-          is_active?: boolean | null
-          performance_score?: number | null
-          salary_cap?: number | null
-          salary_used?: number | null
-          team_chemistry_bonus?: number | null
-          team_name?: string
-          total_team_value?: number | null
-          tournament_id?: string | null
+          round_id?: string
+          submitted_at?: string
+          team_picks?: Json
+          total_score?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_round_picks_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fantasy_round_scores: {
+        Row: {
+          clean_sweeps: number
+          created_at: string
+          current_score: number
+          id: string
+          last_updated: string
+          map_wins: number
+          match_wins: number
+          matches_played: number
+          round_id: string
+          team_id: string
+          team_name: string
+          team_type: string
+          tournaments_won: number
+          user_id: string
+        }
+        Insert: {
+          clean_sweeps?: number
+          created_at?: string
+          current_score?: number
+          id?: string
+          last_updated?: string
+          map_wins?: number
+          match_wins?: number
+          matches_played?: number
+          round_id: string
+          team_id: string
+          team_name: string
+          team_type: string
+          tournaments_won?: number
+          user_id: string
+        }
+        Update: {
+          clean_sweeps?: number
+          created_at?: string
+          current_score?: number
+          id?: string
+          last_updated?: string
+          map_wins?: number
+          match_wins?: number
+          matches_played?: number
+          round_id?: string
+          team_id?: string
+          team_name?: string
+          team_type?: string
+          tournaments_won?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_round_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fantasy_rounds: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          start_date: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          start_date: string
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
-      }
-      live_fantasy_scores: {
-        Row: {
-          created_at: string
-          current_total_score: number
-          fantasy_team_id: string
-          id: string
-          last_calculated: string
-          position_scores: Json
-          session_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_total_score?: number
-          fantasy_team_id: string
-          id?: string
-          last_calculated?: string
-          position_scores?: Json
-          session_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_total_score?: number
-          fantasy_team_id?: string
-          id?: string
-          last_calculated?: string
-          position_scores?: Json
-          session_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "live_fantasy_scores_fantasy_team_id_fkey"
-            columns: ["fantasy_team_id"]
-            isOneToOne: false
-            referencedRelation: "fantasy_teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "live_fantasy_scores_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "fantasy_live_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       live_player_performance: {
         Row: {
@@ -771,15 +686,7 @@ export type Database = {
           session_id?: string
           team_name?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "live_player_performance_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "fantasy_live_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       match_notifications: {
         Row: {
@@ -1043,6 +950,7 @@ export type Database = {
           original_scheduled_at: string | null
           raw_data: Json | null
           rescheduled: boolean | null
+          row_id: number
           serie_id: string | null
           serie_name: string | null
           slug: string | null
@@ -1079,6 +987,7 @@ export type Database = {
           original_scheduled_at?: string | null
           raw_data?: Json | null
           rescheduled?: boolean | null
+          row_id?: number
           serie_id?: string | null
           serie_name?: string | null
           slug?: string | null
@@ -1115,6 +1024,7 @@ export type Database = {
           original_scheduled_at?: string | null
           raw_data?: Json | null
           rescheduled?: boolean | null
+          row_id?: number
           serie_id?: string | null
           serie_name?: string | null
           slug?: string | null
@@ -1261,18 +1171,24 @@ export type Database = {
       pandascore_sync_state: {
         Row: {
           id: string
+          last_match_id: number | null
+          last_match_row_id: number | null
           last_page: number | null
           last_synced_at: string | null
           max_page: number | null
         }
         Insert: {
           id: string
+          last_match_id?: number | null
+          last_match_row_id?: number | null
           last_page?: number | null
           last_synced_at?: string | null
           max_page?: number | null
         }
         Update: {
           id?: string
+          last_match_id?: number | null
+          last_match_row_id?: number | null
           last_page?: number | null
           last_synced_at?: string | null
           max_page?: number | null
