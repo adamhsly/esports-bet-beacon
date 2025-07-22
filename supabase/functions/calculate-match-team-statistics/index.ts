@@ -6,48 +6,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface TeamStatsData {
-  teamId: string;
-  winRate: number;
-  recentForm: string;
-  tournamentWins: number;
-  totalMatches: number;
-  wins: number;
-  losses: number;
-  leaguePerformance: Record<string, any>;
-  recentWinRate30d: number;
-  last10MatchesDetail: any[];
-}
+const BATCH_SIZE = 100;
+const SYNC_ID = "match_stats";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
 
-    // Broadened status filter to catch more matches
-    const { data: matches, error } = await supabaseClient
+  try {
+    // Get sync state
+    const { data: syncState, error: syncError } = await supabase
+      .from("pandascore_sync_state")
+      .select("last_page")
+      .eq("id", SYNC_ID)
+      .maybeSingle();
+
+    if (syncError) throw new Error("Failed to read sync state");
+
+    const lastPage = syncState?.last_page ?? 0;
+    const offset = lastPage * BATCH_SIZE;
+
+    const { data: matches, error: fetchError } = await supabase
       .from("pandascore_matches")
       .select("match_id, start_time, esport_type, teams, status")
-      .in("status", ["finished", "not_started", "running", "canceled", "processing"])
-      .order("start_time", { ascending: true });
+      .in("status", ["finished", "not_started", "running", "canceled"])
+      .order("start_time", { ascending: true })
+      .range(offset, offset + BATCH_SIZE - 1);
 
-    if (error || !matches || matches.length === 0) {
-      console.error("Error or no matches found", error);
-      return new Response(
-        JSON.stringify({ message: "No matches found" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (fetchError || !matches || matches.length === 0) {
+      return new Response(JSON.stringify({ done: true, message: "No more matches" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log(`Fetched ${matches.length} matches`);
-
-    const results: any[] = [];
+    const results = [];
 
     for (const match of matches) {
       const matchId = match.match_id.toString();
@@ -56,36 +54,22 @@ serve(async (req) => {
       const teams = match.teams as any[];
       const matchStatus = match.status;
 
-      console.log(`\n➡️ Evaluating match ${matchId} (${matchStatus})`);
-
-      if (!teams || teams.length === 0) {
-        console.warn(`❌ No teams for match ${matchId}`);
-        continue;
-      }
+      if (!teams || teams.length === 0) continue;
 
       for (const team of teams) {
         const teamId = team.opponent?.id?.toString();
-        if (!teamId) {
-          console.warn(`❌ Missing team ID in match ${matchId}`);
-          continue;
-        }
+        if (!teamId) continue;
 
-        console.log(`   🔄 Processing team ${teamId} for match ${matchId}`);
-
-        const { data: existingStat } = await supabaseClient
+        const { data: existingStat } = await supabase
           .from("pandascore_match_team_stats")
           .select("id")
           .eq("match_id", matchId)
           .eq("team_id", teamId)
           .maybeSingle();
 
-        if (existingStat) {
-          console.log(`   ⚠️ Skipping team ${teamId} for match ${matchId} (already processed)`);
-          continue;
-        }
+        if (existingStat) continue;
 
-        // Get historical matches for team
-        const { data: historicalMatches, error: historyError } = await supabaseClient
+        const { data: historicalMatches, error: historyError } = await supabase
           .from("pandascore_matches")
           .select("*")
           .eq("esport_type", esportType)
@@ -93,10 +77,7 @@ serve(async (req) => {
           .eq("status", "finished")
           .order("start_time", { ascending: true });
 
-        if (historyError || !historicalMatches) {
-          console.error(`❌ Error fetching history for team ${teamId}`, historyError);
-          continue;
-        }
+        if (historyError || !historicalMatches) continue;
 
         const teamMatches = historicalMatches.filter(m => {
           return (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId);
@@ -104,7 +85,7 @@ serve(async (req) => {
 
         const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
-        const { error: insertError } = await supabaseClient
+        const { error: insertError } = await supabase
           .from("pandascore_match_team_stats")
           .upsert({
             match_id: matchId,
@@ -120,33 +101,37 @@ serve(async (req) => {
             recent_win_rate_30d: stats.recentWinRate30d,
             last_10_matches_detail: stats.last10MatchesDetail,
             calculated_at: new Date().toISOString(),
-            // match_status removed to avoid schema error
-          }, { onConflict: ['match_id', 'team_id'] });
+          }, { onConflict: ["match_id", "team_id"] });
 
-        if (insertError) {
-          console.error(`❌ Error inserting stats for team ${teamId} in match ${matchId}`, insertError);
-        } else {
-          console.log(`✅ Inserted stats for team ${teamId} in match ${matchId}`);
-          results.push({ matchId, teamId, status: matchStatus });
+        if (!insertError) {
+          results.push({ matchId, teamId });
         }
       }
     }
 
+    // Update sync state
+    await supabase
+      .from("pandascore_sync_state")
+      .upsert({ id: SYNC_ID, last_page: lastPage + 1, last_synced_at: new Date().toISOString() });
+
     return new Response(
-      JSON.stringify({ success: true, processed: results }),
+      JSON.stringify({
+        success: true,
+        processedMatches: results.length,
+        nextPage: lastPage + 1,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
-  } catch (error) {
-    console.error("🔥 Unhandled error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || error.toString() }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  } catch (err) {
+    console.error("Fatal error:", err);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 
-function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string): TeamStatsData {
+function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string) {
   const totalMatches = matches.length;
   let wins = 0;
   let tournamentWins = 0;
