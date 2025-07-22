@@ -19,7 +19,7 @@ interface TeamStatsData {
   last10MatchesDetail: any[];
 }
 
-const SYNC_STATE_ID = "pandascore_match_team_stats";
+const BATCH_SIZE = 100;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -32,106 +32,109 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Fetch sync state or create default
+    // Get or create sync state
     let { data: syncState, error: syncError } = await supabaseClient
       .from("pandascore_sync_state")
       .select("*")
-      .eq("id", SYNC_STATE_ID)
+      .eq("id", "pandascore_match_team_stats")
       .maybeSingle();
 
     if (syncError) {
-      console.error("[ERROR] Fetching sync state:", syncError);
+      console.error("Error fetching sync state:", syncError);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch sync state", details: syncError }),
+        JSON.stringify({ error: "Failed to fetch sync state" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (!syncState) {
-      // Create initial sync state row
-      const { error: insertError } = await supabaseClient
+      // Create initial sync state if none exists
+      const { error: createError } = await supabaseClient
         .from("pandascore_sync_state")
-        .insert([{ id: SYNC_STATE_ID, last_match_row_id: 0, last_synced_at: new Date().toISOString() }]);
-      if (insertError) {
-        console.error("[ERROR] Creating initial sync state:", insertError);
+        .insert({
+          id: "pandascore_match_team_stats",
+          last_match_row_id: 0,
+          last_synced_at: new Date().toISOString(),
+        });
+
+      if (createError) {
+        console.error("Error creating initial sync state:", createError);
         return new Response(
-          JSON.stringify({ error: "Failed to create initial sync state", details: insertError }),
+          JSON.stringify({ error: "Failed to create sync state" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      syncState = { id: SYNC_STATE_ID, last_match_row_id: 0 };
+
+      syncState = {
+        id: "pandascore_match_team_stats",
+        last_match_row_id: 0,
+      };
     }
 
-    const BATCH_SIZE = 100; // Adjust batch size as needed
-    const lastMatchRowId = syncState.last_match_row_id ?? 0;
+    const lastSyncedRowId = syncState.last_match_row_id || 0;
 
-    console.log(`[INFO] Starting batch from last_match_row_id = ${lastMatchRowId}`);
+    console.log(`Starting batch processing from row_id > ${lastSyncedRowId}`);
 
-    // Fetch next batch of matches after lastMatchRowId
+    // Fetch next batch of matches
     const { data: matches, error: fetchError } = await supabaseClient
       .from("pandascore_matches")
-      .select("id, match_id, start_time, esport_type, teams, status, winner_id, tournament_name, league_name")
-      .gt("id", lastMatchRowId)
-      .order("id", { ascending: true })
+      .select("*")
+      .gt("row_id", lastSyncedRowId)
+      .order("row_id", { ascending: true })
       .limit(BATCH_SIZE);
 
     if (fetchError) {
-      console.error("[ERROR] Fetching matches failed:", fetchError);
+      console.error("Error fetching matches:", fetchError);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch matches", details: fetchError }),
+        JSON.stringify({ error: "Failed to fetch matches" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (!matches || matches.length === 0) {
-      console.log("[INFO] No more matches to process");
+      console.log("No more matches to process.");
       return new Response(
-        JSON.stringify({ success: true, message: "No more matches to process" }),
+        JSON.stringify({ success: true, message: "All matches processed." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    let maxProcessedId = lastMatchRowId;
-    let totalTeamsProcessed = 0;
+    let highestRowId = lastSyncedRowId;
+    const processedResults: any[] = [];
 
     for (const match of matches) {
-      maxProcessedId = Math.max(maxProcessedId, match.id);
-      const matchId = match.match_id?.toString() || "";
+      const matchId = match.match_id.toString();
       const esportType = match.esport_type;
       const matchStartTime = match.start_time;
       const teams = match.teams as any[];
       const matchStatus = match.status;
+      const rowId = match.row_id;
+
+      if (rowId > highestRowId) highestRowId = rowId;
 
       if (!teams || teams.length === 0) {
-        console.warn(`[WARN] No teams found for match id ${match.id} (match_id: ${matchId})`);
+        console.warn(`No teams found for match ${matchId}`);
         continue;
       }
 
       for (const team of teams) {
         const teamId = team.opponent?.id?.toString();
-        if (!teamId) {
-          console.warn(`[WARN] Missing teamId in match id ${match.id}, skipping`);
-          continue;
-        }
+        if (!teamId) continue;
 
-        // Check if stats already processed for this team + match
-        const { data: existingStat, error: existingError } = await supabaseClient
+        // Check if stats already processed for this team+match
+        const { data: existingStat } = await supabaseClient
           .from("pandascore_match_team_stats")
           .select("id")
           .eq("match_id", matchId)
           .eq("team_id", teamId)
           .maybeSingle();
 
-        if (existingError) {
-          console.error(`[ERROR] Checking existing stats for team ${teamId} match ${matchId}`, existingError);
-          continue;
-        }
         if (existingStat) {
-          console.log(`[INFO] Skipping team ${teamId} for match ${matchId} (already processed)`);
+          console.log(`Skipping team ${teamId} for match ${matchId} (already processed)`);
           continue;
         }
 
-        // Fetch historical matches for stats calculation
+        // Get historical matches for this team finished before this match start
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
@@ -141,78 +144,67 @@ serve(async (req) => {
           .order("start_time", { ascending: true });
 
         if (historyError || !historicalMatches) {
-          console.error(`[ERROR] Fetching historical matches for team ${teamId}`, historyError);
+          console.error(`Error fetching historical matches for team ${teamId}:`, historyError);
           continue;
         }
 
-        const teamMatches = historicalMatches.filter((m) => {
-          return (m.teams ?? []).some((t) => t.opponent?.id?.toString() === teamId);
-        });
+        const teamMatches = historicalMatches.filter(m =>
+          (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId)
+        );
 
         const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
-        // Upsert stats
+        // Upsert the stats
         const { error: insertError } = await supabaseClient
           .from("pandascore_match_team_stats")
-          .upsert(
-            {
-              match_id: matchId,
-              team_id: teamId,
-              esport_type: esportType,
-              win_rate: stats.winRate,
-              recent_form: stats.recentForm,
-              tournament_wins: stats.tournamentWins,
-              total_matches: stats.totalMatches,
-              wins: stats.wins,
-              losses: stats.losses,
-              league_performance: stats.leaguePerformance,
-              recent_win_rate_30d: stats.recentWinRate30d,
-              last_10_matches_detail: stats.last10MatchesDetail,
-              calculated_at: new Date().toISOString(),
-              match_status: matchStatus,
-            },
-            { onConflict: ["match_id", "team_id"] }
-          );
+          .upsert({
+            match_id: matchId,
+            team_id: teamId,
+            esport_type: esportType,
+            win_rate: stats.winRate,
+            recent_form: stats.recentForm,
+            tournament_wins: stats.tournamentWins,
+            total_matches: stats.totalMatches,
+            wins: stats.wins,
+            losses: stats.losses,
+            league_performance: stats.leaguePerformance,
+            recent_win_rate_30d: stats.recentWinRate30d,
+            last_10_matches_detail: stats.last10MatchesDetail,
+            calculated_at: new Date().toISOString(),
+            match_status: matchStatus,
+          }, { onConflict: ['match_id', 'team_id'] });
 
         if (insertError) {
-          console.error(`[ERROR] Inserting stats for team ${teamId} match ${matchId}`, insertError);
-          continue;
+          console.error(`Error inserting stats for team ${teamId} in match ${matchId}:`, insertError);
         } else {
-          totalTeamsProcessed++;
-          console.log(`[INFO] Processed stats for team ${teamId} in match ${matchId}`);
+          console.log(`Processed stats for team ${teamId} in match ${matchId}`);
+          processedResults.push({ matchId, teamId, status: matchStatus });
         }
       }
     }
 
-    // Update sync state with new last_match_row_id and last_synced_at
-    const { error: updateSyncError } = await supabaseClient
+    // Update sync state with new last_match_row_id and timestamp
+    const { error: updateError } = await supabaseClient
       .from("pandascore_sync_state")
       .update({
-        last_match_row_id: maxProcessedId,
+        last_match_row_id: highestRowId,
         last_synced_at: new Date().toISOString(),
       })
-      .eq("id", SYNC_STATE_ID);
+      .eq("id", "pandascore_match_team_stats");
 
-    if (updateSyncError) {
-      console.error("[ERROR] Updating sync state failed:", updateSyncError);
-      return new Response(
-        JSON.stringify({ error: "Failed to update sync state", details: updateSyncError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (updateError) {
+      console.error("Failed to update sync state:", updateError);
+    } else {
+      console.log(`Sync state updated. last_match_row_id set to ${highestRowId}`);
     }
 
-    console.log(`[INFO] Batch complete. Last processed match row id: ${maxProcessedId}, teams processed: ${totalTeamsProcessed}`);
-
     return new Response(
-      JSON.stringify({
-        success: true,
-        last_processed_match_row_id: maxProcessedId,
-        teams_processed: totalTeamsProcessed,
-      }),
+      JSON.stringify({ success: true, lastMatchRowId: highestRowId, processed: processedResults }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   } catch (error) {
-    console.error("[FATAL] Unhandled error:", error);
+    console.error("Unhandled error:", error);
     return new Response(
       JSON.stringify({ error: error.message || error.toString() }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -298,5 +290,5 @@ function getOpponentName(teamId: string, teams: any[]): string {
     return id && id !== teamId;
   });
 
-  return opponent?.opponent?.name || opponent?.name || "Unknown";
+  return opponent?.opponent?.name || "Unknown";
 }
