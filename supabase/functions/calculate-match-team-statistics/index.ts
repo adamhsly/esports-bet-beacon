@@ -30,11 +30,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // ⚠️ Try fetching ALL matches (up to 1000)
+    // Broadened status filter to catch more matches
     const { data: matches, error } = await supabaseClient
       .from("pandascore_matches")
       .select("match_id, start_time, esport_type, teams, status")
-      .in("status", ["finished", "not_started"])
+      .in("status", ["finished", "not_started", "running", "canceled", "processing"])
       .order("start_time", { ascending: true });
 
     if (error || !matches || matches.length === 0) {
@@ -46,11 +46,6 @@ serve(async (req) => {
     }
 
     console.log(`Fetched ${matches.length} matches`);
-
-    // DEBUG: Ensure 1211616 is in list
-    const hardcodedMatchId = "1211616";
-    const includes1211616 = matches.some(m => m.match_id.toString() === hardcodedMatchId);
-    console.log(`Match 1211616 present: ${includes1211616}`);
 
     const results: any[] = [];
 
@@ -125,7 +120,7 @@ serve(async (req) => {
             recent_win_rate_30d: stats.recentWinRate30d,
             last_10_matches_detail: stats.last10MatchesDetail,
             calculated_at: new Date().toISOString(),
-            match_status: matchStatus,
+            // match_status removed to avoid schema error
           }, { onConflict: ['match_id', 'team_id'] });
 
         if (insertError) {
@@ -150,8 +145,6 @@ serve(async (req) => {
     );
   }
 });
-
-// 🔢 Utility Functions
 
 function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string): TeamStatsData {
   const totalMatches = matches.length;
