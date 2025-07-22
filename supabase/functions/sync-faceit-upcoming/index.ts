@@ -28,7 +28,7 @@ serve(async (req) => {
   const faceitApiKey = Deno.env.get("FACEIT_API_KEY");
   if (!faceitApiKey) throw new Error("FACEIT_API_KEY not set");
 
-  let games = ["cs2"];
+  let games = ["csgo", "dota2", "valorant", "lol", "r6s", "overwatch"];
   try {
     const body = await req.json();
     if (body.games && Array.isArray(body.games)) {
@@ -49,6 +49,7 @@ serve(async (req) => {
 
   for (const game of games) {
     for (const type of ["ongoing", "upcoming"]) {
+      console.log(`🎮 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
       const championshipsUrl = new URL("https://open.faceit.com/data/v4/championships");
       championshipsUrl.searchParams.set("game", game);
       championshipsUrl.searchParams.set("type", type);
