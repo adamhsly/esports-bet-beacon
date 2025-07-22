@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
+const SYNC_ID = "match_stats";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-const SYNC_ID = "match_stats";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -19,8 +19,8 @@ serve(async (req) => {
   );
 
   try {
-    // 1. Load last match ID processed
-    const { data: syncRow, error: syncErr } = await supabase
+    // 1. Fetch last synced match
+    const { data: syncRow } = await supabase
       .from("pandascore_sync_state")
       .select("last_match_id")
       .eq("id", SYNC_ID)
@@ -28,7 +28,7 @@ serve(async (req) => {
 
     const lastMatchId = syncRow?.last_match_id ?? 0;
 
-    // 2. Get next match after that
+    // 2. Fetch next match to process
     const { data: matches, error: matchErr } = await supabase
       .from("pandascore_matches")
       .select("match_id, start_time, esport_type, teams, status")
@@ -50,12 +50,20 @@ serve(async (req) => {
     const matchStatus = match.status;
     const teams = match.teams ?? [];
 
-    const results = [];
+    console.log(`⏳ Processing match ${matchId}`);
+
+    // 3. Immediately update sync state so we don’t get stuck
+    await supabase
+      .from("pandascore_sync_state")
+      .upsert({ id: SYNC_ID, last_match_id: parseInt(matchId), last_synced_at: new Date().toISOString() });
+
+    let processedTeams = 0;
 
     for (const team of teams) {
       const teamId = team.opponent?.id?.toString();
       if (!teamId) continue;
 
+      // Check if already exists
       const { data: existing } = await supabase
         .from("pandascore_match_team_stats")
         .select("id")
@@ -63,9 +71,13 @@ serve(async (req) => {
         .eq("team_id", teamId)
         .maybeSingle();
 
-      if (existing) continue;
+      if (existing) {
+        console.log(`⚠️ Already processed team ${teamId} in match ${matchId}`);
+        continue;
+      }
 
-      const { data: history, error: histErr } = await supabase
+      // Pull history
+      const { data: history } = await supabase
         .from("pandascore_matches")
         .select("*")
         .eq("esport_type", esportType)
@@ -73,15 +85,13 @@ serve(async (req) => {
         .eq("status", "finished")
         .order("start_time", { ascending: true });
 
-      if (histErr || !history) continue;
-
-      const teamMatches = history.filter(m =>
+      const teamMatches = (history ?? []).filter(m =>
         (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId)
       );
 
       const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
-      const { error: insertError } = await supabase
+      const { error: insertErr } = await supabase
         .from("pandascore_match_team_stats")
         .upsert({
           match_id: matchId,
@@ -97,25 +107,25 @@ serve(async (req) => {
           recent_win_rate_30d: stats.recentWinRate30d,
           last_10_matches_detail: stats.last10MatchesDetail,
           calculated_at: new Date().toISOString(),
+          match_status: matchStatus,
         }, { onConflict: ["match_id", "team_id"] });
 
-      if (!insertError) {
-        results.push({ matchId, teamId });
+      if (insertErr) {
+        console.error(`❌ Insert failed for team ${teamId} in match ${matchId}`, insertErr);
+      } else {
+        console.log(`✅ Processed stats for team ${teamId} in match ${matchId}`);
+        processedTeams++;
       }
     }
 
-    // 3. Update sync progress to this match
-    await supabase
-      .from("pandascore_sync_state")
-      .upsert({ id: SYNC_ID, last_match_id: parseInt(matchId), last_synced_at: new Date().toISOString() });
-
-    return new Response(JSON.stringify({ success: true, matchId, processed: results.length }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ success: true, matchId, teamsProcessed: processedTeams }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
 
   } catch (err) {
-    console.error("Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("💥 Unexpected error:", err);
+    return new Response(JSON.stringify({ error: err.message || err.toString() }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
