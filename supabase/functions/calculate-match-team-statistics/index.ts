@@ -30,28 +30,42 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") ?? "50");
-    const offset = parseInt(url.searchParams.get("offset") ?? "0");
+    // Fetch all matches in batches
+    const allMatches: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
 
-    // Get finished + upcoming matches
-    const { data: matches, error: fetchError } = await supabaseClient
-      .from("pandascore_matches")
-      .select("match_id, start_time, esport_type, teams, status")
-      .in("status", ["finished", "not_started"])
-      .order("start_time", { ascending: true })
-      .range(offset, offset + limit - 1);
+    while (true) {
+      const { data: batch, error } = await supabaseClient
+        .from("pandascore_matches")
+        .select("match_id, start_time, esport_type, teams, status")
+        .in("status", ["finished", "not_started"])
+        .order("start_time", { ascending: true })
+        .range(from, from + batchSize - 1);
 
-    if (fetchError || !matches || matches.length === 0) {
+      if (error) {
+        console.error("Error fetching matches:", error);
+        break;
+      }
+
+      if (!batch || batch.length === 0) break;
+
+      allMatches.push(...batch);
+      if (batch.length < batchSize) break;
+
+      from += batchSize;
+    }
+
+    if (allMatches.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No matches found or error fetching" }),
+        JSON.stringify({ message: "No matches found" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const results: any[] = [];
 
-    for (const match of matches) {
+    for (const match of allMatches) {
       const matchId = match.match_id.toString();
       const esportType = match.esport_type;
       const matchStartTime = match.start_time;
@@ -67,7 +81,6 @@ serve(async (req) => {
         const teamId = team.opponent?.id?.toString();
         if (!teamId) continue;
 
-        // Skip already processed
         const { data: existingStat } = await supabaseClient
           .from("pandascore_match_team_stats")
           .select("id")
@@ -80,7 +93,6 @@ serve(async (req) => {
           continue;
         }
 
-        // Pull match history
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
@@ -100,7 +112,6 @@ serve(async (req) => {
 
         const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
-        // Upsert stats
         const { error: insertError } = await supabaseClient
           .from("pandascore_match_team_stats")
           .upsert({
@@ -117,7 +128,7 @@ serve(async (req) => {
             recent_win_rate_30d: stats.recentWinRate30d,
             last_10_matches_detail: stats.last10MatchesDetail,
             calculated_at: new Date().toISOString(),
-            match_status: matchStatus, // Track if it was upcoming or finished
+            match_status: matchStatus,
           }, { onConflict: ['match_id', 'team_id'] });
 
         if (insertError) {
