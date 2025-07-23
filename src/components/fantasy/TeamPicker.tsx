@@ -185,6 +185,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       if (error) throw error;
 
       toast.success('Team submitted successfully!');
+      console.log('Team submission successful, navigating back...');
       onBack();
     } catch (error: any) {
       console.error('Error submitting team:', error);
