@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ interface Team {
   matches_in_period?: number;
   logo_url?: string;
   recent_activity?: number;
+  esport_type?: string;
 }
 
 interface TeamPickerProps {
@@ -50,35 +52,36 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       // Fetch pro teams from Pandascore matches within round period
       const { data: pandaMatches, error: pandaError } = await supabase
         .from('pandascore_matches')
-        .select('teams')
+        .select('teams, esport_type')
         .gte('start_time', round.start_date)
         .lte('start_time', round.end_date)
         .not('teams', 'is', null);
 
       if (pandaError) throw pandaError;
 
-      // Extract unique pro teams
-      const proTeamSet = new Set<string>();
-      const proTeamData: Team[] = [];
+      // Extract unique pro teams with esport type
+      const proTeamMap = new Map<string, Team>();
       
       pandaMatches?.forEach(match => {
         if (match.teams && Array.isArray(match.teams)) {
           match.teams.forEach((teamObj: any) => {
             if (teamObj.opponent?.opponent) {
               const team = teamObj.opponent.opponent;
-              if (!proTeamSet.has(team.id)) {
-                proTeamSet.add(team.id);
-                proTeamData.push({
+              if (!proTeamMap.has(team.id)) {
+                proTeamMap.set(team.id, {
                   id: team.id,
                   name: team.name || team.slug || 'Unknown Team',
                   type: 'pro',
-                  logo_url: team.image_url
+                  logo_url: team.image_url,
+                  esport_type: match.esport_type
                 });
               }
             }
           });
         }
       });
+
+      const proTeamData = Array.from(proTeamMap.values());
 
       // Fetch amateur teams from Faceit matches
       const { data: faceitMatches, error: faceitError } = await supabase
@@ -307,15 +310,87 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {proTeams.map(team => (
-                <TeamCard
-                  key={team.id}
-                  team={team}
-                  isSelected={!!selectedTeams.find(t => t.id === team.id)}
-                  onClick={() => handleTeamSelect(team)}
-                />
-              ))}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Select Pro Team</h3>
+                <p className="text-sm text-muted-foreground">Choose teams scheduled to play in this period</p>
+              </div>
+              
+              <Select onValueChange={(teamId) => {
+                const team = proTeams.find(t => t.id === teamId);
+                if (team) handleTeamSelect(team);
+              }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a pro team..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {proTeams.map(team => (
+                    <SelectItem 
+                      key={team.id} 
+                      value={team.id}
+                      disabled={!!selectedTeams.find(t => t.id === team.id)}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        {team.logo_url && (
+                          <img 
+                            src={team.logo_url} 
+                            alt={team.name} 
+                            className="w-6 h-6 rounded flex-shrink-0" 
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{team.name}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {team.esport_type?.toUpperCase()}
+                            </Badge>
+                            <Badge variant="default" className="text-xs">
+                              Pro
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Selected Pro Teams Display */}
+              {selectedTeams.filter(t => t.type === 'pro').length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Selected Pro Teams:</h4>
+                  <div className="grid gap-2">
+                    {selectedTeams.filter(t => t.type === 'pro').map(team => (
+                      <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {team.logo_url && (
+                            <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
+                          )}
+                          <div>
+                            <div className="font-medium">{team.name}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {team.esport_type?.toUpperCase()}
+                              </Badge>
+                              <Badge variant="default" className="text-xs">
+                                Pro
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleTeamSelect(team)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
