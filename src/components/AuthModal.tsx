@@ -95,9 +95,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
       });
     } else {
       toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
+        title: "Account created successfully!",
+        description: "Welcome to EsportsHub! Please check your email to verify your account.",
       });
+      
+      // Clear form
+      setSignUpEmail('');
+      setSignUpPassword('');
+      setSignUpConfirmPassword('');
+      setSignUpUsername('');
+      setSignUpFullName('');
+      
+      // Close modal and handle success
+      onClose();
+      onSuccess?.();
     }
     
     setLoading(false);

@@ -94,9 +94,17 @@ const AuthPage: React.FC = () => {
       });
     } else {
       toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
+        title: "Account created successfully!",
+        description: "Welcome to EsportsHub! Please check your email to verify your account.",
       });
+      
+      // Clear form and navigate to homepage
+      setSignUpEmail('');
+      setSignUpPassword('');
+      setSignUpConfirmPassword('');
+      setSignUpUsername('');
+      setSignUpFullName('');
+      navigate('/');
     }
     
     setLoading(false);
