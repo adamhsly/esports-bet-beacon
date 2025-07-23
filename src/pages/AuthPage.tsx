@@ -19,9 +19,10 @@ const AuthPage: React.FC = () => {
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
   const [signUpUsername, setSignUpUsername] = useState('');
   const [signUpFullName, setSignUpFullName] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -99,6 +100,28 @@ const AuthPage: React.FC = () => {
     setLoading(false);
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await resetPassword(resetEmail);
+    
+    if (error) {
+      toast({
+        title: "Reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Reset link sent!",
+        description: "Please check your email for the password reset link.",
+      });
+    }
+    
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-theme-gray-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -119,7 +142,7 @@ const AuthPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
+              <TabsList className="grid w-full grid-cols-3 bg-theme-gray-dark">
                 <TabsTrigger 
                   value="signin" 
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
@@ -131,6 +154,12 @@ const AuthPage: React.FC = () => {
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
                 >
                   Sign Up
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reset"
+                  className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
+                >
+                  Reset
                 </TabsTrigger>
               </TabsList>
 
@@ -264,6 +293,34 @@ const AuthPage: React.FC = () => {
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Create Account'}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="reset" className="space-y-4">
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email" className="text-gray-300">
+                      <Mail className="inline w-4 h-4 mr-2" />
+                      Email
+                    </Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                      className="bg-theme-gray-dark border-theme-gray-light text-white"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-theme-purple hover:bg-theme-purple/90"
+                    disabled={loading}
+                  >
+                    {loading ? 'Sending reset link...' : 'Send Reset Link'}
                   </Button>
                 </form>
               </TabsContent>
