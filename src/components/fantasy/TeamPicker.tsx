@@ -87,8 +87,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       const { data: faceitMatches, error: faceitError } = await supabase
         .from('faceit_matches')
         .select('teams')
-        .gte('match_date', round.start_date)
-        .lte('match_date', round.end_date);
+        .gte('scheduled_at', round.start_date)
+        .lte('scheduled_at', round.end_date);
 
       if (faceitError) throw faceitError;
 
