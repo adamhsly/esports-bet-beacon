@@ -20,6 +20,8 @@ const AuthPage: React.FC = () => {
   const [signUpUsername, setSignUpUsername] = useState('');
   const [signUpFullName, setSignUpFullName] = useState('');
   const [resetEmail, setResetEmail] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp, resetPassword, user } = useAuth();
@@ -117,6 +119,7 @@ const AuthPage: React.FC = () => {
         title: "Reset link sent!",
         description: "Please check your email for the password reset link.",
       });
+      setResetEmailSent(true);
     }
     
     setLoading(false);
@@ -142,7 +145,7 @@ const AuthPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-3 bg-theme-gray-dark">
+              <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
                 <TabsTrigger 
                   value="signin" 
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
@@ -155,56 +158,103 @@ const AuthPage: React.FC = () => {
                 >
                   Sign Up
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="reset"
-                  className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
-                >
-                  Reset
-                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-gray-300">
-                      <Mail className="inline w-4 h-4 mr-2" />
-                      Email
-                    </Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      value={signInEmail}
-                      onChange={(e) => setSignInEmail(e.target.value)}
-                      required
-                      className="bg-theme-gray-dark border-theme-gray-light text-white"
-                      placeholder="Enter your email"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-gray-300">
-                      <Lock className="inline w-4 h-4 mr-2" />
-                      Password
-                    </Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      value={signInPassword}
-                      onChange={(e) => setSignInPassword(e.target.value)}
-                      required
-                      className="bg-theme-gray-dark border-theme-gray-light text-white"
-                      placeholder="Enter your password"
-                    />
-                  </div>
+                {!showResetForm ? (
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email" className="text-gray-300">
+                        <Mail className="inline w-4 h-4 mr-2" />
+                        Email
+                      </Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        value={signInEmail}
+                        onChange={(e) => setSignInEmail(e.target.value)}
+                        required
+                        className="bg-theme-gray-dark border-theme-gray-light text-white"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password" className="text-gray-300">
+                        <Lock className="inline w-4 h-4 mr-2" />
+                        Password
+                      </Label>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        value={signInPassword}
+                        onChange={(e) => setSignInPassword(e.target.value)}
+                        required
+                        className="bg-theme-gray-dark border-theme-gray-light text-white"
+                        placeholder="Enter your password"
+                      />
+                      <div className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => setShowResetForm(true)}
+                          className="text-sm text-theme-purple hover:text-theme-purple/80 underline"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                    </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-theme-purple hover:bg-theme-purple/90"
-                    disabled={loading}
-                  >
-                    {loading ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </form>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-theme-purple hover:bg-theme-purple/90"
+                      disabled={loading}
+                    >
+                      {loading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="text-center mb-4">
+                      <h3 className="text-lg font-semibold text-white">Reset Password</h3>
+                      <p className="text-sm text-gray-300">Enter your email to receive a reset link</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email" className="text-gray-300">
+                        <Mail className="inline w-4 h-4 mr-2" />
+                        Email
+                      </Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                        className="bg-theme-gray-dark border-theme-gray-light text-white"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        onClick={() => setShowResetForm(false)}
+                        className="flex-1 border-theme-gray-light text-gray-300 hover:text-white"
+                        disabled={loading}
+                      >
+                        Back
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="flex-1 bg-theme-purple hover:bg-theme-purple/90"
+                        disabled={loading || resetEmailSent}
+                      >
+                        {resetEmailSent ? 'Sent' : loading ? 'Sending...' : 'Send Reset Link'}
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
@@ -293,34 +343,6 @@ const AuthPage: React.FC = () => {
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Create Account'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="reset" className="space-y-4">
-                <form onSubmit={handleResetPassword} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reset-email" className="text-gray-300">
-                      <Mail className="inline w-4 h-4 mr-2" />
-                      Email
-                    </Label>
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      required
-                      className="bg-theme-gray-dark border-theme-gray-light text-white"
-                      placeholder="Enter your email"
-                    />
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-theme-purple hover:bg-theme-purple/90"
-                    disabled={loading}
-                  >
-                    {loading ? 'Sending reset link...' : 'Send Reset Link'}
                   </Button>
                 </form>
               </TabsContent>
