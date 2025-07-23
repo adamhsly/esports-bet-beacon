@@ -45,7 +45,7 @@ export const InProgressRounds: React.FC = () => {
     if (!user) return;
 
     try {
-      // Fetch user's picks for active rounds
+      // Fetch user's picks for open and active rounds (rounds in progress)
       const { data: picks, error: picksError } = await supabase
         .from('fantasy_round_picks')
         .select(`
@@ -53,7 +53,7 @@ export const InProgressRounds: React.FC = () => {
           fantasy_rounds!inner(*)
         `)
         .eq('user_id', user.id)
-        .eq('fantasy_rounds.status', 'active');
+        .in('fantasy_rounds.status', ['open', 'active']);
 
       if (picksError) throw picksError;
 
