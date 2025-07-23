@@ -44,7 +44,9 @@ const FantasyPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="join">
-            <RoundSelector />
+            <RoundSelector 
+              onNavigateToInProgress={() => setActiveTab('in-progress')}
+            />
           </TabsContent>
 
           <TabsContent value="in-progress">

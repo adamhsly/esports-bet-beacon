@@ -16,7 +16,11 @@ interface FantasyRound {
   created_at: string;
 }
 
-export const RoundSelector: React.FC = () => {
+interface RoundSelectorProps {
+  onNavigateToInProgress?: () => void;
+}
+
+export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProgress }) => {
   const [rounds, setRounds] = useState<FantasyRound[]>([]);
   const [selectedRound, setSelectedRound] = useState<FantasyRound | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,13 @@ export const RoundSelector: React.FC = () => {
   };
 
   if (selectedRound) {
-    return <TeamPicker round={selectedRound} onBack={() => setSelectedRound(null)} />;
+    return (
+      <TeamPicker 
+        round={selectedRound} 
+        onBack={() => setSelectedRound(null)}
+        onNavigateToInProgress={onNavigateToInProgress}
+      />
+    );
   }
 
   if (loading) {

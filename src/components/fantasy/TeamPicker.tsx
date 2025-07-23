@@ -8,6 +8,7 @@ import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import AuthModal from '@/components/AuthModal';
 
 interface FantasyRound {
   id: string;
@@ -30,9 +31,10 @@ interface Team {
 interface TeamPickerProps {
   round: FantasyRound;
   onBack: () => void;
+  onNavigateToInProgress?: () => void;
 }
 
-export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
+export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigateToInProgress }) => {
   const { user } = useAuth();
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
@@ -40,6 +42,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
   const [benchTeam, setBenchTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState(false);
 
   useEffect(() => {
     fetchAvailableTeams();
@@ -147,7 +151,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
 
   const handleSubmit = async () => {
     if (!user) {
-      toast.error('Please log in to submit your team');
+      setShowAuthModal(true);
+      setPendingSubmission(true);
       return;
     }
 
@@ -185,8 +190,13 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       if (error) throw error;
 
       toast.success('Team submitted successfully!');
-      console.log('Team submission successful, navigating back...');
-      onBack();
+      console.log('Team submission successful, navigating to in-progress...');
+      
+      if (onNavigateToInProgress) {
+        onNavigateToInProgress();
+      } else {
+        onBack();
+      }
     } catch (error: any) {
       console.error('Error submitting team:', error);
       if (error.code === '23505') {
@@ -197,6 +207,22 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAuthSuccess = async () => {
+    setShowAuthModal(false);
+    if (pendingSubmission) {
+      setPendingSubmission(false);
+      // Wait a bit for user state to update
+      setTimeout(() => {
+        handleSubmit();
+      }, 500);
+    }
+  };
+
+  const handleAuthModalClose = () => {
+    setShowAuthModal(false);
+    setPendingSubmission(false);
   };
 
   const TeamCard: React.FC<{ team: Team; isSelected: boolean; onClick: () => void; showBench?: boolean; isBench?: boolean }> = ({ 
@@ -477,6 +503,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
       </div>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleAuthModalClose}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
