@@ -220,9 +220,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
                   {team.type === 'pro' ? 'Pro' : 'Amateur'}
                 </Badge>
                 {team.type === 'amateur' && (
-                  <Badge variant="outline" className="text-xs">
-                    +25% bonus
-                  </Badge>
+                  <>
+                    <Badge variant="outline" className="text-xs">
+                      +25% bonus
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {team.recent_activity || 0} matches
+                    </Badge>
+                  </>
                 )}
               </div>
             </div>
