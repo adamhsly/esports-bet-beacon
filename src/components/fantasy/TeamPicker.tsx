@@ -65,8 +65,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
       pandaMatches?.forEach(match => {
         if (match.teams && Array.isArray(match.teams)) {
           match.teams.forEach((teamObj: any) => {
-            if (teamObj.opponent?.opponent) {
-              const team = teamObj.opponent.opponent;
+            if (teamObj.type === 'Team' && teamObj.opponent) {
+              const team = teamObj.opponent;
               if (!proTeamMap.has(team.id)) {
                 proTeamMap.set(team.id, {
                   id: team.id,
