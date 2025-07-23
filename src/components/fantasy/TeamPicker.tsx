@@ -59,21 +59,25 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
 
       if (pandaError) throw pandaError;
 
-      // Extract unique pro teams with esport type
-      const proTeamMap = new Map<string, Team>();
+      // Extract unique pro teams with esport type and match count
+      const proTeamMap = new Map<string, Team & { matches_in_period: number }>();
       
       pandaMatches?.forEach(match => {
         if (match.teams && Array.isArray(match.teams)) {
           match.teams.forEach((teamObj: any) => {
             if (teamObj.type === 'Team' && teamObj.opponent) {
               const team = teamObj.opponent;
-              if (!proTeamMap.has(team.id)) {
+              const existing = proTeamMap.get(team.id);
+              if (existing) {
+                existing.matches_in_period = (existing.matches_in_period || 0) + 1;
+              } else {
                 proTeamMap.set(team.id, {
                   id: team.id,
                   name: team.name || team.slug || 'Unknown Team',
                   type: 'pro',
                   logo_url: team.image_url,
-                  esport_type: match.esport_type
+                  esport_type: match.esport_type,
+                  matches_in_period: 1
                 });
               }
             }
@@ -346,6 +350,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack }) => {
                             </Badge>
                             <Badge variant="default" className="text-xs">
                               Pro
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {team.matches_in_period} matches
                             </Badge>
                           </div>
                         </div>
