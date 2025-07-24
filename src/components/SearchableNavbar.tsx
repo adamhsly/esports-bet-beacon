@@ -26,7 +26,7 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               <img 
                 src="/lovable-uploads/87674e8d-6590-4300-a8e3-02fe83e7a100.png" 
                 alt="Frags & Fortunes" 
-                className="h-56"
+                className="h-46"
               />
             </Link>
             
