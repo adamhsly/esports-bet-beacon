@@ -23,7 +23,11 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-6">
             <Link to="/" className="flex items-center">
-              <span className="font-gaming text-xl text-white">Frags & Fortunes <span className="text-theme-purple">Scores</span></span>
+              <img 
+                src="/lovable-uploads/87674e8d-6590-4300-a8e3-02fe83e7a100.png" 
+                alt="Frags & Fortunes" 
+                className="h-8"
+              />
             </Link>
             
             <div className="hidden md:flex space-x-4">
