@@ -45,6 +45,8 @@ export const InProgressRounds: React.FC = () => {
     if (!user) return;
 
     try {
+      console.log('Fetching in-progress rounds for user:', user.id);
+      
       // Fetch user's picks for open and active rounds (rounds in progress)
       const { data: picks, error: picksError } = await supabase
         .from('fantasy_round_picks')
@@ -56,6 +58,8 @@ export const InProgressRounds: React.FC = () => {
         .in('fantasy_rounds.status', ['open', 'active']);
 
       if (picksError) throw picksError;
+
+      console.log('Fantasy picks fetched:', picks);
 
       // Fetch scores for each round
       const roundsWithScores = await Promise.all(
@@ -84,6 +88,7 @@ export const InProgressRounds: React.FC = () => {
         })
       );
 
+      console.log('Rounds with scores processed:', roundsWithScores);
       setRounds(roundsWithScores);
     } catch (error) {
       console.error('Error fetching in-progress rounds:', error);
@@ -191,11 +196,10 @@ export const InProgressRounds: React.FC = () => {
                     Team Performance
                   </h4>
                   
-                  {round.scores.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">Waiting for match results...</p>
-                  ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {round.scores.map((score) => (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {round.scores.length > 0 ? (
+                      // Show scored teams
+                      round.scores.map((score) => (
                         <div 
                           key={score.team_id}
                           className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
@@ -223,9 +227,46 @@ export const InProgressRounds: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    ) : (
+                      // Show picked teams without scores
+                      round.team_picks.map((team, index) => (
+                        <div 
+                          key={team.id || index}
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            {team.logo_url && (
+                              <img 
+                                src={team.logo_url} 
+                                alt={team.name}
+                                className="w-8 h-8 rounded object-contain"
+                              />
+                            )}
+                            <div>
+                              <div className="font-medium">{team.name}</div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Badge variant={team.type === 'pro' ? 'default' : 'secondary'} className="text-xs">
+                                  {team.type}
+                                </Badge>
+                                {team.type === 'amateur' && (
+                                  <Badge variant="outline" className="text-xs text-green-600">
+                                    +25% bonus
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">
+                              Waiting for matches...
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
 
                 {/* Scoring Breakdown */}
