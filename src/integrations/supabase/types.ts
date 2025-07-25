@@ -1949,6 +1949,10 @@ export type Database = {
         }
         Returns: number
       }
+      update_expired_fantasy_rounds: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       update_panda_team_head_to_head: {
         Args: Record<PropertyKey, never>
         Returns: undefined

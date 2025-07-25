@@ -41,6 +41,20 @@ export const InProgressRounds: React.FC = () => {
     }
   }, [user]);
 
+  const updateRoundStatus = async () => {
+    try {
+      console.log('🕐 Updating fantasy round status...');
+      const { error } = await supabase.functions.invoke('update-fantasy-round-status');
+      if (error) {
+        console.error('Error updating round status:', error);
+      } else {
+        console.log('✅ Round status updated successfully');
+      }
+    } catch (error) {
+      console.error('Error invoking round status update:', error);
+    }
+  };
+
   const calculateScores = async () => {
     try {
       console.log('🎯 Triggering fantasy score calculation...');
@@ -64,7 +78,8 @@ export const InProgressRounds: React.FC = () => {
     try {
       console.log('Fetching in-progress rounds for user:', user.id);
       
-      // Trigger score calculation first
+      // First update round statuses, then trigger score calculation
+      await updateRoundStatus();
       await calculateScores();
       
       // Fetch user's picks for open and active rounds (rounds in progress)
