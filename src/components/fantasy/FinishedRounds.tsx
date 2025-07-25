@@ -64,7 +64,7 @@ export const FinishedRounds: React.FC = () => {
         `)
         .eq('user_id', user.id)
         .eq('fantasy_rounds.status', 'finished')
-        .order('fantasy_rounds.end_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (picksError) throw picksError;
 
