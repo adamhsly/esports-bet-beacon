@@ -27,6 +27,7 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               src="/lovable-uploads/frags_and_fortunes_transparent.png"
               alt="Frags & Fortunes"
               className="h-full max-h-12 w-auto object-contain"
+              style={{ maxHeight: '3rem' }}
             />
             </Link>
             
