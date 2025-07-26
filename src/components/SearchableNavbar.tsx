@@ -28,6 +28,8 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               alt="Frags & Fortunes"
               className="h-full w-auto object-contain"
             />
+            </Link>
+            
             <div className="hidden md:flex space-x-4">
               <Link to="/esports/csgo" className="text-gray-300 hover:text-white">
                 Matches
