@@ -60,12 +60,17 @@ const fetchPlayersByIds = async (playerIds: number[]): Promise<any[]> => {
   }
   
   console.log(`👥 Fetching ${playerIds.length} players from pandascore_players_master:`, playerIds);
+  console.log(`🔍 Player IDs type check:`, playerIds.map(id => ({ id, type: typeof id })));
   
   try {
+    // Ensure all IDs are properly formatted for the query
+    const formattedIds = playerIds.map(id => Number(id));
+    console.log(`🔄 Formatted IDs for query:`, formattedIds);
+    
     const { data: players, error } = await supabase
       .from('pandascore_players_master')
       .select('*')
-      .in('id', playerIds);
+      .in('id', formattedIds);
     
     if (error) {
       console.error('❌ Error fetching players from pandascore_players_master:', error);
