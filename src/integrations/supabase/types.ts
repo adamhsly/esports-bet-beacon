@@ -841,6 +841,7 @@ export type Database = {
           draws: number
           id: string
           last_match_at: string | null
+          match_id: number | null
           team_a_id: string
           team_a_wins: number
           team_b_id: string
@@ -853,6 +854,7 @@ export type Database = {
           draws?: number
           id?: string
           last_match_at?: string | null
+          match_id?: number | null
           team_a_id: string
           team_a_wins?: number
           team_b_id: string
@@ -865,6 +867,7 @@ export type Database = {
           draws?: number
           id?: string
           last_match_at?: string | null
+          match_id?: number | null
           team_a_id?: string
           team_a_wins?: number
           team_b_id?: string
