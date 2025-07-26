@@ -1936,6 +1936,26 @@ export type Database = {
           slug: string | null
           team_id: string | null
         }
+        Insert: {
+          acronym?: string | null
+          esport_type?: string | null
+          logo_url?: string | null
+          name?: string | null
+          original_id?: string | null
+          players_data?: Json | null
+          slug?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          acronym?: string | null
+          esport_type?: string | null
+          logo_url?: string | null
+          name?: string | null
+          original_id?: string | null
+          players_data?: Json | null
+          slug?: string | null
+          team_id?: string | null
+        }
         Relationships: []
       }
     }
