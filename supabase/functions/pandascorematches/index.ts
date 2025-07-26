@@ -15,10 +15,13 @@ serve(async () => {
   const BASE_URL = 'https://api.pandascore.co/matches/upcoming'
   const PER_PAGE = 50
 
+  // Team player cache
   const teamCache: Record<string, number[]> = {}
 
+  // Fetch player IDs from the /teams/{id} endpoint
   async function getTeamPlayerIds(teamId: number): Promise<number[]> {
     if (!teamId) return []
+
     if (teamCache[teamId]) return teamCache[teamId]
 
     const res = await fetch(`https://api.pandascore.co/teams/${teamId}`, {
@@ -26,49 +29,72 @@ serve(async () => {
     })
 
     if (!res.ok) {
-      console.error(`❌ Failed to fetch team ${teamId}:`, await res.text())
+      console.error(`Failed to fetch team ${teamId}:`, await res.text())
       return []
     }
 
     const data = await res.json()
     const playerIds = (data.players ?? []).map((p: any) => p.id).filter(Boolean)
     teamCache[teamId] = playerIds
-    await sleep(300)
+    await sleep(300) // Avoid hitting rate limit
     return playerIds
   }
 
+  // Get last synced page and max page from sync state table
   const { data: syncState, error: syncStateError } = await supabase
     .from('pandascore_sync_state')
-    .select('last_page')
+    .select('last_page, max_page')
     .eq('id', 'matches')
     .maybeSingle()
 
   if (syncStateError) {
-    console.error('❌ Failed to fetch sync state:', syncStateError)
+    console.error('Failed to fetch sync state:', syncStateError)
   }
 
   let page = (syncState?.last_page ?? 0) + 1
   let totalFetched = 0
+  let totalPages = syncState?.max_page ?? 0
 
-  // Fetch total pages
+  // Optional: Log total available and set max_page on first run or if not set
   const testRes = await fetch(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   })
-
   const total = testRes.headers.get('X-Total')
-  const totalPages = Math.ceil((parseInt(total ?? '0')) / PER_PAGE)
-  console.log(`📊 Total matches: ${total}, Pages: ${totalPages}`)
+  console.log(`Total matches available: ${total}`)
+
+  if (total) {
+    totalPages = Math.ceil(parseInt(total, 10) / PER_PAGE)
+    console.log(`Total pages calculated: ${totalPages}`)
+
+    // Update max_page in DB if needed
+    if (!syncState || !syncState.max_page || syncState.max_page !== totalPages) {
+      const { error: updateMaxPageError } = await supabase
+        .from('pandascore_sync_state')
+        .upsert({
+          id: 'matches',
+          max_page: totalPages,
+          last_page: page - 1, // store previous last_page correctly
+          last_synced_at: new Date().toISOString(),
+        }, { onConflict: ['id'] })
+
+      if (updateMaxPageError) {
+        console.error('Failed to update max_page:', updateMaxPageError)
+      } else {
+        console.log(`Updated max_page to ${totalPages} in sync state table`)
+      }
+    }
+  }
 
   while (true) {
     const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&sort=modified_at`
-    console.log(`🔎 Fetching page ${page}: ${url}`)
+    console.log(`Fetching page ${page}: ${url}`)
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
     })
 
     if (!res.ok) {
-      console.error(`❌ PandaScore error on page ${page}:`, await res.text())
+      console.error(`PandaScore error on page ${page}:`, await res.text())
       break
     }
 
@@ -77,11 +103,14 @@ serve(async () => {
     try {
       matches = JSON.parse(text)
     } catch (e) {
-      console.error('❌ Failed to parse JSON:', e)
+      console.error('Failed to parse JSON:', e)
       break
     }
 
-    if (!Array.isArray(matches) || matches.length === 0) break
+    if (!Array.isArray(matches) || matches.length === 0) {
+      console.log(`No matches found on page ${page}, stopping fetch loop.`)
+      break
+    }
 
     for (const match of matches) {
       const match_id = match.id?.toString()
@@ -94,13 +123,14 @@ serve(async () => {
         .maybeSingle()
 
       if (fetchError) {
-        console.error(`❌ Error checking match ${match_id}:`, fetchError)
+        console.error(`Error checking match ${match_id}:`, fetchError)
         continue
       }
 
       const modifiedRemote = new Date(match.modified_at)
       const modifiedLocal = existing?.modified_at ? new Date(existing.modified_at) : null
 
+      // Skip unmodified matches
       if (modifiedLocal && modifiedRemote <= modifiedLocal) continue
 
       const teamAId = match.opponents?.[0]?.opponent?.id
@@ -150,14 +180,13 @@ serve(async () => {
         .upsert(mapped, { onConflict: ['match_id'] })
 
       if (error) {
-        console.error(`❌ Failed to upsert match ${match_id}:`, error)
+        console.error(`Failed to upsert match ${match_id}:`, error)
       } else {
-        console.log(`✅ Upserted match ${match_id}`)
+        console.log(`Upserted match ${match_id}`)
         totalFetched++
       }
     }
 
-    // 🔄 Update sync state
     console.log(`📝 Updating sync state → last_page: ${page}, max_page: ${totalPages}`)
 
     const { error: syncUpdateError } = await supabase
@@ -174,6 +203,11 @@ serve(async () => {
     }
 
     page++
+    if (page > totalPages) {
+      console.log(`🔄 Reached max page (${totalPages}), resetting to page 1`)
+      page = 1
+    }
+
     await sleep(1000)
   }
 
