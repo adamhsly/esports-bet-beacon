@@ -12,9 +12,9 @@ import { PandaScoreFinishedMatchHeader } from '@/components/match-details/PandaS
 import { PandaScoreLiveMatchHeader } from '@/components/match-details/PandaScoreLiveMatchHeader';
 import { PandaScoreCompactMatchHeader } from '@/components/match-details/PandaScoreCompactMatchHeader';
 import { PandaScorePlayerRoster } from '@/components/match-details/PandaScorePlayerRoster';
-import { PandaScoreMobilePlayerLineup } from '@/components/match-details/PandaScoreMobilePlayerLineup';
+
 import { PandaScorePreMatchStats } from '@/components/match-details/PandaScorePreMatchStats';
-import { PandaScorePlayerLineupTable } from '@/components/match-details/PandaScorePlayerLineupTable';
+
 import { EnhancedTeamComparison } from '@/components/EnhancedTeamComparison';
 import { fetchSupabasePandaScoreMatchDetails } from '@/lib/supabasePandaScoreApi';
 import { useQuery } from '@tanstack/react-query';
@@ -186,20 +186,6 @@ const PandaScoreUpcomingMatchPage = () => {
             </Card>
           )}
 
-          {/* Player lineups */}
-          <div className="px-2 md:px-0">
-            {isMobile ? (
-              <PandaScoreMobilePlayerLineup 
-                teams={matchDetails.teams} 
-                esportType={matchDetails.esport_type}
-              />
-            ) : (
-              <PandaScorePlayerLineupTable 
-                teams={matchDetails.teams}
-                esportType={matchDetails.esport_type}
-              />
-            )}
-          </div>
 
           {/* Pre-Match Stats */}
           <Card className="bg-theme-gray-dark border border-theme-gray-medium">
