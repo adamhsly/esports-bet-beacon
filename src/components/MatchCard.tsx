@@ -112,13 +112,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
   // Determine the correct route for the given match with enhanced logging
   let to = '/';
-  if (source === 'amateur' || (id && id.startsWith('faceit_'))) {
+  if (source === 'amateur' || (id && String(id).startsWith('faceit_'))) {
     // All FACEIT matches go to the unified page regardless of status
-    to = `/faceit/match/${id.replace('faceit_', '')}`;
+    to = `/faceit/match/${String(id).replace('faceit_', '')}`;
     console.log(`🎯 FACEIT match ${id} will route to unified page: ${to} (status: ${status} -> ${normalizedStatus})`);
-  } else if (source === 'professional' || (id && id.startsWith('pandascore_'))) {
+  } else if (source === 'professional' || (id && String(id).startsWith('pandascore_'))) {
     // For PandaScore matches, always route to the same page (no separate finished page)
-    to = `/pandascore/match/${id.replace('pandascore_', '')}`;
+    to = `/pandascore/match/${String(id).replace('pandascore_', '')}`;
     console.log(`🎯 PANDASCORE match ${id} will route to: ${to} (status: ${status} -> ${normalizedStatus})`);
   } else {
     to = `/match/${id}`;
