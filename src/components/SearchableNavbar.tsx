@@ -22,14 +22,12 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-6">
-            <Link to="/" className="flex items-center">
-              <img 
-                src="/lovable-uploads/frags_and_fortunes_transparent.png" 
-                alt="Frags & Fortunes" 
-                className="h-26 w-auto"
-              />
-            </Link>
-            
+          <Link to="/" className="flex items-center h-full">
+            <img 
+              src="/lovable-uploads/frags_and_fortunes_transparent.png"
+              alt="Frags & Fortunes"
+              className="h-full w-auto object-contain"
+            />
             <div className="hidden md:flex space-x-4">
               <Link to="/esports/csgo" className="text-gray-300 hover:text-white">
                 Matches
