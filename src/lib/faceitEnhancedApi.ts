@@ -249,7 +249,13 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       currentRound: matchData.current_round || undefined,
       roundTimer: matchData.round_timer_seconds || undefined,
       overtimeRounds: matchData.overtime_rounds || undefined,
-      teams: matchData.teams || {}, // Include teams data
+      teams: (() => {
+        const teams = matchData.teams as any;
+        if (teams && typeof teams === 'object' && teams.faction1 && teams.faction2) {
+          return [teams.faction1, teams.faction2];
+        }
+        return Array.isArray(teams) ? teams : [];
+      })(),
       liveTeamScores: (matchData.live_team_scores as any) || undefined,
       mapsPlayed: (matchData.maps_played as any) || [],
       roundResults: (matchData.round_results as any) || [],
