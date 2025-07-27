@@ -87,7 +87,7 @@ serve(async (req) => {
       configured_at: faceitMatch.configured_at ? new Date(faceitMatch.configured_at).toISOString() : null,
       calculate_elo: faceitMatch.calculate_elo,
       version: faceitMatch.version,
-      teams: faceitMatch.teams,
+      teams: faceitMatch.teams || [], // Ensure teams is never null
       voting: faceitMatch.voting || null,
       faceit_data: {
         region: faceitMatch.region,
