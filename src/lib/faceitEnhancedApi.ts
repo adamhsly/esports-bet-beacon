@@ -8,6 +8,7 @@ export interface EnhancedMatchData {
   currentRound?: number;
   roundTimer?: number;
   overtimeRounds?: number;
+  teams?: any; // Add teams data
   liveTeamScores?: {
     faction1: number;
     faction2: number;
@@ -48,6 +49,11 @@ export interface EnhancedMatchData {
   economyData?: Record<string, any>;
   objectivesStatus?: Record<string, any>;
   autoRefreshInterval?: number;
+  // Additional fields for compatibility
+  faceitData?: any;
+  startTime?: string;
+  started_at?: string;
+  finished_at?: string;
 }
 
 export interface PlayerMatchPerformance {
@@ -243,6 +249,7 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       currentRound: matchData.current_round || undefined,
       roundTimer: matchData.round_timer_seconds || undefined,
       overtimeRounds: matchData.overtime_rounds || undefined,
+      teams: matchData.teams || {}, // Include teams data
       liveTeamScores: (matchData.live_team_scores as any) || undefined,
       mapsPlayed: (matchData.maps_played as any) || [],
       roundResults: (matchData.round_results as any) || [],
@@ -250,7 +257,11 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       killFeed: (matchData.kill_feed as any) || [],
       economyData: (matchData.economy_data as any) || {},
       objectivesStatus: (matchData.objectives_status as any) || {},
-      autoRefreshInterval: matchData.auto_refresh_interval || 15000
+      autoRefreshInterval: matchData.auto_refresh_interval || 15000,
+      faceitData: matchData.faceit_data || {},
+      startTime: matchData.started_at || undefined,
+      started_at: matchData.started_at || undefined,
+      finished_at: matchData.finished_at || undefined
     };
 
     // Transform player performances
