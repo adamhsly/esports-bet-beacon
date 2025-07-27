@@ -151,8 +151,239 @@ export type Database = {
         }
         Relationships: []
       }
+      faceit_live_match_stats: {
+        Row: {
+          bomb_site: string | null
+          bomb_status: string | null
+          bomb_timer_seconds: number | null
+          created_at: string | null
+          id: string
+          match_id: string
+          player_armor: Json | null
+          player_health: Json | null
+          player_money: Json | null
+          player_positions: Json | null
+          player_weapons: Json | null
+          round_number: number
+          round_phase: string | null
+          round_timer_seconds: number | null
+          team_scores: Json
+          updated_at: string | null
+        }
+        Insert: {
+          bomb_site?: string | null
+          bomb_status?: string | null
+          bomb_timer_seconds?: number | null
+          created_at?: string | null
+          id?: string
+          match_id: string
+          player_armor?: Json | null
+          player_health?: Json | null
+          player_money?: Json | null
+          player_positions?: Json | null
+          player_weapons?: Json | null
+          round_number?: number
+          round_phase?: string | null
+          round_timer_seconds?: number | null
+          team_scores?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          bomb_site?: string | null
+          bomb_status?: string | null
+          bomb_timer_seconds?: number | null
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          player_armor?: Json | null
+          player_health?: Json | null
+          player_money?: Json | null
+          player_positions?: Json | null
+          player_weapons?: Json | null
+          round_number?: number
+          round_phase?: string | null
+          round_timer_seconds?: number | null
+          team_scores?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faceit_live_match_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "faceit_matches"
+            referencedColumns: ["match_id"]
+          },
+        ]
+      }
+      faceit_match_kill_feed: {
+        Row: {
+          assisters: Json | null
+          blind: boolean | null
+          created_at: string | null
+          event_type: string | null
+          headshot: boolean | null
+          id: string
+          killer_nickname: string | null
+          killer_player_id: string | null
+          killer_team: string | null
+          match_id: string
+          noscope: boolean | null
+          penetrated: boolean | null
+          position_killer: Json | null
+          position_victim: Json | null
+          round_number: number
+          round_time_seconds: number | null
+          thru_smoke: boolean | null
+          timestamp: string | null
+          victim_nickname: string | null
+          victim_player_id: string | null
+          victim_team: string | null
+          wallbang: boolean | null
+          weapon: string | null
+        }
+        Insert: {
+          assisters?: Json | null
+          blind?: boolean | null
+          created_at?: string | null
+          event_type?: string | null
+          headshot?: boolean | null
+          id?: string
+          killer_nickname?: string | null
+          killer_player_id?: string | null
+          killer_team?: string | null
+          match_id: string
+          noscope?: boolean | null
+          penetrated?: boolean | null
+          position_killer?: Json | null
+          position_victim?: Json | null
+          round_number: number
+          round_time_seconds?: number | null
+          thru_smoke?: boolean | null
+          timestamp?: string | null
+          victim_nickname?: string | null
+          victim_player_id?: string | null
+          victim_team?: string | null
+          wallbang?: boolean | null
+          weapon?: string | null
+        }
+        Update: {
+          assisters?: Json | null
+          blind?: boolean | null
+          created_at?: string | null
+          event_type?: string | null
+          headshot?: boolean | null
+          id?: string
+          killer_nickname?: string | null
+          killer_player_id?: string | null
+          killer_team?: string | null
+          match_id?: string
+          noscope?: boolean | null
+          penetrated?: boolean | null
+          position_killer?: Json | null
+          position_victim?: Json | null
+          round_number?: number
+          round_time_seconds?: number | null
+          thru_smoke?: boolean | null
+          timestamp?: string | null
+          victim_nickname?: string | null
+          victim_player_id?: string | null
+          victim_team?: string | null
+          wallbang?: boolean | null
+          weapon?: string | null
+        }
+        Relationships: []
+      }
+      faceit_match_rounds: {
+        Row: {
+          bomb_defused: boolean | null
+          bomb_exploded: boolean | null
+          bomb_planted: boolean | null
+          bomb_site: string | null
+          created_at: string | null
+          economy_after: Json | null
+          economy_before: Json | null
+          faction1_score_after: number | null
+          faction1_score_before: number | null
+          faction2_score_after: number | null
+          faction2_score_before: number | null
+          first_kill_player: string | null
+          first_kill_victim: string | null
+          first_kill_weapon: string | null
+          id: string
+          key_events: Json | null
+          map_name: string | null
+          match_id: string
+          player_positions_end: Json | null
+          player_positions_start: Json | null
+          round_duration_seconds: number | null
+          round_end_reason: string | null
+          round_mvp_player: string | null
+          round_number: number
+          round_type: string | null
+          winning_faction: string | null
+        }
+        Insert: {
+          bomb_defused?: boolean | null
+          bomb_exploded?: boolean | null
+          bomb_planted?: boolean | null
+          bomb_site?: string | null
+          created_at?: string | null
+          economy_after?: Json | null
+          economy_before?: Json | null
+          faction1_score_after?: number | null
+          faction1_score_before?: number | null
+          faction2_score_after?: number | null
+          faction2_score_before?: number | null
+          first_kill_player?: string | null
+          first_kill_victim?: string | null
+          first_kill_weapon?: string | null
+          id?: string
+          key_events?: Json | null
+          map_name?: string | null
+          match_id: string
+          player_positions_end?: Json | null
+          player_positions_start?: Json | null
+          round_duration_seconds?: number | null
+          round_end_reason?: string | null
+          round_mvp_player?: string | null
+          round_number: number
+          round_type?: string | null
+          winning_faction?: string | null
+        }
+        Update: {
+          bomb_defused?: boolean | null
+          bomb_exploded?: boolean | null
+          bomb_planted?: boolean | null
+          bomb_site?: string | null
+          created_at?: string | null
+          economy_after?: Json | null
+          economy_before?: Json | null
+          faction1_score_after?: number | null
+          faction1_score_before?: number | null
+          faction2_score_after?: number | null
+          faction2_score_before?: number | null
+          first_kill_player?: string | null
+          first_kill_victim?: string | null
+          first_kill_weapon?: string | null
+          id?: string
+          key_events?: Json | null
+          map_name?: string | null
+          match_id?: string
+          player_positions_end?: Json | null
+          player_positions_start?: Json | null
+          round_duration_seconds?: number | null
+          round_end_reason?: string | null
+          round_mvp_player?: string | null
+          round_number?: number
+          round_type?: string | null
+          winning_faction?: string | null
+        }
+        Relationships: []
+      }
       faceit_matches: {
         Row: {
+          auto_refresh_interval: number | null
           calculate_elo: boolean | null
           championship_raw_data: Json | null
           championship_stream_url: string | null
@@ -160,14 +391,26 @@ export type Database = {
           competition_type: string | null
           configured_at: string | null
           created_at: string
+          current_round: number | null
+          economy_data: Json | null
           faceit_data: Json | null
           finished_at: string | null
           game: string
           id: string
+          kill_feed: Json | null
+          last_live_update: string | null
+          live_player_status: Json | null
+          live_team_scores: Json | null
+          maps_played: Json | null
           match_id: string
+          match_phase: string | null
+          objectives_status: Json | null
           organized_by: string | null
+          overtime_rounds: number | null
           raw_data: Json | null
           region: string | null
+          round_results: Json | null
+          round_timer_seconds: number | null
           scheduled_at: string | null
           started_at: string | null
           status: string
@@ -177,6 +420,7 @@ export type Database = {
           voting: Json | null
         }
         Insert: {
+          auto_refresh_interval?: number | null
           calculate_elo?: boolean | null
           championship_raw_data?: Json | null
           championship_stream_url?: string | null
@@ -184,14 +428,26 @@ export type Database = {
           competition_type?: string | null
           configured_at?: string | null
           created_at?: string
+          current_round?: number | null
+          economy_data?: Json | null
           faceit_data?: Json | null
           finished_at?: string | null
           game?: string
           id?: string
+          kill_feed?: Json | null
+          last_live_update?: string | null
+          live_player_status?: Json | null
+          live_team_scores?: Json | null
+          maps_played?: Json | null
           match_id: string
+          match_phase?: string | null
+          objectives_status?: Json | null
           organized_by?: string | null
+          overtime_rounds?: number | null
           raw_data?: Json | null
           region?: string | null
+          round_results?: Json | null
+          round_timer_seconds?: number | null
           scheduled_at?: string | null
           started_at?: string | null
           status: string
@@ -201,6 +457,7 @@ export type Database = {
           voting?: Json | null
         }
         Update: {
+          auto_refresh_interval?: number | null
           calculate_elo?: boolean | null
           championship_raw_data?: Json | null
           championship_stream_url?: string | null
@@ -208,14 +465,26 @@ export type Database = {
           competition_type?: string | null
           configured_at?: string | null
           created_at?: string
+          current_round?: number | null
+          economy_data?: Json | null
           faceit_data?: Json | null
           finished_at?: string | null
           game?: string
           id?: string
+          kill_feed?: Json | null
+          last_live_update?: string | null
+          live_player_status?: Json | null
+          live_team_scores?: Json | null
+          maps_played?: Json | null
           match_id?: string
+          match_phase?: string | null
+          objectives_status?: Json | null
           organized_by?: string | null
+          overtime_rounds?: number | null
           raw_data?: Json | null
           region?: string | null
+          round_results?: Json | null
+          round_timer_seconds?: number | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -311,6 +580,108 @@ export type Database = {
             referencedColumns: ["player_id"]
           },
         ]
+      }
+      faceit_player_match_performance: {
+        Row: {
+          adr: number | null
+          assists: number | null
+          clutch_rounds_attempted: number | null
+          clutch_rounds_won: number | null
+          created_at: string | null
+          damage_dealt: number | null
+          damage_received: number | null
+          deaths: number | null
+          enemies_flashed: number | null
+          equipment_used: Json | null
+          first_deaths: number | null
+          first_kills: number | null
+          flash_assists: number | null
+          headshots: number | null
+          headshots_percent: number | null
+          id: string
+          kd_ratio: number | null
+          kills: number | null
+          map_areas_controlled: Json | null
+          match_id: string
+          mvp_rounds: number | null
+          player_id: string
+          player_nickname: string
+          rating: number | null
+          round_damage: Json | null
+          round_deaths: Json | null
+          round_kills: Json | null
+          score: number | null
+          team_faction: string
+          updated_at: string | null
+          utility_damage: number | null
+        }
+        Insert: {
+          adr?: number | null
+          assists?: number | null
+          clutch_rounds_attempted?: number | null
+          clutch_rounds_won?: number | null
+          created_at?: string | null
+          damage_dealt?: number | null
+          damage_received?: number | null
+          deaths?: number | null
+          enemies_flashed?: number | null
+          equipment_used?: Json | null
+          first_deaths?: number | null
+          first_kills?: number | null
+          flash_assists?: number | null
+          headshots?: number | null
+          headshots_percent?: number | null
+          id?: string
+          kd_ratio?: number | null
+          kills?: number | null
+          map_areas_controlled?: Json | null
+          match_id: string
+          mvp_rounds?: number | null
+          player_id: string
+          player_nickname: string
+          rating?: number | null
+          round_damage?: Json | null
+          round_deaths?: Json | null
+          round_kills?: Json | null
+          score?: number | null
+          team_faction: string
+          updated_at?: string | null
+          utility_damage?: number | null
+        }
+        Update: {
+          adr?: number | null
+          assists?: number | null
+          clutch_rounds_attempted?: number | null
+          clutch_rounds_won?: number | null
+          created_at?: string | null
+          damage_dealt?: number | null
+          damage_received?: number | null
+          deaths?: number | null
+          enemies_flashed?: number | null
+          equipment_used?: Json | null
+          first_deaths?: number | null
+          first_kills?: number | null
+          flash_assists?: number | null
+          headshots?: number | null
+          headshots_percent?: number | null
+          id?: string
+          kd_ratio?: number | null
+          kills?: number | null
+          map_areas_controlled?: Json | null
+          match_id?: string
+          mvp_rounds?: number | null
+          player_id?: string
+          player_nickname?: string
+          rating?: number | null
+          round_damage?: Json | null
+          round_deaths?: Json | null
+          round_kills?: Json | null
+          score?: number | null
+          team_faction?: string
+          updated_at?: string | null
+          utility_damage?: number | null
+        }
+        Relationships: []
       }
       faceit_player_match_stats: {
         Row: {
