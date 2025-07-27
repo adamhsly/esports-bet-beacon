@@ -147,8 +147,11 @@ const FaceitMatchPage = () => {
   // Determine which header and content to render based on match status and time
   const matchData = matchDetails.matchData || matchDetails;
   const isEnhancedData = 'playerPerformances' in matchDetails;
-  const headerType = getHeaderType(matchData.status, matchData.startTime);
-  console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchData.status}`, { isEnhancedData });
+  
+  // Ensure teams data exists and is valid
+  const safeTeams = matchData?.teams || [];
+  const headerType = getHeaderType(matchData?.status, matchData?.startTime);
+  console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchData?.status}`, { isEnhancedData, teamsCount: safeTeams.length });
 
   const renderMatchHeader = () => {
     // Use mobile-style compact header for all devices now
@@ -186,7 +189,7 @@ const FaceitMatchPage = () => {
         autoRefreshInterval: matchDetails.matchData.autoRefreshInterval || 15000
       };
 
-      const teams = matchData.teams?.map((team: any, index: number) => ({
+      const teams = safeTeams?.map((team: any, index: number) => ({
         name: team.name,
         logo: team.logo || team.avatar,
         faction: index === 0 ? 'faction1' as const : 'faction2' as const,
@@ -206,7 +209,7 @@ const FaceitMatchPage = () => {
 
     // Enhanced match analysis for finished matches with comprehensive data
     if (headerType === 'finished' && isEnhancedData && matchDetails.playerPerformances?.length > 0) {
-      const teams = matchData.teams?.map((team: any, index: number) => ({
+      const teams = safeTeams?.map((team: any, index: number) => ({
         name: team.name,
         logo: team.logo || team.avatar,
         faction: index === 0 ? 'faction1' as const : 'faction2' as const
@@ -241,28 +244,30 @@ const FaceitMatchPage = () => {
         )}
         
         {/* Pre-Match Stats for all match types */}
-        <FaceitPreMatchStats 
-          teams={matchData.teams}
-          faceitData={matchData.faceitData}
-        />
+        {safeTeams.length > 0 && (
+          <FaceitPreMatchStats 
+            teams={safeTeams}
+            faceitData={matchData.faceitData}
+          />
+        )}
         
         {/* Community Voting for upcoming matches */}
-        {headerType === 'upcoming' && (
+        {headerType === 'upcoming' && safeTeams.length >= 2 && (
           <Card className="bg-theme-gray-dark border-theme-gray-medium">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
               <MatchVotingWidget 
-                matchId={matchData.id}
+                matchId={matchData?.id || matchData?.match_id}
                 teams={[
                   { 
-                    id: matchData.teams[0]?.id || 'team1',
-                    name: matchData.teams[0]?.name || 'Team 1', 
-                    logo: matchData.teams[0]?.logo || '/placeholder.svg'
+                    id: safeTeams[0]?.id || safeTeams[0]?.faction_id || 'team1',
+                    name: safeTeams[0]?.name || 'Team 1', 
+                    logo: safeTeams[0]?.logo || safeTeams[0]?.avatar || '/placeholder.svg'
                   },
                   { 
-                    id: matchData.teams[1]?.id || 'team2',
-                    name: matchData.teams[1]?.name || 'Team 2', 
-                    logo: matchData.teams[1]?.logo || '/placeholder.svg'
+                    id: safeTeams[1]?.id || safeTeams[1]?.faction_id || 'team2',
+                    name: safeTeams[1]?.name || 'Team 2', 
+                    logo: safeTeams[1]?.logo || safeTeams[1]?.avatar || '/placeholder.svg'
                   }
                 ]}
               />
@@ -271,13 +276,13 @@ const FaceitMatchPage = () => {
         )}
 
         {/* Live Room Access for live matches */}
-        {headerType === 'live' && (
+        {headerType === 'live' && safeTeams.length > 0 && (
           <Card className="bg-theme-gray-dark border-theme-gray-medium">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Match Room Access</h3>
               <FaceitLiveRoomAccess 
-                matchId={matchData.id}
-                teams={matchData.teams}
+                matchId={matchData?.id || matchData?.match_id}
+                teams={safeTeams}
                 status="live"
               />
             </div>
@@ -285,25 +290,27 @@ const FaceitMatchPage = () => {
         )}
 
         {/* Player Performance for finished matches */}
-        {headerType === 'finished' && (
+        {headerType === 'finished' && safeTeams.length > 0 && (
           <Card className="bg-theme-gray-dark border-theme-gray-medium">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Player Performance</h3>
               <FaceitPlayerPerformanceTable 
-                teams={matchData.teams} 
-                matchResult={matchData.faceitData?.results}
+                teams={safeTeams} 
+                matchResult={matchData?.faceitData?.results}
               />
             </div>
           </Card>
         )}
 
         {/* Team Rosters - Always show */}
-        <Card className="bg-theme-gray-dark border-theme-gray-medium">
-          <div className="p-4">
-            <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
-            <FaceitPlayerRoster teams={matchData.teams} />
-          </div>
-        </Card>
+        {safeTeams.length > 0 && (
+          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
+              <FaceitPlayerRoster teams={safeTeams} />
+            </div>
+          </Card>
+        )}
       </div>
     );
   };
@@ -328,10 +335,12 @@ const FaceitMatchPage = () => {
           {renderMatchHeader()}
           
           {/* Player Lineup - Use mobile-optimized component for all devices */}
-          {isMobile ? (
-            <FaceitMobilePlayerLineup teams={matchData.teams} />
-          ) : (
-            <FaceitPlayerLineupTable teams={matchData.teams} />
+          {safeTeams.length > 0 && (
+            isMobile ? (
+              <FaceitMobilePlayerLineup teams={safeTeams} />
+            ) : (
+              <FaceitPlayerLineupTable teams={safeTeams} />
+            )
           )}
           
           {/* Main Content - Card-based layout for all devices */}
