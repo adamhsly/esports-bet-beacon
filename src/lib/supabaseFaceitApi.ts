@@ -594,6 +594,14 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         console.log(`🏆 Match ${databaseMatchId} has results:`, results);
       }
 
+      // 🔧 CRITICAL: Determine timestamp priority - scheduled_at -> finished_at -> started_at -> filter out
+      const startTime = match.scheduled_at || match.finished_at || match.started_at;
+      const hasValidSchedule = !!(match.scheduled_at || match.finished_at || match.started_at);
+      
+      if (!hasValidSchedule) {
+        console.log(`⚠️ Match ${match.match_id} has no valid timestamps - will be filtered out`);
+      }
+
       const transformedMatch = {
         id: `faceit_${databaseMatchId}`, // 🔧 USE DATABASE MATCH_ID DIRECTLY
         teams: [
@@ -608,13 +616,13 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
             id: teams.faction2?.id || teams.team2?.id || `team2_${databaseMatchId}`
           }
         ] as [any, any],
-        startTime: match.scheduled_at || match.started_at || match.created_at,
+        startTime: startTime || match.created_at,
         tournament: match.competition_name || 'FACEIT Match',
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
         status: match.status, // CRITICAL: Include status for routing logic
-        hasValidSchedule: !!(match.scheduled_at || match.started_at), // Track if match has proper scheduling
+        hasValidSchedule: hasValidSchedule, // Track if match has proper scheduling
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
@@ -704,6 +712,10 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
         results = rawData.results;
       }
 
+      // 🔧 CRITICAL: Determine timestamp priority - scheduled_at -> finished_at -> started_at -> filter out
+      const startTime = match.scheduled_at || match.finished_at || match.started_at;
+      const hasValidSchedule = !!(match.scheduled_at || match.finished_at || match.started_at);
+
       return {
         id: `faceit_${match.match_id}`,
         teams: [
@@ -718,13 +730,13 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
             id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`
           }
         ] as [any, any],
-        startTime: match.scheduled_at || match.started_at || match.created_at,
+        startTime: startTime || match.created_at,
         tournament: match.competition_name || 'FACEIT Match',
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
         status: match.status, // Include status for routing logic
-        hasValidSchedule: !!(match.scheduled_at || match.started_at), // Track if match has proper scheduling
+        hasValidSchedule: hasValidSchedule, // Track if match has proper scheduling
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
@@ -817,6 +829,10 @@ export const fetchSupabaseFaceitFinishedMatches = async (limit: number = 10): Pr
         results = rawData.results;
       }
 
+      // 🔧 CRITICAL: Determine timestamp priority - scheduled_at -> finished_at -> started_at -> filter out
+      const startTime = match.scheduled_at || match.finished_at || match.started_at;
+      const hasValidSchedule = !!(match.scheduled_at || match.finished_at || match.started_at);
+
       return {
         id: `faceit_${match.match_id}`,
         teams: [
@@ -831,13 +847,13 @@ export const fetchSupabaseFaceitFinishedMatches = async (limit: number = 10): Pr
             id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`
           }
         ] as [any, any],
-        startTime: match.scheduled_at || match.started_at || match.created_at,
+        startTime: startTime || match.created_at,
         tournament: match.competition_name || 'FACEIT Match',
         esportType: match.game || 'cs2',
         bestOf: bestOf,
         source: 'amateur' as const,
         status: match.status,
-        hasValidSchedule: !!(match.scheduled_at || match.started_at), // Track if match has proper scheduling
+        hasValidSchedule: hasValidSchedule, // Track if match has proper scheduling
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
