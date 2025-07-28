@@ -428,7 +428,7 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       if (m?.configured_at && !isNaN(new Date(m.configured_at).getTime())) {
         return m.configured_at;
       }
-      return new Date().toISOString();
+      return m?.created_at || new Date().toISOString();
     }
 
     // Extract best_of from raw_data with proper type checking
@@ -608,7 +608,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
             id: teams.faction2?.id || teams.team2?.id || `team2_${databaseMatchId}`
           }
         ] as [any, any],
-        startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+        startTime: match.scheduled_at || match.started_at || match.created_at,
         tournament: match.competition_name || 'FACEIT Match',
         esportType: match.game || 'cs2',
         bestOf: bestOf,
@@ -717,7 +717,7 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
             id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`
           }
         ] as [any, any],
-        startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+        startTime: match.scheduled_at || match.started_at || match.created_at,
         tournament: match.competition_name || 'FACEIT Match',
         esportType: match.game || 'cs2',
         bestOf: bestOf,
@@ -829,7 +829,7 @@ export const fetchSupabaseFaceitFinishedMatches = async (limit: number = 10): Pr
             id: teams.faction2?.id || teams.team2?.id || `team2_${match.match_id}`
           }
         ] as [any, any],
-        startTime: match.scheduled_at || match.started_at || new Date().toISOString(),
+        startTime: match.scheduled_at || match.started_at || match.created_at,
         tournament: match.competition_name || 'FACEIT Match',
         esportType: match.game || 'cs2',
         bestOf: bestOf,
