@@ -44,6 +44,9 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
   });
 
   const formatDateTime = (dateString: string) => {
+    if (!dateString) {
+      return { date: 'TBC', time: 'TBC' };
+    }
     const date = new Date(dateString);
     return {
       date: date.toLocaleDateString(),
