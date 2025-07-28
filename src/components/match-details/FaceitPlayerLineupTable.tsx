@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Trophy, Target, TrendingUp } from 'lucide-react';
+import { User, Trophy, Target, TrendingUp, Loader2 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { PlayerDetailsModal } from './PlayerDetailsModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Player {
   nickname: string;
@@ -16,6 +17,15 @@ interface Player {
   kd_ratio?: number;
   recent_form?: string;
   recent_form_string?: string;
+  // Enhanced stats from faceit_player_stats
+  faceit_elo?: number;
+  avg_headshots_percent?: number;
+  current_win_streak?: number;
+  longest_win_streak?: number;
+  membership?: string;
+  country?: string;
+  map_stats?: any;
+  recent_results?: any[];
   match_history?: Array<{
     id: string;
     match_id: string;
@@ -66,9 +76,83 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedTeamName, setSelectedTeamName] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [enhancedTeams, setEnhancedTeams] = useState<Team[]>(teams);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   
-  const team1 = teams[0] || { name: 'Team 1', roster: [] };
-  const team2 = teams[1] || { name: 'Team 2', roster: [] };
+  // Fetch enhanced player stats from faceit_player_stats table
+  useEffect(() => {
+    const fetchPlayerStats = async () => {
+      if (!teams.length) return;
+      
+      setIsLoadingStats(true);
+      try {
+        // Collect all player IDs from both teams
+        const allPlayerIds = teams.flatMap(team => 
+          (team.roster || []).map(player => player.player_id)
+        ).filter(Boolean);
+
+        if (allPlayerIds.length === 0) {
+          setIsLoadingStats(false);
+          return;
+        }
+
+        // Fetch stats for all players in one query
+        const { data: playerStats, error } = await supabase
+          .from('faceit_player_stats')
+          .select('*')
+          .in('player_id', allPlayerIds);
+
+        if (error) {
+          console.error('Error fetching player stats:', error);
+          setIsLoadingStats(false);
+          return;
+        }
+
+        // Create a map of player stats by player_id
+        const statsMap = new Map();
+        (playerStats || []).forEach(stat => {
+          statsMap.set(stat.player_id, stat);
+        });
+
+        // Enhance teams with fetched stats
+        const enhanced = teams.map(team => ({
+          ...team,
+          roster: (team.roster || []).map(player => {
+            const stats = statsMap.get(player.player_id);
+            if (stats) {
+              return {
+                ...player,
+                total_matches: stats.total_matches || player.total_matches,
+                win_rate: stats.win_rate || player.win_rate,
+                kd_ratio: stats.avg_kd_ratio || player.kd_ratio,
+                recent_form: stats.recent_form_string || player.recent_form,
+                faceit_elo: stats.faceit_elo,
+                avg_headshots_percent: stats.avg_headshots_percent,
+                current_win_streak: stats.current_win_streak,
+                longest_win_streak: stats.longest_win_streak,
+                membership: stats.membership,
+                country: stats.country,
+                map_stats: stats.map_stats,
+                recent_results: stats.recent_results
+              };
+            }
+            return player;
+          })
+        }));
+
+        setEnhancedTeams(enhanced);
+      } catch (error) {
+        console.error('Failed to fetch player stats:', error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    fetchPlayerStats();
+  }, [teams]);
+  
+  const team1 = enhancedTeams[0] || { name: 'Team 1', roster: [] };
+  const team2 = enhancedTeams[1] || { name: 'Team 2', roster: [] };
 
   // If mobile, don't render this component (use mobile version instead)
   if (isMobile) {
@@ -121,75 +205,102 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
       
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader>
-            <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
-              <TableHead className="text-gray-300 font-semibold">Player</TableHead>
-              <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
-              <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
-              <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
-              <TableHead className="text-gray-300 font-semibold text-center">K/D</TableHead>
-              <TableHead className="text-gray-300 font-semibold text-center">Form</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {team.roster?.map((player, idx) => (
-              <TableRow 
-                key={`${player.player_id}-${idx}`} 
-                className="border-theme-gray-medium hover:bg-theme-gray-medium/30 cursor-pointer"
-                onClick={() => handlePlayerClick(player, team.name)}
-              >
-                <TableCell className="py-3">
-                  <div className="flex items-center space-x-3">
-                    <img 
-                      src={player.avatar || '/placeholder.svg'} 
-                      alt={player.nickname} 
-                      className="w-8 h-8 rounded-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
-                    <span className="text-white font-medium text-sm">{player.nickname}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  {player.skill_level ? (
-                    <Badge variant="outline" className={`text-xs ${getSkillLevelColor(player.skill_level)}`}>
-                      {player.skill_level}
-                    </Badge>
-                  ) : (
-                    <span className="text-gray-500 text-xs">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  <span className="text-white text-sm">
-                    {player.total_matches || '-'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  {player.win_rate ? (
-                    <span className="text-green-400 text-sm font-semibold">
-                      {Math.round(player.win_rate)}%
-                    </span>
-                  ) : (
-                    <span className="text-gray-500 text-xs">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  {player.kd_ratio ? (
-                    <span className="text-blue-400 text-sm font-semibold">
-                      {player.kd_ratio.toFixed(2)}
-                    </span>
-                  ) : (
-                    <span className="text-gray-500 text-xs">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  {getFormBadge(player.recent_form) || (
-                    <span className="text-gray-500 text-xs">-</span>
-                  )}
-                </TableCell>
+            <TableHeader>
+              <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
+                <TableHead className="text-gray-300 font-semibold">Player</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">ELO</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">K/D</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">HS%</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">Form</TableHead>
               </TableRow>
-            ))}
+            </TableHeader>
+            <TableBody>
+              {team.roster?.map((player, idx) => (
+                <TableRow 
+                  key={`${player.player_id}-${idx}`} 
+                  className="border-theme-gray-medium hover:bg-theme-gray-medium/30 cursor-pointer"
+                  onClick={() => handlePlayerClick(player, team.name)}
+                >
+                  <TableCell className="py-3">
+                    <div className="flex items-center space-x-3">
+                      <img 
+                        src={player.avatar || '/placeholder.svg'} 
+                        alt={player.nickname} 
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium text-sm">{player.nickname}</span>
+                        {player.membership === 'premium' && (
+                          <Badge variant="outline" className="text-xs bg-orange-500/20 text-orange-400 border-orange-400/30 w-fit">
+                            PREMIUM
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {player.skill_level ? (
+                      <Badge variant="outline" className={`text-xs ${getSkillLevelColor(player.skill_level)}`}>
+                        {player.skill_level}
+                      </Badge>
+                    ) : (
+                      <span className="text-gray-500 text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {player.faceit_elo ? (
+                      <span className="text-purple-400 text-sm font-semibold">
+                        {player.faceit_elo.toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="text-white text-sm">
+                      {player.total_matches || '-'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {player.win_rate ? (
+                      <span className="text-green-400 text-sm font-semibold">
+                        {Math.round(player.win_rate)}%
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {player.kd_ratio ? (
+                      <span className="text-blue-400 text-sm font-semibold">
+                        {player.kd_ratio.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {player.avg_headshots_percent ? (
+                      <span className="text-yellow-400 text-sm font-semibold">
+                        {Math.round(player.avg_headshots_percent)}%
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {getFormBadge(player.recent_form) || (
+                      <span className="text-gray-500 text-xs">-</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>
@@ -203,6 +314,9 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
             <User className="h-6 w-6 mr-3" />
             Player Lineups
+            {isLoadingStats && (
+              <Loader2 className="h-4 w-4 ml-2 animate-spin text-blue-400" />
+            )}
           </h2>
 
           {/* Enhanced Stats Indicator */}
@@ -210,7 +324,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
             <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
               <div className="flex items-center text-green-400 text-sm">
                 <TrendingUp className="h-4 w-4 mr-2" />
-                <span>Enhanced statistics available for some players</span>
+                <span>Enhanced statistics loaded from FACEIT player database</span>
               </div>
             </div>
           )}
