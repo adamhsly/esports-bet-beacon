@@ -136,10 +136,10 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
             <div>
               <div className="text-sm text-gray-400">Started</div>
               <div className="text-white font-semibold">
-                {new Date(match.startTime).toLocaleTimeString([], { 
+                {match.startTime ? new Date(match.startTime).toLocaleTimeString([], { 
                   hour: '2-digit', 
                   minute: '2-digit' 
-                })}
+                }) : 'TBC'}
               </div>
             </div>
           </div>

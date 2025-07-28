@@ -148,14 +148,14 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
-              <span>{finishedTime ? new Date(finishedTime).toLocaleDateString() : new Date(match.startTime).toLocaleDateString()}</span>
+              <span>{finishedTime ? new Date(finishedTime).toLocaleDateString() : (match.startTime ? new Date(match.startTime).toLocaleDateString() : 'TBC')}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 mr-1" />
               <span>
                 {finishedTime 
                   ? new Date(finishedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                  : getMatchDuration()
+                  : match.startTime ? getMatchDuration() : 'TBC'
                 }
               </span>
             </div>
