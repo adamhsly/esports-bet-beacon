@@ -286,7 +286,7 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
         competitionType: matchData.competition_type || (matchData.faceit_data as any)?.competition_type,
         competitionName: matchData.competition_name || (matchData.faceit_data as any)?.competition_name
       },
-      startTime: matchData.scheduled_at || matchData.started_at || matchData.created_at,
+      startTime: matchData.scheduled_at || undefined, // Only use scheduled_at, don't fallback to created_at
       started_at: matchData.started_at || undefined,
       finished_at: matchData.finished_at || undefined,
       bestOf: (() => {
