@@ -5,11 +5,10 @@ interface ApiKeyContextType {
   sportDevsApiKey: string;
 }
 
-// This API key is meant to be used with the correct authorization format (Bearer token)
-const API_KEY = "GsZ3ovnDw0umMvL5p7SfPA";
+// SECURITY: API key moved to secure edge function - no longer exposed in frontend
 
 const ApiKeyContext = createContext<ApiKeyContextType>({
-  sportDevsApiKey: API_KEY,
+  sportDevsApiKey: '', // Removed hardcoded key for security
 });
 
 export const useApiKey = () => {
@@ -24,7 +23,7 @@ const ApiKeyProvider: React.FC<ApiKeyProviderProps> = ({ children }) => {
   return (
     <ApiKeyContext.Provider 
       value={{ 
-        sportDevsApiKey: API_KEY
+        sportDevsApiKey: '' // API calls should now go through secure edge functions
       }}
     >
       {children}
