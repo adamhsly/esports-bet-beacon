@@ -614,6 +614,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         bestOf: bestOf,
         source: 'amateur' as const,
         status: match.status, // CRITICAL: Include status for routing logic
+        hasValidSchedule: !!(match.scheduled_at || match.started_at), // Track if match has proper scheduling
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
@@ -623,7 +624,7 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
         },
         // 🔧 ADD: Store the original database match_id for easy access
         databaseMatchId: databaseMatchId
-      } satisfies MatchInfo & { databaseMatchId: string };
+      } satisfies MatchInfo & { databaseMatchId: string; hasValidSchedule: boolean };
 
       // Enhanced logging for debugging routing issues
       console.log(`🔍 Transformed match ${databaseMatchId}:`, {
@@ -723,6 +724,7 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
         bestOf: bestOf,
         source: 'amateur' as const,
         status: match.status, // Include status for routing logic
+        hasValidSchedule: !!(match.scheduled_at || match.started_at), // Track if match has proper scheduling
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,
@@ -835,6 +837,7 @@ export const fetchSupabaseFaceitFinishedMatches = async (limit: number = 10): Pr
         bestOf: bestOf,
         source: 'amateur' as const,
         status: match.status,
+        hasValidSchedule: !!(match.scheduled_at || match.started_at), // Track if match has proper scheduling
         faceitData: {
           region: match.region,
           competitionType: match.competition_type,

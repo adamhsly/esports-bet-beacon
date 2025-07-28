@@ -724,8 +724,14 @@ const Index = () => {
         const filteredMatches = applyAllFilters(combinedMatches);
         console.log(`📊 After all filters: ${filteredMatches.length} matches`);
         
-        // 🔧 NEW: Enhanced date filtering with timezone-aware comparison
+        // 🔧 NEW: Enhanced date filtering with timezone-aware comparison and valid schedule check
         const dateFilteredMatches = filteredMatches.filter(match => {
+          // 🔧 EXCLUDE FACEIT matches without proper scheduling
+          if (match.source === 'amateur' && 'hasValidSchedule' in match && !match.hasValidSchedule) {
+            console.log(`🚫 Excluding FACEIT match ${match.id} from calendar - no valid schedule`);
+            return false;
+          }
+          
           const isInRange = isDateInRange(match.startTime, selectedDate);
           
           if (match.source === 'professional') {

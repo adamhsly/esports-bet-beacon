@@ -37,6 +37,7 @@ export interface MatchInfo {
   awayTeamPlayers?: Player[];
   source?: 'professional' | 'amateur';
   status?: string;
+  hasValidSchedule?: boolean; // For FACEIT matches to track if they have proper scheduling
   faceitData?: {
     region?: string;
     competitionType?: string;
