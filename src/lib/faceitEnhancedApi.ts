@@ -54,6 +54,7 @@ export interface EnhancedMatchData {
   startTime?: string;
   started_at?: string;
   finished_at?: string;
+  bestOf?: number;
 }
 
 export interface PlayerMatchPerformance {
@@ -171,10 +172,11 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
         created_at,
         competition_name,
         competition_type,
-        region
+        region,
+        raw_data
       `)
       .eq('match_id', matchId)
-      .single();
+      .maybeSingle();
 
     if (matchError || !matchData) {
       console.error('❌ Error fetching match data:', matchError);
@@ -286,7 +288,11 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       },
       startTime: matchData.scheduled_at || matchData.started_at || matchData.created_at,
       started_at: matchData.started_at || undefined,
-      finished_at: matchData.finished_at || undefined
+      finished_at: matchData.finished_at || undefined,
+      bestOf: (() => {
+        const rawData = matchData.raw_data as any;
+        return rawData?.best_of || 1;
+      })()
     };
 
     // Transform player performances
