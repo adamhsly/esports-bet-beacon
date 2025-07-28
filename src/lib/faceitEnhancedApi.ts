@@ -166,7 +166,12 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
         teams,
         faceit_data,
         started_at,
-        finished_at
+        finished_at,
+        scheduled_at,
+        created_at,
+        competition_name,
+        competition_type,
+        region
       `)
       .eq('match_id', matchId)
       .single();
@@ -252,7 +257,16 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       teams: (() => {
         const teams = matchData.teams as any;
         if (teams && typeof teams === 'object' && teams.faction1 && teams.faction2) {
-          return [teams.faction1, teams.faction2];
+          // Transform team data to include proper logo field and ensure array format
+          const team1 = {
+            ...teams.faction1,
+            logo: teams.faction1.avatar || teams.faction1.logo || '/placeholder.svg'
+          };
+          const team2 = {
+            ...teams.faction2,
+            logo: teams.faction2.avatar || teams.faction2.logo || '/placeholder.svg'
+          };
+          return [team1, team2];
         }
         return Array.isArray(teams) ? teams : [];
       })(),
@@ -264,8 +278,13 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       economyData: (matchData.economy_data as any) || {},
       objectivesStatus: (matchData.objectives_status as any) || {},
       autoRefreshInterval: matchData.auto_refresh_interval || 15000,
-      faceitData: matchData.faceit_data || {},
-      startTime: matchData.started_at || undefined,
+      faceitData: {
+        ...(matchData.faceit_data && typeof matchData.faceit_data === 'object' ? matchData.faceit_data : {}),
+        region: matchData.region || (matchData.faceit_data as any)?.region,
+        competitionType: matchData.competition_type || (matchData.faceit_data as any)?.competition_type,
+        competitionName: matchData.competition_name || (matchData.faceit_data as any)?.competition_name
+      },
+      startTime: matchData.scheduled_at || matchData.started_at || matchData.created_at,
       started_at: matchData.started_at || undefined,
       finished_at: matchData.finished_at || undefined
     };
