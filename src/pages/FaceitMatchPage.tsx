@@ -302,15 +302,6 @@ const FaceitMatchPage = () => {
           </Card>
         )}
 
-        {/* Team Rosters - Always show */}
-        {safeTeams.length > 0 && (
-          <Card className="bg-theme-gray-dark border-theme-gray-medium">
-            <div className="p-4">
-              <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
-              <FaceitPlayerRoster teams={safeTeams} />
-            </div>
-          </Card>
-        )}
       </div>
     );
   };
