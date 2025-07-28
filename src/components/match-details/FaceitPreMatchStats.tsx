@@ -117,76 +117,9 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
     </div>
   );
 
-  // If we don't have sufficient data, show a minimal view
+  // If we don't have sufficient data, return null (don't show anything)
   if (!hasBothTeamsData || !canShowComparison) {
-    return (
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-white flex items-center">
-          <TrendingUp className="h-5 w-5 mr-2 text-orange-400" />
-          Match Information
-        </h3>
-
-        {/* Show what data we do have */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {faceitData && (
-            <>
-              <StatCard title="Match Type" icon={<Award className="h-4 w-4 text-yellow-400" />}>
-                <div className="space-y-2">
-                  <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-400/30">
-                    {faceitData.calculateElo ? 'ELO Ranked' : 'League Match'}
-                  </Badge>
-                  <p className="text-sm text-gray-400">
-                    {faceitData.calculateElo ? 'ELO points at stake' : 'Standard league points at stake'}
-                  </p>
-                </div>
-              </StatCard>
-
-              <StatCard title="Competition Info" icon={<Users className="h-4 w-4 text-blue-400" />}>
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-gray-400">Type: </span>
-                    <span className="text-white">{faceitData.competitionType || 'Competitive'}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-gray-400">Region: </span>
-                    <span className="text-white">{faceitData.region || 'EU'}</span>
-                  </div>
-                  {faceitData.calculateElo && (
-                    <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30">
-                      ELO Ranked
-                    </Badge>
-                  )}
-                </div>
-              </StatCard>
-
-              <StatCard title="Match Format" icon={<Clock className="h-4 w-4 text-purple-400" />}>
-                <div className="space-y-2">
-                  <div className="text-lg font-bold text-purple-400">Best of 1</div>
-                  <p className="text-sm text-gray-400">Single map elimination</p>
-                  <div className="text-xs text-gray-500">Map determined by veto process</div>
-                </div>
-              </StatCard>
-            </>
-          )}
-        </div>
-
-        {/* Data availability notice */}
-        <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-white mb-2">Limited Pre-Match Analysis</h4>
-              <div className="text-sm text-gray-400 space-y-1">
-                {!hasTeam1Data && <p>• No roster data available for {team1.name}</p>}
-                {!hasTeam2Data && <p>• No roster data available for {team2.name}</p>}
-                <p>• Team comparison requires player statistics from both teams</p>
-                <p>• Enhanced analysis will be available once player data is synced</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   return (
