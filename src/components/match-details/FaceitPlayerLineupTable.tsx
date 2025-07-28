@@ -122,6 +122,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
             if (stats) {
               return {
                 ...player,
+                skill_level: stats.skill_level || player.skill_level, // Use skill_level from faceit_player_stats
                 total_matches: stats.total_matches || player.total_matches,
                 win_rate: stats.win_rate || player.win_rate,
                 kd_ratio: stats.avg_kd_ratio || player.kd_ratio,
