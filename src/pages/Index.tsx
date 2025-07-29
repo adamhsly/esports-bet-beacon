@@ -13,6 +13,7 @@ import { fetchSupabaseFaceitAllMatches, fetchSupabaseFaceitMatchesByDate, fetchS
 import { FaceitSyncButtons } from '@/components/FaceitSyncButtons';
 import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
 import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS } from '@/lib/gameTypes';
+import LiveDataTestPanel from '@/components/LiveDataTestPanel';
 
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
@@ -889,6 +890,13 @@ const Index = () => {
       <SearchableNavbar />
       <div className="flex-grow">
         <div className="w-full">
+          {/* Live Data Test Panel - Only show in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-8 mx-2 md:mx-4">
+              <LiveDataTestPanel />
+            </div>
+          )}
+
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
             
