@@ -2299,33 +2299,45 @@ export type Database = {
       pandascore_view_teams: {
         Row: {
           acronym: string | null
+          created_at: string | null
           esport_type: string | null
+          last_synced_at: string | null
           logo_url: string | null
           name: string | null
           original_id: string | null
           players_data: Json | null
+          raw_data: Json | null
           slug: string | null
           team_id: string | null
+          updated_at: string | null
         }
         Insert: {
           acronym?: string | null
+          created_at?: string | null
           esport_type?: string | null
+          last_synced_at?: string | null
           logo_url?: string | null
           name?: string | null
           original_id?: string | null
           players_data?: Json | null
+          raw_data?: Json | null
           slug?: string | null
           team_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           acronym?: string | null
+          created_at?: string | null
           esport_type?: string | null
+          last_synced_at?: string | null
           logo_url?: string | null
           name?: string | null
           original_id?: string | null
           players_data?: Json | null
+          raw_data?: Json | null
           slug?: string | null
           team_id?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
