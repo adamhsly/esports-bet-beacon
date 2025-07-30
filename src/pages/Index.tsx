@@ -260,14 +260,14 @@ const Index = () => {
     // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
     console.log('🔍 DEBUG: Starting PandaScore query with detailed logging...');
     
-    // 🔧 ENHANCED: Create dynamic date range based on selected date for better relevance  
+    // 🔧 FIXED: Use broader date range to ensure all matches are available
     const selectedDateStart = startOfDay(selectedDate);
-    const oneWeekBefore = new Date(selectedDateStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const oneMonthAfter = new Date(selectedDateStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const oneMonthBefore = new Date(selectedDateStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const threeMonthsAfter = new Date(selectedDateStart.getTime() + 90 * 24 * 60 * 60 * 1000);
     
     console.log('🔍 DEBUG: Date range for PandaScore query based on selected date:');
     console.log(`  - Selected Date: ${selectedDate.toDateString()}`);
-    console.log(`  - Query Range: ${oneWeekBefore.toISOString()} to ${oneMonthAfter.toISOString()}`);
+    console.log(`  - Query Range: ${oneMonthBefore.toISOString()} to ${threeMonthsAfter.toISOString()}`);
     
     // STEP 1: Test basic query first
     console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
@@ -282,15 +282,15 @@ const Index = () => {
       console.log('🔍 DEBUG: Basic PandaScore query result:', testPandaScore);
     }
     
-    // STEP 2: Enhanced query with selected date-based filtering
-    console.log('🔍 DEBUG: Testing PandaScore query with selected date-based filter...');
+    // STEP 2: Enhanced query with extended date-based filtering
+    console.log('🔍 DEBUG: Testing PandaScore query with extended date-based filter...');
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .gte('start_time', oneWeekBefore.toISOString())
-      .lte('start_time', oneMonthAfter.toISOString())
+      .gte('start_time', oneMonthBefore.toISOString())
+      .lte('start_time', threeMonthsAfter.toISOString())
       .order('start_time', { ascending: true }) // Changed to ascending to get closest matches first
-      .limit(3000); // Increased limit
+      .limit(5000); // Increased limit to accommodate broader date range
 
     if (pandascoreError) {
       console.error('❌ Error loading PandaScore matches:', pandascoreError);
