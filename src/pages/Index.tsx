@@ -260,36 +260,37 @@ const Index = () => {
     // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
     console.log('🔍 DEBUG: Starting PandaScore query with detailed logging...');
     
-    // 🔧 FIXED: Use broader date range to ensure all matches are available
+    // 🔧 ENHANCED: Create dynamic date range based on selected date for better relevance  
     const selectedDateStart = startOfDay(selectedDate);
-    const oneMonthBefore = new Date(selectedDateStart.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const threeMonthsAfter = new Date(selectedDateStart.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const oneWeekBefore = new Date(selectedDateStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAfter = new Date(selectedDateStart.getTime() + 30 * 24 * 60 * 60 * 1000);
     
     console.log('🔍 DEBUG: Date range for PandaScore query based on selected date:');
     console.log(`  - Selected Date: ${selectedDate.toDateString()}`);
-    console.log(`  - Query Range: ${oneMonthBefore.toISOString()} to ${threeMonthsAfter.toISOString()}`);
+    console.log(`  - Query Range: ${oneWeekBefore.toISOString()} to ${oneMonthAfter.toISOString()}`);
     
     // STEP 1: Test basic query first
     console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
-    const { count: testCount, error: testPandaError } = await supabase
+    const { data: testPandaScore, error: testPandaError } = await supabase
       .from('pandascore_matches')
-      .select('*', { count: 'exact', head: true });
+      .select('count(*), esport_type')
+      .limit(5);
     
     if (testPandaError) {
       console.error('❌ Basic PandaScore test query failed:', testPandaError);
     } else {
-      console.log('🔍 DEBUG: Basic PandaScore total count:', testCount);
+      console.log('🔍 DEBUG: Basic PandaScore query result:', testPandaScore);
     }
     
-    // STEP 2: Enhanced query with extended date-based filtering
-    console.log('🔍 DEBUG: Testing PandaScore query with extended date-based filter...');
+    // STEP 2: Enhanced query with selected date-based filtering
+    console.log('🔍 DEBUG: Testing PandaScore query with selected date-based filter...');
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .gte('start_time', oneMonthBefore.toISOString())
-      .lte('start_time', threeMonthsAfter.toISOString())
+      .gte('start_time', oneWeekBefore.toISOString())
+      .lte('start_time', oneMonthAfter.toISOString())
       .order('start_time', { ascending: true }) // Changed to ascending to get closest matches first
-      .limit(5000); // Increased limit to accommodate broader date range
+      .limit(3000); // Increased limit
 
     if (pandascoreError) {
       console.error('❌ Error loading PandaScore matches:', pandascoreError);
