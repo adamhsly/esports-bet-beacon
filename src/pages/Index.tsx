@@ -271,15 +271,14 @@ const Index = () => {
     
     // STEP 1: Test basic query first
     console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
-    const { data: testPandaScore, error: testPandaError } = await supabase
+    const { count: testCount, error: testPandaError } = await supabase
       .from('pandascore_matches')
-      .select('count(*), esport_type')
-      .limit(5);
+      .select('*', { count: 'exact', head: true });
     
     if (testPandaError) {
       console.error('❌ Basic PandaScore test query failed:', testPandaError);
     } else {
-      console.log('🔍 DEBUG: Basic PandaScore query result:', testPandaScore);
+      console.log('🔍 DEBUG: Basic PandaScore total count:', testCount);
     }
     
     // STEP 2: Enhanced query with extended date-based filtering
