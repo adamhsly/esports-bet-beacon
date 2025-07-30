@@ -208,7 +208,7 @@ const FaceitMatchPage = () => {
     }
 
     // Enhanced match analysis for finished matches with comprehensive data
-    if (headerType === 'finished' && isEnhancedData && matchDetails.playerPerformances?.length > 0) {
+    if (headerType === 'finished' && isEnhancedData) {
       const teams = safeTeams?.map((team: any, index: number) => ({
         name: team.name,
         logo: team.logo || team.avatar,
@@ -220,6 +220,35 @@ const FaceitMatchPage = () => {
         winnerFaction: matchData.faceitData.results.winner === 'faction1' ? 'faction1' as const : 'faction2' as const,
         finalScore: matchData.faceitData.results.score || { faction1: 0, faction2: 0 }
       } : undefined;
+
+      // Check if this is a bye/walkover match
+      const isByeMatch = teams.some(team => team.name?.toLowerCase() === 'bye');
+      
+      if (isByeMatch || matchDetails.playerPerformances?.length === 0) {
+        return (
+          <div className="space-y-4">
+            <Card className="bg-theme-gray-dark border-theme-gray-medium">
+              <div className="p-6 text-center">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Match Complete</h3>
+                <p className="text-gray-400">
+                  {isByeMatch 
+                    ? "This was a walkover match - no player performance data available."
+                    : "Player performance statistics are not available for this match."
+                  }
+                </p>
+                {matchResult && (
+                  <div className="mt-4 p-3 bg-theme-gray-medium rounded-lg">
+                    <p className="text-green-400 font-semibold">
+                      Winner: {teams.find(t => t.faction === matchResult.winnerFaction)?.name || 'Unknown'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        );
+      }
 
       return (
         <div className="space-y-4">
