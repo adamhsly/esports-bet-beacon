@@ -51,37 +51,23 @@ interface PandaScoreTeamsData {
   };
 }
 
-// 🔧 ENHANCED: Time-based status categorization for FACEIT matches
+// 🔧 FIXED: Database status-based categorization for FACEIT matches
 const getFaceitStatusCategory = (status: string, matchId: string, startTime?: string): 'live' | 'upcoming' | 'finished' | null => {
   const lowerStatus = status.toLowerCase();
   
   console.log(`🔍 Categorizing match ${matchId} with status: ${status} (normalized: ${lowerStatus})`);
   
-  // Finished match statuses (always respect finished status)
+  // Use actual database status instead of time-based logic
   if (['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
     console.log(`✅ Match ${matchId} categorized as FINISHED`);
     return 'finished';
   }
   
-  // Time-based live status determination
-  if (startTime) {
-    const now = new Date();
-    const matchStart = new Date(startTime);
-    const hasStarted = now >= matchStart;
-    
-    if (hasStarted && !['finished', 'completed', 'cancelled', 'aborted'].includes(lowerStatus)) {
-      console.log(`✅ Match ${matchId} categorized as LIVE (past start time: ${startTime})`);
-      return 'live';
-    }
-  }
-  
-  // Default live status fallback for explicit live statuses
   if (['ongoing', 'running', 'live'].includes(lowerStatus)) {
     console.log(`✅ Match ${matchId} categorized as LIVE (explicit status)`);
     return 'live';
   }
   
-  // Upcoming match statuses
   if (['upcoming', 'ready', 'scheduled', 'configured'].includes(lowerStatus)) {
     console.log(`✅ Match ${matchId} categorized as UPCOMING`);
     return 'upcoming';

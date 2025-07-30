@@ -62,15 +62,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const { teams, startTime, tournament, tournament_name, source, bestOf, id, status, faceitData, rawData } = match;
   const matchDate = new Date(startTime);
   
-  // 🔧 ENHANCED: Time-based status determination
+  // 🔧 FIXED: Database status-based determination
   const normalizedStatus = status?.toLowerCase() || '';
   const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
-  
-  // Time-based live status determination
-  const now = new Date();
-  const matchStart = new Date(startTime);
-  const hasStarted = now >= matchStart;
-  const isLive = hasStarted && !isFinished;
+  const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
 
   // Enhanced logging for routing decisions AND winner/score data
   console.log(`🎯 MatchCard rendering for ${id}:`, {
