@@ -15,7 +15,10 @@ function convertFaceitTimestamp(timestamp) {
 }
 
 serve(async (req) => {
+  console.log("🟢 Function triggered");
+
   if (req.method === "OPTIONS") {
+    console.log("↪️ OPTIONS request received");
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -25,15 +28,21 @@ serve(async (req) => {
   );
 
   const faceitApiKey = Deno.env.get("FACEIT_API_KEY");
-  if (!faceitApiKey) throw new Error("FACEIT_API_KEY not set");
+  if (!faceitApiKey) {
+    console.error("❌ FACEIT_API_KEY not set");
+    return new Response("FACEIT_API_KEY not set", { status: 500 });
+  }
 
   let games = ["csgo", "dota2", "valorant", "lol", "r6s", "overwatch"];
   try {
     const body = await req.json();
     if (body.games && Array.isArray(body.games)) {
       games = body.games;
+      console.log("🎮 Using custom games list:", games);
     }
-  } catch (_) {}
+  } catch (err) {
+    console.warn("⚠️ Failed to parse request body or no custom games specified");
+  }
 
   const { data: logEntry } = await supabase
     .from("faceit_sync_logs")
@@ -49,7 +58,7 @@ serve(async (req) => {
 
   for (const game of games) {
     for (const type of ["ongoing", "upcoming"]) {
-      console.log(`🎮 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
+      console.log(`🎯 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
       const championshipsUrl = new URL("https://open.faceit.com/data/v4/championships");
       championshipsUrl.searchParams.set("game", game);
       championshipsUrl.searchParams.set("type", type);
@@ -58,11 +67,18 @@ serve(async (req) => {
         headers: { Authorization: `Bearer ${faceitApiKey}` },
       });
 
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.warn(`⚠️ Failed to fetch championships for ${game} (${type})`);
+        continue;
+      }
+
       const { items: championships } = await response.json();
+      console.log(`🏆 Found ${championships.length} championships for ${game} (${type})`);
 
       for (const championship of championships) {
         const champId = championship.championship_id;
+        console.log(`🔎 Processing championship: ${champId}`);
+
         const champDetailsResp = await fetch(
           `https://open.faceit.com/data/v4/championships/${champId}`,
           { headers: { Authorization: `Bearer ${faceitApiKey}` } }
@@ -74,9 +90,14 @@ serve(async (req) => {
           `https://open.faceit.com/data/v4/championships/${champId}/matches`,
           { headers: { Authorization: `Bearer ${faceitApiKey}` } }
         );
-        if (!matchesResp.ok) continue;
+
+        if (!matchesResp.ok) {
+          console.warn(`⚠️ Failed to fetch matches for championship ${champId}`);
+          continue;
+        }
 
         const { items: matches } = await matchesResp.json();
+        console.log(`📦 Found ${matches.length} matches for championship ${champId}`);
 
         for (const match of matches) {
           const status = (match.status || "").toLowerCase();
@@ -91,7 +112,7 @@ serve(async (req) => {
           ];
 
           if (!allowedStatuses.includes(status)) {
-            console.log(`⚠️ Skipping ${match.match_id} due to unknown status: ${status}`);
+            console.log(`🚫 Skipping ${match.match_id}: unknown status "${status}"`);
             continue;
           }
 
@@ -109,6 +130,8 @@ serve(async (req) => {
 
   let added = 0;
   let updated = 0;
+
+  console.log(`📝 Processing ${allUpcomingMatches.length} upcoming matches...`);
 
   for (const { match, championshipDetails } of allUpcomingMatches) {
     const matchData = {
@@ -138,6 +161,8 @@ serve(async (req) => {
       championship_raw_data: championshipDetails || null,
     };
 
+    console.log(`📤 Upserting match ${match.match_id}...`);
+
     const { error } = await supabase
       .from("faceit_matches")
       .upsert(matchData, { onConflict: "match_id", ignoreDuplicates: false });
@@ -163,6 +188,11 @@ serve(async (req) => {
       }
     }
   }
+
+  console.log(`🎯 Matches processed: ${allUpcomingMatches.length}`);
+  console.log(`➕ Added: ${added}`);
+  console.log(`🔁 Updated: ${updated}`);
+  console.log(`📋 Match statuses encountered:`, Array.from(allMatchStatuses));
 
   await supabase
     .from("faceit_sync_logs")
