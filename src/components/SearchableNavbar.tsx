@@ -118,13 +118,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
             <div className="px-2 pt-2 pb-3 space-y-1">
               <div className="flex flex-col space-y-3">
                 <Link 
-                  to="/esports/csgo" 
-                  className="text-white hover:text-theme-purple py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Matches
-                </Link>
-                <Link 
                   to="/tournaments" 
                   className="text-white hover:text-theme-purple py-2"
                   onClick={() => setIsMenuOpen(false)}
@@ -138,7 +131,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
                 >
                   Teams
                 </Link>
-                
                 {user && (
                   <>
                     <Link 
