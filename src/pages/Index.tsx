@@ -891,6 +891,18 @@ const Index = () => {
   const filteredAllMatchesForCalendar = filterMatchesByGameType(allMatches, selectedGameType);
   const matchCounts = getTotalMatchCountsByDate(filteredAllMatchesForCalendar);
   const detailedMatchCounts = getDetailedMatchCountsByDate(filteredAllMatchesForCalendar);
+  
+  // Debug calendar match counts
+  console.log('📅 Calendar Debug Info:', {
+    totalMatches: allMatches.length,
+    filteredMatches: filteredAllMatchesForCalendar.length,
+    selectedGameType,
+    matchCountKeys: Object.keys(matchCounts),
+    sampleMatchCounts: Object.keys(matchCounts).slice(0, 5).reduce((acc, key) => {
+      acc[key] = matchCounts[key];
+      return acc;
+    }, {} as Record<string, number>)
+  });
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
