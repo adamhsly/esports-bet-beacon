@@ -131,7 +131,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
                 >
                   Tournaments
                 </Link>
-                </Link>
                 <Link 
                   to="/teams" 
                   className="text-white hover:text-theme-purple py-2"
