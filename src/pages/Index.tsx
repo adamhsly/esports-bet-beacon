@@ -262,12 +262,12 @@ const Index = () => {
     
     // 🔧 ENHANCED: Create dynamic date range based on selected date for better relevance  
     const selectedDateStart = startOfDay(selectedDate);
-    const oneWeekBefore = new Date(selectedDateStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthBefore = new Date(selectedDateStart.getTime() - 30 * 24 * 60 * 60 * 1000);
     const oneMonthAfter = new Date(selectedDateStart.getTime() + 30 * 24 * 60 * 60 * 1000);
     
     console.log('🔍 DEBUG: Date range for PandaScore query based on selected date:');
     console.log(`  - Selected Date: ${selectedDate.toDateString()}`);
-    console.log(`  - Query Range: ${oneWeekBefore.toISOString()} to ${oneMonthAfter.toISOString()}`);
+    console.log(`  - Query Range: ${oneMonthBefore.toISOString()} to ${oneMonthAfter.toISOString()}`);
     
     // STEP 1: Test basic query first
     console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
@@ -287,7 +287,7 @@ const Index = () => {
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
-      .gte('start_time', oneWeekBefore.toISOString())
+      .gte('start_time', oneMonthBefore.toISOString())
       .lte('start_time', oneMonthAfter.toISOString())
       .order('start_time', { ascending: true }) // Changed to ascending to get closest matches first
       .limit(3000); // Increased limit
