@@ -234,161 +234,183 @@ const Index = () => {
   // Check if selected date is today
   const isSelectedDateToday = isToday(selectedDate);
   
-  // Updated unified match loading function with better date handling
+  // Enhanced helper function to extract team data from both legacy and new formats with detailed logging
+  const extractTeamData = (teams: any, index: number, matchId?: string) => {
+    const logPrefix = matchId ? `[Match ${matchId}]` : '';
+    console.log(`${logPrefix} 🔍 Extracting team ${index + 1} from teams data:`, teams);
+    
+    if (!teams) {
+      console.log(`${logPrefix} ⚠️ No teams data provided, returning TBD`);
+      return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+    }
+    
+    // Handle array format: [{"type": "Team", "opponent": {...}}, ...]
+    if (Array.isArray(teams)) {
+      console.log(`${logPrefix} 📋 Teams is array with length: ${teams.length}`);
+      
+      if (teams.length === 0) {
+        console.log(`${logPrefix} ⚠️ Empty teams array, returning TBD`);
+        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      }
+      
+      const teamEntry = teams[index];
+      console.log(`${logPrefix} 🎯 Team entry at index ${index}:`, teamEntry);
+      
+      if (teamEntry?.opponent) {
+        const extractedData = {
+          id: teamEntry.opponent.id,
+          name: teamEntry.opponent.name,
+          image_url: teamEntry.opponent.image_url,
+          acronym: teamEntry.opponent.acronym,
+          slug: teamEntry.opponent.slug,
+          location: teamEntry.opponent.location
+        };
+        console.log(`${logPrefix} ✅ Successfully extracted team data:`, extractedData);
+        return extractedData;
+      } else if (teamEntry?.type === 'Team' && !teamEntry.opponent) {
+        // Handle case where team entry exists but opponent is missing
+        console.log(`${logPrefix} ⚠️ Team entry exists but opponent data missing`);
+        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      } else {
+        console.log(`${logPrefix} ⚠️ Invalid team entry structure, returning TBD`);
+        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+      }
+    }
+    
+    // Handle legacy object format: {team1: {...}, team2: {...}}
+    if (typeof teams === 'object' && teams !== null) {
+      console.log(`${logPrefix} 📦 Teams is object, checking legacy format`);
+      const teamKey = index === 0 ? 'team1' : 'team2';
+      const teamData = teams[teamKey];
+      console.log(`${logPrefix} 🔑 Checking key '${teamKey}':`, teamData);
+      
+      if (teamData) {
+        const extractedData = {
+          id: teamData.id,
+          name: teamData.name,
+          image_url: teamData.image_url || teamData.logo,
+          acronym: teamData.acronym,
+          slug: teamData.slug,
+          location: teamData.location
+        };
+        console.log(`${logPrefix} ✅ Successfully extracted legacy team data:`, extractedData);
+        return extractedData;
+      }
+    }
+    
+    console.log(`${logPrefix} ❌ Unable to extract team data, returning TBD. Teams structure:`, teams);
+    return { name: 'TBD', image_url: '/placeholder.svg', id: null };
+  };
+  
+  // Load calendar match counts with wider date range for better calendar visualization
+  const loadMatchCountsForCalendar = async (): Promise<MatchInfo[]> => {
+    console.log('📅 Loading matches for calendar visualization with wider date range...');
+    
+    // Create wider date range for calendar (1 month before to 3 months after today)
+    const today = new Date();
+    const oneMonthBefore = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const threeMonthsAfter = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
+    
+    console.log('📅 Calendar date range:', {
+      from: oneMonthBefore.toISOString(),
+      to: threeMonthsAfter.toISOString()
+    });
+    
+    // Fetch FACEIT matches for calendar
+    const faceitMatches = await fetchSupabaseFaceitAllMatches();
+    console.log(`📅 Loaded ${faceitMatches.length} FACEIT matches for calendar`);
+    
+    // Fetch PandaScore matches for calendar with wider range
+    const { data: pandascoreMatches, error: pandascoreError } = await supabase
+      .from('pandascore_matches')
+      .select('match_id, start_time, status, esport_type, teams, tournament_name, league_name, number_of_games, raw_data')
+      .gte('start_time', oneMonthBefore.toISOString())
+      .lte('start_time', threeMonthsAfter.toISOString())
+      .order('start_time', { ascending: true })
+      .limit(5000);
+
+    if (pandascoreError) {
+      console.error('❌ Error loading PandaScore matches for calendar:', pandascoreError);
+    } else {
+      console.log(`📅 Loaded ${pandascoreMatches?.length || 0} PandaScore matches for calendar`);
+    }
+
+    // Transform PandaScore matches for calendar (lightweight)
+    const transformedPandaScore = (pandascoreMatches || []).map(match => {
+      const team1Data = extractTeamData(match.teams, 0, match.match_id);
+      const team2Data = extractTeamData(match.teams, 1, match.match_id);
+      
+      return {
+        id: `pandascore_${match.match_id}`,
+        teams: [
+          {
+            name: team1Data.name || 'TBD',
+            logo: team1Data.image_url || '/placeholder.svg',
+            id: team1Data.id?.toString() || `pandascore_team_${match.match_id}_1`
+          },
+          {
+            name: team2Data.name || 'TBD',
+            logo: team2Data.image_url || '/placeholder.svg',
+            id: team2Data.id?.toString() || `pandascore_team_${match.match_id}_2`
+          }
+        ] as [any, any],
+        startTime: match.start_time,
+        tournament: match.tournament_name || match.league_name || 'Professional Tournament',
+        tournament_name: match.tournament_name,
+        league_name: match.league_name,
+        esportType: match.esport_type,
+        bestOf: match.number_of_games || 3,
+        source: 'professional' as const,
+        status: match.status,
+        rawData: match.raw_data
+      } satisfies MatchInfo;
+    });
+
+    const combinedMatches = [...faceitMatches, ...transformedPandaScore];
+    
+    // Filter out TBC/TBD matches
+    const filteredMatches = combinedMatches.filter(match => {
+      const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+      return !teamNames.some(name => name === 'tbc' || name === 'tbd');
+    });
+    
+    console.log(`📅 Calendar dataset: ${filteredMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
+    return filteredMatches;
+  };
+
+  // Updated unified match loading function for display (focused date range for performance)
   const loadAllMatchesFromDatabase = async (): Promise<MatchInfo[]> => {
-    console.log('🔄 Loading matches from database (FACEIT + PandaScore with improved date handling)...');
+    console.log('🔄 Loading matches for display with focused date range...');
     
     // Fetch FACEIT matches with full data including status and results
     const faceitMatches = await fetchSupabaseFaceitAllMatches();
     console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches from database`);
     
-    // Debug: Log a sample FACEIT match to verify data structure
-    if (faceitMatches.length > 0) {
-      const sampleMatch = faceitMatches[0] as any;
-      console.log('🔍 Sample FACEIT match data:', {
-        id: sampleMatch.id,
-        databaseMatchId: sampleMatch.databaseMatchId,
-        status: sampleMatch.status,
-        faceitData: sampleMatch.faceitData,
-        hasResults: !!(sampleMatch.faceitData?.results)
-      });
-    }
-    
-    // 🔧 FIXED: FACEIT matches already have correct IDs from the API function
-    console.log(`📊 FACEIT matches already have correct IDs for routing`);
-    
-    // 🔧 OPTIMIZED: Fetch relevant PandaScore matches with date filtering to avoid loading all 215k+ matches
-    console.log('🔍 DEBUG: Starting PandaScore query with detailed logging...');
-    
-    // 🔧 ENHANCED: Create dynamic date range based on selected date for better relevance  
+    // Create focused date range based on selected date for display performance
     const selectedDateStart = startOfDay(selectedDate);
     const oneWeekBefore = new Date(selectedDateStart.getTime() - 7 * 24 * 60 * 60 * 1000);
     const oneMonthAfter = new Date(selectedDateStart.getTime() + 30 * 24 * 60 * 60 * 1000);
     
-    console.log('🔍 DEBUG: Date range for PandaScore query based on selected date:');
-    console.log(`  - Selected Date: ${selectedDate.toDateString()}`);
-    console.log(`  - Query Range: ${oneWeekBefore.toISOString()} to ${oneMonthAfter.toISOString()}`);
+    console.log('🔍 Display date range:', {
+      selectedDate: selectedDate.toDateString(),
+      from: oneWeekBefore.toISOString(),
+      to: oneMonthAfter.toISOString()
+    });
     
-    // STEP 1: Test basic query first
-    console.log('🔍 DEBUG: Testing basic PandaScore query without filters...');
-    const { data: testPandaScore, error: testPandaError } = await supabase
-      .from('pandascore_matches')
-      .select('count(*), esport_type')
-      .limit(5);
-    
-    if (testPandaError) {
-      console.error('❌ Basic PandaScore test query failed:', testPandaError);
-    } else {
-      console.log('🔍 DEBUG: Basic PandaScore query result:', testPandaScore);
-    }
-    
-    // STEP 2: Enhanced query with selected date-based filtering
-    console.log('🔍 DEBUG: Testing PandaScore query with selected date-based filter...');
+    // Fetch PandaScore matches for display with focused range
     const { data: pandascoreMatches, error: pandascoreError } = await supabase
       .from('pandascore_matches')
       .select('*')
       .gte('start_time', oneWeekBefore.toISOString())
       .lte('start_time', oneMonthAfter.toISOString())
-      .order('start_time', { ascending: true }) // Changed to ascending to get closest matches first
-      .limit(3000); // Increased limit
+      .order('start_time', { ascending: true })
+      .limit(3000);
 
     if (pandascoreError) {
-      console.error('❌ Error loading PandaScore matches:', pandascoreError);
-      console.error('❌ Full PandaScore error details:', JSON.stringify(pandascoreError, null, 2));
+      console.error('❌ Error loading PandaScore matches for display:', pandascoreError);
     } else {
-      console.log(`✅ Successfully fetched ${pandascoreMatches?.length || 0} PandaScore matches`);
-      
-      // STEP 3: Log sample of the data to verify structure
-      if (pandascoreMatches && pandascoreMatches.length > 0) {
-        console.log('🔍 DEBUG: Sample PandaScore match structure:', {
-          sampleMatch: pandascoreMatches[0],
-          totalMatches: pandascoreMatches.length,
-          esportTypes: [...new Set(pandascoreMatches.map(m => m.esport_type))],
-          statuses: [...new Set(pandascoreMatches.map(m => m.status))]
-        });
-      }
+      console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches for display`);
     }
-
-    console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches from database (all matches, no limit)`);
-    
-    // 🔧 DEBUG: Log date range information for PandaScore matches
-    if (pandascoreMatches && pandascoreMatches.length > 0) {
-      const dates = pandascoreMatches.map(m => m.start_time).filter(Boolean).sort();
-      console.log('📅 PandaScore match date range:', {
-        earliest: dates[dates.length - 1],
-        latest: dates[0],
-        totalMatches: pandascoreMatches.length,
-        sampleDates: dates.slice(0, 5)
-      });
-    }
-    
-    // Enhanced helper function to extract team data from both legacy and new formats with detailed logging
-    const extractTeamData = (teams: any, index: number, matchId?: string) => {
-      const logPrefix = matchId ? `[Match ${matchId}]` : '';
-      console.log(`${logPrefix} 🔍 Extracting team ${index + 1} from teams data:`, teams);
-      
-      if (!teams) {
-        console.log(`${logPrefix} ⚠️ No teams data provided, returning TBD`);
-        return { name: 'TBD', image_url: '/placeholder.svg', id: null };
-      }
-      
-      // Handle array format: [{"type": "Team", "opponent": {...}}, ...]
-      if (Array.isArray(teams)) {
-        console.log(`${logPrefix} 📋 Teams is array with length: ${teams.length}`);
-        
-        if (teams.length === 0) {
-          console.log(`${logPrefix} ⚠️ Empty teams array, returning TBD`);
-          return { name: 'TBD', image_url: '/placeholder.svg', id: null };
-        }
-        
-        const teamEntry = teams[index];
-        console.log(`${logPrefix} 🎯 Team entry at index ${index}:`, teamEntry);
-        
-        if (teamEntry?.opponent) {
-          const extractedData = {
-            id: teamEntry.opponent.id,
-            name: teamEntry.opponent.name,
-            image_url: teamEntry.opponent.image_url,
-            acronym: teamEntry.opponent.acronym,
-            slug: teamEntry.opponent.slug,
-            location: teamEntry.opponent.location
-          };
-          console.log(`${logPrefix} ✅ Successfully extracted team data:`, extractedData);
-          return extractedData;
-        } else if (teamEntry?.type === 'Team' && !teamEntry.opponent) {
-          // Handle case where team entry exists but opponent is missing
-          console.log(`${logPrefix} ⚠️ Team entry exists but opponent data missing`);
-          return { name: 'TBD', image_url: '/placeholder.svg', id: null };
-        } else {
-          console.log(`${logPrefix} ⚠️ Invalid team entry structure, returning TBD`);
-          return { name: 'TBD', image_url: '/placeholder.svg', id: null };
-        }
-      }
-      
-      // Handle legacy object format: {team1: {...}, team2: {...}}
-      if (typeof teams === 'object' && teams !== null) {
-        console.log(`${logPrefix} 📦 Teams is object, checking legacy format`);
-        const teamKey = index === 0 ? 'team1' : 'team2';
-        const teamData = teams[teamKey];
-        console.log(`${logPrefix} 🔑 Checking key '${teamKey}':`, teamData);
-        
-        if (teamData) {
-          const extractedData = {
-            id: teamData.id,
-            name: teamData.name,
-            image_url: teamData.image_url || teamData.logo,
-            acronym: teamData.acronym,
-            slug: teamData.slug,
-            location: teamData.location
-          };
-          console.log(`${logPrefix} ✅ Successfully extracted legacy team data:`, extractedData);
-          return extractedData;
-        }
-      }
-      
-      console.log(`${logPrefix} ❌ Unable to extract team data, returning TBD. Teams structure:`, teams);
-      return { name: 'TBD', image_url: '/placeholder.svg', id: null };
-    };
 
     // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
     const transformedPandaScore = (pandascoreMatches || []).map(match => {
@@ -451,16 +473,15 @@ const Index = () => {
     return filteredMatches;
   };
 
-  // Load all matches for counting (unified dataset)
+  // Load calendar matches for wider date range visualization
   useEffect(() => {
-    async function loadAllMatches() {
+    async function loadCalendarMatches() {
       setLoadingAllMatches(true);
       try {
-        const combinedMatches = await loadAllMatchesFromDatabase();
+        const calendarMatches = await loadMatchCountsForCalendar();
+        setAllMatches(calendarMatches);
         
-        setAllMatches(combinedMatches);
-        
-        // 🔧 NEW: Initialize date to today's date
+        // Initialize date to today's date
         if (!hasInitializedDate) {
           const today = startOfDay(new Date());
           console.log('📅 Setting initial date to today:', today.toDateString());
@@ -468,16 +489,16 @@ const Index = () => {
           setHasInitializedDate(true);
         }
         
-        console.log('📊 Calendar counts updated from unified dataset');
+        console.log('📅 Calendar counts updated with wider dataset');
       } catch (error) {
-        console.error('Error loading all matches:', error);
+        console.error('Error loading calendar matches:', error);
         setAllMatches([]);
       } finally {
         setLoadingAllMatches(false);
       }
     }
     
-    loadAllMatches();
+    loadCalendarMatches();
   }, [hasInitializedDate]);
 
   // 🔧 ENHANCED: Updated filtering function for game type with comprehensive game support
