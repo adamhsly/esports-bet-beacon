@@ -38,9 +38,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               <Link to="/tournaments" className="text-gray-300 hover:text-white">
                 Tournaments
               </Link>
-              <Link to="/news" className="text-gray-300 hover:text-white">
-                News
-              </Link>
               <Link to="/teams" className="text-gray-300 hover:text-white">
                 Teams
               </Link>
@@ -48,9 +45,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
                 <>
                   <Link to="/fantasy" className="text-gray-300 hover:text-white">
                     Fantasy
-                  </Link>
-                  <Link to="/advanced-cards" className="text-gray-300 hover:text-white">
-                    Cards
                   </Link>
                 </>
               )}
