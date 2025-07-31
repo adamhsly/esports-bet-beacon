@@ -52,8 +52,6 @@ serve(async (req) => {
 
   const allUpcomingMatches = [];
   const allMatchStatuses = new Set();
-  const championshipDetailsMap = new Map();
-
   const now = new Date();
 
   for (const game of games) {
@@ -63,7 +61,7 @@ serve(async (req) => {
       championshipsUrl.searchParams.set("game", game);
       championshipsUrl.searchParams.set("type", type);
 
-      const response = await fetch(championshipsUrl, {
+      const response = await fetch(championshipsUrl.toString(), {
         headers: { Authorization: `Bearer ${faceitApiKey}` },
       });
 
@@ -73,18 +71,15 @@ serve(async (req) => {
       }
 
       const { items: championships } = await response.json();
-      console.log(`🏆 Found ${championships.length} championships for ${game} (${type})`);
+      console.log(`🏆 Found ${championships.length} championships`);
 
       for (const championship of championships) {
         const champId = championship.championship_id;
-        console.log(`🔎 Processing championship: ${champId}`);
-
-        const champDetailsResp = await fetch(
+        const detailsResp = await fetch(
           `https://open.faceit.com/data/v4/championships/${champId}`,
           { headers: { Authorization: `Bearer ${faceitApiKey}` } }
         );
-        const details = champDetailsResp.ok ? await champDetailsResp.json() : null;
-        championshipDetailsMap.set(champId, details);
+        const details = detailsResp.ok ? await detailsResp.json() : null;
 
         const matchesResp = await fetch(
           `https://open.faceit.com/data/v4/championships/${champId}/matches`,
@@ -97,21 +92,14 @@ serve(async (req) => {
         }
 
         const { items: matches } = await matchesResp.json();
-        console.log(`📦 Found ${matches.length} matches for championship ${champId}`);
+        console.log(`📦 Found ${matches.length} matches in championship ${champId}`);
 
         for (const match of matches) {
           const status = (match.status || "").toLowerCase();
-          const scheduledAt = convertFaceitTimestamp(match.scheduled_at);
-          const startedAt = convertFaceitTimestamp(match.started_at);
           const finishedAt = convertFaceitTimestamp(match.finished_at);
-
           allMatchStatuses.add(status);
 
-          const allowedStatuses = [
-            "scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"
-          ];
-
-          if (!allowedStatuses.includes(status)) {
+          if (!["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"].includes(status)) {
             console.log(`🚫 Skipping ${match.match_id}: unknown status "${status}"`);
             continue;
           }
@@ -121,9 +109,68 @@ serve(async (req) => {
             continue;
           }
 
-          console.log(`✅ Including match ${match.match_id} (status: ${status})`);
-          allUpcomingMatches.push({ match, championshipDetails: details });
+          console.log(`✅ Including championship match ${match.match_id}`);
+          allUpcomingMatches.push({ match, championshipDetails: details, sourceType: "championship" });
         }
+      }
+    }
+
+    // 🔁 Now fetch tournaments
+    console.log(`🎲 Fetching tournaments for ${game.toUpperCase()}`);
+    const tournamentsUrl = new URL("https://open.faceit.com/data/v4/tournaments");
+    tournamentsUrl.searchParams.set("game", game);
+    tournamentsUrl.searchParams.set("limit", "50");
+
+    const tournamentsResp = await fetch(tournamentsUrl.toString(), {
+      headers: { Authorization: `Bearer ${faceitApiKey}` },
+    });
+
+    if (!tournamentsResp.ok) {
+      console.warn(`⚠️ Failed to fetch tournaments for ${game}`);
+      continue;
+    }
+
+    const { items: tournaments } = await tournamentsResp.json();
+    console.log(`📦 Found ${tournaments.length} tournaments`);
+
+    for (const tournament of tournaments) {
+      const matchesResp = await fetch(
+        `https://open.faceit.com/data/v4/tournaments/${tournament.id}/matches`,
+        { headers: { Authorization: `Bearer ${faceitApiKey}` } }
+      );
+
+      if (!matchesResp.ok) {
+        console.warn(`⚠️ Failed to fetch matches for tournament ${tournament.id}`);
+        continue;
+      }
+
+      const { items: matches } = await matchesResp.json();
+      console.log(`🎯 Found ${matches.length} matches for tournament ${tournament.id}`);
+
+      for (const match of matches) {
+        const status = (match.status || "").toLowerCase();
+        const finishedAt = convertFaceitTimestamp(match.finished_at);
+        allMatchStatuses.add(status);
+
+        if (!["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"].includes(status)) {
+          console.log(`🚫 Skipping ${match.match_id}: unknown status "${status}"`);
+          continue;
+        }
+
+        if (finishedAt && new Date(finishedAt) <= now) {
+          console.log(`📌 Skipping ${match.match_id}: already finished`);
+          continue;
+        }
+
+        console.log(`✅ Including tournament match ${match.match_id}`);
+        allUpcomingMatches.push({
+          match,
+          championshipDetails: {
+            ...tournament,
+            stream_url: tournament.stream_url || tournament.faceit_url || null,
+          },
+          sourceType: "tournament",
+        });
       }
     }
   }
@@ -131,9 +178,9 @@ serve(async (req) => {
   let added = 0;
   let updated = 0;
 
-  console.log(`📝 Processing ${allUpcomingMatches.length} upcoming matches...`);
+  console.log(`📝 Upserting ${allUpcomingMatches.length} matches...`);
 
-  for (const { match, championshipDetails } of allUpcomingMatches) {
+  for (const { match, championshipDetails, sourceType } of allUpcomingMatches) {
     const matchData = {
       match_id: match.match_id,
       game: match.game,
@@ -159,9 +206,8 @@ serve(async (req) => {
       raw_data: match,
       championship_stream_url: championshipDetails?.stream_url || championshipDetails?.url || null,
       championship_raw_data: championshipDetails || null,
+      source_type: sourceType,
     };
-
-    console.log(`📤 Upserting match ${match.match_id}...`);
 
     const { error } = await supabase
       .from("faceit_matches")
@@ -188,11 +234,6 @@ serve(async (req) => {
       }
     }
   }
-
-  console.log(`🎯 Matches processed: ${allUpcomingMatches.length}`);
-  console.log(`➕ Added: ${added}`);
-  console.log(`🔁 Updated: ${updated}`);
-  console.log(`📋 Match statuses encountered:`, Array.from(allMatchStatuses));
 
   await supabase
     .from("faceit_sync_logs")
