@@ -252,8 +252,89 @@ serve(async () => {
     console.error("❌ Failed to reset last_page in sync_state:", resetError);
   }
 
+  // --- New: Fetch and update live running matches ---
+  async function updateLiveRunningMatches() {
+    console.log('Fetching live running matches...');
+    const RUNNING_URL = `${BASE_URL}/running`;
+
+    const res = await fetch(RUNNING_URL, {
+      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+    });
+
+    if (!res.ok) {
+      console.error('Failed to fetch running matches:', await res.text());
+      return;
+    }
+
+    const runningMatches = await res.json();
+
+    if (!Array.isArray(runningMatches) || runningMatches.length === 0) {
+      console.log('No live running matches currently.');
+      return;
+    }
+
+    console.log(`🕹️ ${runningMatches.length} live running matches found.`);
+
+    for (const match of runningMatches) {
+      const match_id = match.id?.toString();
+      if (!match_id) continue;
+
+      // Fetch existing match by match_id
+      const { data: existing, error: fetchError } = await supabase
+        .from("pandascore_matches")
+        .select("id")
+        .eq("match_id", match_id)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error(`Error checking running match ${match_id}:`, fetchError);
+        continue;
+      }
+      if (!existing) {
+        // No existing record to update
+        continue;
+      }
+
+      // Extract scores from match.results if available
+      // Structure example: [{team_id:1234, score:1}, ...]
+      // We'll just keep full raw_data for now, since free tier is limited
+      const updateData = {
+        status: match.status ?? null,
+        winner_id: match.winner_id?.toString() ?? null,
+        winner_type: match.winner_type ?? null,
+        raw_data: match,
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: updateError } = await supabase
+        .from("pandascore_matches")
+        .update(updateData)
+        .eq("match_id", match_id);
+
+      if (updateError) {
+        console.error(`❌ Failed to update live match ${match_id}:`, updateError);
+      } else {
+        console.log(`✅ Updated live match ${match_id} with status ${match.status}`);
+      }
+    }
+  }
+
+  await updateLiveRunningMatches();
+
   return new Response(
-    JSON.stringify({ status: "done", total: totalFetched }),
-    { headers: { "Content-Type": "application/json" } }
+    JSON.stringify({
+      message: "Sync completed.",
+      total_fetched: totalFetched,
+      last_page: lastPage - 1,
+      max_page: computedMaxPage,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+      },
+    }
   );
 });
