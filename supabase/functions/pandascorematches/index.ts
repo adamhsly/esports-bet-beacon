@@ -70,15 +70,12 @@ serve(async () => {
     if (!syncState || !syncState.max_page || syncState.max_page !== totalPages) {
       const { error: updateMaxPageError } = await supabase
         .from('pandascore_sync_state')
-        .upsert(
-          {
-            id: 'matches',
-            max_page: totalPages,
-            last_page: page - 1, // store previous last_page correctly
-            last_synced_at: new Date().toISOString(),
-          },
-          { onConflict: ['id'] }
-        )
+        .upsert({
+          id: 'matches',
+          max_page: totalPages,
+          last_page: page - 1,
+          last_synced_at: new Date().toISOString(),
+        }, { onConflict: ['id'] })
 
       if (updateMaxPageError) {
         console.error('Failed to update max_page:', updateMaxPageError)
@@ -119,9 +116,13 @@ serve(async () => {
       const match_id = match.id?.toString()
       if (!match_id) continue
 
-      // Skip if required NOT NULL fields missing
-      if (!match.begin_at || !match.videogame?.name) {
-        console.warn(`Skipping match ${match_id} due to missing start_time or esport_type`)
+      // Skip matches with missing required fields
+      if (!match.begin_at) {
+        console.log(`Skipping match ${match_id} because start_time (begin_at) is missing.`)
+        continue
+      }
+      if (!match.videogame?.name) {
+        console.log(`Skipping match ${match_id} because esport_type (videogame.name) is missing.`)
         continue
       }
 
@@ -166,9 +167,9 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at,
-        status: match.status,
+        status: match.status ?? 'scheduled',
         match_type: match.match_type,
-        number_of_games: match.number_of_games,
+        number_of_games: match.number_of_games ?? 3,
         tournament_id: match.tournament?.id?.toString() ?? null,
         tournament_name: match.tournament?.name ?? null,
         league_id: match.league?.id?.toString() ?? null,
@@ -200,15 +201,12 @@ serve(async () => {
 
     const { error: syncUpdateError } = await supabase
       .from('pandascore_sync_state')
-      .upsert(
-        {
-          id: 'matches',
-          last_page: page,
-          max_page: totalPages,
-          last_synced_at: new Date().toISOString(),
-        },
-        { onConflict: ['id'] }
-      )
+      .upsert({
+        id: 'matches',
+        last_page: page,
+        max_page: totalPages,
+        last_synced_at: new Date().toISOString(),
+      }, { onConflict: ['id'] })
 
     if (syncUpdateError) {
       console.error(`❌ Failed to update sync state for page ${page}:`, syncUpdateError)
