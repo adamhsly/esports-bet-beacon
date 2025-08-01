@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { v4 as uuidv4 } from "https://deno.land/std/uuid/mod.ts";
 
 serve(async (req) => {
   const supabase = createClient(
@@ -23,9 +22,10 @@ serve(async (req) => {
 
     if (!res.ok) {
       const err = await res.json();
-      return new Response(JSON.stringify({ error: "Failed to fetch live matches", details: err }), {
-        status: 500,
-      });
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch live matches", details: err }),
+        { status: 500 }
+      );
     }
 
     const lives = await res.json();
@@ -34,42 +34,50 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    // Filter out matches with missing esport_type (videogame name)
-    const filteredLives = lives.filter((match: any) => match.videogame?.name);
+    // Filter out matches missing required fields: esport_type & start_time
+    const filteredLives = lives.filter(
+      (match: any) =>
+        typeof match.videogame?.name === "string" &&
+        match.videogame.name.trim() !== "" &&
+        typeof match.begin_at === "string" &&
+        match.begin_at.trim() !== ""
+    );
 
-    console.log(`Filtered out ${lives.length - filteredLives.length} matches missing esport_type`);
+    console.log(`Filtered out ${lives.length - filteredLives.length} invalid matches`);
 
     const formatted = filteredLives.map((match: any) => ({
       match_id: String(match.id),
-      esport_type: match.videogame?.name || null,
+      esport_type: match.videogame.name.trim(),
       teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
-      start_time: match.begin_at,
-      end_time: match.end_at,
+      start_time: new Date(match.begin_at).toISOString(),
+      end_time: match.end_at ? new Date(match.end_at).toISOString() : null,
       tournament_id: match.tournament?.id?.toString() ?? null,
       tournament_name: match.tournament?.name ?? null,
       league_id: match.league?.id?.toString() ?? null,
       league_name: match.league?.name ?? null,
       serie_id: match.serie?.id?.toString() ?? null,
       serie_name: match.serie?.name ?? null,
-      status: match.status,
-      match_type: match.type,
-      number_of_games: match.number_of_games ?? null,
+      status: match.status || "scheduled",
+      match_type: match.type ?? null,
+      number_of_games: match.number_of_games ?? 3,
       raw_data: match,
       updated_at: now,
       last_synced_at: now,
-      slug: match.slug,
-      draw: match.draw,
-      forfeit: match.forfeit,
-      original_scheduled_at: match.original_scheduled_at,
-      rescheduled: match.rescheduled,
-      detailed_stats: match.detailed_stats,
+      slug: match.slug ?? null,
+      draw: match.draw ?? null,
+      forfeit: match.forfeit ?? null,
+      original_scheduled_at: match.original_scheduled_at
+        ? new Date(match.original_scheduled_at).toISOString()
+        : null,
+      rescheduled: match.rescheduled ?? null,
+      detailed_stats: match.detailed_stats ?? null,
       winner_id: match.winner_id?.toString() ?? null,
       winner_type: match.winner_type ?? null,
       videogame_id: match.videogame?.id?.toString() ?? null,
       videogame_name: match.videogame?.name ?? null,
       stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
       stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
-      modified_at: match.modified_at,
+      modified_at: match.modified_at ? new Date(match.modified_at).toISOString() : null,
       team_a_player_ids: match.opponents?.[0]?.players?.map((p: any) => p.id) ?? [],
       team_b_player_ids: match.opponents?.[1]?.players?.map((p: any) => p.id) ?? [],
     }));
@@ -90,8 +98,9 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("Unexpected error:", err);
-    return new Response(JSON.stringify({ error: "Unexpected error", details: err.message }), {
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: "Unexpected error", details: err.message }),
+      { status: 500 }
+    );
   }
 });
