@@ -8,11 +8,8 @@ function sleep(ms: number) {
 
 // Utility to compare teams arrays (opponents)
 function teamsAreDifferent(apiTeams: any[], dbTeams: any[]): boolean {
-  // Simple check: if lengths differ, definitely changed
   if (!apiTeams || !dbTeams) return true;
   if (apiTeams.length !== dbTeams.length) return true;
-
-  // Compare stringified JSON of each opponent — order matters here
   for (let i = 0; i < apiTeams.length; i++) {
     if (JSON.stringify(apiTeams[i]) !== JSON.stringify(dbTeams[i])) {
       return true;
@@ -26,15 +23,9 @@ serve(async () => {
   const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const PANDA_API_TOKEN = Deno.env.get("PANDA_SCORE_API_KEY");
 
-  console.log("SUPABASE_URL present:", !!SUPABASE_URL);
-  console.log("SERVICE_ROLE_KEY present:", !!SERVICE_ROLE_KEY);
-  console.log("PANDA_SCORE_API_KEY present:", !!PANDA_API_TOKEN);
-
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !PANDA_API_TOKEN) {
     return new Response(
-      JSON.stringify({
-        error: "Missing one or more required environment variables.",
-      }),
+      JSON.stringify({ error: "Missing one or more required environment variables." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -57,19 +48,15 @@ serve(async () => {
   const BASE_URL = "https://api.pandascore.co/matches";
   const PER_PAGE = 50;
 
-  // Calculate date range: yesterday 00:00:00 UTC to day after tomorrow 00:00:00 UTC
+  // Limit date range: yesterday, today, and tomorrow
   const now = new Date();
   const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const yesterdayStart = new Date(todayStart);
-  yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
-  const dayAfterTomorrowStart = new Date(todayStart);
-  dayAfterTomorrowStart.setUTCDate(dayAfterTomorrowStart.getUTCDate() + 2);
+  yesterdayStart.setUTCDate(todayStart.getUTCDate() - 1);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setUTCDate(todayStart.getUTCDate() + 1);
+  const dateRangeStr = `${yesterdayStart.toISOString().slice(0, 10)},${tomorrowStart.toISOString().slice(0, 10)}`;
 
-  const dateRangeStr = `${yesterdayStart.toISOString().slice(0, 10)},${dayAfterTomorrowStart
-    .toISOString()
-    .slice(0, 10)}`;
-
-  // Load sync state from Supabase
   const { data: syncState } = await supabase
     .from("pandascore_sync_state")
     .select("last_page", "max_page")
@@ -79,13 +66,9 @@ serve(async () => {
   let lastPage = (syncState?.last_page ?? 0) + 1;
   const maxPage = syncState?.max_page ?? 0;
 
-  // Get total matches count to calculate max page
-  const headRes = await fetch(
-    `${BASE_URL}?per_page=1&range[scheduled_at]=${dateRangeStr}`,
-    {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    }
-  );
+  const headRes = await fetch(`${BASE_URL}?per_page=1&range[scheduled_at]=${dateRangeStr}`, {
+    headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+  });
 
   if (!headRes.ok) {
     console.error("Failed to fetch total matches count:", await headRes.text());
@@ -98,27 +81,17 @@ serve(async () => {
   const totalMatches = Number(headRes.headers.get("X-Total") ?? 0);
   const computedMaxPage = Math.ceil(totalMatches / PER_PAGE);
 
-  console.log(`Total matches: ${totalMatches}, Max page: ${computedMaxPage}`);
-
-  // Update max_page if needed
   if (computedMaxPage !== maxPage) {
-    const { error: maxPageError } = await supabase
-      .from("pandascore_sync_state")
-      .upsert(
-        { id: "matches", max_page: computedMaxPage },
-        { onConflict: ["id"] }
-      );
-    if (maxPageError) {
-      console.error("Failed to update max_page in sync_state:", maxPageError);
-    }
+    await supabase.from("pandascore_sync_state").upsert(
+      { id: "matches", max_page: computedMaxPage },
+      { onConflict: ["id"] }
+    );
   }
 
   let totalFetched = 0;
 
   while (lastPage <= computedMaxPage) {
     const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${lastPage}&range[scheduled_at]=${dateRangeStr}`;
-    console.log(`Fetching page ${lastPage}: ${url}`);
-
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
     });
@@ -136,16 +109,12 @@ serve(async () => {
       break;
     }
 
-    if (!Array.isArray(matches) || matches.length === 0) {
-      console.log("No more matches to process.");
-      break;
-    }
+    if (!Array.isArray(matches) || matches.length === 0) break;
 
     for (const match of matches) {
       const match_id = match.id?.toString();
       if (!match_id) continue;
 
-      // Fetch existing match by match_id
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
         .select("status", "teams")
@@ -159,15 +128,10 @@ serve(async () => {
 
       const existingStatus = existing?.status ?? null;
       const existingTeams = existing?.teams ?? [];
-
       const apiStatus = match.status ?? null;
       const apiTeams = match.opponents ?? [];
 
-      // Update if status changed OR teams changed
-      if (existingStatus === apiStatus && !teamsAreDifferent(apiTeams, existingTeams)) {
-        // No relevant change, skip update
-        continue;
-      }
+      if (existingStatus === apiStatus && !teamsAreDifferent(apiTeams, existingTeams)) continue;
 
       const mapped = {
         match_id,
@@ -215,44 +179,30 @@ serve(async () => {
       }
     }
 
-    // Update sync state with last processed page
-    const { error: syncUpdateError } = await supabase
-      .from("pandascore_sync_state")
-      .upsert(
-        {
-          id: "matches",
-          last_page: lastPage,
-          max_page: computedMaxPage,
-          last_synced_at: new Date().toISOString(),
-        },
-        { onConflict: ["id"] }
-      );
-
-    if (syncUpdateError) {
-      console.error(`❌ Failed to update sync state for page ${lastPage}:`, syncUpdateError);
-    }
-
-    lastPage++;
-    await sleep(1000);
-  }
-
-  // Reset last_page back to 0 for next full sync cycle
-  const { error: resetError } = await supabase
-    .from("pandascore_sync_state")
-    .upsert(
+    await supabase.from("pandascore_sync_state").upsert(
       {
         id: "matches",
-        last_page: 0,
+        last_page: lastPage,
+        max_page: computedMaxPage,
         last_synced_at: new Date().toISOString(),
       },
       { onConflict: ["id"] }
     );
 
-  if (resetError) {
-    console.error("❌ Failed to reset last_page in sync_state:", resetError);
+    lastPage++;
+    await sleep(1000);
   }
 
-  // --- New: Fetch and update live running matches ---
+  await supabase.from("pandascore_sync_state").upsert(
+    {
+      id: "matches",
+      last_page: 0,
+      last_synced_at: new Date().toISOString(),
+    },
+    { onConflict: ["id"] }
+  );
+
+  // --- Update live running matches ---
   async function updateLiveRunningMatches() {
     console.log('Fetching live running matches...');
     const RUNNING_URL = `${BASE_URL}/running`;
@@ -273,31 +223,18 @@ serve(async () => {
       return;
     }
 
-    console.log(`🕹️ ${runningMatches.length} live running matches found.`);
-
     for (const match of runningMatches) {
       const match_id = match.id?.toString();
       if (!match_id) continue;
 
-      // Fetch existing match by match_id
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
         .select("id")
         .eq("match_id", match_id)
         .maybeSingle();
 
-      if (fetchError) {
-        console.error(`Error checking running match ${match_id}:`, fetchError);
-        continue;
-      }
-      if (!existing) {
-        // No existing record to update
-        continue;
-      }
+      if (!existing || fetchError) continue;
 
-      // Extract scores from match.results if available
-      // Structure example: [{team_id:1234, score:1}, ...]
-      // We'll just keep full raw_data for now, since free tier is limited
       const updateData = {
         status: match.status ?? null,
         winner_id: match.winner_id?.toString() ?? null,
@@ -307,20 +244,60 @@ serve(async () => {
         updated_at: new Date().toISOString(),
       };
 
-      const { error: updateError } = await supabase
-        .from("pandascore_matches")
+      await supabase.from("pandascore_matches")
         .update(updateData)
         .eq("match_id", match_id);
+    }
+  }
 
-      if (updateError) {
-        console.error(`❌ Failed to update live match ${match_id}:`, updateError);
-      } else {
-        console.log(`✅ Updated live match ${match_id} with status ${match.status}`);
-      }
+  // --- New: Update cancelled matches ---
+  async function updateCancelledMatches() {
+    console.log('🔍 Fetching cancelled matches...');
+    const CANCELLED_URL = `${BASE_URL}?per_page=50&range[scheduled_at]=${dateRangeStr}&status=cancelled`;
+
+    const res = await fetch(CANCELLED_URL, {
+      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+    });
+
+    if (!res.ok) {
+      console.error('❌ Failed to fetch cancelled matches:', await res.text());
+      return;
+    }
+
+    const cancelledMatches = await res.json();
+
+    if (!Array.isArray(cancelledMatches) || cancelledMatches.length === 0) {
+      console.log('✅ No cancelled matches found in this window.');
+      return;
+    }
+
+    for (const match of cancelledMatches) {
+      const match_id = match.id?.toString();
+      if (!match_id) continue;
+
+      const { data: existing, error: fetchError } = await supabase
+        .from("pandascore_matches")
+        .select("id")
+        .eq("match_id", match_id)
+        .maybeSingle();
+
+      if (!existing || fetchError) continue;
+
+      const updateData = {
+        status: "cancelled",
+        raw_data: match,
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      await supabase.from("pandascore_matches")
+        .update(updateData)
+        .eq("match_id", match_id);
     }
   }
 
   await updateLiveRunningMatches();
+  await updateCancelledMatches();
 
   return new Response(
     JSON.stringify({
