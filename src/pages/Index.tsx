@@ -17,7 +17,7 @@ import LiveDataTestPanel from '@/components/LiveDataTestPanel';
 
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { getDetailedMatchCountsByDate, getTotalMatchCountsByDate, MatchCountBreakdown } from '@/utils/matchCountUtils';
-import { startOfDay, endOfDay, isToday } from 'date-fns';
+import { startOfDay, endOfDay, isToday, subMonths, addMonths, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
@@ -308,12 +308,16 @@ const Index = () => {
     
     // Create wider date range for calendar (1 month before to 3 months after today)
     const today = new Date();
-    const oneMonthBefore = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const threeMonthsAfter = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const oneMonthBefore = subMonths(today, 1);
+    const threeMonthsAfter = addMonths(today, 3);
     
     console.log('📅 Calendar date range:', {
+      today: today.toISOString(),
       from: oneMonthBefore.toISOString(),
-      to: threeMonthsAfter.toISOString()
+      to: threeMonthsAfter.toISOString(),
+      todayFormatted: format(today, 'yyyy-MM-dd'),
+      fromFormatted: format(oneMonthBefore, 'yyyy-MM-dd'),
+      toFormatted: format(threeMonthsAfter, 'yyyy-MM-dd')
     });
     
     // Fetch FACEIT matches for calendar
@@ -333,6 +337,30 @@ const Index = () => {
       console.error('❌ Error loading PandaScore matches for calendar:', pandascoreError);
     } else {
       console.log(`📅 Loaded ${pandascoreMatches?.length || 0} PandaScore matches for calendar`);
+      
+      // Debug: Show sample of PandaScore matches with their dates
+      const sampleMatches = (pandascoreMatches || []).slice(0, 10);
+      console.log('📅 Sample PandaScore matches from query:', sampleMatches.map(m => ({
+        match_id: m.match_id,
+        start_time: m.start_time,
+        esport_type: m.esport_type,
+        status: m.status
+      })));
+      
+      // Debug: Show date range of all matches
+      if (pandascoreMatches && pandascoreMatches.length > 0) {
+        const startTimes = pandascoreMatches.map(m => new Date(m.start_time));
+        const earliestMatch = new Date(Math.min(...startTimes.map(d => d.getTime())));
+        const latestMatch = new Date(Math.max(...startTimes.map(d => d.getTime())));
+        
+        console.log('📅 PandaScore matches date range:', {
+          earliest: earliestMatch.toISOString(),
+          latest: latestMatch.toISOString(),
+          earliestFormatted: format(earliestMatch, 'yyyy-MM-dd'),
+          latestFormatted: format(latestMatch, 'yyyy-MM-dd'),
+          totalCount: pandascoreMatches.length
+        });
+      }
     }
 
     // Transform PandaScore matches for calendar (lightweight)
