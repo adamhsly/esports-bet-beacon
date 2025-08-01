@@ -66,7 +66,7 @@ serve(async () => {
     for (const team of teams) {
       const mapped = {
         team_id: team.id?.toString(),
-        esport_type: team.videogame?.name ?? "unknown",
+        esport_type: team.current_videogame?.name ?? "unknown",
         name: team.name ?? "unknown",
         acronym: team.acronym ?? null,
         logo_url: team.image_url ?? null,
