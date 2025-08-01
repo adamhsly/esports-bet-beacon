@@ -116,6 +116,19 @@ serve(async () => {
       const match_id = match.id?.toString()
       if (!match_id) continue
 
+      // Skip if start_time is missing (required not null)
+      if (!match.begin_at) {
+        console.warn(`Skipping match ${match_id} because start_time (begin_at) is missing.`)
+        continue
+      }
+
+      // Skip if esport_type is missing (required not null)
+      const esportType = match.videogame?.name
+      if (!esportType) {
+        console.warn(`Skipping match ${match_id} because esport_type (videogame.name) is missing.`)
+        continue
+      }
+
       const { data: existing, error: fetchError } = await supabase
         .from('pandascore_matches')
         .select('modified_at')
@@ -139,9 +152,12 @@ serve(async () => {
       const teamAPlayerIds = await getTeamPlayerIds(teamAId)
       const teamBPlayerIds = await getTeamPlayerIds(teamBId)
 
+      // Set status or default to 'scheduled' if missing
+      const status = match.status ?? 'scheduled'
+
       const mapped = {
         match_id,
-        esport_type: match.videogame?.name ?? null,
+        esport_type: esportType,
         slug: match.slug,
         draw: match.draw,
         forfeit: match.forfeit,
@@ -157,7 +173,7 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at,
-        status: match.status,
+        status,
         match_type: match.match_type,
         number_of_games: match.number_of_games,
         tournament_id: match.tournament?.id?.toString() ?? null,
