@@ -46,7 +46,6 @@ serve(async (req) => {
     }
 
     if (!syncState) {
-      // Create initial sync state with last_match_row_id = 0
       const { error: insertSyncError } = await supabaseClient
         .from("pandascore_sync_state")
         .insert({
@@ -64,7 +63,6 @@ serve(async (req) => {
 
     const lastRowId = syncState.last_match_row_id || 0;
 
-    // Fetch next batch of matches with row_id > lastRowId
     const { data: matches, error: fetchError } = await supabaseClient
       .from("pandascore_matches")
       .select("row_id, match_id, start_time, esport_type, teams, status")
@@ -93,19 +91,25 @@ serve(async (req) => {
       const teams = match.teams as any[];
       const matchStatus = match.status;
 
-      if (!teams || teams.length === 0) {
-        console.warn(`No teams for match ${matchId}`);
+      if (!teams || !Array.isArray(teams)) {
+        console.warn(`Invalid or missing teams for match ${matchId}`);
         continue;
       }
 
-      for (const team of teams) {
-        const teamId = team.opponent?.id?.toString();
-        if (!teamId) {
-          console.warn(`No teamId for a team in match ${matchId}`);
-          continue;
-        }
+      // Get unique team IDs (stringified)
+      const uniqueTeamIds = [...new Set(
+        teams
+          .map(t => t.opponent?.id?.toString())
+          .filter(id => !!id)
+      )];
 
-        // Skip if already processed for this match+team
+      if (uniqueTeamIds.length !== 2) {
+        console.warn(`Skipping match ${matchId} — expected 2 teams, found ${uniqueTeamIds.length}`);
+        continue;
+      }
+
+      for (const teamId of uniqueTeamIds) {
+        // Check if stats already exist
         const { data: existingStat, error: existingStatError } = await supabaseClient
           .from("pandascore_match_team_stats")
           .select("id")
@@ -114,7 +118,7 @@ serve(async (req) => {
           .maybeSingle();
 
         if (existingStatError) {
-          console.error(`Error checking existing stats for match ${matchId} team ${teamId}`, existingStatError);
+          console.error(`Error checking existing stats for match ${matchId}, team ${teamId}:`, existingStatError);
           continue;
         }
         if (existingStat) {
@@ -122,7 +126,6 @@ serve(async (req) => {
           continue;
         }
 
-        // Fetch historical matches finished before this match start
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
@@ -130,21 +133,19 @@ serve(async (req) => {
           .lt("start_time", matchStartTime)
           .eq("status", "finished")
           .order("start_time", { ascending: true })
-          .limit(100); // Limit historical to 100 matches to reduce CPU/time
+          .limit(100);
 
         if (historyError || !historicalMatches) {
           console.error(`Error fetching history for team ${teamId}`, historyError);
           continue;
         }
 
-        // Filter matches for this team
-        const teamMatches = historicalMatches.filter(m => {
-          return (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId);
-        });
+        const teamMatches = historicalMatches.filter(m =>
+          (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId)
+        );
 
         const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
 
-        // Upsert stats (without match_status)
         const { error: insertError } = await supabaseClient
           .from("pandascore_match_team_stats")
           .upsert({
@@ -174,7 +175,6 @@ serve(async (req) => {
       if (matchRowId > maxProcessedRowId) maxProcessedRowId = matchRowId;
     }
 
-    // Update sync state with max processed row_id and timestamp
     const { error: updateSyncError } = await supabaseClient
       .from("pandascore_sync_state")
       .update({
