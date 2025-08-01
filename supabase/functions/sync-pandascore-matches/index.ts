@@ -34,7 +34,9 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    const formatted = lives.map((match: any) => ({
+    const formatted = lives
+    .filter((match: any) => match.videogame?.name) // ✅ Skip if esport_type is null
+    .map((match: any) => ({
       match_id: String(match.id),
       esport_type: match.videogame?.name || null,
       teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
