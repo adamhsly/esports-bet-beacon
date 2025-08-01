@@ -73,7 +73,7 @@ serve(async () => {
         .upsert({
           id: 'matches',
           max_page: totalPages,
-          last_page: page - 1,
+          last_page: page - 1, // store previous last_page correctly
           last_synced_at: new Date().toISOString(),
         }, { onConflict: ['id'] })
 
@@ -116,12 +116,15 @@ serve(async () => {
       const match_id = match.id?.toString()
       if (!match_id) continue
 
-      // Skip matches with missing required fields
+      // Skip match if start_time (begin_at) is missing (NOT NULL constraint in DB)
       if (!match.begin_at) {
         console.log(`Skipping match ${match_id} because start_time (begin_at) is missing.`)
         continue
       }
-      if (!match.videogame?.name) {
+
+      // Upsert required fields only if they have values for NOT NULL constraints
+      const esport_type = match.videogame?.name ?? null
+      if (!esport_type) {
         console.log(`Skipping match ${match_id} because esport_type (videogame.name) is missing.`)
         continue
       }
@@ -151,7 +154,7 @@ serve(async () => {
 
       const mapped = {
         match_id,
-        esport_type: match.videogame?.name ?? null,
+        esport_type,
         slug: match.slug,
         draw: match.draw,
         forfeit: match.forfeit,
@@ -197,6 +200,7 @@ serve(async () => {
       }
     }
 
+    // Update sync state in DB after processing this page
     console.log(`📝 Updating sync state → last_page: ${page}, max_page: ${totalPages}`)
 
     const { error: syncUpdateError } = await supabase
@@ -210,6 +214,8 @@ serve(async () => {
 
     if (syncUpdateError) {
       console.error(`❌ Failed to update sync state for page ${page}:`, syncUpdateError)
+    } else {
+      console.log(`✅ Sync state updated successfully for page ${page}`)
     }
 
     page++
