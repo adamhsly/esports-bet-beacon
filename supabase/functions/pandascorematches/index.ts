@@ -5,6 +5,29 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function fetchWithRetries(
+  url: string,
+  options: RequestInit,
+  retries = 3,
+  delay = 1000
+): Promise<Response> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch(url, options)
+    if (res.ok) return res
+
+    if (res.status >= 500 && res.status < 600) {
+      console.warn(`API server error (${res.status}), attempt ${attempt} of ${retries}. Retrying in ${delay}ms...`)
+      await sleep(delay)
+      delay *= 2 // exponential backoff
+      continue
+    }
+
+    // Other errors return immediately
+    return res
+  }
+  throw new Error(`Failed to fetch ${url} after ${retries} attempts`)
+}
+
 serve(async () => {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -40,7 +63,23 @@ serve(async () => {
     return playerIds
   }
 
-  // Get last synced page and max page from sync state table
+  // **Reset sync state at start**
+  const { error: resetError } = await supabase
+    .from('pandascore_sync_state')
+    .upsert({
+      id: 'matches',
+      last_page: 0,
+      max_page: 0,
+      last_synced_at: new Date().toISOString(),
+    }, { onConflict: ['id'] })
+
+  if (resetError) {
+    console.error('Failed to reset sync state at start:', resetError)
+  } else {
+    console.log('Reset sync state to last_page=0 and max_page=0 at start')
+  }
+
+  // Get sync state (after reset)
   const { data: syncState, error: syncStateError } = await supabase
     .from('pandascore_sync_state')
     .select('last_page, max_page')
@@ -55,10 +94,18 @@ serve(async () => {
   let totalFetched = 0
   let totalPages = syncState?.max_page ?? 0
 
-  // Optional: Log total available and set max_page on first run or if not set
-  const testRes = await fetch(`${BASE_URL}?per_page=1`, {
+  // Fetch total matches to calculate max_page
+  const testRes = await fetchWithRetries(`${BASE_URL}?per_page=1`, {
     headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
   })
+
+  if (!testRes.ok) {
+    console.error('Failed to fetch total matches:', await testRes.text())
+    return new Response(JSON.stringify({ status: 'error', message: 'Failed to fetch total matches' }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const total = testRes.headers.get('X-Total')
   console.log(`Total matches available: ${total}`)
 
@@ -73,7 +120,7 @@ serve(async () => {
         .upsert({
           id: 'matches',
           max_page: totalPages,
-          last_page: page - 1, // store previous last_page correctly
+          last_page: 0,
           last_synced_at: new Date().toISOString(),
         }, { onConflict: ['id'] })
 
@@ -89,9 +136,15 @@ serve(async () => {
     const url = `${BASE_URL}?per_page=${PER_PAGE}&page=${page}&sort=modified_at`
     console.log(`Fetching page ${page}: ${url}`)
 
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
-    })
+    let res: Response
+    try {
+      res = await fetchWithRetries(url, {
+        headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+      })
+    } catch (e) {
+      console.error(`Fetch error on page ${page}:`, e)
+      break
+    }
 
     if (!res.ok) {
       console.error(`PandaScore error on page ${page}:`, await res.text())
@@ -116,16 +169,17 @@ serve(async () => {
       const match_id = match.id?.toString()
       if (!match_id) continue
 
-      // Skip match if start_time (begin_at) is missing (NOT NULL constraint in DB)
+      // Check for required non-null fields (start_time, esport_type, teams)
       if (!match.begin_at) {
         console.log(`Skipping match ${match_id} because start_time (begin_at) is missing.`)
         continue
       }
-
-      // Upsert required fields only if they have values for NOT NULL constraints
-      const esport_type = match.videogame?.name ?? null
-      if (!esport_type) {
+      if (!match.videogame?.name) {
         console.log(`Skipping match ${match_id} because esport_type (videogame.name) is missing.`)
+        continue
+      }
+      if (!match.opponents || !Array.isArray(match.opponents) || match.opponents.length === 0) {
+        console.log(`Skipping match ${match_id} because teams (opponents) is missing or empty.`)
         continue
       }
 
@@ -154,7 +208,7 @@ serve(async () => {
 
       const mapped = {
         match_id,
-        esport_type,
+        esport_type: match.videogame?.name ?? null,
         slug: match.slug,
         draw: match.draw,
         forfeit: match.forfeit,
@@ -200,7 +254,6 @@ serve(async () => {
       }
     }
 
-    // Update sync state in DB after processing this page
     console.log(`📝 Updating sync state → last_page: ${page}, max_page: ${totalPages}`)
 
     const { error: syncUpdateError } = await supabase
@@ -214,8 +267,6 @@ serve(async () => {
 
     if (syncUpdateError) {
       console.error(`❌ Failed to update sync state for page ${page}:`, syncUpdateError)
-    } else {
-      console.log(`✅ Sync state updated successfully for page ${page}`)
     }
 
     page++
