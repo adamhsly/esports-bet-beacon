@@ -34,9 +34,12 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    const formatted = lives
-    .filter((match: any) => match.videogame?.name) // ✅ Skip if esport_type is null
-    .map((match: any) => ({
+    // Filter out matches with missing esport_type (videogame name)
+    const filteredLives = lives.filter((match: any) => match.videogame?.name);
+
+    console.log(`Filtered out ${lives.length - filteredLives.length} matches missing esport_type`);
+
+    const formatted = filteredLives.map((match: any) => ({
       match_id: String(match.id),
       esport_type: match.videogame?.name || null,
       teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
@@ -71,7 +74,6 @@ serve(async (req) => {
       team_b_player_ids: match.opponents?.[1]?.players?.map((p: any) => p.id) ?? [],
     }));
 
-    // Upsert based on match_id, not uuid
     const { error } = await supabase
       .from("pandascore_matches")
       .upsert(formatted, { onConflict: "match_id" });
