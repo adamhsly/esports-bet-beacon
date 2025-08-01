@@ -33,7 +33,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Fetch or create sync state
     let { data: syncState, error: syncError } = await supabaseClient
       .from("pandascore_sync_state")
       .select("*")
@@ -53,10 +52,12 @@ serve(async (req) => {
           last_match_row_id: 0,
           last_synced_at: new Date().toISOString(),
         });
+
       if (insertSyncError) {
         console.error("Error creating initial sync state:", insertSyncError);
         return new Response(JSON.stringify({ error: "Error creating initial sync state" }), { status: 500, headers: corsHeaders });
       }
+
       syncState = { last_match_row_id: 0 };
       console.log("Created initial sync state");
     }
@@ -86,19 +87,24 @@ serve(async (req) => {
     for (const match of matches) {
       const matchRowId = match.row_id;
       const matchId = match.match_id.toString();
-      const esportType = match.esport_type;
-      const matchStartTime = match.start_time;
-      const teams = match.teams as any[];
-      const matchStatus = match.status;
 
-      if (!teams || !Array.isArray(teams)) {
-        console.warn(`Invalid or missing teams for match ${matchId}`);
+      // Skip PUBG matches entirely
+      if (match.esport_type === "PUBG") {
+        console.log(`Skipping match ${matchId} — esport_type is PUBG`);
         continue;
       }
 
-      // Get unique team IDs (stringified)
+      const esportType = match.esport_type;
+      const matchStartTime = match.start_time;
+      const rawTeams = match.teams;
+
+      if (!Array.isArray(rawTeams)) {
+        console.warn(`Skipping match ${matchId} — teams field is not an array`, rawTeams);
+        continue;
+      }
+
       const uniqueTeamIds = [...new Set(
-        teams
+        rawTeams
           .map(t => t.opponent?.id?.toString())
           .filter(id => !!id)
       )];
@@ -109,7 +115,6 @@ serve(async (req) => {
       }
 
       for (const teamId of uniqueTeamIds) {
-        // Check if stats already exist
         const { data: existingStat, error: existingStatError } = await supabaseClient
           .from("pandascore_match_team_stats")
           .select("id")
@@ -118,9 +123,10 @@ serve(async (req) => {
           .maybeSingle();
 
         if (existingStatError) {
-          console.error(`Error checking existing stats for match ${matchId}, team ${teamId}:`, existingStatError);
+          console.error(`Supabase query failed for match ${matchId}, team ${teamId}:`, existingStatError);
           continue;
         }
+
         if (existingStat) {
           console.log(`Skipping team ${teamId} for match ${matchId} (already processed)`);
           continue;
@@ -275,6 +281,7 @@ function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime:
 }
 
 function getOpponentName(teamId: string, teams: any[]): string | null {
+  if (!Array.isArray(teams)) return null;
   for (const team of teams) {
     if (team.opponent?.id?.toString() !== teamId) {
       return team.opponent?.name || null;
