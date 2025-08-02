@@ -504,9 +504,11 @@ const Index = () => {
   // Load calendar matches for wider date range visualization
   useEffect(() => {
     async function loadCalendarMatches() {
+      console.log('🔄 Starting calendar matches load...');
       setLoadingAllMatches(true);
       try {
         const calendarMatches = await loadMatchCountsForCalendar();
+        console.log(`🔄 Calendar matches loaded: ${calendarMatches.length} total matches`);
         setAllMatches(calendarMatches);
         
         // Initialize date to today's date
@@ -519,7 +521,7 @@ const Index = () => {
         
         console.log('📅 Calendar counts updated with wider dataset');
       } catch (error) {
-        console.error('Error loading calendar matches:', error);
+        console.error('❌ Error loading calendar matches:', error);
         setAllMatches([]);
       } finally {
         setLoadingAllMatches(false);
@@ -527,7 +529,7 @@ const Index = () => {
     }
     
     loadCalendarMatches();
-  }, [hasInitializedDate]);
+  }, []);
 
   // 🔧 ENHANCED: Updated filtering function for game type with comprehensive game support
   const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
