@@ -922,17 +922,25 @@ const Index = () => {
   const matchCounts = getTotalMatchCountsByDate(filteredAllMatchesForCalendar);
   const detailedMatchCounts = getDetailedMatchCountsByDate(filteredAllMatchesForCalendar);
   
-  // Debug calendar match counts
-  console.log('📅 Calendar Debug Info:', {
-    totalMatches: allMatches.length,
-    filteredMatches: filteredAllMatchesForCalendar.length,
-    selectedGameType,
-    matchCountKeys: Object.keys(matchCounts),
-    sampleMatchCounts: Object.keys(matchCounts).slice(0, 5).reduce((acc, key) => {
-      acc[key] = matchCounts[key];
-      return acc;
-    }, {} as Record<string, number>)
-  });
+  // Debug calendar match counts when data changes
+  useEffect(() => {
+    console.log('📅 Calendar Debug Info:', {
+      totalMatches: allMatches.length,
+      filteredMatches: filteredAllMatchesForCalendar.length,
+      selectedGameType,
+      matchCountKeys: Object.keys(matchCounts),
+      sampleMatchCounts: Object.keys(matchCounts).slice(0, 5).reduce((acc, key) => {
+        acc[key] = matchCounts[key];
+        return acc;
+      }, {} as Record<string, number>),
+      pandascore_matches_sample: allMatches.filter(m => m.source === 'professional').slice(0, 3).map(m => ({
+        id: m.id,
+        startTime: m.startTime,
+        status: m.status,
+        teams: m.teams.map(t => t.name)
+      }))
+    });
+  }, [allMatches.length, selectedGameType, filteredAllMatchesForCalendar.length]);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
