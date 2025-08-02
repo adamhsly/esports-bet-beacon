@@ -406,12 +406,99 @@ const Index = () => {
     return filteredMatches;
   };
 
-  // Simplified: Use calendar data for display to avoid duplicate loading
+  // Updated unified match loading function for display (focused date range for performance)
   const loadAllMatchesFromDatabase = async (): Promise<MatchInfo[]> => {
-    console.log('🔄 Using calendar matches for display (no duplicate loading)...');
+    console.log('🔄 Loading matches for display with focused date range...');
     
-    // Return the already loaded calendar matches
-    return allMatches;
+    // Fetch FACEIT matches with full data including status and results
+    const faceitMatches = await fetchSupabaseFaceitAllMatches();
+    console.log(`📊 Loaded ${faceitMatches.length} FACEIT matches from database`);
+    
+    // Create focused date range based on selected date for display performance
+    const selectedDateStart = startOfDay(selectedDate);
+    const oneWeekBefore = new Date(selectedDateStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAfter = new Date(selectedDateStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    console.log('🔍 Display date range:', {
+      selectedDate: selectedDate.toDateString(),
+      from: oneWeekBefore.toISOString(),
+      to: oneMonthAfter.toISOString()
+    });
+    
+    // Fetch PandaScore matches for display with focused range
+    const { data: pandascoreMatches, error: pandascoreError } = await supabase
+      .from('pandascore_matches')
+      .select('*')
+      .gte('start_time', oneWeekBefore.toISOString())
+      .lte('start_time', oneMonthAfter.toISOString())
+      .order('start_time', { ascending: true })
+      .limit(3000);
+
+    if (pandascoreError) {
+      console.error('❌ Error loading PandaScore matches for display:', pandascoreError);
+    } else {
+      console.log(`📊 Loaded ${pandascoreMatches?.length || 0} PandaScore matches for display`);
+    }
+
+    // Transform PandaScore matches to MatchInfo format with consistent ID prefixing and correct team IDs
+    const transformedPandaScore = (pandascoreMatches || []).map(match => {
+      const matchId = `pandascore_${match.match_id}`;
+      
+      console.log(`🔄 Processing PandaScore match ${match.match_id}:`, { 
+        teams: match.teams, 
+        esport_type: match.esport_type,
+        status: match.status,
+        start_time: match.start_time 
+      });
+      
+      // Extract team data using helper function (supports both formats)
+      const team1Data = extractTeamData(match.teams, 0, match.match_id);
+      const team2Data = extractTeamData(match.teams, 1, match.match_id);
+      
+      console.log(`🏆 Team data for match ${match.match_id}:`, { team1Data, team2Data });
+      
+      const transformedMatch = {
+        id: matchId, // Ensure consistent prefixing for homepage
+        teams: [
+          {
+            name: team1Data.name || 'TBD',
+            logo: team1Data.image_url || '/placeholder.svg',
+            id: team1Data.id?.toString() || `pandascore_team_${match.match_id}_1`
+          },
+          {
+            name: team2Data.name || 'TBD',
+            logo: team2Data.image_url || '/placeholder.svg',
+            id: team2Data.id?.toString() || `pandascore_team_${match.match_id}_2`
+          }
+        ] as [any, any],
+        startTime: match.start_time,
+        tournament: match.tournament_name || match.league_name || 'Professional Tournament',
+        tournament_name: match.tournament_name,
+        league_name: match.league_name,
+        esportType: match.esport_type,
+        bestOf: match.number_of_games || 3,
+        source: 'professional' as const,
+        status: match.status, // Include status for proper categorization
+        rawData: match.raw_data // 🔧 FIXED: Pass the complete rawData
+      } satisfies MatchInfo;
+      
+      console.log(`✅ Transformed PandaScore match ${match.match_id}:`, transformedMatch);
+      return transformedMatch;
+    });
+
+    const combinedMatches = [...faceitMatches, ...transformedPandaScore];
+    console.log(`📊 Total unified dataset: ${combinedMatches.length} matches (${faceitMatches.length} FACEIT + ${transformedPandaScore.length} PandaScore)`);
+    
+    // Filter out matches with placeholder team names
+    const filteredMatches = combinedMatches.filter(match => {
+      const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+      // Hide matches where any team is TBC or TBD
+      return !teamNames.some(name => name === 'tbc' || name === 'tbd');
+    });
+    
+    console.log(`📊 After filtering TBC/TBD: ${filteredMatches.length} matches (removed ${combinedMatches.length - filteredMatches.length})`);
+    
+    return filteredMatches;
   };
 
   // Load calendar matches for wider date range visualization
@@ -835,23 +922,25 @@ const Index = () => {
   const matchCounts = getTotalMatchCountsByDate(filteredAllMatchesForCalendar);
   const detailedMatchCounts = getDetailedMatchCountsByDate(filteredAllMatchesForCalendar);
   
-  // Debug calendar match counts immediately
-  console.log('📅 Calendar Debug Info (immediate):', {
-    totalMatches: allMatches.length,
-    filteredMatches: filteredAllMatchesForCalendar.length,
-    selectedGameType,
-    matchCountKeys: Object.keys(matchCounts),
-    sampleMatchCounts: Object.keys(matchCounts).slice(0, 5).reduce((acc, key) => {
-      acc[key] = matchCounts[key];
-      return acc;
-    }, {} as Record<string, number>),
-    pandascore_matches_sample: allMatches.filter(m => m.source === 'professional').slice(0, 3).map(m => ({
-      id: m.id,
-      startTime: m.startTime,
-      status: m.status,
-      teams: m.teams.map(t => t.name)
-    }))
-  });
+  // Debug calendar match counts when data changes
+  useEffect(() => {
+    console.log('📅 Calendar Debug Info:', {
+      totalMatches: allMatches.length,
+      filteredMatches: filteredAllMatchesForCalendar.length,
+      selectedGameType,
+      matchCountKeys: Object.keys(matchCounts),
+      sampleMatchCounts: Object.keys(matchCounts).slice(0, 5).reduce((acc, key) => {
+        acc[key] = matchCounts[key];
+        return acc;
+      }, {} as Record<string, number>),
+      pandascore_matches_sample: allMatches.filter(m => m.source === 'professional').slice(0, 3).map(m => ({
+        id: m.id,
+        startTime: m.startTime,
+        status: m.status,
+        teams: m.teams.map(t => t.name)
+      }))
+    });
+  }, [allMatches.length, selectedGameType, filteredAllMatchesForCalendar.length]);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
