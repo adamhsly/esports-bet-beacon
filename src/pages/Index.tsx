@@ -454,10 +454,9 @@ const Index = () => {
     async function loadCalendarCounts() {
       setLoadingCalendar(true);
       try {
-        console.log('📅 Loading calendar counts using Supabase functions...');
+        console.log('📅 Loading calendar counts using Supabase functions for target date:', selectedDate.toDateString());
         
-        const today = new Date();
-        const matchCountBreakdown = await getMatchCountsAroundDate(today);
+        const matchCountBreakdown = await getMatchCountsAroundDate(selectedDate);
         const totalCounts = getTotalMatchCountsByDate(matchCountBreakdown);
         
         setDetailedMatchCounts(matchCountBreakdown);
@@ -479,7 +478,7 @@ const Index = () => {
     }
     
     loadCalendarCounts();
-  }, []);
+  }, [selectedDate]);
 
   // Load matches for the selected date using Supabase functions
   useEffect(() => {
