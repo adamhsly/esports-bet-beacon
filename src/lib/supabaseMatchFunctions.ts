@@ -94,10 +94,10 @@ export async function getMatchCountsAroundDate(targetDate: Date): Promise<Record
   try {
     // Call both Supabase functions in parallel
     const [faceitResult, pandascoreResult] = await Promise.all([
-      supabase.rpc('faceit_get_match_counts_around_date', { 
+      (supabase.rpc as any)('faceit_get_match_counts_around_date', { 
         target_date: targetDate.toISOString() 
       }),
-      supabase.rpc('pandascore_get_match_counts_around_date', { 
+      (supabase.rpc as any)('pandascore_get_match_counts_around_date', { 
         target_date: targetDate.toISOString() 
       })
     ]);
@@ -110,8 +110,8 @@ export async function getMatchCountsAroundDate(targetDate: Date): Promise<Record
       console.error('❌ Error fetching PandaScore match counts:', pandascoreResult.error);
     }
 
-    const faceitCounts = faceitResult.data || [];
-    const pandascoreCounts = pandascoreResult.data || [];
+    const faceitCounts = Array.isArray(faceitResult.data) ? faceitResult.data : [];
+    const pandascoreCounts = Array.isArray(pandascoreResult.data) ? pandascoreResult.data : [];
 
     console.log(`📊 FACEIT counts: ${faceitCounts.length} days`);
     console.log(`📊 PandaScore counts: ${pandascoreCounts.length} days`);
@@ -239,10 +239,10 @@ export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[
   try {
     // Call both Supabase functions in parallel
     const [faceitResult, pandascoreResult] = await Promise.all([
-      supabase.rpc('get_faceit_matches_around_date', { 
+      (supabase.rpc as any)('get_faceit_matches_around_date', { 
         target_date: targetDate.toISOString() 
       }),
-      supabase.rpc('get_pandascore_matches_around_date', { 
+      (supabase.rpc as any)('get_pandascore_matches_around_date', { 
         target_date: targetDate.toISOString() 
       })
     ]);
@@ -255,8 +255,8 @@ export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[
       console.error('❌ Error fetching PandaScore matches:', pandascoreResult.error);
     }
 
-    const faceitMatches = faceitResult.data || [];
-    const pandascoreMatches = pandascoreResult.data || [];
+    const faceitMatches = Array.isArray(faceitResult.data) ? faceitResult.data : [];
+    const pandascoreMatches = Array.isArray(pandascoreResult.data) ? pandascoreResult.data : [];
 
     console.log(`📊 Retrieved ${faceitMatches.length} FACEIT matches and ${pandascoreMatches.length} PandaScore matches`);
 
