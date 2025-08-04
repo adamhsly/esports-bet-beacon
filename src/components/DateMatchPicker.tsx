@@ -60,8 +60,9 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
   // Helper to handle calendar date selection
   const handleCalendarSelect = (date: Date | undefined) => {
     if (date) {
-      setStartDate(addDays(startOfDay(date), -3)); // Center calendar on new picked date
-      onDateSelect(startOfDay(date));
+      const selectedDateStart = startOfDay(date);
+      setStartDate(addDays(selectedDateStart, -3)); // Center calendar on new picked date
+      onDateSelect(selectedDateStart);
       setCalendarOpen(false);
     }
   };
