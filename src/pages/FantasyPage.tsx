@@ -18,7 +18,7 @@ const FantasyPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-theme-purple to-theme-green bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Fantasy Esports
             </span>
           </h1>
