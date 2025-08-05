@@ -158,17 +158,17 @@ export const InProgressRounds: React.FC = () => {
 
   const getRoundTypeColor = (type: string) => {
     switch (type) {
-      case 'daily': return 'bg-blue-500';
-      case 'weekly': return 'bg-green-500';
-      case 'monthly': return 'bg-purple-500';
-      default: return 'bg-gray-500';
+      case 'daily': return 'bg-blue-600 text-white';
+      case 'weekly': return 'bg-green-600 text-white';
+      case 'monthly': return 'bg-primary text-primary-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin w-8 h-8 border-2 border-theme-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading your active rounds...</p>
       </div>
     );
@@ -204,7 +204,7 @@ export const InProgressRounds: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-xl capitalize">{round.type} Round</CardTitle>
-                  <Badge className={`${getRoundTypeColor(round.type)} text-white`}>
+                  <Badge className={getRoundTypeColor(round.type)}>
                     {round.type}
                   </Badge>
                 </div>
@@ -254,7 +254,7 @@ export const InProgressRounds: React.FC = () => {
                           </div>
                           
                           <div className="text-right">
-                            <div className="text-lg font-bold text-theme-purple">
+                            <div className="text-lg font-bold text-primary">
                               {score.current_score} pts
                             </div>
                             <div className="text-xs text-muted-foreground">

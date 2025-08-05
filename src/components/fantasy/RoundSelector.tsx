@@ -53,10 +53,10 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
 
   const getRoundTypeColor = (type: string) => {
     switch (type) {
-      case 'daily': return 'bg-blue-500';
-      case 'weekly': return 'bg-green-500';
-      case 'monthly': return 'bg-purple-500';
-      default: return 'bg-gray-500';
+      case 'daily': return 'bg-blue-600 text-white';
+      case 'weekly': return 'bg-green-600 text-white';
+      case 'monthly': return 'bg-primary text-primary-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -92,7 +92,7 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin w-8 h-8 border-2 border-theme-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading fantasy rounds...</p>
       </div>
     );
@@ -127,7 +127,7 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg capitalize">{round.type} Round</CardTitle>
-                <Badge className={`${getRoundTypeColor(round.type)} text-white`}>
+                <Badge className={getRoundTypeColor(round.type)}>
                   {round.type}
                 </Badge>
               </div>
