@@ -12,9 +12,9 @@ interface RoundSelectorProps {
 }
 
 const roundImageMap: Record<string, string> = {
-  daily: '/lovable-uploads/daily_round.png',
-  weekly: '/lovable-uploads/weekly_round.png',
-  monthly: '/lovable-uploads/monthly_round.png',
+  daily: '/lovable-uploads/daily_round/daily.png',
+  weekly: '/lovable-uploads/weekly_round/weekly.png',
+  monthly: '/lovable-uploads/monthly_round/monthly.png',
 };
 
 const getRoundTypeColor = (type: string) => {
@@ -30,27 +30,19 @@ const getRoundTypeColor = (type: string) => {
   }
 };
 
-// Inline helpers
-const formatDate = (dateStr: string | Date) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-};
-
-const calculateDuration = (startStr: string | Date, endStr: string | Date) => {
-  const start = new Date(startStr).getTime();
-  const end = new Date(endStr).getTime();
-  const diffMs = end - start;
-  const hours = Math.floor(diffMs / 1000 / 60 / 60);
-  const minutes = Math.floor((diffMs / 1000 / 60) % 60);
-  return `${hours}h ${minutes}m`;
-};
-
 export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelectedRound }) => {
+  // Filter only open rounds
+  const openRounds = rounds.filter((round) => round.status?.toLowerCase() === 'open');
+
+  if (openRounds.length === 0) {
+    return <p className="text-gray-400 text-center mt-4">No open rounds available</p>;
+  }
+
   return (
     <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {rounds.map((round) => {
-        const roundType = round.type.toLowerCase();
-        const roundImage = roundImageMap[roundType] || '/lovable-uploads/default.png';
+      {openRounds.map((round) => {
+        const roundType = round.type?.toLowerCase() || 'default';
+        const roundImage = round.image_url || roundImageMap[roundType] || '/lovable-uploads/default.png';
 
         return (
           <Card
@@ -60,6 +52,7 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelecte
             )}
           >
             <CardContent className="flex flex-col gap-3 p-4">
+              {/* Image */}
               <div className="w-full flex justify-center">
                 <img
                   src={roundImage}
@@ -68,15 +61,24 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelecte
                 />
               </div>
 
+              {/* Info */}
               <div className="space-y-2 text-sm text-gray-300 mt-2">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
-                  <span>{formatDate(round.start_date)}</span>
+                  <span>{new Date(round.start_date).toLocaleDateString()}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-gray-400" />
-                  <span>Duration: {calculateDuration(round.start_date, round.end_date)}</span>
+                  <span>
+                    Duration:{' '}
+                    {round.start_date && round.end_date
+                      ? `${Math.ceil(
+                          (new Date(round.end_date).getTime() - new Date(round.start_date).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )} days`
+                      : 'N/A'}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -85,13 +87,9 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelecte
                 </div>
               </div>
 
+              {/* Badge + Button */}
               <div className="flex items-center justify-between mt-4">
-                <Badge
-                  className={cn(
-                    'px-3 py-1 text-xs font-medium rounded-full',
-                    getRoundTypeColor(roundType)
-                  )}
-                >
+                <Badge className={cn('px-3 py-1 text-xs font-medium rounded-full', getRoundTypeColor(roundType))}>
                   {round.type}
                 </Badge>
 
