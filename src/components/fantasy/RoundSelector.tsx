@@ -1,162 +1,94 @@
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Clock, Users, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Calendar, Clock, Users } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import { Button } from '@/components/ui/button';
+import { formatDate, calculateDuration } from '@/utils/formatUtils'; // Assumes you have these
+import { cn } from '@/lib/utils';
+import { Round } from '@/types/rounds';
 
-interface Team {
-  id: string;
-  name: string;
-  image_url?: string;
-  hash_image?: string;
+interface RoundSelectorProps {
+  rounds: Round[];
+  setSelectedRound: (round: Round) => void;
 }
 
-interface Match {
-  id: string;
-  teams: [Team, Team];
-  startTime: string;
-  bestOf: number;
-  status: string;
-  faceitData?: {
-    results?: {
-      winner: string;
-      score: {
-        faction1: number;
-        faction2: number;
-      };
-    };
-  };
-}
+const roundImageMap: Record<string, string> = {
+  daily: '/lovable-uploads/daily_round/daily.png',
+  weekly: '/lovable-uploads/weekly_round/weekly.png',
+  monthly: '/lovable-uploads/monthly_round/monthly.png',
+};
 
-interface FaceitMatchListProps {
-  matches: Match[];
-}
-
-const getBOBadgeClass = (bo: number) => {
-  switch (bo) {
-    case 1: return 'bg-green-500/20 text-green-400 border-green-400/30 ml-1';
-    case 2: return 'bg-yellow-400/20 text-yellow-400 border-yellow-400/30 ml-1';
-    case 3: return 'bg-purple-500/20 text-purple-400 border-purple-400/30 ml-1';
-    case 5: return 'bg-pink-500/20 text-pink-400 border-pink-400/30 ml-1';
-    case 7: return 'bg-red-500/20 text-red-400 border-red-400/30 ml-1';
-    default: return 'bg-neutral-500/20 text-neutral-300 border-neutral-400/25 ml-1';
+const getRoundTypeColor = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'daily':
+      return 'bg-blue-500/20 text-blue-400 border border-blue-400/30';
+    case 'weekly':
+      return 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30';
+    case 'monthly':
+      return 'bg-purple-500/20 text-purple-400 border border-purple-400/30';
+    default:
+      return 'bg-gray-500/20 text-gray-400 border border-gray-400/30';
   }
 };
 
-const FaceitMatchList: React.FC<FaceitMatchListProps> = ({ matches }) => {
+export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelectedRound }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {matches.map((match) => {
-        const matchDate = new Date(match.startTime);
-        const isFinished = ['finished', 'completed', 'cancelled'].includes(match.status.toLowerCase());
-        const isLive = ['ongoing', 'running', 'live'].includes(match.status.toLowerCase());
-        const finalScore = match.faceitData?.results
-          ? `${match.faceitData.results.score.faction1} - ${match.faceitData.results.score.faction2}`
-          : null;
-
-        const getWinnerStyling = (teamIndex: number) => {
-          if (!isFinished || !match.faceitData?.results) return '';
-          const isWinner = match.faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
-          return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
-        };
+    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {rounds.map((round) => {
+        const roundType = round.type.toLowerCase();
+        const roundImage = roundImageMap[roundType] || '/lovable-uploads/default.png';
 
         return (
-          <Link
-            key={match.id}
-            to={`/faceit/match/${match.id.replace('faceit_', '')}`}
-            className="group block focus:outline-none"
+          <Card
+            key={round.id}
+            className={cn(
+              'bg-theme-gray-medium ring-1 ring-theme-gray-dark/30 border-0 rounded-xl shadow-none px-0 py-0 transition-all duration-200 group hover:scale-[1.015] hover:shadow-md hover:ring-2 hover:ring-theme-purple/70 cursor-pointer'
+            )}
           >
-            <Card
-              className="bg-orange-950/70 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none px-0 py-0 transition-transform group-hover:scale-[1.015] group-hover:shadow-md group-hover:ring-2 group-hover:ring-theme-purple/70"
-            >
-              <div className="flex flex-col gap-1 px-3 py-2">
-                <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
-                    FACEIT
-                  </span>
-                  {isFinished && finalScore ? (
-                    <div className="flex items-center gap-1 text-xs text-green-400 font-semibold">
-                      <CheckCircle size={12} />
-                      <span>{finalScore}</span>
-                    </div>
-                  ) : isLive ? (
-                    <div className="flex items-center gap-1 text-xs text-red-400 font-semibold">
-                      <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
-                      <span>LIVE</span>
-                    </div>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
-                      <Clock size={14} className="mr-1" />
-                      {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  )}
+            <CardContent className="flex flex-col gap-3 p-4">
+              {/* Image */}
+              <div className="w-full flex justify-center">
+                <img
+                  src={roundImage}
+                  alt={`${round.type} round`}
+                  className="w-24 h-24 object-contain"
+                />
+              </div>
+
+              {/* Info */}
+              <div className="space-y-2 text-sm text-gray-300 mt-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <span>{formatDate(round.start_date)}</span>
                 </div>
 
-                {/* Teams row */}
-                <div className="flex items-center justify-between min-h-10 mt-0.5">
-                  <div className={`flex items-center gap-2 flex-1 rounded-lg p-1 transition-all ${getWinnerStyling(0)}`}>
-                    <img
-                      src={getEnhancedTeamLogoUrl(match.teams[0])}
-                      alt={`${match.teams[0].name} logo`}
-                      className="w-7 h-7 object-contain rounded-md bg-gray-800"
-                      onError={(e) => (e.currentTarget.src = '/placeholder.svg')}
-                    />
-                    <span className="truncate font-semibold text-sm text-white max-w-[90px]">
-                      {match.teams[0].name}
-                    </span>
-                  </div>
-
-                  <span className="text-md font-bold text-gray-400 mx-2">vs</span>
-
-                  <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-1 transition-all ${getWinnerStyling(1)}`}>
-                    <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">
-                      {match.teams[1].name}
-                    </span>
-                    <img
-                      src={getEnhancedTeamLogoUrl(match.teams[1])}
-                      alt={`${match.teams[1].name} logo`}
-                      className="w-7 h-7 object-contain rounded-md bg-gray-800"
-                      onError={(e) => (e.currentTarget.src = '/placeholder.svg')}
-                    />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                  <span>Duration: {calculateDuration(round.start_date, round.end_date)}</span>
                 </div>
 
-                {/* Labels */}
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center">
-                    <Badge
-                      variant="outline"
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-orange-500/20 text-orange-400 border-orange-400/30"
-                    >
-                      <Users size={13} className="mr-1" />
-                      FACEIT
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${getBOBadgeClass(match.bestOf)}`}
-                    >
-                      BO{match.bestOf}
-                    </Badge>
-                    {isFinished && (
-                      <Badge
-                        variant="outline"
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-400/30 ml-1"
-                      >
-                        <CheckCircle size={10} className="mr-1" />
-                        FINISHED
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="flex-1" />
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-gray-400" />
+                  <span>Teams: Up to 5 (Mix pro & amateur)</span>
                 </div>
               </div>
-            </Card>
-          </Link>
+
+              {/* Badge + Button */}
+              <div className="flex items-center justify-between mt-4">
+                <Badge className={cn('px-3 py-1 text-xs font-medium rounded-full', getRoundTypeColor(roundType))}>
+                  {round.type}
+                </Badge>
+
+                <Button
+                  className="ml-auto bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2"
+                  onClick={() => setSelectedRound(round)}
+                >
+                  Join Round
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>
   );
 };
-
-export default FaceitMatchList;
