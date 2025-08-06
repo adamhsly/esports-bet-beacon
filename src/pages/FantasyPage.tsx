@@ -7,9 +7,18 @@ import { RoundSelector } from '@/components/fantasy/RoundSelector';
 import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { Calendar, Clock, Trophy } from 'lucide-react';
+import { Round } from '@/types/rounds';
+
+// Example rounds data (replace with actual API data)
+const exampleRounds: Round[] = [
+  { id: '1', type: 'daily', start_date: new Date(), end_date: new Date() },
+  { id: '2', type: 'weekly', start_date: new Date(), end_date: new Date() },
+  { id: '3', type: 'monthly', start_date: new Date(), end_date: new Date() },
+];
 
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
+  const [selectedRound, setSelectedRound] = useState<Round | null>(null);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
@@ -55,7 +64,11 @@ const FantasyPage: React.FC = () => {
               </TabsList>
 
               <TabsContent value="join">
-                <RoundSelector onNavigateToInProgress={() => setActiveTab('in-progress')} />
+                <RoundSelector
+                  rounds={exampleRounds} // provide actual rounds from API
+                  setSelectedRound={setSelectedRound}
+                  onNavigateToInProgress={() => setActiveTab('in-progress')}
+                />
               </TabsContent>
 
               <TabsContent value="in-progress">
