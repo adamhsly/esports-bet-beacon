@@ -11,19 +11,21 @@ import { Round } from '@/types/rounds';
 
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
-  const [selectedRound, setSelectedRound] = useState<Round | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Replace with your actual API call or database fetch
     async function fetchRounds() {
       try {
-        const res = await fetch('/api/rounds'); // Your backend endpoint
+        const res = await fetch('/api/rounds'); // adjust the endpoint if needed
         if (!res.ok) throw new Error('Failed to fetch rounds');
         const data: Round[] = await res.json();
+        console.log('Fetched rounds:', data); // Debug: check what comes from DB
         setRounds(data);
       } catch (err) {
         console.error('Error fetching rounds:', err);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -50,28 +52,35 @@ const FantasyPage: React.FC = () => {
           <div className="max-w-2xl mx-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto bg-gray-800 p-1 rounded-lg shadow-md">
-                <TabsTrigger value="join" className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors">
+                <TabsTrigger
+                  value="join"
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors"
+                >
                   <Calendar className="h-4 w-4" />
                   Join a Round
                 </TabsTrigger>
-                <TabsTrigger value="in-progress" className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors">
+                <TabsTrigger
+                  value="in-progress"
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors"
+                >
                   <Clock className="h-4 w-4" />
                   In Progress
                 </TabsTrigger>
-                <TabsTrigger value="finished" className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors">
+                <TabsTrigger
+                  value="finished"
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors"
+                >
                   <Trophy className="h-4 w-4" />
                   Finished
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="join">
-                <RoundSelector
-                  rounds={rounds}
-                  setSelectedRound={(round) => {
-                    setSelectedRound(round);
-                    setActiveTab('in-progress'); // Navigate to In Progress after selection
-                  }}
-                />
+                {loading ? (
+                  <p className="text-gray-400 text-center mt-4">Loading rounds...</p>
+                ) : (
+                  <RoundSelector rounds={rounds} setSelectedRound={() => setActiveTab('in-progress')} />
+                )}
               </TabsContent>
 
               <TabsContent value="in-progress">
