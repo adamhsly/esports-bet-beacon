@@ -270,7 +270,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 )}
               </div>
             )}
-            {isSelected && <CheckCircle className="h-5 w-5 text-theme-purple" />}
+            {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
             {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
           </div>
         </div>
@@ -281,7 +281,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin w-8 h-8 border-2 border-theme-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading available teams...</p>
       </div>
     );
