@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Medal, Users, TrendingUp, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -13,37 +13,12 @@ interface Round {
   start_date: string;
   end_date: string;
   status: 'open' | 'in_progress' | 'finished';
-  total_score?: number;
-  team_picks?: any[];
-  bench_team?: any;
-  scores?: FantasyScore[];
-  leaderboard?: LeaderboardEntry[];
-  user_rank?: number;
-}
-
-interface FantasyScore {
-  team_id: string;
-  team_name: string;
-  team_type: 'pro' | 'amateur';
-  current_score: number;
-  match_wins: number;
-  map_wins: number;
-  tournaments_won: number;
-  clean_sweeps: number;
-  matches_played: number;
-}
-
-interface LeaderboardEntry {
-  user_id: string;
-  username: string;
-  total_score: number;
-  rank: number;
+  image_url?: string;
 }
 
 export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = ({ onNavigateToInProgress }) => {
   const { user } = useAuth();
   const [rounds, setRounds] = useState<Round[]>([]);
-  const [selectedRound, setSelectedRound] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,56 +46,6 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
     }
   };
 
-  const fetchLeaderboard = async (roundId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('fantasy_round_picks')
-        .select(`
-          user_id,
-          total_score,
-          profiles:profiles(username)
-        `)
-        .eq('round_id', roundId)
-        .order('total_score', { ascending: false });
-
-      if (error) throw error;
-
-      const leaderboard = (data || []).map((entry: any, index) => ({
-        user_id: entry.user_id,
-        username: entry.profiles?.[0]?.username || 'Anonymous',
-        total_score: entry.total_score,
-        rank: index + 1,
-      }));
-
-      const userRank = leaderboard.find((entry) => entry.user_id === user?.id)?.rank;
-
-      return { leaderboard, userRank };
-    } catch (err) {
-      console.error('Error fetching leaderboard:', err);
-      toast.error('Failed to load leaderboard');
-      return { leaderboard: [], userRank: undefined };
-    }
-  };
-
-  const handleViewLeaderboard = async (roundId: string) => {
-    if (selectedRound === roundId) {
-      setSelectedRound(null);
-      return;
-    }
-
-    const { leaderboard, userRank } = await fetchLeaderboard(roundId);
-
-    setRounds((prev) =>
-      prev.map((round) =>
-        round.id === roundId
-          ? { ...round, leaderboard, user_rank: userRank }
-          : round
-      )
-    );
-
-    setSelectedRound(roundId);
-  };
-
   const getRoundTypeColor = (type: string) => {
     switch (type) {
       case 'daily': return 'bg-blue-600 text-white';
@@ -146,39 +71,38 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {rounds.map((round) => (
-        <Card key={round.id}>
-          <CardHeader>
+        <Card key={round.id} className="overflow-hidden">
+          {round.image_url && (
+            <img
+              src={round.image_url}
+              alt={`${round.type} round`}
+              className="w-full h-40 object-cover rounded-t-md"
+            />
+          )}
+          <CardHeader className="pt-4">
             <CardTitle className="flex justify-between items-center">
               <span>{round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round</span>
               <Badge className={getRoundTypeColor(round.type)}>{round.type}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <p>
-                <Calendar className="inline mr-2" />{' '}
-                {new Date(round.start_date).toLocaleDateString()} - {new Date(round.end_date).toLocaleDateString()}
-              </p>
+            <div className="mb-4 flex flex-col gap-1 text-sm text-muted-foreground">
+              <span>
+                <Calendar className="inline mr-2" />
+                Start: {new Date(round.start_date).toLocaleDateString()}
+              </span>
+              <span>
+                <Calendar className="inline mr-2" />
+                End: {new Date(round.end_date).toLocaleDateString()}
+              </span>
             </div>
-            <Button onClick={() => handleViewLeaderboard(round.id)}>
-              {selectedRound === round.id ? 'Hide Leaderboard' : 'View Leaderboard'}
-            </Button>
 
-            {selectedRound === round.id && round.leaderboard && (
-              <div className="mt-4 border-t pt-2">
-                {round.leaderboard.slice(0, 10).map((entry) => (
-                  <div
-                    key={entry.user_id}
-                    className={`flex items-center justify-between px-4 py-2 ${
-                      entry.user_id === user?.id ? 'bg-primary/10' : ''
-                    }`}
-                  >
-                    <span>{entry.rank}. {entry.username}</span>
-                    <span>{entry.total_score} pts</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <Button
+              className="bg-gradient-to-r from-primary to-accent text-white w-full"
+              onClick={onNavigateToInProgress}
+            >
+              Join Round
+            </Button>
           </CardContent>
         </Card>
       ))}
