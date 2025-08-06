@@ -72,7 +72,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
           <img
             src={getRoundImage(round.type)}
             alt={`${round.type} round`}
-            className="w-full h-40 object-cover rounded-t-md"
+            className="w-full h-48 sm:h-40 md:h-48 object-cover rounded-t-lg"
           />
           <CardHeader className="pt-4" />
           <CardContent>
