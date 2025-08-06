@@ -1,14 +1,16 @@
+import React from 'react';
 import { Calendar, Clock, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, calculateDuration } from '@/utils/formatUtils'; // Assumes you have these
+import { formatDate, calculateDuration } from '@/utils/formatUtils';
 import { cn } from '@/lib/utils';
 import { Round } from '@/types/rounds';
 
 interface RoundSelectorProps {
   rounds: Round[];
   setSelectedRound: (round: Round) => void;
+  onNavigateToInProgress?: () => void; // optional callback
 }
 
 const roundImageMap: Record<string, string> = {
@@ -30,7 +32,11 @@ const getRoundTypeColor = (type: string) => {
   }
 };
 
-export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelectedRound }) => {
+export const RoundSelector: React.FC<RoundSelectorProps> = ({
+  rounds,
+  setSelectedRound,
+  onNavigateToInProgress,
+}) => {
   return (
     <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {rounds.map((round) => {
@@ -80,7 +86,10 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelecte
 
                 <Button
                   className="ml-auto bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2"
-                  onClick={() => setSelectedRound(round)}
+                  onClick={() => {
+                    setSelectedRound(round);
+                    onNavigateToInProgress?.();
+                  }}
                 >
                   Join Round
                 </Button>
