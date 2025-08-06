@@ -12,9 +12,9 @@ interface RoundSelectorProps {
 }
 
 const roundImageMap: Record<string, string> = {
-  daily: '/lovable-uploads/daily_round/daily.png',
-  weekly: '/lovable-uploads/weekly_round/weekly.png',
-  monthly: '/lovable-uploads/monthly_round/monthly.png',
+  daily: '/lovable-uploads/daily_round.png',
+  weekly: '/lovable-uploads/weekly_round.png',
+  monthly: '/lovable-uploads/monthly_round.png',
 };
 
 const getRoundTypeColor = (type: string) => {
