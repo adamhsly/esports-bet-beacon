@@ -176,7 +176,7 @@ export const InProgressRounds: React.FC = () => {
 
   if (rounds.length === 0) {
     return (
-      <Card>
+      <Card className="bg-card border-border">
         <CardContent className="text-center py-12">
           <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No Active Rounds</h3>
@@ -199,7 +199,7 @@ export const InProgressRounds: React.FC = () => {
 
       <div className="space-y-6">
         {rounds.map((round) => (
-          <Card key={round.id} className="hover:shadow-lg transition-shadow">
+          <Card key={round.id} className="bg-card border-border hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

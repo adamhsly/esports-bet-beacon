@@ -229,8 +229,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
     team, isSelected, onClick, showBench = false, isBench = false 
   }) => (
     <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'ring-2 ring-theme-purple bg-theme-purple/5' : ''
+      className={`cursor-pointer transition-all hover:shadow-md bg-card border-border ${
+        isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
       } ${isBench ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`}
       onClick={onClick}
     >
