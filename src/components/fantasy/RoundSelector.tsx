@@ -1,109 +1,187 @@
-import React from 'react';
-import { Calendar, Clock, Users } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Round } from '@/types/rounds';
+import { Trophy, Medal, Users, TrendingUp, Calendar } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
-interface RoundSelectorProps {
-  rounds: Round[];
-  setSelectedRound: (round: Round) => void;
+interface Round {
+  id: string;
+  type: 'daily' | 'weekly' | 'monthly';
+  start_date: string;
+  end_date: string;
+  status: 'open' | 'in_progress' | 'finished';
+  total_score?: number;
+  team_picks?: any[];
+  bench_team?: any;
+  scores?: FantasyScore[];
+  leaderboard?: LeaderboardEntry[];
+  user_rank?: number;
 }
 
-const roundImageMap: Record<string, string> = {
-  daily: '/lovable-uploads/daily_round/daily.png',
-  weekly: '/lovable-uploads/weekly_round/weekly.png',
-  monthly: '/lovable-uploads/monthly_round/monthly.png',
-};
+interface FantasyScore {
+  team_id: string;
+  team_name: string;
+  team_type: 'pro' | 'amateur';
+  current_score: number;
+  match_wins: number;
+  map_wins: number;
+  tournaments_won: number;
+  clean_sweeps: number;
+  matches_played: number;
+}
 
-const getRoundTypeColor = (type: string) => {
-  switch (type.toLowerCase()) {
-    case 'daily':
-      return 'bg-blue-500/20 text-blue-400 border border-blue-400/30';
-    case 'weekly':
-      return 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30';
-    case 'monthly':
-      return 'bg-purple-500/20 text-purple-400 border border-purple-400/30';
-    default:
-      return 'bg-gray-500/20 text-gray-400 border border-gray-400/30';
+interface LeaderboardEntry {
+  user_id: string;
+  username: string;
+  total_score: number;
+  rank: number;
+}
+
+export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = ({ onNavigateToInProgress }) => {
+  const { user } = useAuth();
+  const [rounds, setRounds] = useState<Round[]>([]);
+  const [selectedRound, setSelectedRound] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchOpenRounds();
+  }, [user]);
+
+  const fetchOpenRounds = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('fantasy_rounds')
+        .select('*')
+        .eq('status', 'open')
+        .order('start_date', { ascending: true });
+
+      if (error) throw error;
+
+      setRounds(data || []);
+    } catch (err) {
+      console.error('Error fetching rounds:', err);
+      toast.error('Failed to load rounds');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLeaderboard = async (roundId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('fantasy_round_picks')
+        .select(`
+          user_id,
+          total_score,
+          profiles:profiles(username)
+        `)
+        .eq('round_id', roundId)
+        .order('total_score', { ascending: false });
+
+      if (error) throw error;
+
+      const leaderboard = (data || []).map((entry: any, index) => ({
+        user_id: entry.user_id,
+        username: entry.profiles?.[0]?.username || 'Anonymous',
+        total_score: entry.total_score,
+        rank: index + 1,
+      }));
+
+      const userRank = leaderboard.find((entry) => entry.user_id === user?.id)?.rank;
+
+      return { leaderboard, userRank };
+    } catch (err) {
+      console.error('Error fetching leaderboard:', err);
+      toast.error('Failed to load leaderboard');
+      return { leaderboard: [], userRank: undefined };
+    }
+  };
+
+  const handleViewLeaderboard = async (roundId: string) => {
+    if (selectedRound === roundId) {
+      setSelectedRound(null);
+      return;
+    }
+
+    const { leaderboard, userRank } = await fetchLeaderboard(roundId);
+
+    setRounds((prev) =>
+      prev.map((round) =>
+        round.id === roundId
+          ? { ...round, leaderboard, user_rank: userRank }
+          : round
+      )
+    );
+
+    setSelectedRound(roundId);
+  };
+
+  const getRoundTypeColor = (type: string) => {
+    switch (type) {
+      case 'daily': return 'bg-blue-600 text-white';
+      case 'weekly': return 'bg-green-600 text-white';
+      case 'monthly': return 'bg-purple-600 text-white';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading rounds...</p>
+      </div>
+    );
   }
-};
 
-export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelectedRound }) => {
-  // Filter only open rounds
-  const openRounds = rounds.filter((round) => round.status?.toLowerCase() === 'open');
-
-  if (openRounds.length === 0) {
-    return <p className="text-gray-400 text-center mt-4">No open rounds available</p>;
+  if (!rounds.length) {
+    return <p className="text-center text-muted-foreground">No open rounds available.</p>;
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {openRounds.map((round) => {
-        const roundType = round.type?.toLowerCase() || 'default';
-        const roundImage = round.image_url || roundImageMap[roundType] || '/lovable-uploads/default.png';
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {rounds.map((round) => (
+        <Card key={round.id}>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              <span>{round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round</span>
+              <Badge className={getRoundTypeColor(round.type)}>{round.type}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <p>
+                <Calendar className="inline mr-2" />{' '}
+                {new Date(round.start_date).toLocaleDateString()} - {new Date(round.end_date).toLocaleDateString()}
+              </p>
+            </div>
+            <Button onClick={() => handleViewLeaderboard(round.id)}>
+              {selectedRound === round.id ? 'Hide Leaderboard' : 'View Leaderboard'}
+            </Button>
 
-        return (
-          <Card
-            key={round.id}
-            className={cn(
-              'bg-theme-gray-medium ring-1 ring-theme-gray-dark/30 border-0 rounded-xl shadow-none px-0 py-0 transition-all duration-200 group hover:scale-[1.015] hover:shadow-md hover:ring-2 hover:ring-theme-purple/70 cursor-pointer'
+            {selectedRound === round.id && round.leaderboard && (
+              <div className="mt-4 border-t pt-2">
+                {round.leaderboard.slice(0, 10).map((entry) => (
+                  <div
+                    key={entry.user_id}
+                    className={`flex items-center justify-between px-4 py-2 ${
+                      entry.user_id === user?.id ? 'bg-primary/10' : ''
+                    }`}
+                  >
+                    <span>{entry.rank}. {entry.username}</span>
+                    <span>{entry.total_score} pts</span>
+                  </div>
+                ))}
+              </div>
             )}
-          >
-            <CardContent className="flex flex-col gap-3 p-4">
-              {/* Image */}
-              <div className="w-full flex justify-center">
-                <img
-                  src={roundImage}
-                  alt={`${round.type} round`}
-                  className="w-24 h-24 object-contain"
-                />
-              </div>
-
-              {/* Info */}
-              <div className="space-y-2 text-sm text-gray-300 mt-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span>{new Date(round.start_date).toLocaleDateString()}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <span>
-                    Duration:{' '}
-                    {round.start_date && round.end_date
-                      ? `${Math.ceil(
-                          (new Date(round.end_date).getTime() - new Date(round.start_date).getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        )} days`
-                      : 'N/A'}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-gray-400" />
-                  <span>Teams: Up to 5 (Mix pro & amateur)</span>
-                </div>
-              </div>
-
-              {/* Badge + Button */}
-              <div className="flex items-center justify-between mt-4">
-                <Badge className={cn('px-3 py-1 text-xs font-medium rounded-full', getRoundTypeColor(roundType))}>
-                  {round.type}
-                </Badge>
-
-                <Button
-                  className="ml-auto bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2"
-                  onClick={() => setSelectedRound(round)}
-                >
-                  Join Round
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
