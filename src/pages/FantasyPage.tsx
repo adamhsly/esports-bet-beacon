@@ -7,11 +7,11 @@ import { RoundSelector } from '@/components/fantasy/RoundSelector';
 import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { Calendar, Clock, Trophy } from 'lucide-react';
-import { Round } from '@/types/rounds';
+
 
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
-  const [rounds, setRounds] = useState<Round[]>([]);
+  const [rounds, setRounds] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const FantasyPage: React.FC = () => {
       try {
         const res = await fetch('/api/rounds'); // adjust the endpoint if needed
         if (!res.ok) throw new Error('Failed to fetch rounds');
-        const data: Round[] = await res.json();
+        const data = await res.json();
         console.log('Fetched rounds:', data); // Debug: check what comes from DB
         setRounds(data);
       } catch (err) {
@@ -79,7 +79,7 @@ const FantasyPage: React.FC = () => {
                 {loading ? (
                   <p className="text-gray-400 text-center mt-4">Loading rounds...</p>
                 ) : (
-                  <RoundSelector rounds={rounds} setSelectedRound={() => setActiveTab('in-progress')} />
+                  <RoundSelector onNavigateToInProgress={() => setActiveTab('in-progress')} />
                 )}
               </TabsContent>
 

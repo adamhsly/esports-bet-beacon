@@ -34,7 +34,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
         .order('start_date', { ascending: true });
 
       if (error) throw error;
-      setRounds(data || []);
+      setRounds((data || []) as Round[]);
     } catch (err) {
       console.error('Error fetching rounds:', err);
       toast.error('Failed to load rounds');
@@ -72,7 +72,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
           <img
             src={getRoundImage(round.type)}
             alt={`${round.type} round`}
-            className="w-full h-48 sm:h-40 md:h-48 object-cover rounded-t-lg"
+            className="w-full h-32 object-contain bg-card rounded-t-lg"
           />
           <CardHeader className="pt-4" />
           <CardContent>
