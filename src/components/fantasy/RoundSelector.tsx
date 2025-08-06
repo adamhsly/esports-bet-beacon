@@ -38,11 +38,14 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-  setRounds(data?.map(round => ({
-        ...round,
-        type: round.type as 'daily' | 'weekly' | 'monthly',
-        status: round.status as 'open' | 'active' | 'finished'
-      })) || []);
+
+      setRounds(
+        data?.map((round) => ({
+          ...round,
+          type: round.type as 'daily' | 'weekly' | 'monthly',
+          status: round.status as 'open' | 'active' | 'finished',
+        })) || []
+      );
     } catch (error) {
       console.error('Error fetching rounds:', error);
       toast.error('Failed to load fantasy rounds');
@@ -53,10 +56,14 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
 
   const getRoundTypeColor = (type: string) => {
     switch (type) {
-      case 'daily': return 'bg-blue-600 text-white';
-      case 'weekly': return 'bg-green-600 text-white';
-      case 'monthly': return 'bg-primary text-primary-foreground';
-      default: return 'bg-muted text-muted-foreground';
+      case 'daily':
+        return 'bg-blue-600 text-white';
+      case 'weekly':
+        return 'bg-green-600 text-white';
+      case 'monthly':
+        return 'bg-purple-600 text-white';
+      default:
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -65,7 +72,7 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -73,7 +80,7 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
     const startDate = new Date(start);
     const endDate = new Date(end);
     const diffHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffHours < 24) return `${diffHours}h`;
     if (diffHours < 168) return `${Math.round(diffHours / 24)}d`;
     return `${Math.round(diffHours / 168)}w`;
@@ -81,8 +88,8 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
 
   if (selectedRound) {
     return (
-      <TeamPicker 
-        round={selectedRound} 
+      <TeamPicker
+        round={selectedRound}
         onBack={() => setSelectedRound(null)}
         onNavigateToInProgress={onNavigateToInProgress}
       />
@@ -113,42 +120,43 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({ onNavigateToInProg
   }
 
   return (
-    <div className="space-y-4">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Choose Your Round</h2>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-1">Choose Your Round</h2>
         <p className="text-muted-foreground">
           Select a round format to join. Each format has different duration and scoring opportunities.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {rounds.map((round) => (
-          <Card key={round.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card
+            key={round.id}
+            className="bg-gray-900 text-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg capitalize">{round.type} Round</CardTitle>
-                <Badge className={getRoundTypeColor(round.type)}>
-                  {round.type}
-                </Badge>
+                <Badge className={getRoundTypeColor(round.type)}>{round.type}</Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
+              <div className="space-y-3 text-sm text-gray-300">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-400" />
                   <span>{formatDate(round.start_date)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-400" />
                   <span>Duration: {calculateDuration(round.start_date, round.end_date)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-gray-400" />
                   <span>Teams: Up to 5 (Mix pro & amateur)</span>
                 </div>
-                
-                <Button 
-                  className="w-full mt-4" 
+
+                <Button
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={() => setSelectedRound(round)}
                 >
                   Join Round
