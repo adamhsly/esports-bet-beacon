@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,31 +9,26 @@ import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { Calendar, Clock, Trophy } from 'lucide-react';
 import { Round } from '@/types/rounds';
 
-// Example rounds – replace with your actual data source
-const sampleRounds: Round[] = [
-  {
-    id: '1',
-    type: 'Daily',
-    start_date: new Date(),
-    end_date: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // 2h later
-  },
-  {
-    id: '2',
-    type: 'Weekly',
-    start_date: new Date(),
-    end_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000), // 1 day later
-  },
-  {
-    id: '3',
-    type: 'Monthly',
-    start_date: new Date(),
-    end_date: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // 1 week later
-  },
-];
-
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
+  const [rounds, setRounds] = useState<Round[]>([]);
+
+  useEffect(() => {
+    // Replace with your actual API call or database fetch
+    async function fetchRounds() {
+      try {
+        const res = await fetch('/api/rounds'); // Your backend endpoint
+        if (!res.ok) throw new Error('Failed to fetch rounds');
+        const data: Round[] = await res.json();
+        setRounds(data);
+      } catch (err) {
+        console.error('Error fetching rounds:', err);
+      }
+    }
+
+    fetchRounds();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
@@ -55,24 +50,15 @@ const FantasyPage: React.FC = () => {
           <div className="max-w-2xl mx-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto bg-gray-800 p-1 rounded-lg shadow-md">
-                <TabsTrigger
-                  value="join"
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors"
-                >
+                <TabsTrigger value="join" className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors">
                   <Calendar className="h-4 w-4" />
                   Join a Round
                 </TabsTrigger>
-                <TabsTrigger
-                  value="in-progress"
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors"
-                >
+                <TabsTrigger value="in-progress" className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors">
                   <Clock className="h-4 w-4" />
                   In Progress
                 </TabsTrigger>
-                <TabsTrigger
-                  value="finished"
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors"
-                >
+                <TabsTrigger value="finished" className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:bg-theme-purple data-[state=active]:text-white transition-colors">
                   <Trophy className="h-4 w-4" />
                   Finished
                 </TabsTrigger>
@@ -80,7 +66,7 @@ const FantasyPage: React.FC = () => {
 
               <TabsContent value="join">
                 <RoundSelector
-                  rounds={sampleRounds}
+                  rounds={rounds}
                   setSelectedRound={(round) => {
                     setSelectedRound(round);
                     setActiveTab('in-progress'); // Navigate to In Progress after selection
