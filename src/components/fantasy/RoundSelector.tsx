@@ -45,9 +45,9 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
 
   const getRoundImage = (type: string) => {
     switch (type) {
-      case 'daily': return '/images/rounds/daily.jpg';
-      case 'weekly': return '/images/rounds/weekly.jpg';
-      case 'monthly': return '/images/rounds/monthly.jpg';
+      case 'daily': return 'lovable-uploads/daily_round.png';
+      case 'weekly': return 'lovable-uploads/weekly_round.png';
+      case 'monthly': return 'lovable-uploads/monthly_round.png';
       default: return '/images/rounds/default.jpg';
     }
   };
