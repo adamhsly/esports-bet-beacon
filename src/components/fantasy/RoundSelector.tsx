@@ -14,7 +14,7 @@ interface Round {
   status: 'open' | 'in_progress' | 'finished';
 }
 
-export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = ({ onNavigateToInProgress }) => {
+export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJoinRound?: (round: Round) => void }> = ({ onNavigateToInProgress, onJoinRound }) => {
   const { user } = useAuth();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,9 +88,8 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
             </div>
 
             <Button
-              className="w-full text-white"
-              style={{ backgroundColor: '#8b5cf6' }}
-              onClick={onNavigateToInProgress}
+              className="w-full"
+              onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
             >
               Join Round
             </Button>

@@ -6,11 +6,13 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { RoundSelector } from '@/components/fantasy/RoundSelector';
 import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
+import { TeamPicker } from '@/components/fantasy/TeamPicker';
 import { Calendar, Clock, Trophy } from 'lucide-react';
 
 
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
+  const [selectedRound, setSelectedRound] = useState<any>(null);
   const [rounds, setRounds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,10 +78,19 @@ const FantasyPage: React.FC = () => {
               </TabsList>
 
               <TabsContent value="join">
-                {loading ? (
+                {selectedRound ? (
+                  <TeamPicker 
+                    round={selectedRound} 
+                    onBack={() => setSelectedRound(null)}
+                    onNavigateToInProgress={() => setActiveTab('in-progress')}
+                  />
+                ) : loading ? (
                   <p className="text-gray-400 text-center mt-4">Loading rounds...</p>
                 ) : (
-                  <RoundSelector onNavigateToInProgress={() => setActiveTab('in-progress')} />
+                  <RoundSelector 
+                    onNavigateToInProgress={() => setActiveTab('in-progress')} 
+                    onJoinRound={setSelectedRound}
+                  />
                 )}
               </TabsContent>
 
