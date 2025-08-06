@@ -9,11 +9,26 @@ import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { Calendar, Clock, Trophy } from 'lucide-react';
 import { Round } from '@/types/rounds';
 
-// Example rounds data (replace with actual API data)
-const exampleRounds: Round[] = [
-  { id: '1', type: 'daily', start_date: new Date(), end_date: new Date() },
-  { id: '2', type: 'weekly', start_date: new Date(), end_date: new Date() },
-  { id: '3', type: 'monthly', start_date: new Date(), end_date: new Date() },
+// Example rounds – replace with your actual data source
+const sampleRounds: Round[] = [
+  {
+    id: '1',
+    type: 'Daily',
+    start_date: new Date(),
+    end_date: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // 2h later
+  },
+  {
+    id: '2',
+    type: 'Weekly',
+    start_date: new Date(),
+    end_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000), // 1 day later
+  },
+  {
+    id: '3',
+    type: 'Monthly',
+    start_date: new Date(),
+    end_date: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // 1 week later
+  },
 ];
 
 const FantasyPage: React.FC = () => {
@@ -65,9 +80,11 @@ const FantasyPage: React.FC = () => {
 
               <TabsContent value="join">
                 <RoundSelector
-                  rounds={exampleRounds} // provide actual rounds from API
-                  setSelectedRound={setSelectedRound}
-                  onNavigateToInProgress={() => setActiveTab('in-progress')}
+                  rounds={sampleRounds}
+                  setSelectedRound={(round) => {
+                    setSelectedRound(round);
+                    setActiveTab('in-progress'); // Navigate to In Progress after selection
+                  }}
                 />
               </TabsContent>
 
