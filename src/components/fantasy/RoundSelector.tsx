@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,15 +43,6 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
     }
   };
 
-  const getRoundTypeColor = (type: string) => {
-    switch (type) {
-      case 'daily': return 'bg-blue-600 text-white';
-      case 'weekly': return 'bg-green-600 text-white';
-      case 'monthly': return 'bg-purple-600 text-white';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
   const getRoundImage = (type: string) => {
     switch (type) {
       case 'daily': return '/images/rounds/daily.jpg';
@@ -84,12 +74,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
             alt={`${round.type} round`}
             className="w-full h-40 object-cover rounded-t-md"
           />
-          <CardHeader className="pt-4">
-            <CardTitle className="flex justify-between items-center">
-              <span>{round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round</span>
-              <Badge className={getRoundTypeColor(round.type)}>{round.type}</Badge>
-            </CardTitle>
-          </CardHeader>
+          <CardHeader className="pt-4" />
           <CardContent>
             <div className="mb-4 flex flex-col gap-1 text-sm text-muted-foreground">
               <span>
