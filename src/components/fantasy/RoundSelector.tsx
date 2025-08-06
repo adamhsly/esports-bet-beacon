@@ -3,14 +3,12 @@ import { Calendar, Clock, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, calculateDuration } from '@/utils/formatUtils';
 import { cn } from '@/lib/utils';
 import { Round } from '@/types/rounds';
 
 interface RoundSelectorProps {
   rounds: Round[];
   setSelectedRound: (round: Round) => void;
-  onNavigateToInProgress?: () => void; // optional callback
 }
 
 const roundImageMap: Record<string, string> = {
@@ -32,11 +30,22 @@ const getRoundTypeColor = (type: string) => {
   }
 };
 
-export const RoundSelector: React.FC<RoundSelectorProps> = ({
-  rounds,
-  setSelectedRound,
-  onNavigateToInProgress,
-}) => {
+// Inline helpers
+const formatDate = (dateStr: string | Date) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const calculateDuration = (startStr: string | Date, endStr: string | Date) => {
+  const start = new Date(startStr).getTime();
+  const end = new Date(endStr).getTime();
+  const diffMs = end - start;
+  const hours = Math.floor(diffMs / 1000 / 60 / 60);
+  const minutes = Math.floor((diffMs / 1000 / 60) % 60);
+  return `${hours}h ${minutes}m`;
+};
+
+export const RoundSelector: React.FC<RoundSelectorProps> = ({ rounds, setSelectedRound }) => {
   return (
     <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {rounds.map((round) => {
@@ -51,7 +60,6 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({
             )}
           >
             <CardContent className="flex flex-col gap-3 p-4">
-              {/* Image */}
               <div className="w-full flex justify-center">
                 <img
                   src={roundImage}
@@ -60,7 +68,6 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({
                 />
               </div>
 
-              {/* Info */}
               <div className="space-y-2 text-sm text-gray-300 mt-2">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
@@ -78,18 +85,19 @@ export const RoundSelector: React.FC<RoundSelectorProps> = ({
                 </div>
               </div>
 
-              {/* Badge + Button */}
               <div className="flex items-center justify-between mt-4">
-                <Badge className={cn('px-3 py-1 text-xs font-medium rounded-full', getRoundTypeColor(roundType))}>
+                <Badge
+                  className={cn(
+                    'px-3 py-1 text-xs font-medium rounded-full',
+                    getRoundTypeColor(roundType)
+                  )}
+                >
                   {round.type}
                 </Badge>
 
                 <Button
                   className="ml-auto bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2"
-                  onClick={() => {
-                    setSelectedRound(round);
-                    onNavigateToInProgress?.();
-                  }}
+                  onClick={() => setSelectedRound(round)}
                 >
                   Join Round
                 </Button>
