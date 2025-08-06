@@ -13,7 +13,6 @@ interface Round {
   start_date: string;
   end_date: string;
   status: 'open' | 'in_progress' | 'finished';
-  image_url?: string;
 }
 
 export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = ({ onNavigateToInProgress }) => {
@@ -36,7 +35,6 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
         .order('start_date', { ascending: true });
 
       if (error) throw error;
-
       setRounds(data || []);
     } catch (err) {
       console.error('Error fetching rounds:', err);
@@ -52,6 +50,15 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
       case 'weekly': return 'bg-green-600 text-white';
       case 'monthly': return 'bg-purple-600 text-white';
       default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getRoundImage = (type: string) => {
+    switch (type) {
+      case 'daily': return '/images/rounds/daily.jpg';
+      case 'weekly': return '/images/rounds/weekly.jpg';
+      case 'monthly': return '/images/rounds/monthly.jpg';
+      default: return '/images/rounds/default.jpg';
     }
   };
 
@@ -72,13 +79,11 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {rounds.map((round) => (
         <Card key={round.id} className="overflow-hidden">
-          {round.image_url && (
-            <img
-              src={round.image_url}
-              alt={`${round.type} round`}
-              className="w-full h-40 object-cover rounded-t-md"
-            />
-          )}
+          <img
+            src={getRoundImage(round.type)}
+            alt={`${round.type} round`}
+            className="w-full h-40 object-cover rounded-t-md"
+          />
           <CardHeader className="pt-4">
             <CardTitle className="flex justify-between items-center">
               <span>{round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round</span>
@@ -98,7 +103,8 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void }> = 
             </div>
 
             <Button
-              className="bg-gradient-to-r from-primary to-accent text-white w-full"
+              className="w-full text-white"
+              style={{ backgroundColor: '#8b5cf6' }}
               onClick={onNavigateToInProgress}
             >
               Join Round
