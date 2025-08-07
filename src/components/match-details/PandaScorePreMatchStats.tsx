@@ -45,19 +45,20 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
       try {
         const promises = [];
 
-        // Fetch team1 stats if we have an ID
+        // Fetch team1 overall stats via Supabase SQL
         if (team1.id) {
-          promises.push(calculateMatchSpecificTeamStats(team1.id, esportType, matchId));
+          promises.push(getTeamStats(team1.id));
+        } else {
+          promises.push(Promise.resolve(null));
+        }
+        
+        // Fetch team2 overall stats via Supabase SQL
+        if (team2.id) {
+          promises.push(getTeamStats(team2.id));
         } else {
           promises.push(Promise.resolve(null));
         }
 
-        // Fetch team2 stats if we have an ID
-        if (team2.id) {
-          promises.push(calculateMatchSpecificTeamStats(team2.id, esportType, matchId));
-        } else {
-          promises.push(Promise.resolve(null));
-        }
 
         // Fetch head-to-head record if we have both IDs
         if (team1.id && team2.id) {
