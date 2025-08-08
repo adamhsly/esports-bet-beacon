@@ -138,8 +138,7 @@ serve(async (req) => {
           .eq("esport_type", esportType)
           .lt("start_time", matchStartTime)
           .eq("status", "finished")
-          .order("start_time", { ascending: true })
-          .limit(100);
+          .order("start_time", { ascending: true });
 
         if (historyError || !historicalMatches) {
           console.error(`Error fetching history for team ${teamId}`, historyError);
