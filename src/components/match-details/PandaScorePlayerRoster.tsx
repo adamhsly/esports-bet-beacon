@@ -15,12 +15,14 @@ interface PandaScorePlayerRosterProps {
       player_id: string;
       position?: string;
       role?: string;
+      nationality?: string;
     }>;
     roster?: Array<{
       nickname: string;
       player_id: string;
       position?: string;
       role?: string;
+      nationality?: string;
     }>;
   }>;
   esportType?: string;
