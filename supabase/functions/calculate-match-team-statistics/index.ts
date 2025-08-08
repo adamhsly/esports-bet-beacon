@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BATCH_SIZE = 20;  // Reduced batch size for quicker runs
+const BATCH_SIZE = 15;  // Reduced batch size for quicker runs
 const SYNC_STATE_ID = "pandascore_match_team_stats";
 
 interface TeamStatsData {
