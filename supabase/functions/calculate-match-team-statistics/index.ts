@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 5;  // Reduced batch size for quicker runs
 const SYNC_STATE_ID = "pandascore_match_team_stats";
 
 interface TeamStatsData {
@@ -33,6 +33,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Fetch or create sync state row
     let { data: syncState, error: syncError } = await supabaseClient
       .from("pandascore_sync_state")
       .select("*")
@@ -144,6 +145,7 @@ serve(async (req) => {
           continue;
         }
 
+        // Fetch historical matches (no limit)
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
@@ -189,27 +191,23 @@ serve(async (req) => {
         }
       }
 
+      // Update max processed row ID
       if (matchRowId > maxProcessedRowId) maxProcessedRowId = matchRowId;
-    }
 
-    console.log("Last row id processed:", maxProcessedRowId);
+      // Periodically update sync state after processing each match
+      const { error: partialUpdateError } = await supabaseClient
+        .from("pandascore_sync_state")
+        .update({
+          last_match_row_id: maxProcessedRowId,
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq("id", SYNC_STATE_ID);
 
-    const { error: updateSyncError } = await supabaseClient
-      .from("pandascore_sync_state")
-      .update({
-        last_match_row_id: maxProcessedRowId,
-        last_synced_at: new Date().toISOString(),
-      })
-      .eq("id", SYNC_STATE_ID);
-
-    if (updateSyncError) {
-      console.error("Failed to update sync state:", updateSyncError);
-      return new Response(
-        JSON.stringify({ error: "Failed to update sync state" }),
-        { status: 500, headers: corsHeaders }
-      );
-    } else {
-      console.log("Sync state updated successfully");
+      if (partialUpdateError) {
+        console.error("Partial sync state update failed:", partialUpdateError);
+      } else {
+        console.log(`Updated last_match_row_id to ${maxProcessedRowId} after processing match ${matchRowId}`);
+      }
     }
 
     return new Response(
