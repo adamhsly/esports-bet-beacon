@@ -9,19 +9,6 @@ const corsHeaders = {
 const BATCH_SIZE = 20;
 const SYNC_STATE_ID = "pandascore_match_team_stats";
 
-interface TeamStatsData {
-  teamId: string;
-  winRate: number;
-  recentForm: string;
-  tournamentWins: number;
-  totalMatches: number;
-  wins: number;
-  losses: number;
-  leaguePerformance: Record<string, any>;
-  recentWinRate30d: number;
-  last10MatchesDetail: any[];
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -66,10 +53,9 @@ serve(async (req) => {
 
     const { data: matches, error: fetchError } = await supabaseClient
       .from("pandascore_matches")
-      .select("row_id, match_id, start_time, esport_type, teams, status")
+      .select("row_id, match_id, start_time, esport_type, teams, status, winner_id")
       .gt("row_id", lastRowId)
-      .order("row_id", { ascending: true })
-      .limit(BATCH_SIZE);
+      .order("row_id", { ascending: true });
 
     if (fetchError) {
       console.error("Fetching matches failed:", fetchError);
@@ -88,13 +74,11 @@ serve(async (req) => {
       const matchRowId = match.row_id;
       const matchId = match.match_id.toString();
 
-      // Skip PUBG matches entirely
       if (match.esport_type === "PUBG") {
         console.log(`Skipping match ${matchId} — esport_type is PUBG`);
         continue;
       }
 
-      const esportType = match.esport_type;
       const matchStartTime = match.start_time;
       const rawTeams = match.teams;
 
@@ -135,7 +119,7 @@ serve(async (req) => {
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
-          .eq("esport_type", esportType)
+          .eq("esport_type", match.esport_type)
           .lt("start_time", matchStartTime)
           .eq("status", "finished")
           .order("start_time", { ascending: true });
@@ -156,7 +140,7 @@ serve(async (req) => {
           .upsert({
             match_id: matchId,
             team_id: teamId,
-            esport_type: esportType,
+            esport_type: match.esport_type,
             win_rate: stats.winRate,
             recent_form: stats.recentForm,
             tournament_wins: stats.tournamentWins,
@@ -175,6 +159,58 @@ serve(async (req) => {
           console.log(`Processed stats for team ${teamId} in match ${matchId}`);
           processedResults.push({ matchId, teamId });
         }
+      }
+
+      // NEW: Head-to-head logic
+      const [teamA, teamB] = uniqueTeamIds.sort();
+
+      const { data: h2hMatches, error: h2hError } = await supabaseClient
+        .from("pandascore_matches")
+        .select("match_id, winner_id, start_time, teams")
+        .eq("status", "finished")
+        .lt("start_time", matchStartTime);
+
+      if (h2hError || !h2hMatches) {
+        console.error(`Failed to fetch H2H matches for ${teamA} vs ${teamB}`, h2hError);
+        continue;
+      }
+
+      const relevantH2H = h2hMatches.filter(m =>
+        (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamA) &&
+        (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamB)
+      );
+
+      let teamAWins = 0, teamBWins = 0, draws = 0;
+      let lastMatchAt: string | null = null;
+
+      for (const m of relevantH2H) {
+        const winner = m.winner_id?.toString();
+        if (!winner) draws++;
+        else if (winner === teamA) teamAWins++;
+        else if (winner === teamB) teamBWins++;
+
+        const matchDate = new Date(m.start_time);
+        if (!lastMatchAt || matchDate > new Date(lastMatchAt)) {
+          lastMatchAt = m.start_time;
+        }
+      }
+
+      const { error: h2hUpsertError } = await supabaseClient
+        .from("panda_team_head_to_head")
+        .upsert({
+          team_a_id: teamA,
+          team_b_id: teamB,
+          total_matches: relevantH2H.length,
+          team_a_wins: teamAWins,
+          team_b_wins: teamBWins,
+          draws,
+          last_match_at: lastMatchAt,
+          match_id: matchId,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: ['team_a_id', 'team_b_id'] });
+
+      if (h2hUpsertError) {
+        console.error(`Failed to upsert head-to-head for ${teamA} vs ${teamB}`, h2hUpsertError);
       }
 
       if (matchRowId > maxProcessedRowId) maxProcessedRowId = matchRowId;
@@ -207,7 +243,7 @@ serve(async (req) => {
   }
 });
 
-function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string): TeamStatsData {
+function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string) {
   const totalMatches = matches.length;
   let wins = 0;
   let tournamentWins = 0;
