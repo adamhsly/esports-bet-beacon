@@ -238,4 +238,34 @@ serve(async () => {
 
       if (!existing || fetchError) continue;
 
-      //
+      // Update the existing record
+      const updated = {
+        raw_data: match,
+        status: match.status ?? null,
+        modified_at: match.modified_at ?? null,
+        last_synced_at: new Date().toISOString(),
+      };
+
+      // Consistency fix: ensure status matches raw_data status
+      updated.status = updated.status ?? updated.raw_data?.status ?? null;
+
+      const { error } = await supabase
+        .from("pandascore_matches")
+        .update(updated)
+        .eq("match_id", match_id);
+
+      if (error) {
+        console.error(`Failed to update live running match ${match_id}:`, error);
+      } else {
+        console.log(`Updated live running match ${match_id}`);
+      }
+    }
+  }
+
+  await updateLiveRunningMatches();
+
+  return new Response(
+    JSON.stringify({ message: `Sync complete. Updated ${totalFetched} matches.` }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+});
