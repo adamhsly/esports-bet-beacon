@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Trophy, Target, Loader2 } from 'lucide-react';
 import { calculateMatchSpecificTeamStats, getMatchSpecificHeadToHeadRecord } from '@/lib/teamStatsCalculator';
+import { getTeamStats } from '@/lib/stats';
 
 interface PandaScorePreMatchStatsProps {
   teams: Array<{
