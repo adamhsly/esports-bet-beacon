@@ -9,6 +9,19 @@ const corsHeaders = {
 const BATCH_SIZE = 20;
 const SYNC_STATE_ID = "pandascore_match_team_stats";
 
+interface TeamStatsData {
+  teamId: string;
+  winRate: number;
+  recentForm: string;
+  tournamentWins: number;
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  leaguePerformance: Record<string, any>;
+  recentWinRate30d: number;
+  last10MatchesDetail: any[];
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -28,7 +41,10 @@ serve(async (req) => {
 
     if (syncError) {
       console.error("Error fetching sync state:", syncError);
-      return new Response(JSON.stringify({ error: "Error fetching sync state" }), { status: 500, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ error: "Error fetching sync state" }),
+        { status: 500, headers: corsHeaders }
+      );
     }
 
     if (!syncState) {
@@ -42,7 +58,10 @@ serve(async (req) => {
 
       if (insertSyncError) {
         console.error("Error creating initial sync state:", insertSyncError);
-        return new Response(JSON.stringify({ error: "Error creating initial sync state" }), { status: 500, headers: corsHeaders });
+        return new Response(
+          JSON.stringify({ error: "Error creating initial sync state" }),
+          { status: 500, headers: corsHeaders }
+        );
       }
 
       syncState = { last_match_row_id: 0 };
@@ -53,18 +72,25 @@ serve(async (req) => {
 
     const { data: matches, error: fetchError } = await supabaseClient
       .from("pandascore_matches")
-      .select("row_id, match_id, start_time, esport_type, teams, status, winner_id")
+      .select("row_id, match_id, start_time, esport_type, teams, status")
       .gt("row_id", lastRowId)
-      .order("row_id", { ascending: true });
+      .order("row_id", { ascending: true })
+      .limit(BATCH_SIZE);
 
     if (fetchError) {
       console.error("Fetching matches failed:", fetchError);
-      return new Response(JSON.stringify({ error: "Failed to fetch matches" }), { status: 500, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch matches" }),
+        { status: 500, headers: corsHeaders }
+      );
     }
 
     if (!matches || matches.length === 0) {
       console.log("No new matches to process");
-      return new Response(JSON.stringify({ success: true, message: "No new matches to process" }), { headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ success: true, message: "No new matches to process" }),
+        { headers: corsHeaders }
+      );
     }
 
     let maxProcessedRowId = lastRowId;
@@ -74,11 +100,13 @@ serve(async (req) => {
       const matchRowId = match.row_id;
       const matchId = match.match_id.toString();
 
+      // Skip PUBG matches entirely
       if (match.esport_type === "PUBG") {
         console.log(`Skipping match ${matchId} — esport_type is PUBG`);
         continue;
       }
 
+      const esportType = match.esport_type;
       const matchStartTime = match.start_time;
       const rawTeams = match.teams;
 
@@ -119,7 +147,7 @@ serve(async (req) => {
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
-          .eq("esport_type", match.esport_type)
+          .eq("esport_type", esportType)
           .lt("start_time", matchStartTime)
           .eq("status", "finished")
           .order("start_time", { ascending: true });
@@ -140,7 +168,7 @@ serve(async (req) => {
           .upsert({
             match_id: matchId,
             team_id: teamId,
-            esport_type: match.esport_type,
+            esport_type: esportType,
             win_rate: stats.winRate,
             recent_form: stats.recentForm,
             tournament_wins: stats.tournamentWins,
@@ -161,60 +189,10 @@ serve(async (req) => {
         }
       }
 
-      // NEW: Head-to-head logic
-      const [teamA, teamB] = uniqueTeamIds.sort();
-
-      const { data: h2hMatches, error: h2hError } = await supabaseClient
-        .from("pandascore_matches")
-        .select("match_id, winner_id, start_time, teams")
-        .eq("status", "finished")
-        .lt("start_time", matchStartTime);
-
-      if (h2hError || !h2hMatches) {
-        console.error(`Failed to fetch H2H matches for ${teamA} vs ${teamB}`, h2hError);
-        continue;
-      }
-
-      const relevantH2H = h2hMatches.filter(m =>
-        (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamA) &&
-        (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamB)
-      );
-
-      let teamAWins = 0, teamBWins = 0, draws = 0;
-      let lastMatchAt: string | null = null;
-
-      for (const m of relevantH2H) {
-        const winner = m.winner_id?.toString();
-        if (!winner) draws++;
-        else if (winner === teamA) teamAWins++;
-        else if (winner === teamB) teamBWins++;
-
-        const matchDate = new Date(m.start_time);
-        if (!lastMatchAt || matchDate > new Date(lastMatchAt)) {
-          lastMatchAt = m.start_time;
-        }
-      }
-
-      const { error: h2hUpsertError } = await supabaseClient
-        .from("panda_team_head_to_head")
-        .upsert({
-          team_a_id: teamA,
-          team_b_id: teamB,
-          total_matches: relevantH2H.length,
-          team_a_wins: teamAWins,
-          team_b_wins: teamBWins,
-          draws,
-          last_match_at: lastMatchAt,
-          match_id: matchId,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: ['team_a_id', 'team_b_id'] });
-
-      if (h2hUpsertError) {
-        console.error(`Failed to upsert head-to-head for ${teamA} vs ${teamB}`, h2hUpsertError);
-      }
-
       if (matchRowId > maxProcessedRowId) maxProcessedRowId = matchRowId;
     }
+
+    console.log("Last row id processed:", maxProcessedRowId);
 
     const { error: updateSyncError } = await supabaseClient
       .from("pandascore_sync_state")
@@ -226,7 +204,12 @@ serve(async (req) => {
 
     if (updateSyncError) {
       console.error("Failed to update sync state:", updateSyncError);
-      return new Response(JSON.stringify({ error: "Failed to update sync state" }), { status: 500, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ error: "Failed to update sync state" }),
+        { status: 500, headers: corsHeaders }
+      );
+    } else {
+      console.log("Sync state updated successfully");
     }
 
     return new Response(
@@ -243,7 +226,7 @@ serve(async (req) => {
   }
 });
 
-function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string) {
+function calculateTeamStatistics(teamId: string, matches: any[], matchStartTime: string): TeamStatsData {
   const totalMatches = matches.length;
   let wins = 0;
   let tournamentWins = 0;
