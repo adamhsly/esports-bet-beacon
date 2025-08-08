@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,14 +14,16 @@ interface PandaScorePlayerRosterProps {
       player_id: string;
       position?: string;
       role?: string;
-      nationality?: string;
+      nationality?: string; // Added nationality here
+      image_url?: string; // Added for the img src
     }>;
     roster?: Array<{
       nickname: string;
       player_id: string;
       position?: string;
       role?: string;
-      nationality?: string;
+      nationality?: string; // Added nationality here
+      image_url?: string;
     }>;
   }>;
   esportType?: string;
@@ -36,6 +37,7 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
     setSelectedPlayerId(playerId);
     setIsPlayerModalOpen(true);
   };
+
   console.log('📋 PandaScore Player Roster received teams:', {
     esportType,
     teamsCount: teams?.length || 0,
@@ -146,6 +148,12 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
               </Badge>
             )}
           </div>
+
+          {/* Added nationality display here */}
+          <div className="text-xs text-gray-300 mt-1">
+            {player.nationality ? `Nationality: ${player.nationality}` : 'Nationality: Unknown'}
+          </div>
+
           <div className="text-xs text-gray-500 mt-1">ID: {player.player_id}</div>
         </div>
       </div>
@@ -239,17 +247,6 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
               </Card>
             )}
           </div>
-        </div>
-      </div>
-      
-      {/* Enhanced debug info for development */}
-      <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/30">
-        <div className="text-xs text-gray-400">
-          <strong>🔧 Enhanced Roster Debug Info:</strong><br />
-          Game: {esportType}<br />
-          Team 1 ({team1.name}): {team1Players.length} players (from {team1.players ? 'players' : 'roster'} array)<br />
-          Team 2 ({team2.name}): {team2Players.length} players (from {team2.players ? 'players' : 'roster'} array)<br />
-          Data Source: Tournament Rosters API + Database
         </div>
       </div>
       
