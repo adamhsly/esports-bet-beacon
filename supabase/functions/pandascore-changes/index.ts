@@ -151,7 +151,7 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at ?? null,
-        status: match.status ?? null, // initial status from API
+        status: match.status ?? null, // temporary
         match_type: match.match_type ?? null,
         number_of_games: match.number_of_games ?? null,
         tournament_id: match.tournament?.id?.toString() ?? null,
@@ -167,8 +167,8 @@ serve(async () => {
         created_at: existing ? undefined : new Date().toISOString(),
       };
 
-      // Consistency fix: ensure status matches raw_data status if missing or mismatched
-      mapped.status = mapped.status ?? mapped.raw_data?.status ?? null;
+      // Consistency fix: ensure status matches raw_data top-level status
+      mapped.status = match?.status ?? match?.raw_data?.status ?? null;
 
       const { error } = await supabase
         .from("pandascore_matches")
@@ -241,13 +241,10 @@ serve(async () => {
       // Update the existing record
       const updated = {
         raw_data: match,
-        status: match.status ?? null,
+        status: match.status ?? match.raw_data?.status ?? null,
         modified_at: match.modified_at ?? null,
         last_synced_at: new Date().toISOString(),
       };
-
-      // Consistency fix: ensure status matches raw_data status
-      updated.status = updated.status ?? updated.raw_data?.status ?? null;
 
       const { error } = await supabase
         .from("pandascore_matches")
@@ -263,6 +260,48 @@ serve(async () => {
   }
 
   await updateLiveRunningMatches();
+
+  // --- Force-finish matches that started over 12 hours ago but aren't marked finished ---
+  async function finalizeOldMatches() {
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+
+    const { data: oldMatches, error } = await supabase
+      .from("pandascore_matches")
+      .select("match_id, status, start_time, raw_data")
+      .lt("start_time", twelveHoursAgo)
+      .not("status", "eq", "finished");
+
+    if (error) {
+      console.error("Failed to fetch old matches:", error);
+      return;
+    }
+
+    if (!oldMatches || oldMatches.length === 0) {
+      console.log("No old matches to finalize.");
+      return;
+    }
+
+    for (const match of oldMatches) {
+      const match_id = match.match_id;
+      const updatedStatus = match.raw_data?.status ?? "finished";
+
+      const { error: updateError } = await supabase
+        .from("pandascore_matches")
+        .update({
+          status: updatedStatus,
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq("match_id", match_id);
+
+      if (updateError) {
+        console.error(`❌ Failed to update old match ${match_id}:`, updateError);
+      } else {
+        console.log(`✅ Finalized old match ${match_id} with status '${updatedStatus}'`);
+      }
+    }
+  }
+
+  await finalizeOldMatches();
 
   return new Response(
     JSON.stringify({ message: `Sync complete. Updated ${totalFetched} matches.` }),
