@@ -151,7 +151,7 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at ?? null,
-        status: match.status ?? null, // temporary
+        status: match.status ?? null,
         match_type: match.match_type ?? null,
         number_of_games: match.number_of_games ?? null,
         tournament_id: match.tournament?.id?.toString() ?? null,
@@ -166,9 +166,6 @@ serve(async () => {
         last_synced_at: new Date().toISOString(),
         created_at: existing ? undefined : new Date().toISOString(),
       };
-
-      // Consistency fix: ensure status matches raw_data top-level status
-      mapped.status = match?.status ?? match?.raw_data?.status ?? null;
 
       const { error } = await supabase
         .from("pandascore_matches")
@@ -238,73 +235,83 @@ serve(async () => {
 
       if (!existing || fetchError) continue;
 
-      // Update the existing record
-      const updated = {
+      const updateData = {
+        status: match.status ?? null,
+        winner_id: match.winner_id?.toString() ?? null,
+        winner_type: match.winner_type ?? null,
         raw_data: match,
-        status: match.status ?? match.raw_data?.status ?? null,
-        modified_at: match.modified_at ?? null,
         last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from("pandascore_matches")
-        .update(updated)
+      await supabase.from("pandascore_matches")
+        .update(updateData)
         .eq("match_id", match_id);
+    }
+  }
 
-      if (error) {
-        console.error(`Failed to update live running match ${match_id}:`, error);
-      } else {
-        console.log(`Updated live running match ${match_id}`);
-      }
+  // --- New: Update cancelled matches ---
+  async function updateCancelledMatches() {
+    console.log('🔍 Fetching cancelled matches...');
+    const CANCELLED_URL = `${BASE_URL}?per_page=50&range[scheduled_at]=${dateRangeStr}&status=cancelled`;
+
+    const res = await fetch(CANCELLED_URL, {
+      headers: { Authorization: `Bearer ${PANDA_API_TOKEN}` },
+    });
+
+    if (!res.ok) {
+      console.error('❌ Failed to fetch cancelled matches:', await res.text());
+      return;
+    }
+
+    const cancelledMatches = await res.json();
+
+    if (!Array.isArray(cancelledMatches) || cancelledMatches.length === 0) {
+      console.log('✅ No cancelled matches found in this window.');
+      return;
+    }
+
+    for (const match of cancelledMatches) {
+      const match_id = match.id?.toString();
+      if (!match_id) continue;
+
+      const { data: existing, error: fetchError } = await supabase
+        .from("pandascore_matches")
+        .select("id")
+        .eq("match_id", match_id)
+        .maybeSingle();
+
+      if (!existing || fetchError) continue;
+
+      const updateData = {
+        status: "cancelled",
+        raw_data: match,
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      await supabase.from("pandascore_matches")
+        .update(updateData)
+        .eq("match_id", match_id);
     }
   }
 
   await updateLiveRunningMatches();
-
-  // --- Force-finish matches that started over 12 hours ago but aren't marked finished ---
-  async function finalizeOldMatches() {
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-
-    const { data: oldMatches, error } = await supabase
-      .from("pandascore_matches")
-      .select("match_id, status, start_time, raw_data")
-      .lt("start_time", twelveHoursAgo)
-      .not("status", "eq", "finished");
-
-    if (error) {
-      console.error("Failed to fetch old matches:", error);
-      return;
-    }
-
-    if (!oldMatches || oldMatches.length === 0) {
-      console.log("No old matches to finalize.");
-      return;
-    }
-
-    for (const match of oldMatches) {
-      const match_id = match.match_id;
-      const updatedStatus = match.raw_data?.status ?? "finished";
-
-      const { error: updateError } = await supabase
-        .from("pandascore_matches")
-        .update({
-          status: updatedStatus,
-          last_synced_at: new Date().toISOString(),
-        })
-        .eq("match_id", match_id);
-
-      if (updateError) {
-        console.error(`❌ Failed to update old match ${match_id}:`, updateError);
-      } else {
-        console.log(`✅ Finalized old match ${match_id} with status '${updatedStatus}'`);
-      }
-    }
-  }
-
-  await finalizeOldMatches();
+  await updateCancelledMatches();
 
   return new Response(
-    JSON.stringify({ message: `Sync complete. Updated ${totalFetched} matches.` }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    JSON.stringify({
+      message: "Sync completed.",
+      total_fetched: totalFetched,
+      last_page: lastPage - 1,
+      max_page: computedMaxPage,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+      },
+    }
   );
 });

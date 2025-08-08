@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BATCH_SIZE = 15;  // Reduced batch size for quicker runs
+const BATCH_SIZE = 20;
 const SYNC_STATE_ID = "pandascore_match_team_stats";
 
 interface TeamStatsData {
@@ -33,7 +33,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Fetch or create sync state row
     let { data: syncState, error: syncError } = await supabaseClient
       .from("pandascore_sync_state")
       .select("*")
@@ -42,10 +41,7 @@ serve(async (req) => {
 
     if (syncError) {
       console.error("Error fetching sync state:", syncError);
-      return new Response(
-        JSON.stringify({ error: "Error fetching sync state" }),
-        { status: 500, headers: corsHeaders }
-      );
+      return new Response(JSON.stringify({ error: "Error fetching sync state" }), { status: 500, headers: corsHeaders });
     }
 
     if (!syncState) {
@@ -59,10 +55,7 @@ serve(async (req) => {
 
       if (insertSyncError) {
         console.error("Error creating initial sync state:", insertSyncError);
-        return new Response(
-          JSON.stringify({ error: "Error creating initial sync state" }),
-          { status: 500, headers: corsHeaders }
-        );
+        return new Response(JSON.stringify({ error: "Error creating initial sync state" }), { status: 500, headers: corsHeaders });
       }
 
       syncState = { last_match_row_id: 0 };
@@ -80,18 +73,12 @@ serve(async (req) => {
 
     if (fetchError) {
       console.error("Fetching matches failed:", fetchError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch matches" }),
-        { status: 500, headers: corsHeaders }
-      );
+      return new Response(JSON.stringify({ error: "Failed to fetch matches" }), { status: 500, headers: corsHeaders });
     }
 
     if (!matches || matches.length === 0) {
       console.log("No new matches to process");
-      return new Response(
-        JSON.stringify({ success: true, message: "No new matches to process" }),
-        { headers: corsHeaders }
-      );
+      return new Response(JSON.stringify({ success: true, message: "No new matches to process" }), { headers: corsHeaders });
     }
 
     let maxProcessedRowId = lastRowId;
@@ -145,14 +132,14 @@ serve(async (req) => {
           continue;
         }
 
-        // Fetch historical matches (no limit)
         const { data: historicalMatches, error: historyError } = await supabaseClient
           .from("pandascore_matches")
           .select("*")
           .eq("esport_type", esportType)
           .lt("start_time", matchStartTime)
           .eq("status", "finished")
-          .order("start_time", { ascending: true });
+          .order("start_time", { ascending: true })
+          .limit(100);
 
         if (historyError || !historicalMatches) {
           console.error(`Error fetching history for team ${teamId}`, historyError);
@@ -191,23 +178,20 @@ serve(async (req) => {
         }
       }
 
-      // Update max processed row ID
       if (matchRowId > maxProcessedRowId) maxProcessedRowId = matchRowId;
+    }
 
-      // Periodically update sync state after processing each match
-      const { error: partialUpdateError } = await supabaseClient
-        .from("pandascore_sync_state")
-        .update({
-          last_match_row_id: maxProcessedRowId,
-          last_synced_at: new Date().toISOString(),
-        })
-        .eq("id", SYNC_STATE_ID);
+    const { error: updateSyncError } = await supabaseClient
+      .from("pandascore_sync_state")
+      .update({
+        last_match_row_id: maxProcessedRowId,
+        last_synced_at: new Date().toISOString(),
+      })
+      .eq("id", SYNC_STATE_ID);
 
-      if (partialUpdateError) {
-        console.error("Partial sync state update failed:", partialUpdateError);
-      } else {
-        console.log(`Updated last_match_row_id to ${maxProcessedRowId} after processing match ${matchRowId}`);
-      }
+    if (updateSyncError) {
+      console.error("Failed to update sync state:", updateSyncError);
+      return new Response(JSON.stringify({ error: "Failed to update sync state" }), { status: 500, headers: corsHeaders });
     }
 
     return new Response(
