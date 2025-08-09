@@ -81,6 +81,45 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
 
   console.log('🎯 Live Match Final formatted prize pool:', formattedPrizePool);
 
+  // Compute live map scores using rawData.games; fallback to rawData.results
+  const computeLiveScores = () => {
+    try {
+      const games = match.rawData?.games ?? [];
+      const opponents = match.rawData?.opponents ?? [];
+      const teamAId = opponents?.[0]?.opponent?.id ?? match.teams?.[0]?.id;
+      const teamBId = opponents?.[1]?.opponent?.id ?? match.teams?.[1]?.id;
+
+      let scoreA = 0;
+      let scoreB = 0;
+
+      if (Array.isArray(games) && teamAId && teamBId) {
+        for (const g of games) {
+          if (g?.status === 'finished' && g?.winner?.id != null) {
+            const wid = String(g.winner.id);
+            if (wid === String(teamAId)) scoreA++;
+            else if (wid === String(teamBId)) scoreB++;
+          }
+        }
+      }
+
+      if (scoreA === 0 && scoreB === 0 && Array.isArray(match.rawData?.results)) {
+        const aScore = match.rawData.results.find((r: any) => String(r.team_id) === String(teamAId))?.score;
+        const bScore = match.rawData.results.find((r: any) => String(r.team_id) === String(teamBId))?.score;
+        if (typeof aScore === 'number' || typeof bScore === 'number') {
+          scoreA = aScore ?? 0;
+          scoreB = bScore ?? 0;
+        }
+      }
+
+      return { scoreA, scoreB };
+    } catch (e) {
+      console.warn('Failed to compute live scores from rawData', e);
+      return { scoreA: 0, scoreB: 0 };
+    }
+  };
+
+  const { scoreA, scoreB } = computeLiveScores();
+
   return (
     <Card className="mt-6 bg-theme-gray-dark border-theme-gray-medium overflow-hidden border-l-4 border-l-red-500">
       <div className="p-6">
@@ -132,8 +171,13 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
           
           <div className="text-center">
             <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
-              <div className="text-2xl font-bold text-red-400 mb-2">LIVE</div>
-              <div className="text-sm text-gray-400">Best of {match.bestOf || 3}</div>
+              <div className="text-4xl font-extrabold text-white tracking-wider">
+                {scoreA} - {scoreB}
+              </div>
+              <div className="mt-1 text-sm text-gray-400 flex items-center justify-center gap-2">
+                <Radio className="h-3 w-3 text-red-400 animate-pulse" />
+                <span>LIVE • Bo{match.bestOf || 3}</span>
+              </div>
             </div>
           </div>
           

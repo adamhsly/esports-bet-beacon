@@ -1,1 +1,4 @@
 project_id = "zcjzeafelunqxmxzznos"
+
+[functions.get-team-stats]
+verify_jwt = false
