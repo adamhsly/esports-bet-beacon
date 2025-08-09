@@ -110,60 +110,73 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({ 
     return gameColors[position] || 'bg-gray-500/20 text-gray-400 border-gray-400/30';
   };
 
-const PlayerCard = ({ player, teamName }: { player: any; teamName: string }) => (
-  <Card className="bg-theme-gray-medium/60 border border-theme-gray-light p-5 rounded-lg hover:shadow-lg transition-shadow duration-300">
-    <div className="flex items-center space-x-4">
-      {/* Player image */}
-      <img 
-        src={player.image_url || '/placeholder.svg'} 
-        alt={player.nickname}
-        className="w-16 h-16 rounded-full object-cover border-2 border-theme-gray-light"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = '/placeholder.svg';
-        }}
-      />
+const PlayerCard = ({ player, teamName }: { player: any; teamName: string }) => {
+  const code = (player.nationality || '').toLowerCase();
+  const flagUrl = code ? `https://flagcdn.com/24x18/${code}.png` : null;
 
-      {/* Player info */}
-      <div className="flex flex-col flex-1">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => handlePlayerClick(player.player_id)}
-            className="text-white text-lg font-bold hover:text-blue-400 transition-colors cursor-pointer"
-            title={`View details for ${player.nickname}`}
-          >
-            {player.nickname || 'Unknown Player'}
-          </button>
-          {player.role && (
-            <Badge variant="outline" className="text-xs bg-purple-600/20 text-purple-400 border-purple-400/40">
-              {player.role}
-            </Badge>
-          )}
-        </div>
+  return (
+    <Card className="bg-theme-gray-medium/60 border border-theme-gray-light p-5 rounded-lg hover:shadow-lg transition-shadow duration-300">
+      <div className="flex items-center gap-4">
+        {/* Player image */}
+        <img
+          src={player.image_url || '/placeholder.svg'}
+          alt={player.nickname}
+          className="w-16 h-16 rounded-full object-cover border-2 border-theme-gray-light"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
+        />
 
-        {/* Position badge */}
-        {player.position && (
-          <Badge 
-            variant="outline" 
-            className={`mt-1 w-max text-xs ${getPositionColor(player.position, esportType)}`}
-          >
-            {player.position}
-          </Badge>
-        )}
+        {/* Player info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handlePlayerClick(player.player_id)}
+              className="truncate text-left text-white text-lg font-semibold hover:text-blue-400 transition-colors"
+              title={`View details for ${player.nickname}`}
+            >
+              {player.nickname || 'Unknown Player'}
+            </button>
+            {flagUrl && (
+              <img
+                src={flagUrl}
+                alt={`Flag of ${player.nationality}`}
+                className="h-4 w-6 rounded-sm border border-theme-gray-light"
+                loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            )}
+            {player.role && (
+              <Badge variant="outline" className="text-xs bg-purple-600/20 text-purple-400 border-purple-400/40">
+                {player.role}
+              </Badge>
+            )}
+          </div>
 
-        {/* Nationality */}
-        <div className="mt-2 text-sm text-gray-300">
-          <span className="font-semibold">Nationality:</span> {player.nationality || 'Unknown'}
-        </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {player.position && (
+              <Badge
+                variant="outline"
+                className={`text-xs ${getPositionColor(player.position, esportType)}`}
+              >
+                {player.position}
+              </Badge>
+            )}
+            {code && !flagUrl && (
+              <span className="text-xs text-gray-400 uppercase">{code}</span>
+            )}
+          </div>
 
-        {/* Player ID */}
-        <div className="mt-1 text-xs text-gray-500 select-text">
-          <span className="font-semibold">ID:</span> {player.player_id}
+          <div className="mt-2 text-xs text-gray-500 truncate select-text">
+            ID: {player.player_id}
+          </div>
         </div>
       </div>
-    </div>
-  </Card>
-);
-
+    </Card>
+  );
+};
 
   const RosterStatus = ({ teamName, playerCount }: { teamName: string; playerCount: number }) => (
     <div className="flex items-center gap-2 text-sm mb-2">
