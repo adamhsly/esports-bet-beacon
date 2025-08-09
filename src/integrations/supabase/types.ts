@@ -2355,6 +2355,116 @@ export type Database = {
         }
         Returns: number
       }
+      faceit_get_match_counts_around_date: {
+        Args: { target_date: string }
+        Returns: {
+          match_date: string
+          source: string
+          match_count: number
+        }[]
+      }
+      get_faceit_matches_around_date: {
+        Args: { target_date: string }
+        Returns: {
+          match_date: string
+          id: string
+          match_id: string
+          game: string
+          region: string
+          competition_name: string
+          competition_type: string
+          organized_by: string
+          status: string
+          started_at: string
+          finished_at: string
+          configured_at: string
+          calculate_elo: boolean
+          version: number
+          teams: Json
+          voting: Json
+          faceit_data: Json
+          raw_data: Json
+          created_at: string
+          updated_at: string
+          scheduled_at: string
+          championship_stream_url: string
+          championship_raw_data: Json
+          match_phase: string
+          current_round: number
+          round_timer_seconds: number
+          overtime_rounds: number
+          live_team_scores: Json
+          maps_played: Json
+          round_results: Json
+          live_player_status: Json
+          kill_feed: Json
+          economy_data: Json
+          objectives_status: Json
+          auto_refresh_interval: number
+          last_live_update: string
+        }[]
+      }
+      get_head_to_head_stats: {
+        Args: { team1_id: string; team2_id: string }
+        Returns: Json
+      }
+      get_pandascore_matches_around_date: {
+        Args: { target_date: string }
+        Returns: {
+          match_date: string
+          id: string
+          match_id: string
+          esport_type: string
+          teams: Json
+          start_time: string
+          end_time: string
+          tournament_id: string
+          tournament_name: string
+          league_id: string
+          league_name: string
+          serie_id: string
+          serie_name: string
+          status: string
+          match_type: string
+          number_of_games: number
+          raw_data: Json
+          created_at: string
+          updated_at: string
+          last_synced_at: string
+          slug: string
+          draw: boolean
+          forfeit: boolean
+          original_scheduled_at: string
+          rescheduled: boolean
+          detailed_stats: boolean
+          winner_id: string
+          winner_type: string
+          videogame_id: string
+          videogame_name: string
+          stream_url_1: string
+          stream_url_2: string
+          modified_at: string
+          team_a_player_ids: Json
+          team_b_player_ids: Json
+          row_id: number
+        }[]
+      }
+      get_team_stats: {
+        Args: { team_id: string }
+        Returns: Json
+      }
+      get_team_stats_optimized: {
+        Args: { team_id: string }
+        Returns: Json
+      }
+      pandascore_get_match_counts_around_date: {
+        Args: { target_date: string }
+        Returns: {
+          match_date: string
+          source: string
+          match_count: number
+        }[]
+      }
       update_expired_fantasy_rounds: {
         Args: Record<PropertyKey, never>
         Returns: number
