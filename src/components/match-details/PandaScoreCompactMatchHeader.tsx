@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Calendar, Clock, MapPin, Bell, BellRing, Loader2, CheckCircle, Crown } from 'lucide-react';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import CountdownTimer from '@/components/CountdownTimer';
+import { getPandaScoreLiveScore } from '@/utils/pandascoreScoreUtils';
 
 interface PandaScoreCompactMatchHeaderProps {
   match: {
@@ -146,12 +147,14 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
     return { prizePool, tier };
   };
 
-  const { date, time } = formatDateTime(match.startTime);
-  const finished = isFinished();
-  const { prizePool, tier } = getTournamentInfo();
-  const formattedPrizePool = formatPrizePool(prizePool);
+const { date, time } = formatDateTime(match.startTime);
+const finished = isFinished();
+const { prizePool, tier } = getTournamentInfo();
+const formattedPrizePool = formatPrizePool(prizePool);
+const live = isLive();
+const liveScore = live ? getPandaScoreLiveScore(match.rawData, match.teams) : null;
 
-  console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool);
+console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool);
 
   return (
     <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden relative">
@@ -196,16 +199,26 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
           </Badge>
         </div>
 
-        {/* Countdown Timer or Final Score */}
-        {finished && match.results ? (
-          <div className="mb-2 mt-[-0.5rem] text-center">
-            <div className="text-lg font-bold text-green-400">
-              {getScore(0)} - {getScore(1)}
-            </div>
-          </div>
-        ) : (
-          <CountdownTimer targetTime={match.startTime} className="mb-2 mt-[-0.5rem]" />
-        )}
+{/* Countdown Timer, Live Score, or Final Score */}
+{finished && match.results ? (
+  <div className="mb-2 mt-[-0.5rem] text-center">
+    <div className="text-lg font-bold text-green-400">
+      {getScore(0)} - {getScore(1)}
+    </div>
+  </div>
+) : live ? (
+  <div className="mb-2 mt-[-0.5rem] text-center">
+    <div className="text-lg font-bold text-white">
+      {(liveScore?.a ?? 0)} - {(liveScore?.b ?? 0)}
+    </div>
+    <div className="mt-0.5 text-xs text-red-400 font-semibold flex items-center justify-center gap-1">
+      <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
+      <span>LIVE</span>
+    </div>
+  </div>
+) : (
+  <CountdownTimer targetTime={match.startTime} className="mb-2 mt-[-0.5rem]" />
+)}
 
         {/* Teams vs Section */}
         <div className="flex items-center justify-center mb-3">

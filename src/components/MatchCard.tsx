@@ -4,6 +4,7 @@ import { Clock, Trophy, Users, CheckCircle } from 'lucide-react';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { getPandaScoreLiveScore } from '@/utils/pandascoreScoreUtils';
 
 export interface TeamInfo {
   name: string;
@@ -65,7 +66,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   // 🔧 FIXED: Database status-based determination
   const normalizedStatus = status?.toLowerCase() || '';
   const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
-  const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
+const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
+
+// Live score for PandaScore (professional) matches
+const liveScore = isLive && (source === 'professional' || (id && String(id).startsWith('pandascore_')))
+  ? getPandaScoreLiveScore(rawData, teams)
+  : null;
 
   // Enhanced logging for routing decisions AND winner/score data
   console.log(`🎯 MatchCard rendering for ${id}:`, {
@@ -267,9 +273,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
                 <span>{finalScore}</span>
               </div>
             ) : isLive ? (
-              <div className="flex items-center gap-1 text-xs text-red-400 font-semibold">
+              <div className="flex items-center gap-2 text-xs text-red-400 font-semibold">
                 <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
                 <span>LIVE</span>
+                {liveScore && (
+                  <span className="text-white/90 font-bold">{liveScore.a} - {liveScore.b}</span>
+                )}
               </div>
             ) : (
               <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
