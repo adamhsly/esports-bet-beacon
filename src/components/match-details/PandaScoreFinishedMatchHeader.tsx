@@ -152,7 +152,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   console.log('🎯 Finished Match Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className="bg-blue-950/70 ring-1 ring-blue-400/30 border-0 rounded-xl shadow-none">
+    <Card className="bg-theme-gray-dark border border-theme-gray-medium rounded-xl">
       <div className="flex flex-col gap-2 px-3 py-3">
         {/* Tournament info and finished status row */}
         <div className="flex justify-between items-center">

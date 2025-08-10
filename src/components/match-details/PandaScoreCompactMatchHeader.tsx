@@ -154,7 +154,7 @@ export const PandaScoreCompactMatchHeader: React.FC<PandaScoreCompactMatchHeader
   console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className={`${isFinished() ? 'bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border-green-500/30' : 'bg-theme-gray-dark border-theme-gray-medium'} overflow-hidden relative`}>
+    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden relative">
       <div className="p-3">
         {/* Tournament and Platform Badge */}
         <div className="flex items-center justify-between mb-3">

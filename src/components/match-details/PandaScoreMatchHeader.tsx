@@ -20,6 +20,10 @@ interface PandaScoreMatchHeaderProps {
     bestOf?: number;
     status: string;
     rawData?: any;
+    results?: Array<{
+      score: number;
+      team_id: number;
+    }>;
   };
 }
 
@@ -41,6 +45,19 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
     const startTime = new Date(match.startTime);
     const now = new Date();
     return startTime.getTime() < now.getTime();
+  };
+
+  const isFinished = () => {
+    const normalizedStatus = match.status?.toLowerCase() || '';
+    return ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
+  };
+
+  const getScore = (teamIndex: number) => {
+    if (!match.results || !match.results.length) return '-';
+    const team = match.teams[teamIndex];
+    if (!team || !team.id) return '-';
+    const teamResult = match.results.find(r => r.team_id.toString() === (team.id as string).toString());
+    return teamResult ? teamResult.score : '-';
   };
 
   const formatPrizePool = (prizePool: number | string) => {
@@ -133,8 +150,16 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
           </Badge>
         </div>
 
-        {/* Countdown Timer */}
-        <CountdownTimer targetTime={match.startTime} />
+        {/* Countdown Timer or Final Score */}
+        {isFinished() && match.results?.length ? (
+          <div className="mb-4 text-center">
+            <div className="text-2xl font-bold text-green-400">
+              {getScore(0)} - {getScore(1)}
+            </div>
+          </div>
+        ) : (
+          <CountdownTimer targetTime={match.startTime} />
+        )}
 
         {/* Teams Section */}
         <div className="flex items-center justify-between gap-4 mb-6">

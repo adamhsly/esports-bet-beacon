@@ -272,7 +272,45 @@ const transformMatchData = async (dbMatch: any): Promise<PandaScoreMatch> => {
     number_of_games: dbMatch.number_of_games,
     bestOf: dbMatch.number_of_games || 3,
     rawData: dbMatch.raw_data,
-    results: [] // Initialize empty results array
+    results: (() => {
+      try {
+        const t1 = team1.id;
+        const t2 = team2.id;
+        if (!t1 || !t2) return [];
+
+        // Prefer explicit results from PandaScore if available
+        const rdResults = Array.isArray(dbMatch.raw_data?.results)
+          ? dbMatch.raw_data.results.map((r: any) => ({
+              team_id: Number(r.team_id),
+              score: Number(r.score) || 0,
+            }))
+          : [];
+        if (rdResults.length) return rdResults;
+
+        // Fallback: compute from finished games winners
+        const games = dbMatch.raw_data?.games;
+        if (Array.isArray(games)) {
+          let a = 0;
+          let b = 0;
+          for (const g of games) {
+            if (g?.status === 'finished' && g?.winner?.id != null) {
+              const wid = String(g.winner.id);
+              if (wid === String(t1)) a++;
+              else if (wid === String(t2)) b++;
+            }
+          }
+          if (a > 0 || b > 0) {
+            return [
+              { team_id: Number(t1), score: a },
+              { team_id: Number(t2), score: b },
+            ];
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to compute results from raw_data', e);
+      }
+      return [];
+    })()
   };
   
   console.log(`✅ Transformed match data:`, {
