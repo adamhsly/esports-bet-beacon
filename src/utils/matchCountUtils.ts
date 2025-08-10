@@ -14,11 +14,22 @@ export interface MatchCountBreakdown {
 export const getDetailedMatchCountsByDate = (matches: MatchInfo[]): Record<string, MatchCountBreakdown> => {
   const counts: Record<string, MatchCountBreakdown> = {};
   
-  // Filter out matches with TBC/TBD teams (same logic as in Index.tsx)
-  const filteredMatches = matches.filter(match => {
-    const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
-    return !teamNames.some(name => name === 'tbc' || name === 'tbd');
-  });
+// Filter out matches with TBC/TBD teams and finished FACEIT BYE matches
+const filteredMatches = matches.filter(match => {
+  const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+  const hasTbd = teamNames.some(name => name === 'tbc' || name === 'tbd');
+  if (hasTbd) return false;
+
+  const isFaceit = match.source === 'amateur';
+  const isBye = teamNames.some(name => name === 'bye');
+  const normalizedStatus = (match.status || '').toLowerCase();
+  const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
+
+  // Exclude finished FACEIT matches where one of the teams is BYE
+  if (isFaceit && isFinished && isBye) return false;
+
+  return true;
+});
   
   filteredMatches.forEach(match => {
     // Use consistent timezone-aware date parsing to match the display filtering logic

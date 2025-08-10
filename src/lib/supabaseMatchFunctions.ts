@@ -266,14 +266,25 @@ export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[
 
     const combinedMatches = [...transformedFaceit, ...transformedPandaScore];
 
-    // Filter out matches with TBC/TBD teams
-    const filteredMatches = combinedMatches.filter(match => {
-      const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
-      return !teamNames.some(name => name === 'tbc' || name === 'tbd');
-    });
+// Filter out matches with TBC/TBD teams and finished FACEIT matches with a BYE team
+const filteredMatches = combinedMatches.filter(match => {
+  const teamNames = match.teams.map(team => team.name?.toLowerCase() || '');
+  const hasTbd = teamNames.some(name => name === 'tbc' || name === 'tbd');
+  if (hasTbd) return false;
 
-    console.log(`✅ Final filtered matches: ${filteredMatches.length} (removed ${combinedMatches.length - filteredMatches.length} TBC/TBD)`);
-    return filteredMatches;
+  const isFaceit = match.source === 'amateur';
+  const isBye = teamNames.some(name => name === 'bye');
+  const normalizedStatus = (match.status || '').toLowerCase();
+  const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
+
+  // Exclude finished FACEIT matches where one of the teams is BYE
+  if (isFaceit && isFinished && isBye) return false;
+
+  return true;
+});
+
+console.log(`✅ Final filtered matches: ${filteredMatches.length} (removed ${combinedMatches.length - filteredMatches.length} TBC/TBD and FACEIT BYE finished matches)`);
+return filteredMatches;
 
   } catch (error) {
     console.error('❌ Error in getMatchesAroundDate:', error);

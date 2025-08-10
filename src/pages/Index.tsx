@@ -14,12 +14,12 @@ import { PandaScoreSyncButtons } from '@/components/PandaScoreSyncButtons';
 import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS } from '@/lib/gameTypes';
 import LiveDataTestPanel from '@/components/LiveDataTestPanel';
 import { formatMatchDate } from '@/utils/dateMatchUtils';
-import { MatchCountBreakdown } from '@/utils/matchCountUtils';
+import { MatchCountBreakdown, getDetailedMatchCountsByDate, getTotalMatchCountsByDate as getTotalMatchCountsFromMatches } from '@/utils/matchCountUtils';
 import { startOfDay, endOfDay, isToday, subMonths, addMonths, format } from 'date-fns';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
-import { getMatchCountsAroundDate, getTotalMatchCountsByDate, getMatchesAroundDate } from '@/lib/supabaseMatchFunctions';
+import { getMatchesAroundDate } from '@/lib/supabaseMatchFunctions';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -449,36 +449,35 @@ const Index = () => {
     ) : null;
   };
 
-  // Load calendar match counts using Supabase functions
-  useEffect(() => {
-    async function loadCalendarCounts() {
-      setLoadingCalendar(true);
-      try {
-        console.log('📅 Loading calendar counts using Supabase functions for target date:', selectedDate.toDateString());
-        
-        const matchCountBreakdown = await getMatchCountsAroundDate(selectedDate);
-        const totalCounts = getTotalMatchCountsByDate(matchCountBreakdown);
-        
-        setDetailedMatchCounts(matchCountBreakdown);
-        setMatchCounts(totalCounts);
-        
-        console.log(`📅 Calendar counts loaded: ${Object.keys(totalCounts).length} days`);
-        console.log('📅 Sample counts:', Object.keys(totalCounts).slice(0, 5).reduce((acc, key) => {
-          acc[key] = totalCounts[key];
-          return acc;
-        }, {} as Record<string, number>));
-        
-      } catch (error) {
-        console.error('❌ Error loading calendar counts:', error);
-        setDetailedMatchCounts({});
-        setMatchCounts({});
-      } finally {
-        setLoadingCalendar(false);
-      }
+// Load calendar match counts locally from fetched matches
+useEffect(() => {
+  async function loadCalendarCounts() {
+    setLoadingCalendar(true);
+    try {
+      console.log('📅 Loading calendar counts locally for target date:', selectedDate.toDateString());
+
+      // Fetch matches around the selected date and compute counts locally
+      const matches = await getMatchesAroundDate(selectedDate);
+      console.log(`📅 Retrieved ${matches.length} matches for calendar counts computation`);
+
+      const matchCountBreakdown = getDetailedMatchCountsByDate(matches);
+      const totalCounts = getTotalMatchCountsFromMatches(matches);
+
+      setDetailedMatchCounts(matchCountBreakdown);
+      setMatchCounts(totalCounts);
+
+      console.log(`📅 Calendar counts loaded locally: ${Object.keys(totalCounts).length} days`);
+    } catch (error) {
+      console.error('❌ Error loading calendar counts:', error);
+      setDetailedMatchCounts({});
+      setMatchCounts({});
+    } finally {
+      setLoadingCalendar(false);
     }
-    
-    loadCalendarCounts();
-  }, [selectedDate]);
+  }
+
+  loadCalendarCounts();
+}, [selectedDate]);
 
   // Load matches for the selected date using Supabase functions
   useEffect(() => {
