@@ -576,8 +576,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Main Teams</h3>
-                <p className="text-sm text-muted-foreground">Click to add to your team</p>
+                <h3 className="font-semibold">Select Amateur Team</h3>
+                <p className="text-sm text-muted-foreground">Choose amateur teams to add to your lineup</p>
               </div>
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -635,41 +635,128 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 </div>
                 <div className="text-sm text-muted-foreground">Showing {filteredAmateurTeams.length} of {amateurTeams.length}</div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {filteredAmateurTeams.length === 0 ? (
-                  <div className="col-span-full text-center text-sm text-muted-foreground">No teams match your filters.</div>
-                ) : (
-                  filteredAmateurTeams.map(team => (
-                    <TeamCard
-                      key={team.id}
-                      team={team}
-                      isSelected={!!selectedTeams.find(t => t.id === team.id)}
-                      onClick={() => handleTeamSelect(team)}
-                    />
-                  ))
-                )}
-              </div>
+
+              {/* Amateur dropdown selection */}
+              <Select onValueChange={(teamId) => {
+                const team = filteredAmateurTeams.find(t => t.id === teamId);
+                if (team) handleTeamSelect(team);
+              }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select an amateur team..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px] z-50 bg-popover">
+                  {filteredAmateurTeams.map(team => (
+                    <SelectItem 
+                      key={team.id} 
+                      value={team.id}
+                      disabled={!!selectedTeams.find(t => t.id === team.id)}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        {team.logo_url && (
+                          <img 
+                            src={team.logo_url} 
+                            alt={team.name} 
+                            className="w-6 h-6 rounded flex-shrink-0" 
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{team.name}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {team.esport_type?.toUpperCase()}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              Amateur
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {team.matches_prev_window ?? 0} matches
+                            </Badge>
+                            {typeof team.missed_pct === 'number' && (
+                              <Badge variant="outline" className="text-xs">
+                                {team.missed_pct}% missed
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Selected Amateur Teams Display */}
+              {selectedTeams.filter(t => t.type === 'amateur').length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Selected Amateur Teams:</h4>
+                  <div className="grid gap-2">
+                    {selectedTeams.filter(t => t.type === 'amateur').map(team => (
+                      <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {team.logo_url && (
+                            <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
+                          )}
+                          <div>
+                            <div className="font-medium">{team.name}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {team.esport_type?.toUpperCase()}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                Amateur
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleTeamSelect(team)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold">Bench Team (Optional)</h3>
                   <p className="text-sm text-muted-foreground">Used if main team doesn't play</p>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {filteredAmateurTeams.length === 0 ? (
-                    <div className="col-span-full text-center text-sm text-muted-foreground">No teams match your filters.</div>
-                  ) : (
-                    filteredAmateurTeams.map(team => (
-                      <TeamCard
-                        key={`bench-${team.id}`}
-                        team={team}
-                        isSelected={false}
-                        isBench={benchTeam?.id === team.id}
-                        onClick={() => handleBenchSelect(team)}
-                      />
-                    ))
-                  )}
-                </div>
+
+                <Select value={benchTeam?.id ?? "__none__"} onValueChange={(teamId) => {
+                  if (teamId === "__none__") { setBenchTeam(null); return; }
+                  const team = filteredAmateurTeams.find(t => t.id === teamId);
+                  if (team) handleBenchSelect(team);
+                }}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an amateur bench team..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] z-50 bg-popover">
+                    <SelectItem value="__none__">None</SelectItem>
+                    {filteredAmateurTeams.map(team => (
+                      <SelectItem key={`bench-${team.id}`} value={team.id}>
+                        <div className="flex items-center gap-3 w-full">
+                          {team.logo_url && (
+                            <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{team.name}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                {team.esport_type?.toUpperCase()}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">Amateur</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
