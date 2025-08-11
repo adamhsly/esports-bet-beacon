@@ -385,6 +385,14 @@ const Index = () => {
     }
   };
 
+  // Helper to extract numeric prize value for sorting
+  const getPrizeValueFromMetadata = (metadata: any): number | null => {
+    if (!metadata || metadata.prizePool == null) return null;
+    const raw = metadata.prizePool;
+    const value = typeof raw === 'string' ? parseInt(raw) : Number(raw);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+
   // Helper function to render tournament metadata
   const renderTournamentMetadata = (metadata: any) => {
     if (!metadata) return null;
@@ -660,117 +668,132 @@ useEffect(() => {
                 {/* Live Matches for Selected Date - Grouped by League */}
                 {isSelectedDateToday && dateFilteredLiveMatches.length > 0 && (
                   <div className="mb-8">
-                    {Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(
-                      ([league, { matches, tournamentId }]) => {
-                        const metadata = getTournamentMetadata(matches);
-                        return (
-                          <div key={league} className="mb-6">
-                            <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                              {tournamentId ? (
-                                <Link 
-                                  to={`/tournament/${tournamentId}`}
-                                  className="hover:text-theme-purple transition-colors"
-                                >
-                                  <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
-                                    {league}
-                                  </div>
-                                </Link>
-                              ) : (
-                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                    {(() => {
+                      const groups = Object.entries(groupMatchesByLeague(dateFilteredLiveMatches))
+                        .map(([league, { matches, tournamentId }]) => {
+                          const metadata = getTournamentMetadata(matches);
+                          const prizeValue = getPrizeValueFromMetadata(metadata);
+                          return { league, matches, tournamentId, metadata, prizeValue };
+                        })
+                        .sort((a, b) => (b.prizeValue ?? -1) - (a.prizeValue ?? -1));
+                      return groups.map(({ league, matches, tournamentId, metadata }) => (
+                        <div key={league} className="mb-6">
+                          <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
+                            {tournamentId ? (
+                              <Link 
+                                to={`/tournament/${tournamentId}`}
+                                className="hover:text-theme-purple transition-colors"
+                              >
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
                                   {league}
                                 </div>
-                              )}
-                              {renderTournamentMetadata(metadata)}
-                            </div>
-                            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                              {matches.map(match => (
-                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                  <MatchCard match={match} />
-                                </div>
-                              ))}
-                            </div>
+                              </Link>
+                            ) : (
+                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>
+                            )}
+                            {renderTournamentMetadata(metadata)}
                           </div>
-                        );
-                      }
-                    )}
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                            {matches.map(match => (
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+
                   </div>
                 )}
 
                 {/* Upcoming Matches for Selected Date - Grouped by League */}
                 {dateFilteredUpcomingMatches.length > 0 && (
                   <div className="mb-8">
-                    {Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(
-                      ([league, { matches, tournamentId }]) => {
-                        const metadata = getTournamentMetadata(matches);
-                        return (
-                          <div key={league} className="mb-6">
-                            <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                              {tournamentId ? (
-                                <Link 
-                                  to={`/tournament/${tournamentId}`}
-                                  className="hover:text-theme-purple transition-colors"
-                                >
-                                  <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
-                                    {league}
-                                  </div>
-                                </Link>
-                              ) : (
-                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                    {(() => {
+                      const groups = Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches))
+                        .map(([league, { matches, tournamentId }]) => {
+                          const metadata = getTournamentMetadata(matches);
+                          const prizeValue = getPrizeValueFromMetadata(metadata);
+                          return { league, matches, tournamentId, metadata, prizeValue };
+                        })
+                        .sort((a, b) => (b.prizeValue ?? -1) - (a.prizeValue ?? -1));
+                      return groups.map(({ league, matches, tournamentId, metadata }) => (
+                        <div key={league} className="mb-6">
+                          <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
+                            {tournamentId ? (
+                              <Link 
+                                to={`/tournament/${tournamentId}`}
+                                className="hover:text-theme-purple transition-colors"
+                              >
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
                                   {league}
                                 </div>
-                              )}
-                              {renderTournamentMetadata(metadata)}
-                            </div>
-                            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                              {matches.map(match => (
-                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                  <MatchCard match={match} />
-                                </div>
-                              ))}
-                            </div>
+                              </Link>
+                            ) : (
+                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>
+                            )}
+                            {renderTournamentMetadata(metadata)}
                           </div>
-                        );
-                      }
-                    )}
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                            {matches.map(match => (
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+
                   </div>
                 )}
 
                 {/* Finished Matches for Selected Date - Grouped by League */}
                 {dateFilteredFinishedMatches.length > 0 && (
                   <div className="mb-8">
-                    {Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(
-                      ([league, { matches, tournamentId }]) => {
-                        const metadata = getTournamentMetadata(matches);
-                        return (
-                          <div key={league} className="mb-6">
-                            <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                              {tournamentId ? (
-                                <Link 
-                                  to={`/tournament/${tournamentId}`}
-                                  className="hover:text-theme-purple transition-colors"
-                                >
-                                  <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
-                                    {league}
-                                  </div>
-                                </Link>
-                              ) : (
-                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                    {(() => {
+                      const groups = Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches))
+                        .map(([league, { matches, tournamentId }]) => {
+                          const metadata = getTournamentMetadata(matches);
+                          const prizeValue = getPrizeValueFromMetadata(metadata);
+                          return { league, matches, tournamentId, metadata, prizeValue };
+                        })
+                        .sort((a, b) => (b.prizeValue ?? -1) - (a.prizeValue ?? -1));
+                      return groups.map(({ league, matches, tournamentId, metadata }) => (
+                        <div key={league} className="mb-6">
+                          <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
+                            {tournamentId ? (
+                              <Link 
+                                to={`/tournament/${tournamentId}`}
+                                className="hover:text-theme-purple transition-colors"
+                              >
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
                                   {league}
                                 </div>
-                              )}
-                              {renderTournamentMetadata(metadata)}
-                            </div>
-                            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                              {matches.map(match => (
-                                <div key={match.id} className="px-2 sm:px-4 lg:px-6">
-                                  <MatchCard match={match} />
-                                </div>
-                              ))}
-                            </div>
+                              </Link>
+                            ) : (
+                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>
+                            )}
+                            {renderTournamentMetadata(metadata)}
                           </div>
-                        );
-                      }
-                    )}
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                            {matches.map(match => (
+                              <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+
                   </div>
                 )}
 
