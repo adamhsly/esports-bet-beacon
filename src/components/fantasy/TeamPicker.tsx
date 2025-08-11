@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '@/components/AuthModal';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface FantasyRound {
   id: string;
@@ -47,6 +52,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
   const [submitting, setSubmitting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
+
+  // Filters - Pro (PandaScore)
+  const [proSearch, setProSearch] = useState('');
+  const [selectedGamePro, setSelectedGamePro] = useState<string>('all');
+  const [minMatchesPro, setMinMatchesPro] = useState<number>(0);
+  const [hasLogoOnlyPro, setHasLogoOnlyPro] = useState<boolean>(false);
+
+  // Filters - Amateur (FACEIT)
+  const [amSearch, setAmSearch] = useState('');
+  const [selectedGameAm, setSelectedGameAm] = useState<string>('all');
+  const [minMatchesPrev, setMinMatchesPrev] = useState<number>(0);
+  const [maxMissedPct, setMaxMissedPct] = useState<number>(100);
+  const [hasLogoOnlyAm, setHasLogoOnlyAm] = useState<boolean>(false);
+  const [hasPrevMatchesOnlyAm, setHasPrevMatchesOnlyAm] = useState<boolean>(false);
+
+  // Debounced search terms
+  const debouncedProSearch = useDebounce(proSearch, 300);
+  const debouncedAmSearch = useDebounce(amSearch, 300);
 
   useEffect(() => {
     fetchAvailableTeams();
@@ -147,6 +170,41 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       setLoading(false);
     }
   };
+
+  // Unique game lists
+  const proGames = useMemo(() =>
+    Array.from(new Set(proTeams.map((t) => t.esport_type).filter(Boolean))) as string[],
+  [proTeams]);
+
+  const amateurGames = useMemo(() =>
+    Array.from(new Set(amateurTeams.map((t) => t.esport_type).filter(Boolean))) as string[],
+  [amateurTeams]);
+
+  // Filtered lists
+  const filteredProTeams = useMemo(() => {
+    return proTeams.filter((t) => {
+      const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
+      const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
+      const matches = t.matches_in_period ?? 0;
+      const matchesMatch = matches >= minMatchesPro;
+      const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
+      return nameMatch && gameMatch && matchesMatch && logoMatch;
+    });
+  }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro]);
+
+  const filteredAmateurTeams = useMemo(() => {
+    return amateurTeams.filter((t) => {
+      const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
+      const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
+      const matchesPrev = t.matches_prev_window ?? 0;
+      const matchesMatch = matchesPrev >= minMatchesPrev;
+      const missed = t.missed_pct ?? 100;
+      const missedMatch = missed <= maxMissedPct;
+      const logoMatch = !hasLogoOnlyAm || !!t.logo_url;
+      const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchesPrev > 0;
+      return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch;
+    });
+  }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm]);
 
   const handleTeamSelect = (team: Team) => {
     if (selectedTeams.find(t => t.id === team.id)) {
@@ -372,15 +430,56 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 <p className="text-sm text-muted-foreground">Choose teams scheduled to play in this period</p>
               </div>
               
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                  <Input
+                    placeholder="Search teams..."
+                    value={proSearch}
+                    onChange={(e) => setProSearch(e.target.value)}
+                    className="w-full md:w-64"
+                  />
+                  <Select value={selectedGamePro} onValueChange={setSelectedGamePro}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Game" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-popover">
+                      <SelectItem value="all">All games</SelectItem>
+                      {proGames.map((g) => (
+                        <SelectItem key={g} value={g as string}>
+                          {(g as string)?.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Min matches</Label>
+                    <Slider
+                      min={0}
+                      max={10}
+                      step={1}
+                      value={[minMatchesPro]}
+                      onValueChange={(v) => setMinMatchesPro(v[0] ?? 0)}
+                      className="w-40"
+                    />
+                    <span className="text-sm text-muted-foreground w-10 text-right">{minMatchesPro}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="pro-logo" checked={hasLogoOnlyPro} onCheckedChange={(c) => setHasLogoOnlyPro(Boolean(c))} />
+                    <Label htmlFor="pro-logo">With logo</Label>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">Showing {filteredProTeams.length} of {proTeams.length}</div>
+              </div>
+
               <Select onValueChange={(teamId) => {
-                const team = proTeams.find(t => t.id === teamId);
+                const team = filteredProTeams.find(t => t.id === teamId);
                 if (team) handleTeamSelect(team);
               }}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a pro team..." />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {proTeams.map(team => (
+                <SelectContent className="max-h-[300px] z-50 bg-popover">
+                  {filteredProTeams.map(team => (
                     <SelectItem 
                       key={team.id} 
                       value={team.id}
@@ -480,15 +579,75 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 <h3 className="font-semibold">Main Teams</h3>
                 <p className="text-sm text-muted-foreground">Click to add to your team</p>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {amateurTeams.map(team => (
-                  <TeamCard
-                    key={team.id}
-                    team={team}
-                    isSelected={!!selectedTeams.find(t => t.id === team.id)}
-                    onClick={() => handleTeamSelect(team)}
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                  <Input
+                    placeholder="Search teams..."
+                    value={amSearch}
+                    onChange={(e) => setAmSearch(e.target.value)}
+                    className="w-full md:w-64"
                   />
-                ))}
+                  <Select value={selectedGameAm} onValueChange={setSelectedGameAm}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Game" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-popover">
+                      <SelectItem value="all">All games</SelectItem>
+                      {amateurGames.map((g) => (
+                        <SelectItem key={g} value={g as string}>
+                          {(g as string)?.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Min matches</Label>
+                    <Slider
+                      min={0}
+                      max={20}
+                      step={1}
+                      value={[minMatchesPrev]}
+                      onValueChange={(v) => setMinMatchesPrev(v[0] ?? 0)}
+                      className="w-40"
+                    />
+                    <span className="text-sm text-muted-foreground w-10 text-right">{minMatchesPrev}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Max missed %</Label>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={[maxMissedPct]}
+                      onValueChange={(v) => setMaxMissedPct(v[0] ?? 100)}
+                      className="w-40"
+                    />
+                    <span className="text-sm text-muted-foreground w-12 text-right">{maxMissedPct}%</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="am-logo" checked={hasLogoOnlyAm} onCheckedChange={(c) => setHasLogoOnlyAm(Boolean(c))} />
+                    <Label htmlFor="am-logo">With logo</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="am-hasprev" checked={hasPrevMatchesOnlyAm} onCheckedChange={(c) => setHasPrevMatchesOnlyAm(Boolean(c))} />
+                    <Label htmlFor="am-hasprev">Has matches last window</Label>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">Showing {filteredAmateurTeams.length} of {amateurTeams.length}</div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {filteredAmateurTeams.length === 0 ? (
+                  <div className="col-span-full text-center text-sm text-muted-foreground">No teams match your filters.</div>
+                ) : (
+                  filteredAmateurTeams.map(team => (
+                    <TeamCard
+                      key={team.id}
+                      team={team}
+                      isSelected={!!selectedTeams.find(t => t.id === team.id)}
+                      onClick={() => handleTeamSelect(team)}
+                    />
+                  ))
+                )}
               </div>
 
               <div className="border-t pt-4">
@@ -497,15 +656,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                   <p className="text-sm text-muted-foreground">Used if main team doesn't play</p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {amateurTeams.map(team => (
-                    <TeamCard
-                      key={`bench-${team.id}`}
-                      team={team}
-                      isSelected={false}
-                      isBench={benchTeam?.id === team.id}
-                      onClick={() => handleBenchSelect(team)}
-                    />
-                  ))}
+                  {filteredAmateurTeams.length === 0 ? (
+                    <div className="col-span-full text-center text-sm text-muted-foreground">No teams match your filters.</div>
+                  ) : (
+                    filteredAmateurTeams.map(team => (
+                      <TeamCard
+                        key={`bench-${team.id}`}
+                        team={team}
+                        isSelected={false}
+                        isBench={benchTeam?.id === team.id}
+                        onClick={() => handleBenchSelect(team)}
+                      />
+                    ))
+                  )}
                 </div>
               </div>
             </div>
