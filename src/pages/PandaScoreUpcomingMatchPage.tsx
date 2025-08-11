@@ -156,7 +156,7 @@ const PandaScoreUpcomingMatchPage = () => {
   const hasStreams = streams && streams.length > 0;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-theme-gray-dark theme-alt-card">
       <SearchableNavbar />
 
       <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
@@ -175,7 +175,7 @@ const PandaScoreUpcomingMatchPage = () => {
 
           {/* StreamViewer widget for non-finished matches */}
           {hasStreams && headerType !== 'finished' && (
-            <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <Card className="bg-card border border-border">
               <div className="p-4">
                 <h3 className="text-lg font-bold text-white mb-4">Match Streams</h3>
                 <StreamViewer streams={streams} showTabs={false} />
@@ -188,7 +188,7 @@ const PandaScoreUpcomingMatchPage = () => {
 
 
           {/* Pre-Match Stats */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Pre-Match Statistics</h3>
               <PandaScorePreMatchStats
@@ -202,7 +202,7 @@ const PandaScoreUpcomingMatchPage = () => {
 
           {/* Community Predictions for upcoming matches */}
           {headerType === 'upcoming' && (
-            <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <Card className="bg-card border border-border">
               <div className="p-4">
                 <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
                 <MatchVotingWidget
@@ -225,7 +225,7 @@ const PandaScoreUpcomingMatchPage = () => {
           )}
 
           {/* Team Rosters */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
               <PandaScorePlayerRoster 
@@ -236,7 +236,7 @@ const PandaScoreUpcomingMatchPage = () => {
           </Card>
 
           {/* Team Analysis */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Team Analysis</h3>
               <EnhancedTeamComparison

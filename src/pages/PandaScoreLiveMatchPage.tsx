@@ -100,7 +100,7 @@ const PandaScoreLiveMatchPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-theme-gray-dark theme-alt-card">
       <SearchableNavbar />
       
       <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
@@ -117,7 +117,7 @@ const PandaScoreLiveMatchPage = () => {
           <PandaScoreLiveScorecard match={matchDetails} />
           
           {/* Match Information Card */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Match Information</h3>
               <div className="space-y-3">
@@ -141,7 +141,7 @@ const PandaScoreLiveMatchPage = () => {
           </Card>
 
           {/* Quick Actions Card */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
               <button
@@ -154,7 +154,7 @@ const PandaScoreLiveMatchPage = () => {
           </Card>
 
           {/* Team Rosters Card */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Team Rosters</h3>
               <PandaScorePlayerRoster teams={matchDetails.teams} />
@@ -162,7 +162,7 @@ const PandaScoreLiveMatchPage = () => {
           </Card>
 
           {/* Team Analysis Card */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Team Analysis</h3>
               <EnhancedTeamComparison
@@ -174,7 +174,7 @@ const PandaScoreLiveMatchPage = () => {
           </Card>
 
           {/* Official Streams Card */}
-          <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+          <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Official Streams</h3>
               <StreamViewer streams={extractStreamsFromRawData(matchDetails.rawData)} />

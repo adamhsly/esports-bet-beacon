@@ -219,7 +219,7 @@ const MatchDetailsPage = () => {
 
   // Remove the amateur/FACEIT specific logic since those matches are now redirected
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-theme-gray-dark theme-alt-card">
       <SearchableNavbar />
       
       {/* Main content area with responsive padding */}
@@ -258,7 +258,7 @@ const MatchDetailsPage = () => {
               
               {/* Scoreboard Section */}
               <div className="px-2 md:px-8">
-                <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
+                <Card className="bg-card border border-border overflow-hidden">
                   <div className="flex flex-col md:flex-row items-center justify-between">
                     {/* Team 1 */}
                     <div className="flex-1 p-4 text-center">

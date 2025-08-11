@@ -419,3 +419,11 @@ nav a:hover {
 }
 
 }
+
+/* Page theme scope: use homepage-like dark background and lighter card shade */
+.theme-alt-card {
+  --card: 217.2 32.6% 20%;
+  --card-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 28%;
+}
+

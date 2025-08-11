@@ -282,7 +282,7 @@ const FaceitMatchPage = () => {
         
         {/* Community Voting for upcoming matches */}
         {headerType === 'upcoming' && safeTeams.length >= 2 && (
-          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+            <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
               <MatchVotingWidget 
@@ -306,7 +306,7 @@ const FaceitMatchPage = () => {
 
         {/* Live Room Access for live matches */}
         {headerType === 'live' && safeTeams.length > 0 && (
-          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+           <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Match Room Access</h3>
               <FaceitLiveRoomAccess 
@@ -320,7 +320,7 @@ const FaceitMatchPage = () => {
 
         {/* Player Performance for finished matches */}
         {headerType === 'finished' && safeTeams.length > 0 && (
-          <Card className="bg-theme-gray-dark border-theme-gray-medium">
+         <Card className="bg-card border border-border">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Player Performance</h3>
               <FaceitPlayerPerformanceTable 
@@ -336,7 +336,7 @@ const FaceitMatchPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-theme-gray-dark theme-alt-card">
       <SearchableNavbar />
 
       <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
