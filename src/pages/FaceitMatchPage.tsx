@@ -339,7 +339,7 @@ const FaceitMatchPage = () => {
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
 
-      <div className="theme-alt-card flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
+      <div className="flex-grow max-w-5xl mx-auto w-full px-2 md:px-8 py-2 md:py-8">
         <div className="space-y-4 md:space-y-8">
           {/* Error Alert if there were issues */}
           {error && (

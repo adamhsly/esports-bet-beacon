@@ -223,7 +223,7 @@ const MatchDetailsPage = () => {
       <SearchableNavbar />
       
       {/* Main content area with responsive padding */}
-      <div className="theme-alt-card flex-grow w-full">
+      <div className="flex-grow w-full">
         <div className="max-w-5xl mx-auto w-full px-2 md:px-8 py-8">
           <div className="space-y-8">
             {isLoading ? (

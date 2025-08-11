@@ -25,7 +25,6 @@ import AuthPage from '@/pages/AuthPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
 import NotFound from '@/pages/NotFound';
 import './App.css';
-import GlobalBackground from '@/components/GlobalBackground';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,34 +51,31 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
 function App() {
   return (
     <QueryClientWrapper>
-      <div className="relative">
-        <Router>
-          <GlobalBackground />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/esports/:gameType" element={<EsportPage />} />
-            <Route path="/tournaments" element={<TournamentsPage />} />
-            <Route path="/tournament/:tournamentId" element={<TournamentDetailPage />} />
-            <Route path="/teams" element={<TeamsPage />} />
-            <Route path="/team/:id" element={<TeamDetailPage />} />
-            <Route path="/player/:id" element={<PlayerDetailPage />} />
-            <Route path="/match/:matchId" element={<MatchDetailsPage />} />
-            {/* Unified FACEIT match page - handles all statuses */}
-            <Route path="/faceit/match/:matchId" element={<FaceitMatchPage />} />
-            <Route path="/faceit/live/:matchId" element={<FaceitMatchPage />} />
-            <Route path="/faceit/finished/:matchId" element={<FaceitMatchPage />} />
-            <Route path="/pandascore/match/:matchId" element={<PandaScoreUpcomingMatchPage />} />
-            <Route path="/pandascore/live/:matchId" element={<PandaScoreLiveMatchPage />} />
-            <Route path="/news" element={<NewsPage />} />
-            <Route path="/cards" element={<CardsPage />} />
-            <Route path="/advanced-cards" element={<AdvancedCardsPage />} />
-            <Route path="/fantasy" element={<FantasyPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/web3-profile" element={<Web3ProfilePage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-      </div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/esports/:gameType" element={<EsportPage />} />
+          <Route path="/tournaments" element={<TournamentsPage />} />
+          <Route path="/tournament/:tournamentId" element={<TournamentDetailPage />} />
+          <Route path="/teams" element={<TeamsPage />} />
+          <Route path="/team/:id" element={<TeamDetailPage />} />
+          <Route path="/player/:id" element={<PlayerDetailPage />} />
+          <Route path="/match/:matchId" element={<MatchDetailsPage />} />
+          {/* Unified FACEIT match page - handles all statuses */}
+          <Route path="/faceit/match/:matchId" element={<FaceitMatchPage />} />
+          <Route path="/faceit/live/:matchId" element={<FaceitMatchPage />} />
+          <Route path="/faceit/finished/:matchId" element={<FaceitMatchPage />} />
+          <Route path="/pandascore/match/:matchId" element={<PandaScoreUpcomingMatchPage />} />
+          <Route path="/pandascore/live/:matchId" element={<PandaScoreLiveMatchPage />} />
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/cards" element={<CardsPage />} />
+          <Route path="/advanced-cards" element={<AdvancedCardsPage />} />
+          <Route path="/fantasy" element={<FantasyPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/web3-profile" element={<Web3ProfilePage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
     </QueryClientWrapper>
   );
 }
