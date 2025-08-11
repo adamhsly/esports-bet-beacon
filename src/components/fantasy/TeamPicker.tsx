@@ -22,10 +22,13 @@ interface Team {
   id: string;
   name: string;
   type: 'pro' | 'amateur';
-  matches_in_period?: number;
+  matches_in_period?: number; // Pro teams
   logo_url?: string;
-  recent_activity?: number;
   esport_type?: string;
+  // Amateur metrics (previous fantasy window)
+  matches_prev_window?: number;
+  missed_pct?: number;
+  total_scheduled?: number;
 }
 
 interface TeamPickerProps {
@@ -91,38 +94,52 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
 
       const proTeamData = Array.from(proTeamMap.values());
 
-      // Fetch amateur teams from Faceit matches
-      const { data: faceitMatches, error: faceitError } = await supabase
-        .from('faceit_matches')
-        .select('teams')
-        .gte('scheduled_at', round.start_date)
-        .lte('scheduled_at', round.end_date);
+      // Fetch amateur teams from FACEIT database and compute previous-window stats
+      const currentStart = new Date(round.start_date);
+      const currentEnd = new Date(round.end_date);
+      const prevEnd = currentStart;
+      const prevStart = new Date(currentStart.getTime() - (currentEnd.getTime() - currentStart.getTime()));
 
-      if (faceitError) throw faceitError;
+      const [allTeamsRes, prevStatsRes] = await Promise.all([
+        (supabase.rpc as any)('get_all_faceit_teams'),
+        (supabase.rpc as any)('get_faceit_teams_prev_window_stats', {
+          start_ts: prevStart.toISOString(),
+          end_ts: prevEnd.toISOString()
+        })
+      ]);
 
-      // Extract unique amateur teams with recent activity count
-      const amateurTeamMap = new Map<string, { name: string; count: number }>();
-      
-      faceitMatches?.forEach(match => {
-        if (match.teams && Array.isArray(match.teams)) {
-          match.teams.forEach((team: any) => {
-            if (team.name && team.id) {
-              const current = amateurTeamMap.get(team.id) || { name: team.name, count: 0 };
-              amateurTeamMap.set(team.id, { ...current, count: current.count + 1 });
-            }
-          });
-        }
+      if (allTeamsRes.error) throw allTeamsRes.error;
+      if (prevStatsRes.error) throw prevStatsRes.error;
+
+      const stats: Array<any> = prevStatsRes.data || [];
+      const statsMap = new Map<string, any>();
+      stats.forEach((s) => statsMap.set(s.team_id, s));
+
+      const amateurTeamData: Team[] = (allTeamsRes.data || []).map((t: any) => {
+        const s = statsMap.get(t.team_id);
+        return {
+          id: t.team_id,
+          name: t.team_name,
+          type: 'amateur',
+          logo_url: t.logo_url || undefined,
+          esport_type: t.game,
+          matches_prev_window: s?.played_matches ?? 0,
+          missed_pct: typeof s?.missed_pct === 'number' ? Number(s.missed_pct) : undefined,
+          total_scheduled: s?.total_scheduled ?? undefined,
+        } as Team;
+      }).sort((a: Team, b: Team) => {
+        const aM = a.matches_prev_window || 0;
+        const bM = b.matches_prev_window || 0;
+        if (bM !== aM) return bM - aM;
+        const aMiss = a.missed_pct ?? 999;
+        const bMiss = b.missed_pct ?? 999;
+        if (aMiss !== bMiss) return aMiss - bMiss;
+        return a.name.localeCompare(b.name);
       });
-
-      const amateurTeamData: Team[] = Array.from(amateurTeamMap.entries()).map(([id, data]) => ({
-        id,
-        name: data.name,
-        type: 'amateur',
-        recent_activity: data.count
-      }));
 
       setProTeams(proTeamData);
       setAmateurTeams(amateurTeamData);
+
     } catch (error) {
       console.error('Error fetching teams:', error);
       toast.error('Failed to load available teams');
@@ -249,11 +266,17 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 {team.type === 'amateur' && (
                   <>
                     <Badge variant="outline" className="text-xs">
-                      +25% bonus
+                      {team.esport_type?.toUpperCase() || 'FACEIT'}
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
-                      {team.recent_activity || 0} matches
+                      {team.matches_prev_window ?? 0} matches
                     </Badge>
+                    {typeof team.missed_pct === 'number' && (
+                      <Badge variant="outline" className="text-xs">
+                        {team.missed_pct}% missed
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs">+25% bonus</Badge>
                   </>
                 )}
               </div>
@@ -261,13 +284,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
           </div>
           
           <div className="flex items-center gap-2">
-            {team.type === 'amateur' && team.recent_activity !== undefined && (
+            {team.type === 'amateur' && (
               <div className="text-right">
-                <div className="text-sm font-medium">{team.recent_activity} matches</div>
-                <div className="text-xs text-muted-foreground">in period</div>
-                {team.recent_activity < 5 && (
-                  <AlertTriangle className="h-4 w-4 text-orange-500 inline ml-1" />
-                )}
+                <div className="text-sm font-medium">{team.matches_prev_window ?? 0} matches</div>
+                <div className="text-xs text-muted-foreground">last window</div>
               </div>
             )}
             {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
