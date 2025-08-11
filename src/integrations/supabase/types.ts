@@ -2363,6 +2363,15 @@ export type Database = {
           match_count: number
         }[]
       }
+      get_all_faceit_teams: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          team_id: string
+          team_name: string
+          logo_url: string
+          game: string
+        }[]
+      }
       get_faceit_matches_around_date: {
         Args: { target_date: string }
         Returns: {
@@ -2402,6 +2411,19 @@ export type Database = {
           objectives_status: Json
           auto_refresh_interval: number
           last_live_update: string
+        }[]
+      }
+      get_faceit_teams_prev_window_stats: {
+        Args: { start_ts: string; end_ts: string }
+        Returns: {
+          team_id: string
+          team_name: string
+          logo_url: string
+          game: string
+          total_scheduled: number
+          played_matches: number
+          byes: number
+          missed_pct: number
         }[]
       }
       get_head_to_head_stats: {
