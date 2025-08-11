@@ -418,4 +418,14 @@ nav a:hover {
   scroll-behavior: smooth;
 }
 
+/* Alternate darker card shade for match details and fantasy pages */
+.theme-alt-card {
+  --card: 217.2 32.6% 13%;
+  --border: 217.2 32.6% 22%;
+}
+
+/* Override legacy theme classes within alt context */
+.theme-alt-card .bg-theme-gray-dark { background-color: hsl(217.2 32.6% 13%) !important; }
+.theme-alt-card .border-theme-gray-medium { border-color: hsl(215 20% 24%) !important; }
+
 }

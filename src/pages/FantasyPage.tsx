@@ -38,7 +38,7 @@ const FantasyPage: React.FC = () => {
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-background">
       <SearchableNavbar />
 
-      <div className="flex-grow w-full">
+      <div className="theme-alt-card flex-grow w-full">
         <div className="mx-2 md:mx-4 my-8">
           <div className="mb-8 max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold mb-4 text-theme-purple">
