@@ -1008,6 +1008,51 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_team_prices: {
+        Row: {
+          abandon_rate: number | null
+          created_at: string
+          id: string
+          last_price_update: string
+          match_volume: number | null
+          price: number
+          recent_win_rate: number | null
+          round_id: string
+          team_id: string
+          team_name: string | null
+          team_type: string
+          updated_at: string
+        }
+        Insert: {
+          abandon_rate?: number | null
+          created_at?: string
+          id?: string
+          last_price_update?: string
+          match_volume?: number | null
+          price?: number
+          recent_win_rate?: number | null
+          round_id: string
+          team_id: string
+          team_name?: string | null
+          team_type: string
+          updated_at?: string
+        }
+        Update: {
+          abandon_rate?: number | null
+          created_at?: string
+          id?: string
+          last_price_update?: string
+          match_volume?: number | null
+          price?: number
+          recent_win_rate?: number | null
+          round_id?: string
+          team_id?: string
+          team_name?: string | null
+          team_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       live_player_performance: {
         Row: {
           clutch_rounds: number

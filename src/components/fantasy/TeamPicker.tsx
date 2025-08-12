@@ -14,6 +14,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
+import { Progress } from '@/components/ui/progress';
 
 interface FantasyRound {
   id: string;
@@ -34,6 +35,11 @@ interface Team {
   matches_prev_window?: number;
   missed_pct?: number;
   total_scheduled?: number;
+  // Pricing & metrics
+  price?: number;
+  recent_win_rate?: number; // 0..1
+  match_volume?: number; // pro only
+  abandon_rate?: number; // 0..1, amateur only
 }
 
 interface TeamPickerProps {
@@ -41,6 +47,7 @@ interface TeamPickerProps {
   onBack: () => void;
   onNavigateToInProgress?: () => void;
 }
+
 
 export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigateToInProgress }) => {
   const { user } = useAuth();
@@ -52,6 +59,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
   const [submitting, setSubmitting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
+
+  // Salary cap
+  const SALARY_CAP = 50;
+  const budgetSpent = useMemo(() => selectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [selectedTeams]);
+  const budgetRemaining = Math.max(0, SALARY_CAP - budgetSpent);
 
   // Filters - Pro (PandaScore)
   const [proSearch, setProSearch] = useState('');
@@ -66,6 +78,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
   const [maxMissedPct, setMaxMissedPct] = useState<number>(100);
   const [hasLogoOnlyAm, setHasLogoOnlyAm] = useState<boolean>(false);
   const [hasPrevMatchesOnlyAm, setHasPrevMatchesOnlyAm] = useState<boolean>(false);
+
+  // Sorting
+  const [proSortBy, setProSortBy] = useState<'price' | 'win_rate' | 'match_volume'>('price');
+  const [proSortDir, setProSortDir] = useState<'asc' | 'desc'>('desc');
+  const [amSortBy, setAmSortBy] = useState<'price' | 'win_rate' | 'abandon_rate' | 'matches_prev'>('price');
+  const [amSortDir, setAmSortDir] = useState<'asc' | 'desc'>('desc');
 
   // Debounced search terms
   const debouncedProSearch = useDebounce(proSearch, 300);
@@ -123,16 +141,37 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       const prevEnd = currentStart;
       const prevStart = new Date(currentStart.getTime() - (currentEnd.getTime() - currentStart.getTime()));
 
-      const [allTeamsRes, prevStatsRes] = await Promise.all([
+      const [allTeamsRes, prevStatsRes, priceRowsRes] = await Promise.all([
         (supabase.rpc as any)('get_all_faceit_teams'),
         (supabase.rpc as any)('get_faceit_teams_prev_window_stats', {
           start_ts: prevStart.toISOString(),
           end_ts: prevEnd.toISOString()
-        })
+        }),
+        supabase.from('fantasy_team_prices').select('*').eq('round_id', round.id)
       ]);
 
       if (allTeamsRes.error) throw allTeamsRes.error;
       if (prevStatsRes.error) throw prevStatsRes.error;
+      if (priceRowsRes.error) throw priceRowsRes.error;
+
+      const priceRows: Array<any> = priceRowsRes.data || [];
+      const proPriceMap = new Map<string, any>();
+      const amPriceMap = new Map<string, any>();
+      priceRows.forEach((row) => {
+        if (row.team_type === 'pro') proPriceMap.set(row.team_id, row);
+        if (row.team_type === 'amateur') amPriceMap.set(row.team_id, row);
+      });
+
+      // Attach prices to pro teams
+      const proTeamDataWithPrice: Team[] = proTeamData.map((t) => {
+        const p = proPriceMap.get(t.id);
+        return {
+          ...t,
+          price: p?.price ?? undefined,
+          recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined,
+          match_volume: typeof p?.match_volume === 'number' ? p.match_volume : t.matches_in_period,
+        } as Team;
+      });
 
       const stats: Array<any> = prevStatsRes.data || [];
       const statsMap = new Map<string, any>();
@@ -140,6 +179,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
 
       const amateurTeamData: Team[] = (allTeamsRes.data || []).map((t: any) => {
         const s = statsMap.get(t.team_id);
+        const p = amPriceMap.get(t.team_id);
         return {
           id: t.team_id,
           name: t.team_name,
@@ -149,6 +189,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
           matches_prev_window: s?.played_matches ?? 0,
           missed_pct: typeof s?.missed_pct === 'number' ? Number(s.missed_pct) : undefined,
           total_scheduled: s?.total_scheduled ?? undefined,
+          price: p?.price ?? undefined,
+          abandon_rate: typeof p?.abandon_rate === 'number' ? p.abandon_rate : undefined,
+          recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined,
         } as Team;
       }).sort((a: Team, b: Team) => {
         const aM = a.matches_prev_window || 0;
@@ -160,8 +203,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
         return a.name.localeCompare(b.name);
       });
 
-      setProTeams(proTeamData);
+      setProTeams(proTeamDataWithPrice);
       setAmateurTeams(amateurTeamData);
+
 
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -180,9 +224,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
     Array.from(new Set(amateurTeams.map((t) => t.esport_type).filter(Boolean))) as string[],
   [amateurTeams]);
 
-  // Filtered lists
+  // Filtered + Sorted lists
   const filteredProTeams = useMemo(() => {
-    return proTeams.filter((t) => {
+    const list = proTeams.filter((t) => {
       const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
       const matches = t.matches_in_period ?? 0;
@@ -190,10 +234,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
       return nameMatch && gameMatch && matchesMatch && logoMatch;
     });
-  }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro]);
+    const factor = proSortDir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const av = proSortBy === 'price' ? (a.price ?? -Infinity)
+        : proSortBy === 'win_rate' ? (a.recent_win_rate ?? -Infinity)
+        : (a.match_volume ?? a.matches_in_period ?? -Infinity);
+      const bv = proSortBy === 'price' ? (b.price ?? -Infinity)
+        : proSortBy === 'win_rate' ? (b.recent_win_rate ?? -Infinity)
+        : (b.match_volume ?? b.matches_in_period ?? -Infinity);
+      if (av === bv) return a.name.localeCompare(b.name);
+      return (av - bv) * factor;
+    });
+  }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, proSortBy, proSortDir]);
 
   const filteredAmateurTeams = useMemo(() => {
-    return amateurTeams.filter((t) => {
+    const list = amateurTeams.filter((t) => {
       const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
       const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
       const matchesPrev = t.matches_prev_window ?? 0;
@@ -204,16 +259,37 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchesPrev > 0;
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch;
     });
-  }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm]);
+    const factor = amSortDir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const av = amSortBy === 'price' ? (a.price ?? -Infinity)
+        : amSortBy === 'win_rate' ? (a.recent_win_rate ?? -Infinity)
+        : amSortBy === 'abandon_rate' ? (a.abandon_rate ?? -Infinity)
+        : (a.matches_prev_window ?? -Infinity);
+      const bv = amSortBy === 'price' ? (b.price ?? -Infinity)
+        : amSortBy === 'win_rate' ? (b.recent_win_rate ?? -Infinity)
+        : amSortBy === 'abandon_rate' ? (b.abandon_rate ?? -Infinity)
+        : (b.matches_prev_window ?? -Infinity);
+      if (av === bv) return a.name.localeCompare(b.name);
+      return (av - bv) * factor;
+    });
+  }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, amSortBy, amSortDir]);
 
   const handleTeamSelect = (team: Team) => {
     if (selectedTeams.find(t => t.id === team.id)) {
       setSelectedTeams(selectedTeams.filter(t => t.id !== team.id));
-    } else if (selectedTeams.length < 5) {
-      setSelectedTeams([...selectedTeams, team]);
-    } else {
-      toast.error('You can only select up to 5 teams');
+      return;
     }
+    if (selectedTeams.length >= 5) {
+      toast.error('You can only select up to 5 teams');
+      return;
+    }
+    const teamPrice = team.price ?? 0;
+    const newSpent = budgetSpent + teamPrice;
+    if (newSpent > SALARY_CAP) {
+      toast.warning(`Budget exceeded. Adding ${team.name} (+${teamPrice}) goes over ${SALARY_CAP}.`);
+      return;
+    }
+    setSelectedTeams([...selectedTeams, team]);
   };
 
   const handleBenchSelect = (team: Team) => {
@@ -393,6 +469,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               {selectedTeams.map(team => (
                 <Badge key={team.id} variant="secondary" className="flex items-center gap-1">
                   {team.name}
+                  {typeof team.price === 'number' && <span className="text-xs">• {team.price}c</span>}
                   {team.type === 'amateur' && <span className="text-xs text-green-600">+25%</span>}
                 </Badge>
               ))}
@@ -405,6 +482,13 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               </Badge>
             </div>
           )}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm">
+              <span>Budget</span>
+              <span>{budgetSpent}/{SALARY_CAP} credits • Remaining {budgetRemaining}</span>
+            </div>
+            <Progress value={Math.min(100, Math.round((budgetSpent / SALARY_CAP) * 100))} className="mt-2" />
+          </div>
         </CardContent>
       </Card>
 
@@ -485,7 +569,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                       value={team.id}
                       aria-label={team.name}
                       className="text-foreground hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none"
-                      disabled={!!selectedTeams.find(t => t.id === team.id)}
+                      disabled={!!selectedTeams.find(t => t.id === team.id) || (typeof team.price === 'number' && team.price > budgetRemaining)}
                     >
                       <div className="flex items-center gap-3 w-full">
                         {team.logo_url && (
@@ -496,7 +580,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{team.name}</div>
+                          <div className="font-medium truncate flex items-center gap-2">
+                            <span className="truncate">{team.name}</span>
+                            {typeof team.price === 'number' && (
+                              <Badge variant="secondary" className="text-[10px]">{team.price}c</Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">
                               {team.esport_type?.toUpperCase()}
@@ -653,7 +742,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                       value={team.id}
                       aria-label={team.name}
                       className="text-foreground hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none"
-                      disabled={!!selectedTeams.find(t => t.id === team.id)}
+                      disabled={!!selectedTeams.find(t => t.id === team.id) || (typeof team.price === 'number' && team.price > budgetRemaining)}
                     >
                       <div className="flex items-center gap-3 w-full">
                         {team.logo_url && (
@@ -664,7 +753,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{team.name}</div>
+                          <div className="font-medium truncate flex items-center gap-2">
+                            <span className="truncate">{team.name}</span>
+                            {typeof team.price === 'number' && (
+                              <Badge variant="secondary" className="text-[10px]">{team.price}c</Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">
                               {team.esport_type?.toUpperCase()}
