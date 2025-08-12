@@ -88,7 +88,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
             </div>
 
             <Button
-              className="w-full"
+              className="w-full bg-theme-purple hover:bg-theme-purple/90"
               onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
             >
               Join Round

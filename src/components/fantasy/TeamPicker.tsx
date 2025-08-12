@@ -443,9 +443,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                       <SelectValue placeholder="Game" />
                     </SelectTrigger>
                     <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                      <SelectItem value="all">All games</SelectItem>
+                      <SelectItem value="all" className="text-foreground text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">All games</SelectItem>
                       {proGames.map((g) => (
-                        <SelectItem key={g} value={g as string}>
+                        <SelectItem key={g} value={g as string} className="text-foreground text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
                           {(g as string)?.toUpperCase()}
                         </SelectItem>
                       ))}
@@ -483,6 +483,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                     <SelectItem 
                       key={team.id} 
                       value={team.id}
+                      aria-label={team.name}
+                      className="text-foreground hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none"
                       disabled={!!selectedTeams.find(t => t.id === team.id)}
                     >
                       <div className="flex items-center gap-3 w-full">
@@ -592,12 +594,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                       <SelectValue placeholder="Game" />
                     </SelectTrigger>
                     <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                      <SelectItem value="all">All games</SelectItem>
-                      {amateurGames.map((g) => (
-                        <SelectItem key={g} value={g as string}>
-                          {(g as string)?.toUpperCase()}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all" className="text-foreground text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">All games</SelectItem>
+                       {amateurGames.map((g) => (
+                         <SelectItem key={g} value={g as string} className="text-foreground text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
+                           {(g as string)?.toUpperCase()}
+                         </SelectItem>
+                       ))}
                     </SelectContent>
                   </Select>
                   <div className="flex items-center gap-2">
@@ -649,6 +651,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                     <SelectItem 
                       key={team.id} 
                       value={team.id}
+                      aria-label={team.name}
+                      className="text-foreground hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none"
                       disabled={!!selectedTeams.find(t => t.id === team.id)}
                     >
                       <div className="flex items-center gap-3 w-full">
@@ -736,9 +740,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                     <SelectValue placeholder="Select an amateur bench team..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                    <SelectItem value="__none__">None</SelectItem>
+                    <SelectItem value="__none__" className="text-foreground text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">None</SelectItem>
                     {filteredAmateurTeams.map(team => (
-                      <SelectItem key={`bench-${team.id}`} value={team.id}>
+                      <SelectItem key={`bench-${team.id}`} value={team.id} className="text-foreground hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
                         <div className="flex items-center gap-3 w-full">
                           {team.logo_url && (
                             <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />
@@ -768,7 +772,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
         <Button 
           onClick={handleSubmit} 
           disabled={selectedTeams.length !== 5 || submitting}
-          className="min-w-[120px]"
+          className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90"
         >
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
