@@ -439,10 +439,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                     className="w-full md:w-64"
                   />
                   <Select value={selectedGamePro} onValueChange={setSelectedGamePro}>
-                    <SelectTrigger className="w-[160px]">
+                    <SelectTrigger className="w-[160px] rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                       <SelectValue placeholder="Game" />
                     </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover">
+                    <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                       <SelectItem value="all">All games</SelectItem>
                       {proGames.map((g) => (
                         <SelectItem key={g} value={g as string}>
@@ -475,10 +475,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 const team = filteredProTeams.find(t => t.id === teamId);
                 if (team) handleTeamSelect(team);
               }}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                   <SelectValue placeholder="Select a pro team..." />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px] z-50 bg-popover">
+                <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                   {filteredProTeams.map(team => (
                     <SelectItem 
                       key={team.id} 
@@ -588,10 +588,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                     className="w-full md:w-64"
                   />
                   <Select value={selectedGameAm} onValueChange={setSelectedGameAm}>
-                    <SelectTrigger className="w-[160px]">
+                    <SelectTrigger className="w-[160px] rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                       <SelectValue placeholder="Game" />
                     </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover">
+                    <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                       <SelectItem value="all">All games</SelectItem>
                       {amateurGames.map((g) => (
                         <SelectItem key={g} value={g as string}>
@@ -641,10 +641,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                 const team = filteredAmateurTeams.find(t => t.id === teamId);
                 if (team) handleTeamSelect(team);
               }}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                   <SelectValue placeholder="Select an amateur team..." />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px] z-50 bg-popover">
+                <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                   {filteredAmateurTeams.map(team => (
                     <SelectItem 
                       key={team.id} 
@@ -732,10 +732,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                   const team = filteredAmateurTeams.find(t => t.id === teamId);
                   if (team) handleBenchSelect(team);
                 }}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                     <SelectValue placeholder="Select an amateur bench team..." />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px] z-50 bg-popover">
+                  <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                     <SelectItem value="__none__">None</SelectItem>
                     {filteredAmateurTeams.map(team => (
                       <SelectItem key={`bench-${team.id}`} value={team.id}>
