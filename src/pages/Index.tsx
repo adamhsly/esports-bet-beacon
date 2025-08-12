@@ -661,7 +661,7 @@ useEffect(() => {
             {loadingDateFiltered ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
-                <span>Loading matches for selected date...</span>
+                <span className="text-primary-foreground">Loading matches for selected date...</span>
               </div>
             ) : (
               <>
