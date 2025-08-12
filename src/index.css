@@ -425,5 +425,6 @@ nav a:hover {
   --card: 217.2 32.6% 20%;
   --card-foreground: 210 40% 98%;
   --border: 217.2 32.6% 28%;
+  --muted-foreground: 210 40% 98%;
 }
 
