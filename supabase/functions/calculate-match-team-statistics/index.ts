@@ -86,99 +86,106 @@ serve(async (req) => {
 
     for (const match of matches) {
       const matchRowId = match.row_id;
-      const matchId = match.match_id.toString();
 
-      // Skip PUBG matches entirely
-      if (match.esport_type === "PUBG") {
-        console.log(`Skipping match ${matchId} — esport_type is PUBG`);
-        continue;
-      }
+      try {
+        const matchId = match.match_id.toString();
 
-      const esportType = match.esport_type;
-      const matchStartTime = match.start_time;
-      const rawTeams = match.teams;
+        // Skip PUBG matches entirely
+        if (match.esport_type === "PUBG") {
+          console.log(`Skipping match ${matchId} — esport_type is PUBG`);
+          continue; // maxProcessedRowId update moved to finally block
+        }
 
-      if (!Array.isArray(rawTeams)) {
-        console.warn(`Skipping match ${matchId} — teams field is not an array`, rawTeams);
-        continue;
-      }
+        const esportType = match.esport_type;
+        const matchStartTime = match.start_time;
+        const rawTeams = match.teams;
 
-      const uniqueTeamIds = [...new Set(
-        rawTeams
-          .map(t => t.opponent?.id?.toString())
-          .filter(id => !!id)
-      )];
-
-      if (uniqueTeamIds.length !== 2) {
-        console.warn(`Skipping match ${matchId} — expected 2 teams, found ${uniqueTeamIds.length}`);
-        continue;
-      }
-
-      for (const teamId of uniqueTeamIds) {
-        const { data: existingStat, error: existingStatError } = await supabaseClient
-          .from("pandascore_match_team_stats")
-          .select("id")
-          .eq("match_id", matchId)
-          .eq("team_id", teamId)
-          .maybeSingle();
-
-        if (existingStatError) {
-          console.error(`Supabase query failed for match ${matchId}, team ${teamId}:`, existingStatError);
+        if (!Array.isArray(rawTeams)) {
+          console.warn(`Skipping match ${matchId} — teams field is not an array`, rawTeams);
           continue;
         }
 
-        if (existingStat) {
-          console.log(`Skipping team ${teamId} for match ${matchId} (already processed)`);
+        const uniqueTeamIds = [...new Set(
+          rawTeams
+            .map(t => t.opponent?.id?.toString())
+            .filter(id => !!id)
+        )];
+
+        if (uniqueTeamIds.length !== 2) {
+          console.warn(`Skipping match ${matchId} — expected 2 teams, found ${uniqueTeamIds.length}`);
           continue;
         }
 
-        const { data: historicalMatches, error: historyError } = await supabaseClient
-          .from("pandascore_matches")
-          .select("*")
-          .eq("esport_type", esportType)
-          .lt("start_time", matchStartTime)
-          .eq("status", "finished")
-          .order("start_time", { ascending: true })
-          .limit(100);
+        for (const teamId of uniqueTeamIds) {
+          const { data: existingStat, error: existingStatError } = await supabaseClient
+            .from("pandascore_match_team_stats")
+            .select("id")
+            .eq("match_id", matchId)
+            .eq("team_id", teamId)
+            .maybeSingle();
 
-        if (historyError || !historicalMatches) {
-          console.error(`Error fetching history for team ${teamId}`, historyError);
-          continue;
+          if (existingStatError) {
+            console.error(`Supabase query failed for match ${matchId}, team ${teamId}:`, existingStatError);
+            continue;
+          }
+
+          if (existingStat) {
+            console.log(`Skipping team ${teamId} for match ${matchId} (already processed)`);
+            continue;
+          }
+
+          const { data: historicalMatches, error: historyError } = await supabaseClient
+            .from("pandascore_matches")
+            .select("*")
+            .eq("esport_type", esportType)
+            .lt("start_time", matchStartTime)
+            .eq("status", "finished")
+            .order("start_time", { ascending: true })
+            .limit(100);
+
+          if (historyError || !historicalMatches) {
+            console.error(`Error fetching history for team ${teamId}`, historyError);
+            continue;
+          }
+
+          const teamMatches = historicalMatches.filter(m =>
+            (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId)
+          );
+
+          const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
+
+          const { error: insertError } = await supabaseClient
+            .from("pandascore_match_team_stats")
+            .upsert({
+              match_id: matchId,
+              team_id: teamId,
+              esport_type: esportType,
+              win_rate: stats.winRate,
+              recent_form: stats.recentForm,
+              tournament_wins: stats.tournamentWins,
+              total_matches: stats.totalMatches,
+              wins: stats.wins,
+              losses: stats.losses,
+              league_performance: stats.leaguePerformance,
+              recent_win_rate_30d: stats.recentWinRate30d,
+              last_10_matches_detail: stats.last10MatchesDetail,
+              calculated_at: new Date().toISOString(),
+            }, { onConflict: ['match_id', 'team_id'] });
+
+          if (insertError) {
+            console.error(`Error inserting stats for team ${teamId} in match ${matchId}`, insertError);
+          } else {
+            console.log(`Processed stats for team ${teamId} in match ${matchId}`);
+            processedResults.push({ matchId, teamId });
+          }
         }
-
-        const teamMatches = historicalMatches.filter(m =>
-          (m.teams ?? []).some(t => t.opponent?.id?.toString() === teamId)
-        );
-
-        const stats = calculateTeamStatistics(teamId, teamMatches, matchStartTime);
-
-        const { error: insertError } = await supabaseClient
-          .from("pandascore_match_team_stats")
-          .upsert({
-            match_id: matchId,
-            team_id: teamId,
-            esport_type: esportType,
-            win_rate: stats.winRate,
-            recent_form: stats.recentForm,
-            tournament_wins: stats.tournamentWins,
-            total_matches: stats.totalMatches,
-            wins: stats.wins,
-            losses: stats.losses,
-            league_performance: stats.leaguePerformance,
-            recent_win_rate_30d: stats.recentWinRate30d,
-            last_10_matches_detail: stats.last10MatchesDetail,
-            calculated_at: new Date().toISOString(),
-          }, { onConflict: ['match_id', 'team_id'] });
-
-        if (insertError) {
-          console.error(`Error inserting stats for team ${teamId} in match ${matchId}`, insertError);
-        } else {
-          console.log(`Processed stats for team ${teamId} in match ${matchId}`);
-          processedResults.push({ matchId, teamId });
+      } catch (error) {
+        console.error(`Error processing match ${match.row_id}:`, error);
+      } finally {
+        if (matchRowId > maxProcessedRowId) {
+          maxProcessedRowId = matchRowId;
         }
       }
-
-      if (matchRowId > maxProcessedRowId) maxProcessedRowId = matchRowId;
     }
 
     const { error: updateSyncError } = await supabaseClient
