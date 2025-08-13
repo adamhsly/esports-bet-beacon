@@ -481,7 +481,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
           <div className="flex items-center gap-2">
             {team.type === 'amateur' && (
               <div className="text-right">
-                <div className="text-sm font-medium">{team.matches_prev_window ?? 0} matches</div>
+                <div className="text-sm font-medium text-white">{team.matches_prev_window ?? 0} matches</div>
                 <div className="text-xs text-muted-foreground">last window</div>
               </div>
             )}
@@ -641,7 +641,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate flex items-center gap-2">
+                            <div className="font-medium text-white truncate flex items-center gap-2">
                               <span className="truncate">{team.name}</span>
                               {typeof team.price === 'number' && (
                                 <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>
@@ -668,7 +668,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               {/* Selected Pro Teams Display */}
               {selectedTeams.filter(t => t.type === 'pro').length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Selected Pro Teams:</h4>
+                  <h4 className="font-medium text-sm text-white">Selected Pro Teams:</h4>
                   <div className="grid gap-2">
                     {selectedTeams.filter(t => t.type === 'pro').map(team => (
                       <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -677,7 +677,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
                           )}
                           <div>
-                            <div className="font-medium">{team.name}</div>
+                            <div className="font-medium text-white">{team.name}</div>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">
                                 {team.esport_type?.toUpperCase()}
@@ -814,7 +814,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate flex items-center gap-2">
+                            <div className="font-medium text-white truncate flex items-center gap-2">
                               <span className="truncate">{team.name}</span>
                               {typeof team.price === 'number' && (
                                 <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>
@@ -846,7 +846,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               {/* Selected Amateur Teams Display */}
               {selectedTeams.filter(t => t.type === 'amateur').length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Selected Amateur Teams:</h4>
+                  <h4 className="font-medium text-sm text-white">Selected Amateur Teams:</h4>
                   <div className="grid gap-2">
                     {selectedTeams.filter(t => t.type === 'amateur').map(team => (
                       <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -855,7 +855,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
                           )}
                           <div>
-                            <div className="font-medium">{team.name}</div>
+                            <div className="font-medium text-white">{team.name}</div>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">
                                 {team.esport_type?.toUpperCase()}
@@ -903,7 +903,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate flex items-center gap-2"><span className="truncate">{team.name}</span>{typeof team.price === 'number' && (<span className="text-xs opacity-80">— {formatMillions(team.price)}</span>)}</div>
+                            <div className="font-medium text-white truncate flex items-center gap-2"><span className="truncate">{team.name}</span>{typeof team.price === 'number' && (<span className="text-xs opacity-80">— {formatMillions(team.price)}</span>)}</div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs">
                                 {team.esport_type?.toUpperCase()}
