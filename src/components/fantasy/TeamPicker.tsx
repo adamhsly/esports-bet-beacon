@@ -125,8 +125,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               if (existing) {
                 existing.matches_in_period = (existing.matches_in_period || 0) + 1;
               } else {
-                proTeamMap.set(team.id, {
-                  id: team.id,
+                proTeamMap.set(String(team.id), {
+                  id: String(team.id),
                   name: team.name || team.slug || 'Unknown Team',
                   type: 'pro',
                   logo_url: team.image_url,
