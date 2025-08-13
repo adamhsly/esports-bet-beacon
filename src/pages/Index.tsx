@@ -216,7 +216,8 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
 // Game type options are now imported from shared lib
 
 const Index = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  // Initialize with today's date (current date, not hardcoded)
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [selectedGameType, setSelectedGameType] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('all');
