@@ -13,26 +13,7 @@ import { Calendar, Clock, Trophy } from 'lucide-react';
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
-  const [rounds, setRounds] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchRounds() {
-      try {
-        const res = await fetch('/api/rounds'); // adjust the endpoint if needed
-        if (!res.ok) throw new Error('Failed to fetch rounds');
-        const data = await res.json();
-        console.log('Fetched rounds:', data); // Debug: check what comes from DB
-        setRounds(data);
-      } catch (err) {
-        console.error('Error fetching rounds:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchRounds();
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
