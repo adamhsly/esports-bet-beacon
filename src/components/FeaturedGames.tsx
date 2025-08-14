@@ -3,33 +3,39 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { GameCard } from './GameCard';
 
+// Import game logos
+import counterStrike2Logo from '@/assets/logos/esports/counter-strike-2.png';
+import leagueOfLegendsLogo from '@/assets/logos/esports/league-of-legends.png';
+import dota2Logo from '@/assets/logos/esports/dota-2.png';
+import valorantLogo from '@/assets/logos/esports/valorant.png';
+
 const FeaturedGames = () => {
   const games = [
     {
-      id: 'csgo',
-      title: 'CS:GO',
-      imageUrl: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&w=600&h=350',
+      id: 'counter-strike',
+      title: 'Counter-Strike 2',
+      imageUrl: counterStrike2Logo,
       description: 'Find the best odds and bonuses for Counter-Strike matches',
-      link: '/esports/csgo'
+      link: '/esports/counter-strike'
     },
     {
       id: 'lol',
       title: 'League of Legends',
-      imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&h=350',
+      imageUrl: leagueOfLegendsLogo,
       description: 'Bet on LoL tournaments with exclusive promotions',
       link: '/esports/lol'
     },
     {
       id: 'dota2',
       title: 'Dota 2',
-      imageUrl: 'https://images.unsplash.com/photo-1603481546164-9ce7efd92152?auto=format&fit=crop&w=600&h=350',
+      imageUrl: dota2Logo,
       description: 'Compare Dota 2 betting options and bonuses',
       link: '/esports/dota2'
     },
     {
       id: 'valorant',
       title: 'Valorant',
-      imageUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=600&h=350',
+      imageUrl: valorantLogo,
       description: 'Discover the best Valorant betting opportunities',
       link: '/esports/valorant'
     }
