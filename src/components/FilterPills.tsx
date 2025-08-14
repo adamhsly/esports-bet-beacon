@@ -94,7 +94,6 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   };
 
   const pillConfigs = [
-    { id: 'game', label: 'Game Type' },
     { id: 'status', label: 'Match Status' },
     { id: 'source', label: 'Competition Level' },
   ];

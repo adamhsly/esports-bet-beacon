@@ -18,6 +18,7 @@ import { MatchCountBreakdown, getDetailedMatchCountsByDate, getTotalMatchCountsB
 import { startOfDay, endOfDay, isToday, subMonths, addMonths, format } from 'date-fns';
 import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
+import { EsportsLogoFilter } from '@/components/EsportsLogoFilter';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { getMatchesAroundDate } from '@/lib/supabaseMatchFunctions';
 
@@ -633,7 +634,15 @@ useEffect(() => {
           {/* Unified Matches Section with Date Picker */}
           <div className="mb-12">
             
-            {/* FILTER PILLS WITH CALENDAR */}
+            {/* ESPORTS LOGO FILTER BAR */}
+            <div className="mx-2 md:mx-4">
+              <EsportsLogoFilter
+                selectedGameType={selectedGameType}
+                onGameTypeChange={handleGameTypeChange}
+              />
+            </div>
+
+            {/* FILTER PILLS (Status and Source only) */}
             <div className="mx-2 md:mx-4">
               <div className="flex flex-wrap items-center gap-2 mb-6 p-4">
                 <FilterPills
