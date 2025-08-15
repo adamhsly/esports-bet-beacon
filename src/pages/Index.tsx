@@ -679,7 +679,7 @@ useEffect(() => {
                   <img 
                     src="/lovable-uploads/863ef2a8-193d-4c0b-a0f7-99b17420fb6a.png" 
                     alt="Build Your Dream Team - Fantasy Arena" 
-                    className="w-full max-w-2xl h-auto rounded-lg cursor-pointer mx-auto"
+                    className="w-full max-w-xl h-auto rounded-lg cursor-pointer mx-auto"
                   />
                 </Link>
               </div>
