@@ -464,14 +464,18 @@ useEffect(() => {
   async function loadCalendarCounts() {
     setLoadingCalendar(true);
     try {
-      console.log('📅 Loading calendar counts locally for target date:', selectedDate.toDateString());
+      console.log('📅 Loading calendar counts locally for target date:', selectedDate.toDateString(), 'and game type:', selectedGameType);
 
       // Fetch matches around the selected date and compute counts locally
       const matches = await getMatchesAroundDate(selectedDate);
       console.log(`📅 Retrieved ${matches.length} matches for calendar counts computation`);
 
-      const matchCountBreakdown = getDetailedMatchCountsByDate(matches);
-      const totalCounts = getTotalMatchCountsFromMatches(matches);
+      // Apply game type filtering before calculating counts
+      const filteredMatches = filterMatchesByGameType(matches, selectedGameType);
+      console.log(`📅 After game type filtering (${selectedGameType}): ${filteredMatches.length} matches`);
+
+      const matchCountBreakdown = getDetailedMatchCountsByDate(filteredMatches);
+      const totalCounts = getTotalMatchCountsFromMatches(filteredMatches);
 
       setDetailedMatchCounts(matchCountBreakdown);
       setMatchCounts(totalCounts);
@@ -487,7 +491,7 @@ useEffect(() => {
   }
 
   loadCalendarCounts();
-}, [selectedDate]);
+}, [selectedDate, selectedGameType]);
 
   // Load matches for the selected date using Supabase functions
   useEffect(() => {
