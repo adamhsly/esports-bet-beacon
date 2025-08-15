@@ -672,6 +672,19 @@ useEffect(() => {
               </div>
             )}
 
+            {/* Fantasy Banner */}
+            <div className="mx-2 md:mx-4 mb-8">
+              <div className="max-w-4xl mx-auto">
+                <Link to="/fantasy" className="block hover:opacity-90 transition-opacity">
+                  <img 
+                    src="/lovable-uploads/863ef2a8-193d-4c0b-a0f7-99b17420fb6a.png" 
+                    alt="Build Your Dream Team - Fantasy Arena" 
+                    className="w-full h-auto rounded-lg cursor-pointer"
+                  />
+                </Link>
+              </div>
+            </div>
+
             {loadingDateFiltered ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
