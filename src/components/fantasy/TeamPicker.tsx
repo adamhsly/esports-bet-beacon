@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Progress } from '@/components/ui/progress';
+import { SelectedTeamsWidget } from './SelectedTeamsWidget';
 
 interface FantasyRound {
   id: string;
@@ -514,44 +515,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
         </div>
       </div>
 
-      {/* Selected Teams Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Selected Teams ({selectedTeams.length}/5)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {selectedTeams.length === 0 ? (
-            <p className="text-muted-foreground">No teams selected yet</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {selectedTeams.map(team => (
-                <Badge key={team.id} variant="secondary" className="flex items-center gap-1">
-                  {team.name}
-                  {typeof team.price === 'number' && <span className="text-xs">• {team.price}c</span>}
-                  {team.type === 'amateur' && <span className="text-xs text-green-600">+25%</span>}
-                </Badge>
-              ))}
-            </div>
-          )}
-          {benchTeam && (
-            <div className="mt-2">
-              <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                Bench: {benchTeam.name}
-              </Badge>
-            </div>
-          )}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-sm">
-              <span>Budget</span>
-              <span>{budgetSpent}/{SALARY_CAP} credits • Remaining {budgetRemaining}</span>
-            </div>
-            <Progress value={Math.min(100, Math.round((budgetSpent / SALARY_CAP) * 100))} className="mt-2" />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Selected Teams Widget */}
+      <SelectedTeamsWidget
+        selectedTeams={selectedTeams}
+        benchTeam={benchTeam}
+        budgetSpent={budgetSpent}
+        budgetRemaining={budgetRemaining}
+        salaryCapacity={SALARY_CAP}
+      />
 
       {/* Team Selection Tabs */}
       <Tabs defaultValue="pro" className="space-y-4">

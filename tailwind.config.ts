@@ -71,6 +71,12 @@ export default {
 					'gray-dark': '#1E1E1E',
 					'gray-medium': '#2D2D2D',
 					'gray-light': '#3E3E3E',
+				},
+				'neon': {
+					'purple': 'hsl(var(--neon-purple))',
+					'blue': 'hsl(var(--neon-blue))',
+					'orange': 'hsl(var(--neon-orange))',
+					'pink': 'hsl(var(--neon-pink))',
 				}
 			},
 			borderRadius: {
