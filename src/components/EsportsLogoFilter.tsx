@@ -52,8 +52,8 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
             key={game.value}
             onClick={() => onGameTypeChange(game.value)}
             className={cn(
-              "flex-shrink-0 p-3 rounded-xl border-2 transition-all duration-200",
-              "w-16 h-16 flex items-center justify-center",
+              "flex-shrink-0 p-4 rounded-xl border-2 transition-all duration-200",
+              "w-32 h-32 flex items-center justify-center",
               "hover:scale-105 active:scale-95",
               "focus:outline-none focus:ring-2 focus:ring-theme-purple focus:ring-offset-2 focus:ring-offset-theme-gray-dark",
               selectedGameType === game.value
@@ -71,7 +71,7 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
               <img
                 src={game.logo}
                 alt={game.label}
-                className="w-8 h-8 object-contain"
+                className="w-full h-full object-contain p-2"
                 draggable={false}
               />
             ) : (
