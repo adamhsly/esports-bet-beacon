@@ -27,7 +27,7 @@ const FantasyPage: React.FC = () => {
                 Fantasy Esports
               </span>
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-base">
               Create teams mixing pro and amateur teams. Higher risk, higher reward with amateur teams getting 25% bonus points.
             </p>
           </div>
