@@ -57,9 +57,8 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
               "hover:scale-105 active:scale-95",
               "focus:outline-none focus:ring-2 focus:ring-theme-purple focus:ring-offset-2 focus:ring-offset-theme-gray-dark",
               selectedGameType === game.value
-                ? "border-theme-purple shadow-lg shadow-theme-purple/30"
-                : "border-theme-gray-medium hover:border-theme-purple/50 hover:bg-theme-purple/10",
-              "[background:_#8B5cf633]",
+                ? "border-theme-purple shadow-lg shadow-theme-purple/30 [background:_#8B5cf633]"
+                : "border-theme-gray-medium hover:border-theme-purple/50 hover:bg-theme-purple/10 [background:_#374151]",
               // Touch-friendly tap highlight
               "touch-manipulation select-none",
               // Mobile tap highlight
