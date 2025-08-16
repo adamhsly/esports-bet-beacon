@@ -21,16 +21,18 @@ const FantasyPage: React.FC = () => {
 
       <div className="flex-grow w-full">
         <div className="mx-2 md:mx-4 my-8">
-          <div className="mb-8 max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold mb-4 text-theme-purple">
-              <span className="[color:_#8B5CF6]">
-                Fantasy Esports
-              </span>
-            </h1>
-            <p className="text-muted-foreground text-base">
-              Create teams mixing pro and amateur teams. Higher risk, higher reward with amateur teams getting 25% bonus points.
-            </p>
-          </div>
+          {!selectedRound && (
+            <div className="mb-8 max-w-2xl mx-auto">
+              <h1 className="text-3xl font-bold mb-4 text-theme-purple">
+                <span className="[color:_#8B5CF6]">
+                  Fantasy Esports
+                </span>
+              </h1>
+              <p className="text-muted-foreground text-base">
+                Create teams mixing pro and amateur teams. Higher risk, higher reward with amateur teams getting 25% bonus points.
+              </p>
+            </div>
+          )}
 
           <div className="max-w-2xl mx-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
