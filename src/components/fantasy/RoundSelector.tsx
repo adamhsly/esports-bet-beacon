@@ -66,7 +66,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
       {rounds.map((round) => (
         <Card key={round.id} className="overflow-hidden bg-card border-border hover:shadow-lg transition-shadow">
           <img
