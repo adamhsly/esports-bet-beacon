@@ -8,7 +8,7 @@ import { RoundSelector } from '@/components/fantasy/RoundSelector';
 import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPicker';
-import { Calendar, Clock, Trophy } from 'lucide-react';
+import { Calendar, Clock, Trophy, Home } from 'lucide-react';
 
 
 const FantasyPage: React.FC = () => {
@@ -43,8 +43,8 @@ const FantasyPage: React.FC = () => {
                   onClick={() => setSelectedRound(null)}
                   className="flex items-center gap-2"
                 >
-                  <Calendar className="h-4 w-4" />
-                  Back to Fantasy Home
+                  <Home className="h-4 w-4" />
+                  Fantasy
                 </Button>
               </div>
             ) : (
