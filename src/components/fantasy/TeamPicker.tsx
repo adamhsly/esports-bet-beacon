@@ -16,7 +16,6 @@ import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Progress } from '@/components/ui/progress';
 import { SelectedTeamsWidget } from './SelectedTeamsWidget';
-
 interface FantasyRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
@@ -24,7 +23,6 @@ interface FantasyRound {
   end_date: string;
   status: 'open' | 'active' | 'finished';
 }
-
 interface Team {
   id: string;
   name: string;
@@ -42,16 +40,19 @@ interface Team {
   match_volume?: number; // pro only
   abandon_rate?: number; // 0..1, amateur only
 }
-
 interface TeamPickerProps {
   round: FantasyRound;
   onBack: () => void;
   onNavigateToInProgress?: () => void;
 }
-
-
-export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigateToInProgress }) => {
-  const { user } = useAuth();
+export const TeamPicker: React.FC<TeamPickerProps> = ({
+  round,
+  onBack,
+  onNavigateToInProgress
+}) => {
+  const {
+    user
+  } = useAuth();
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
@@ -95,28 +96,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
   // Debounced search terms
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
-
   useEffect(() => {
     fetchAvailableTeams();
   }, [round]);
-
   const fetchAvailableTeams = async () => {
     try {
       setLoading(true);
-      
-      // Fetch pro teams from Pandascore matches within round period
-      const { data: pandaMatches, error: pandaError } = await supabase
-        .from('pandascore_matches')
-        .select('teams, esport_type')
-        .gte('start_time', round.start_date)
-        .lte('start_time', round.end_date)
-        .not('teams', 'is', null);
 
+      // Fetch pro teams from Pandascore matches within round period
+      const {
+        data: pandaMatches,
+        error: pandaError
+      } = await supabase.from('pandascore_matches').select('teams, esport_type').gte('start_time', round.start_date).lte('start_time', round.end_date).not('teams', 'is', null);
       if (pandaError) throw pandaError;
 
       // Extract unique pro teams with esport type and match count
-      const proTeamMap = new Map<string, Team & { matches_in_period: number }>();
-      
+      const proTeamMap = new Map<string, Team & {
+        matches_in_period: number;
+      }>();
       pandaMatches?.forEach(match => {
         if (match.teams && Array.isArray(match.teams)) {
           match.teams.forEach((teamObj: any) => {
@@ -139,7 +136,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
           });
         }
       });
-
       const proTeamData = Array.from(proTeamMap.values());
 
       // Fetch amateur teams from FACEIT database and compute previous-window stats
@@ -147,43 +143,34 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       const currentEnd = new Date(round.end_date);
       const prevEnd = currentStart;
       const prevStart = new Date(currentStart.getTime() - (currentEnd.getTime() - currentStart.getTime()));
-
-      const [allTeamsRes, prevStatsRes, priceRowsRes] = await Promise.all([
-        (supabase.rpc as any)('get_all_faceit_teams'),
-        (supabase.rpc as any)('get_faceit_teams_prev_window_stats', {
-          start_ts: prevStart.toISOString(),
-          end_ts: prevEnd.toISOString()
-        }),
-        supabase.from('fantasy_team_prices').select('*').eq('round_id', round.id)
-      ]);
-
+      const [allTeamsRes, prevStatsRes, priceRowsRes] = await Promise.all([(supabase.rpc as any)('get_all_faceit_teams'), (supabase.rpc as any)('get_faceit_teams_prev_window_stats', {
+        start_ts: prevStart.toISOString(),
+        end_ts: prevEnd.toISOString()
+      }), supabase.from('fantasy_team_prices').select('*').eq('round_id', round.id)]);
       if (allTeamsRes.error) throw allTeamsRes.error;
       if (prevStatsRes.error) throw prevStatsRes.error;
       if (priceRowsRes.error) throw priceRowsRes.error;
-
       const priceRows: Array<any> = priceRowsRes.data || [];
       const proPriceMap = new Map<string, any>();
       const amPriceMap = new Map<string, any>();
-      priceRows.forEach((row) => {
+      priceRows.forEach(row => {
         if (row.team_type === 'pro') proPriceMap.set(row.team_id, row);
         if (row.team_type === 'amateur') amPriceMap.set(row.team_id, row);
       });
 
       // Attach prices to pro teams
-      const proTeamDataWithPrice: Team[] = proTeamData.map((t) => {
+      const proTeamDataWithPrice: Team[] = proTeamData.map(t => {
         const p = proPriceMap.get(t.id);
         return {
           ...t,
           price: p?.price ?? undefined,
           recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined,
-          match_volume: typeof p?.match_volume === 'number' ? p.match_volume : t.matches_in_period,
+          match_volume: typeof p?.match_volume === 'number' ? p.match_volume : t.matches_in_period
         } as Team;
       });
-
       const stats: Array<any> = prevStatsRes.data || [];
       const statsMap = new Map<string, any>();
-      stats.forEach((s) => statsMap.set(s.team_id, s));
-
+      stats.forEach(s => statsMap.set(s.team_id, s));
       const amateurTeamData: Team[] = (allTeamsRes.data || []).map((t: any) => {
         const s = statsMap.get(t.team_id);
         const p = amPriceMap.get(t.team_id);
@@ -198,7 +185,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
           total_scheduled: s?.total_scheduled ?? undefined,
           price: p?.price ?? undefined,
           abandon_rate: typeof p?.abandon_rate === 'number' ? p.abandon_rate : undefined,
-          recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined,
+          recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined
         } as Team;
       }).sort((a: Team, b: Team) => {
         const aM = a.matches_prev_window || 0;
@@ -209,11 +196,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
         if (aMiss !== bMiss) return aMiss - bMiss;
         return a.name.localeCompare(b.name);
       });
-
       setProTeams(proTeamDataWithPrice);
       setAmateurTeams(amateurTeamData);
-
-
     } catch (error) {
       console.error('Error fetching teams:', error);
       toast.error('Failed to load available teams');
@@ -224,71 +208,42 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
 
   // Realtime: Update prices dynamically if they change
   useEffect(() => {
-    const channel = supabase
-      .channel('fantasy_team_prices_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'fantasy_team_prices',
-          filter: `round_id=eq.${round.id}`,
-        },
-        (payload: any) => {
-          const row = payload.new || payload.old;
-          if (!row) return;
-          if (row.team_type === 'pro') {
-            setProTeams((prev) =>
-              prev.map((t) =>
-                t.id === row.team_id
-                  ? {
-                      ...t,
-                      price: typeof row.price === 'number' ? row.price : t.price,
-                      recent_win_rate:
-                        typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
-                      match_volume:
-                        typeof row.match_volume === 'number' ? row.match_volume : t.match_volume,
-                    }
-                  : t
-              )
-            );
-          } else if (row.team_type === 'amateur') {
-            setAmateurTeams((prev) =>
-              prev.map((t) =>
-                t.id === row.team_id
-                  ? {
-                      ...t,
-                      price: typeof row.price === 'number' ? row.price : t.price,
-                      recent_win_rate:
-                        typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
-                      abandon_rate:
-                        typeof row.abandon_rate === 'number' ? row.abandon_rate : t.abandon_rate,
-                    }
-                  : t
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel('fantasy_team_prices_updates').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'fantasy_team_prices',
+      filter: `round_id=eq.${round.id}`
+    }, (payload: any) => {
+      const row = payload.new || payload.old;
+      if (!row) return;
+      if (row.team_type === 'pro') {
+        setProTeams(prev => prev.map(t => t.id === row.team_id ? {
+          ...t,
+          price: typeof row.price === 'number' ? row.price : t.price,
+          recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
+          match_volume: typeof row.match_volume === 'number' ? row.match_volume : t.match_volume
+        } : t));
+      } else if (row.team_type === 'amateur') {
+        setAmateurTeams(prev => prev.map(t => t.id === row.team_id ? {
+          ...t,
+          price: typeof row.price === 'number' ? row.price : t.price,
+          recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
+          abandon_rate: typeof row.abandon_rate === 'number' ? row.abandon_rate : t.abandon_rate
+        } : t));
+      }
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [round.id]);
 
   // Unique game lists
-  const proGames = useMemo(() =>
-    Array.from(new Set(proTeams.map((t) => t.esport_type).filter(Boolean))) as string[],
-  [proTeams]);
-
-  const amateurGames = useMemo(() =>
-    Array.from(new Set(amateurTeams.map((t) => t.esport_type).filter(Boolean))) as string[],
-  [amateurTeams]);
+  const proGames = useMemo(() => Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], [proTeams]);
+  const amateurGames = useMemo(() => Array.from(new Set(amateurTeams.map(t => t.esport_type).filter(Boolean))) as string[], [amateurTeams]);
 
   // Filtered + Sorted lists
   const filteredProTeams = useMemo(() => {
-    const list = proTeams.filter((t) => {
+    const list = proTeams.filter(t => {
       const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
       const matches = t.matches_in_period ?? 0;
@@ -298,19 +253,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
     });
     const factor = proSortDir === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => {
-      const av = proSortBy === 'price' ? (a.price ?? -Infinity)
-        : proSortBy === 'win_rate' ? (a.recent_win_rate ?? -Infinity)
-        : (a.match_volume ?? a.matches_in_period ?? -Infinity);
-      const bv = proSortBy === 'price' ? (b.price ?? -Infinity)
-        : proSortBy === 'win_rate' ? (b.recent_win_rate ?? -Infinity)
-        : (b.match_volume ?? b.matches_in_period ?? -Infinity);
+      const av = proSortBy === 'price' ? a.price ?? -Infinity : proSortBy === 'win_rate' ? a.recent_win_rate ?? -Infinity : a.match_volume ?? a.matches_in_period ?? -Infinity;
+      const bv = proSortBy === 'price' ? b.price ?? -Infinity : proSortBy === 'win_rate' ? b.recent_win_rate ?? -Infinity : b.match_volume ?? b.matches_in_period ?? -Infinity;
       if (av === bv) return a.name.localeCompare(b.name);
       return (av - bv) * factor;
     });
   }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, proSortBy, proSortDir]);
-
   const filteredAmateurTeams = useMemo(() => {
-    const list = amateurTeams.filter((t) => {
+    const list = amateurTeams.filter(t => {
       const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
       const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
       const matchesPrev = t.matches_prev_window ?? 0;
@@ -323,19 +273,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
     });
     const factor = amSortDir === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => {
-      const av = amSortBy === 'price' ? (a.price ?? -Infinity)
-        : amSortBy === 'win_rate' ? (a.recent_win_rate ?? -Infinity)
-        : amSortBy === 'abandon_rate' ? (a.abandon_rate ?? -Infinity)
-        : (a.matches_prev_window ?? -Infinity);
-      const bv = amSortBy === 'price' ? (b.price ?? -Infinity)
-        : amSortBy === 'win_rate' ? (b.recent_win_rate ?? -Infinity)
-        : amSortBy === 'abandon_rate' ? (b.abandon_rate ?? -Infinity)
-        : (b.matches_prev_window ?? -Infinity);
+      const av = amSortBy === 'price' ? a.price ?? -Infinity : amSortBy === 'win_rate' ? a.recent_win_rate ?? -Infinity : amSortBy === 'abandon_rate' ? a.abandon_rate ?? -Infinity : a.matches_prev_window ?? -Infinity;
+      const bv = amSortBy === 'price' ? b.price ?? -Infinity : amSortBy === 'win_rate' ? b.recent_win_rate ?? -Infinity : amSortBy === 'abandon_rate' ? b.abandon_rate ?? -Infinity : b.matches_prev_window ?? -Infinity;
       if (av === bv) return a.name.localeCompare(b.name);
       return (av - bv) * factor;
     });
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, amSortBy, amSortDir]);
-
   const handleTeamSelect = (team: Team) => {
     if (selectedTeams.find(t => t.id === team.id)) {
       setSelectedTeams(selectedTeams.filter(t => t.id !== team.id));
@@ -353,7 +296,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
     }
     setSelectedTeams([...selectedTeams, team]);
   };
-
   const handleBenchSelect = (team: Team) => {
     if (team.type !== 'amateur') {
       toast.error('Bench team must be an amateur team');
@@ -361,19 +303,16 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
     }
     setBenchTeam(benchTeam?.id === team.id ? null : team);
   };
-
   const handleSubmit = async () => {
     if (!user) {
       setShowAuthModal(true);
       setPendingSubmission(true);
       return;
     }
-
     if (selectedTeams.length !== 5) {
       toast.error('Please select exactly 5 teams');
       return;
     }
-
     try {
       setSubmitting(true);
 
@@ -384,27 +323,22 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
         type: team.type,
         logo_url: team.logo_url
       }));
-      
       const benchTeamData = benchTeam ? {
-        id: benchTeam.id, 
+        id: benchTeam.id,
         name: benchTeam.name,
         type: benchTeam.type
       } : null;
-      
-      const { error } = await supabase
-        .from('fantasy_round_picks')
-        .insert({
-          user_id: user.id,
-          round_id: round.id,
-          team_picks: teamPicksData,
-          bench_team: benchTeamData
-        });
-
+      const {
+        error
+      } = await supabase.from('fantasy_round_picks').insert({
+        user_id: user.id,
+        round_id: round.id,
+        team_picks: teamPicksData,
+        bench_team: benchTeamData
+      });
       if (error) throw error;
-
       toast.success('Team submitted successfully!');
       console.log('Team submission successful, navigating to in-progress...');
-      
       if (onNavigateToInProgress) {
         onNavigateToInProgress();
       } else {
@@ -421,7 +355,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       setSubmitting(false);
     }
   };
-
   const handleAuthSuccess = async () => {
     setShowAuthModal(false);
     if (pendingSubmission) {
@@ -432,97 +365,71 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
       }, 500);
     }
   };
-
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
     setPendingSubmission(false);
   };
-
-  const TeamCard: React.FC<{ team: Team; isSelected: boolean; onClick: () => void; showBench?: boolean; isBench?: boolean }> = ({ 
-    team, isSelected, onClick, showBench = false, isBench = false 
-  }) => (
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-md bg-card border-border ${
-        isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
-      } ${isBench ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`}
-      onClick={onClick}
-    >
+  const TeamCard: React.FC<{
+    team: Team;
+    isSelected: boolean;
+    onClick: () => void;
+    showBench?: boolean;
+    isBench?: boolean;
+  }> = ({
+    team,
+    isSelected,
+    onClick,
+    showBench = false,
+    isBench = false
+  }) => <Card className={`cursor-pointer transition-all hover:shadow-md bg-card border-border ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''} ${isBench ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`} onClick={onClick}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {team.logo_url && (
-              <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
-            )}
+            {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />}
             <div>
               <h4 className="font-semibold">{team.name}</h4>
               <div className="flex items-center gap-2">
                 <Badge variant={team.type === 'pro' ? 'default' : 'secondary'} className="text-xs">
                   {team.type === 'pro' ? 'Pro' : 'Amateur'}
                 </Badge>
-                {team.type === 'amateur' && (
-                  <>
+                {team.type === 'amateur' && <>
                     <Badge variant="outline" className="text-xs">
                       {team.esport_type?.toUpperCase() || 'FACEIT'}
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
                       {team.matches_prev_window ?? 0} matches
                     </Badge>
-                    {typeof team.missed_pct === 'number' && (
-                      <Badge variant="outline" className="text-xs">
+                    {typeof team.missed_pct === 'number' && <Badge variant="outline" className="text-xs">
                         {team.missed_pct}% missed
-                      </Badge>
-                    )}
+                      </Badge>}
                     <Badge variant="outline" className="text-xs">+25% bonus</Badge>
-                  </>
-                )}
+                  </>}
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            {team.type === 'amateur' && (
-              <div className="text-right">
+            {team.type === 'amateur' && <div className="text-right">
                 <div className="text-sm font-medium text-white">{team.matches_prev_window ?? 0} matches</div>
                 <div className="text-xs text-muted-foreground">last window</div>
-              </div>
-            )}
+              </div>}
             {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
             {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
-
+    </Card>;
   if (loading) {
-    return (
-      <div className="text-center py-12">
+    return <div className="text-center py-12">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading available teams...</p>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack} className="p-2">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold capitalize">{round.type} Round Team Selection</h2>
-          <p className="text-muted-foreground">Select exactly 5 teams (mix pro and amateur). Optionally choose an amateur bench team.</p>
-        </div>
-      </div>
+  return <div className="space-y-6">
+      
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget
-        selectedTeams={selectedTeams}
-        benchTeam={benchTeam}
-        budgetSpent={budgetSpent}
-        budgetRemaining={budgetRemaining}
-        salaryCapacity={SALARY_CAP}
-      />
+      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} />
 
       {/* Team Selection Tabs */}
       <Tabs defaultValue="pro" className="space-y-4">
@@ -532,15 +439,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
         </TabsList>
 
         <TabsContent value="pro" className="space-y-4">
-          {proTeams.length === 0 ? (
-            <Card>
+          {proTeams.length === 0 ? <Card>
               <CardContent className="text-center py-8">
                 <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">No pro teams available for this round period</p>
               </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
+            </Card> : <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Select Pro Team</h3>
                 <p className="text-sm text-muted-foreground">Choose teams scheduled to play in this period</p>
@@ -548,75 +452,46 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               
               <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between overflow-x-auto md:overflow-visible px-2">
                 <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-                  <Input
-                    placeholder="Search teams..."
-                    value={proSearch}
-                    onChange={(e) => setProSearch(e.target.value)}
-                    className="w-full md:w-64 text-white placeholder:text-white/60"
-                  />
+                  <Input placeholder="Search teams..." value={proSearch} onChange={e => setProSearch(e.target.value)} className="w-full md:w-64 text-white placeholder:text-white/60" />
                   <Select value={selectedGamePro} onValueChange={setSelectedGamePro}>
                     <SelectTrigger className="w-[160px] rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                       <SelectValue placeholder="Game" />
                     </SelectTrigger>
                     <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                       <SelectItem value="all" className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">All games</SelectItem>
-                      {proGames.map((g) => (
-                        <SelectItem key={g} value={g as string} className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
+                      {proGames.map(g => <SelectItem key={g} value={g as string} className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
                           {(g as string)?.toUpperCase()}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                   <div className="flex items-center gap-2">
                     <Label className="text-sm text-white">Min matches</Label>
-                    <Slider
-                      min={0}
-                      max={10}
-                      step={1}
-                      value={[minMatchesPro]}
-                      onValueChange={(v) => setMinMatchesPro(v[0] ?? 0)}
-                      className="w-40"
-                    />
+                    <Slider min={0} max={10} step={1} value={[minMatchesPro]} onValueChange={v => setMinMatchesPro(v[0] ?? 0)} className="w-40" />
                     <span className="text-sm text-white/80 w-10 text-right">{minMatchesPro}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="pro-logo" checked={hasLogoOnlyPro} onCheckedChange={(c) => setHasLogoOnlyPro(Boolean(c))} />
+                    <Checkbox id="pro-logo" checked={hasLogoOnlyPro} onCheckedChange={c => setHasLogoOnlyPro(Boolean(c))} />
                     <Label htmlFor="pro-logo" className="text-white">With logo</Label>
                   </div>
                 </div>
                 <div className="text-sm text-white/80">Showing {filteredProTeams.length} of {proTeams.length}</div>
               </div>
 
-              <Select onValueChange={(teamId) => {
-                const team = filteredProTeams.find(t => t.id === teamId);
-                if (team) handleTeamSelect(team);
-              }}>
+              <Select onValueChange={teamId => {
+            const team = filteredProTeams.find(t => t.id === teamId);
+            if (team) handleTeamSelect(team);
+          }}>
                 <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                   <SelectValue placeholder="Select a pro team..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                  {filteredProTeams.map(team => (
-                    <SelectItem 
-                      key={team.id} 
-                      value={team.id}
-                      aria-label={team.name}
-                      className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none"
-                      disabled={!!selectedTeams.find(t => t.id === team.id) || (typeof team.price === 'number' && team.price > budgetRemaining)}
-                    >
+                  {filteredProTeams.map(team => <SelectItem key={team.id} value={team.id} aria-label={team.name} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none" disabled={!!selectedTeams.find(t => t.id === team.id) || typeof team.price === 'number' && team.price > budgetRemaining}>
                       <div className="flex items-center gap-3 w-full">
-                        {team.logo_url && (
-                          <img 
-                            src={team.logo_url} 
-                            alt={team.name} 
-                            className="w-6 h-6 rounded flex-shrink-0" 
-                          />
-                        )}
+                        {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                             <div className="font-medium text-white truncate flex items-center gap-2">
                               <span className="truncate">{team.name}</span>
-                              {typeof team.price === 'number' && (
-                                <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>
-                              )}
+                              {typeof team.price === 'number' && <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>}
                             </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">
@@ -631,22 +506,17 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                           </div>
                         </div>
                       </div>
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
 
               {/* Selected Pro Teams Display */}
-              {selectedTeams.filter(t => t.type === 'pro').length > 0 && (
-                <div className="space-y-2">
+              {selectedTeams.filter(t => t.type === 'pro').length > 0 && <div className="space-y-2">
                   <h4 className="font-medium text-sm text-white">Selected Pro Teams:</h4>
                   <div className="grid gap-2">
-                    {selectedTeams.filter(t => t.type === 'pro').map(team => (
-                      <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {selectedTeams.filter(t => t.type === 'pro').map(team => <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          {team.logo_url && (
-                            <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
-                          )}
+                          {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />}
                           <div>
                             <div className="font-medium text-white">{team.name}</div>
                             <div className="flex items-center gap-2">
@@ -659,21 +529,13 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             </div>
                           </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleTeamSelect(team)}
-                          className="text-red-600 hover:text-red-700"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleTeamSelect(team)} className="text-red-600 hover:text-red-700">
                           Remove
                         </Button>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                </div>}
+            </div>}
         </TabsContent>
 
         <TabsContent value="amateur" className="space-y-4">
@@ -689,70 +551,46 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
             </div>
           </div>
 
-          {amateurTeams.length === 0 ? (
-            <Card>
+          {amateurTeams.length === 0 ? <Card>
               <CardContent className="text-center py-8">
                 <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">No amateur teams available for this round period</p>
               </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
+            </Card> : <div className="space-y-4">
               <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between overflow-x-auto md:overflow-visible px-2">
                 <h3 className="font-semibold">Select Amateur Team</h3>
                 <p className="text-sm text-muted-foreground">Choose amateur teams to add to your lineup</p>
               </div>
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-                  <Input
-                    placeholder="Search teams..."
-                    value={amSearch}
-                    onChange={(e) => setAmSearch(e.target.value)}
-                    className="w-full md:w-64 text-white placeholder:text-white/60"
-                  />
+                  <Input placeholder="Search teams..." value={amSearch} onChange={e => setAmSearch(e.target.value)} className="w-full md:w-64 text-white placeholder:text-white/60" />
                   <Select value={selectedGameAm} onValueChange={setSelectedGameAm}>
                     <SelectTrigger className="w-[160px] rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                       <SelectValue placeholder="Game" />
                     </SelectTrigger>
                     <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                       <SelectItem value="all" className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">All games</SelectItem>
-                       {amateurGames.map((g) => (
-                         <SelectItem key={g} value={g as string} className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
+                       {amateurGames.map(g => <SelectItem key={g} value={g as string} className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
                            {(g as string)?.toUpperCase()}
-                         </SelectItem>
-                       ))}
+                         </SelectItem>)}
                     </SelectContent>
                   </Select>
                   <div className="flex items-center gap-2">
                     <Label className="text-sm text-white">Min matches</Label>
-                    <Slider
-                      min={0}
-                      max={20}
-                      step={1}
-                      value={[minMatchesPrev]}
-                      onValueChange={(v) => setMinMatchesPrev(v[0] ?? 0)}
-                      className="w-40"
-                    />
+                    <Slider min={0} max={20} step={1} value={[minMatchesPrev]} onValueChange={v => setMinMatchesPrev(v[0] ?? 0)} className="w-40" />
                     <span className="text-sm text-white/80 w-10 text-right">{minMatchesPrev}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Label className="text-sm text-white">Max missed %</Label>
-                    <Slider
-                      min={0}
-                      max={100}
-                      step={5}
-                      value={[maxMissedPct]}
-                      onValueChange={(v) => setMaxMissedPct(v[0] ?? 100)}
-                      className="w-40"
-                    />
+                    <Slider min={0} max={100} step={5} value={[maxMissedPct]} onValueChange={v => setMaxMissedPct(v[0] ?? 100)} className="w-40" />
                     <span className="text-sm text-white/80 w-12 text-right">{maxMissedPct}%</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="am-logo" checked={hasLogoOnlyAm} onCheckedChange={(c) => setHasLogoOnlyAm(Boolean(c))} />
+                    <Checkbox id="am-logo" checked={hasLogoOnlyAm} onCheckedChange={c => setHasLogoOnlyAm(Boolean(c))} />
                     <Label htmlFor="am-logo" className="text-white">With logo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="am-hasprev" checked={hasPrevMatchesOnlyAm} onCheckedChange={(c) => setHasPrevMatchesOnlyAm(Boolean(c))} />
+                    <Checkbox id="am-hasprev" checked={hasPrevMatchesOnlyAm} onCheckedChange={c => setHasPrevMatchesOnlyAm(Boolean(c))} />
                     <Label htmlFor="am-hasprev" className="text-white">Has matches last window</Label>
                   </div>
                 </div>
@@ -760,36 +598,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
               </div>
 
               {/* Amateur dropdown selection */}
-              <Select onValueChange={(teamId) => {
-                const team = filteredAmateurTeams.find(t => t.id === teamId);
-                if (team) handleTeamSelect(team);
-              }}>
+              <Select onValueChange={teamId => {
+            const team = filteredAmateurTeams.find(t => t.id === teamId);
+            if (team) handleTeamSelect(team);
+          }}>
                 <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                   <SelectValue placeholder="Select an amateur team..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                  {filteredAmateurTeams.map(team => (
-                    <SelectItem 
-                      key={team.id} 
-                      value={team.id}
-                      aria-label={team.name}
-                      className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none"
-                      disabled={!!selectedTeams.find(t => t.id === team.id) || (typeof team.price === 'number' && team.price > budgetRemaining)}
-                    >
+                  {filteredAmateurTeams.map(team => <SelectItem key={team.id} value={team.id} aria-label={team.name} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none" disabled={!!selectedTeams.find(t => t.id === team.id) || typeof team.price === 'number' && team.price > budgetRemaining}>
                       <div className="flex items-center gap-3 w-full">
-                        {team.logo_url && (
-                          <img 
-                            src={team.logo_url} 
-                            alt={team.name} 
-                            className="w-6 h-6 rounded flex-shrink-0" 
-                          />
-                        )}
+                        {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                             <div className="font-medium text-white truncate flex items-center gap-2">
                               <span className="truncate">{team.name}</span>
-                              {typeof team.price === 'number' && (
-                                <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>
-                              )}
+                              {typeof team.price === 'number' && <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>}
                             </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">
@@ -801,30 +624,23 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             <Badge variant="secondary" className="text-xs">
                               {team.matches_prev_window ?? 0} matches
                             </Badge>
-                            {typeof team.missed_pct === 'number' && (
-                              <Badge variant="outline" className="text-xs">
+                            {typeof team.missed_pct === 'number' && <Badge variant="outline" className="text-xs">
                                 {team.missed_pct}% missed
-                              </Badge>
-                            )}
+                              </Badge>}
                           </div>
                         </div>
                       </div>
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
 
               {/* Selected Amateur Teams Display */}
-              {selectedTeams.filter(t => t.type === 'amateur').length > 0 && (
-                <div className="space-y-2">
+              {selectedTeams.filter(t => t.type === 'amateur').length > 0 && <div className="space-y-2">
                   <h4 className="font-medium text-sm text-white">Selected Amateur Teams:</h4>
                   <div className="grid gap-2">
-                    {selectedTeams.filter(t => t.type === 'amateur').map(team => (
-                      <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {selectedTeams.filter(t => t.type === 'amateur').map(team => <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          {team.logo_url && (
-                            <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />
-                          )}
+                          {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />}
                           <div>
                             <div className="font-medium text-white">{team.name}</div>
                             <div className="flex items-center gap-2">
@@ -837,19 +653,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             </div>
                           </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleTeamSelect(team)}
-                          className="text-red-600 hover:text-red-700"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleTeamSelect(team)} className="text-red-600 hover:text-red-700">
                           Remove
                         </Button>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
-                </div>
-              )}
+                </div>}
 
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
@@ -857,24 +666,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                   <p className="text-sm text-muted-foreground">Used if main team doesn't play</p>
                 </div>
 
-                <Select value={benchTeam?.id ?? "__none__"} onValueChange={(teamId) => {
-                  if (teamId === "__none__") { setBenchTeam(null); return; }
-                  const team = filteredAmateurTeams.find(t => t.id === teamId);
-                  if (team) handleBenchSelect(team);
-                }}>
+                <Select value={benchTeam?.id ?? "__none__"} onValueChange={teamId => {
+              if (teamId === "__none__") {
+                setBenchTeam(null);
+                return;
+              }
+              const team = filteredAmateurTeams.find(t => t.id === teamId);
+              if (team) handleBenchSelect(team);
+            }}>
                   <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
                     <SelectValue placeholder="Select an amateur bench team..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
                     <SelectItem value="__none__" className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">None</SelectItem>
-                    {filteredAmateurTeams.map(team => (
-                      <SelectItem key={`bench-${team.id}`} value={team.id} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
+                    {filteredAmateurTeams.map(team => <SelectItem key={`bench-${team.id}`} value={team.id} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
                         <div className="flex items-center gap-3 w-full">
-                          {team.logo_url && (
-                            <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />
-                          )}
+                          {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-white truncate flex items-center gap-2"><span className="truncate">{team.name}</span>{typeof team.price === 'number' && (<span className="text-xs opacity-80">— {formatMillions(team.price)}</span>)}</div>
+                            <div className="font-medium text-white truncate flex items-center gap-2"><span className="truncate">{team.name}</span>{typeof team.price === 'number' && <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>}</div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs">
                                 {team.esport_type?.toUpperCase()}
@@ -883,32 +692,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({ round, onBack, onNavigat
                             </div>
                           </div>
                         </div>
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          )}
+            </div>}
         </TabsContent>
       </Tabs>
 
       {/* Submit Button */}
       <div className="flex justify-end">
-        <Button 
-          onClick={handleSubmit} 
-          disabled={selectedTeams.length !== 5 || submitting}
-          className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90"
-        >
+        <Button onClick={handleSubmit} disabled={selectedTeams.length !== 5 || submitting} className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90">
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
       </div>
 
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={handleAuthModalClose}
-        onSuccess={handleAuthSuccess}
-      />
-    </div>
-  );
+      <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
+    </div>;
 };
