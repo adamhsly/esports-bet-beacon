@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RoundSelector } from '@/components/fantasy/RoundSelector';
@@ -35,60 +36,75 @@ const FantasyPage: React.FC = () => {
           )}
 
           <div className="max-w-2xl mx-auto">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
-                <TabsTrigger
-                  value="join"
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+            {selectedRound ? (
+              <div className="mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedRound(null)}
+                  className="flex items-center gap-2"
                 >
                   <Calendar className="h-4 w-4" />
-                  Join a Round
-                </TabsTrigger>
-                <TabsTrigger
-                  value="in-progress"
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
-                >
-                  <Clock className="h-4 w-4" />
-                  In Progress
-                </TabsTrigger>
-                <TabsTrigger
-                  value="finished"
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
-                >
-                  <Trophy className="h-4 w-4" />
-                  Finished
-                </TabsTrigger>
-              </TabsList>
+                  Back to Fantasy Home
+                </Button>
+              </div>
+            ) : (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
+                  <TabsTrigger
+                    value="join"
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Join a Round
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="in-progress"
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                  >
+                    <Clock className="h-4 w-4" />
+                    In Progress
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="finished"
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    Finished
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="join">
-                {selectedRound ? (
-                  <TeamPicker 
-                    round={selectedRound} 
-                    onBack={() => setSelectedRound(null)}
-                    onNavigateToInProgress={() => setActiveTab('in-progress')}
-                  />
-                ) : loading ? (
-                  <p className="text-muted-foreground text-center mt-4">Loading rounds...</p>
-                ) : (
-                  <RoundSelector 
-                    onNavigateToInProgress={() => setActiveTab('in-progress')} 
-                    onJoinRound={setSelectedRound}
-                  />
-                )}
-              </TabsContent>
+                <TabsContent value="join">
+                  {loading ? (
+                    <p className="text-muted-foreground text-center mt-4">Loading rounds...</p>
+                  ) : (
+                    <RoundSelector 
+                      onNavigateToInProgress={() => setActiveTab('in-progress')} 
+                      onJoinRound={setSelectedRound}
+                    />
+                  )}
+                </TabsContent>
 
-              <TabsContent value="in-progress">
-                <ProtectedRoute>
-                  <InProgressRounds />
-                </ProtectedRoute>
-              </TabsContent>
+                <TabsContent value="in-progress">
+                  <ProtectedRoute>
+                    <InProgressRounds />
+                  </ProtectedRoute>
+                </TabsContent>
 
-              <TabsContent value="finished">
-                <ProtectedRoute>
-                  <FinishedRounds />
-                </ProtectedRoute>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="finished">
+                  <ProtectedRoute>
+                    <FinishedRounds />
+                  </ProtectedRoute>
+                </TabsContent>
+              </Tabs>
+            )}
+
+            {selectedRound && (
+              <TeamPicker 
+                round={selectedRound} 
+                onBack={() => setSelectedRound(null)}
+                onNavigateToInProgress={() => setActiveTab('in-progress')}
+              />
+            )}
           </div>
         </div>
       </div>
