@@ -36,13 +36,13 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
 
   return (
     <div 
-      className={`relative rounded-xl ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow`}
+      className={`relative rounded-xl ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow aspect-square`}
       style={{
         animation: 'pulse-glow 3s ease-in-out infinite alternate'
       }}
     >
       <div 
-        className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4 min-h-[200px] flex flex-col justify-between overflow-hidden"
+        className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-3 h-full flex flex-col justify-between overflow-hidden"
         style={{
           background: `linear-gradient(135deg, 
             ${isAmateur 
@@ -58,55 +58,59 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
           <div className={`absolute bottom-4 left-4 w-1 h-1 rounded-full ${isAmateur ? 'bg-red-400' : 'bg-blue-400'} animate-ping delay-300`}></div>
         </div>
 
-        {/* Team Logo */}
-        <div className="flex justify-center mb-4 relative z-10">
+        {/* Team Logo - Most Prominent */}
+        <div className="flex justify-center mb-2 relative z-10">
           {team.logo_url ? (
-            <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20' : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20'} border ${isAmateur ? 'border-orange-400/30' : 'border-purple-400/30'}`}>
+            <div className={`relative p-3 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20' : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20'} border ${isAmateur ? 'border-orange-400/30' : 'border-purple-400/30'}`}>
               <img 
                 src={team.logo_url} 
                 alt={team.name} 
-                className="w-10 h-10 object-contain filter drop-shadow-lg"
+                className="w-16 h-16 object-contain filter drop-shadow-lg"
               />
             </div>
           ) : (
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-400/30' : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-purple-400/30'} border`}>
-              {isAmateur ? <Users className="w-6 h-6 text-orange-400" /> : <Trophy className="w-6 h-6 text-purple-400" />}
+            <div className={`w-20 h-20 rounded-lg flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-400/30' : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-purple-400/30'} border`}>
+              {isAmateur ? <Users className="w-10 h-10 text-orange-400" /> : <Trophy className="w-10 h-10 text-purple-400" />}
             </div>
           )}
         </div>
 
-        {/* Team Name */}
-        <h3 className={`font-bold text-sm text-center mb-4 line-clamp-2 leading-tight min-h-[32px] flex items-center justify-center tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
+        {/* Team Name - Second Most Prominent */}
+        <h3 className={`font-bold text-center mb-3 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg text-xs`}>
           {team.name.toUpperCase()}
         </h3>
 
-        {/* Team Stats - Top Trumps Style */}
-        <div className="space-y-3 flex-grow relative z-10">
-          <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">CREDITS COST</div>
-            <div className={`font-bold text-xl ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+        {/* Compact Stats Grid */}
+        <div className="grid grid-cols-2 gap-2 text-center relative z-10 mb-2">
+          <div>
+            <div className="text-orange-400 font-bold text-[10px] tracking-wider">COST</div>
+            <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
               {team.price || 0}
             </div>
           </div>
           
-          <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">MATCHES SCHEDULED</div>
-            <div className={`font-bold text-xl ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+          <div>
+            <div className="text-orange-400 font-bold text-[10px] tracking-wider">MATCHES</div>
+            <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
               {team.type === 'pro' ? (team.matches_in_period || 0) : (team.matches_prev_window || 0)}
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">ESPORTS</div>
-            <div className={`font-bold text-sm tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
-              {isAmateur ? 'AMATEUR' : 'PRO'}
             </div>
           </div>
         </div>
 
+        {/* Esports Type Badge */}
+        <div className="text-center mb-3 relative z-10">
+          <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold tracking-wider ${
+            isAmateur 
+              ? 'bg-gradient-to-r from-red-600/80 to-orange-600/80 text-red-100 border border-orange-400/30' 
+              : 'bg-gradient-to-r from-purple-600/80 to-blue-600/80 text-purple-100 border border-purple-400/30'
+          }`}>
+            {isAmateur ? 'AMATEUR' : 'PRO'}
+          </div>
+        </div>
+
         {/* Selected Status Button */}
-        <div className="mt-4 relative z-10">
-          <div className={`w-full py-2 px-3 rounded-lg text-center font-bold text-xs tracking-widest ${
+        <div className="relative z-10">
+          <div className={`w-full py-1.5 px-3 rounded-lg text-center font-bold text-[10px] tracking-widest ${
             isAmateur 
               ? 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
               : 'bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.5)]'
@@ -130,8 +134,8 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
 
 const PlaceholderCard: React.FC<{ index: number }> = ({ index }) => {
   return (
-    <div className="relative rounded-xl border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group">
-      <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 p-4 min-h-[200px] flex flex-col justify-center items-center backdrop-blur-sm overflow-hidden">
+    <div className="relative rounded-xl border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group aspect-square">
+      <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 p-3 h-full flex flex-col justify-center items-center backdrop-blur-sm overflow-hidden">
         {/* Animated background particles */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-3 right-3 w-1 h-1 rounded-full bg-gray-400 animate-ping"></div>
@@ -139,17 +143,17 @@ const PlaceholderCard: React.FC<{ index: number }> = ({ index }) => {
         </div>
 
         {/* Placeholder Icon */}
-        <div className="w-14 h-14 rounded-lg border border-gray-600/30 bg-gray-800/20 backdrop-blur-sm flex items-center justify-center mb-6 relative z-10 transition-all duration-300 group-hover:border-gray-500/50 group-hover:bg-gray-700/30">
-          <Star className="w-7 h-7 text-gray-500 group-hover:text-gray-400 transition-colors duration-300" />
+        <div className="w-16 h-16 rounded-lg border border-gray-600/30 bg-gray-800/20 backdrop-blur-sm flex items-center justify-center mb-4 relative z-10 transition-all duration-300 group-hover:border-gray-500/50 group-hover:bg-gray-700/30">
+          <Star className="w-8 h-8 text-gray-500 group-hover:text-gray-400 transition-colors duration-300" />
         </div>
 
         {/* Placeholder Text */}
-        <div className="text-gray-400 font-bold text-sm text-center tracking-widest mb-2 relative z-10 group-hover:text-gray-300 transition-colors duration-300">
+        <div className="text-gray-400 font-bold text-xs text-center tracking-widest mb-2 relative z-10 group-hover:text-gray-300 transition-colors duration-300">
           SELECT TEAM
         </div>
         
         {/* Slot Number */}
-        <div className="text-gray-600 text-xs tracking-wide relative z-10 group-hover:text-gray-500 transition-colors duration-300">
+        <div className="text-gray-600 text-[10px] tracking-wide relative z-10 group-hover:text-gray-500 transition-colors duration-300">
           Slot {index + 1}
         </div>
 
