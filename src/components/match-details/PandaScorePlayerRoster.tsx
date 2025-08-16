@@ -144,7 +144,7 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
             {flagUrl && <img src={flagUrl} alt={`Flag of ${player.nationality}`} className="h-4 w-6 rounded-sm border border-theme-gray-light" loading="lazy" onError={e => {
               (e.target as HTMLImageElement).style.display = 'none';
             }} />}
-            {player.role && <Badge variant="outline" className="text-xs bg-purple-600/20 text-purple-400 border-purple-400/40">
+            {player.role && <Badge variant="outline" className="text-xs bg-accent/20 text-accent-foreground border-accent/40">
                 {player.role}
               </Badge>}
           </div>
