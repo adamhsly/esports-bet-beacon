@@ -72,23 +72,23 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
           <img
             src={getRoundImage(round.type)}
             alt={`${round.type} round`}
-            className="w-full h-32 object-contain bg-card rounded-t-lg"
+            className="w-full h-20 object-contain bg-card rounded-t-lg"
           />
-          <CardHeader className="pt-4" />
-          <CardContent>
-            <div className="mb-4 flex flex-col gap-1 text-sm text-muted-foreground">
+          <CardHeader className="pt-2 pb-1" />
+          <CardContent className="space-y-2">
+            <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
               <span>
-                <Calendar className="inline mr-2" />
+                <Calendar className="inline mr-1 h-3 w-3" />
                 Start: {new Date(round.start_date).toLocaleDateString()}
               </span>
               <span>
-                <Calendar className="inline mr-2" />
+                <Calendar className="inline mr-1 h-3 w-3" />
                 End: {new Date(round.end_date).toLocaleDateString()}
               </span>
             </div>
 
             <Button
-              className="w-full bg-theme-purple hover:bg-theme-purple/90"
+              className="w-full bg-theme-purple hover:bg-theme-purple/90 text-xs py-1.5"
               onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
             >
               Join Round
