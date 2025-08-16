@@ -648,7 +648,7 @@ useEffect(() => {
 
             {/* FILTER PILLS (Status and Source only) */}
             <div className="mx-2 md:mx-4">
-              <div className="flex flex-wrap items-center gap-2 mb-6 p-4">
+              <div className="flex flex-wrap items-center gap-2 mb-6 px-4 py-1">
                 <FilterPills
                   gameType={selectedGameType}
                   statusFilter={selectedStatusFilter}
