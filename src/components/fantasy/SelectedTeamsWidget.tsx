@@ -19,6 +19,7 @@ interface SelectedTeamsWidgetProps {
   budgetSpent: number;
   budgetRemaining: number;
   salaryCapacity: number;
+  roundType: 'daily' | 'weekly' | 'monthly';
 }
 
 const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
@@ -130,7 +131,8 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   benchTeam,
   budgetSpent,
   budgetRemaining,
-  salaryCapacity
+  salaryCapacity,
+  roundType
 }) => {
   // Create array of 5 slots
   const slots = Array.from({ length: 5 }, (_, index) => {
@@ -144,7 +146,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
           <Users className="h-6 w-6 text-neon-purple" />
           <span className="bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
-            Dream Team Selection
+            {roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round Team
           </span>
         </h2>
         <p className="text-gray-400 text-sm">
