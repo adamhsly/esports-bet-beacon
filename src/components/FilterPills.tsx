@@ -110,7 +110,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
             onClick={() => handlePillClick(id)}
             className={cn(
               "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200",
-              "bg-theme-gray-dark hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple",
+              "[background:_#374151] hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple",
               "min-w-[100px] justify-between text-xs",
               openPill === id && "border-theme-purple bg-theme-purple/20"
             )}
