@@ -71,7 +71,7 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
               <img
                 src={game.logo}
                 alt={game.label}
-                className="w-full h-full object-contain p-2"
+                className="w-full h-full object-contain"
                 draggable={false}
               />
             ) : (
