@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Users, Trophy, Star } from 'lucide-react';
+import { Users, Trophy, Star, X } from 'lucide-react';
 
 interface Team {
   id: string;
@@ -20,9 +20,10 @@ interface SelectedTeamsWidgetProps {
   budgetRemaining: number;
   salaryCapacity: number;
   roundType: 'daily' | 'weekly' | 'monthly';
+  onRemoveTeam?: (index: number) => void;
 }
 
-const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
+const TeamCard: React.FC<{ team: Team; index: number; onRemove?: () => void }> = ({ team, index, onRemove }) => {
   const isAmateur = team.type === 'amateur';
   
   // Neon Top Trumps styling
@@ -105,25 +106,28 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
           </div>
         </div>
 
-        {/* Selected Status Button */}
-        <div className="mt-3 relative z-10">
-          <div className={`w-full py-2 px-2 rounded-lg text-center font-bold text-xs tracking-widest ${
-            isAmateur 
-              ? 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
-              : 'bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.5)]'
-          } border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'} transition-all duration-300 hover:scale-105`}>
-            SELECTED
-          </div>
-        </div>
-
-        {/* Amateur Bonus Badge */}
+        {/* Amateur Bonus Badge - Top Left */}
         {isAmateur && (
-          <div className="absolute -top-2 -right-2 z-20">
+          <div className="absolute -top-2 -left-2 z-20">
             <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1 border border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] animate-pulse">
               +25%
             </Badge>
           </div>
         )}
+
+        {/* Remove Button - Top Right */}
+        <div className="absolute -top-2 -right-2 z-20">
+          <button
+            onClick={onRemove}
+            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+              isAmateur 
+                ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
+                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
+            } border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'}`}
+          >
+            <X className="w-3 h-3 text-white" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -167,7 +171,8 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   budgetSpent,
   budgetRemaining,
   salaryCapacity,
-  roundType
+  roundType,
+  onRemoveTeam
 }) => {
   // Create array of 5 slots
   const slots = Array.from({ length: 5 }, (_, index) => {
@@ -215,7 +220,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           {slots.slice(0, 2).map((team, index) => (
             <div key={index} className="aspect-square">
               {team ? (
-                <TeamCard team={team} index={index} />
+                <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} />
               ) : (
                 <PlaceholderCard index={index} />
               )}
@@ -228,7 +233,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           {slots.slice(2, 4).map((team, index) => (
             <div key={index + 2} className="aspect-square">
               {team ? (
-                <TeamCard team={team} index={index + 2} />
+                <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} />
               ) : (
                 <PlaceholderCard index={index + 2} />
               )}
@@ -240,7 +245,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         <div className="flex justify-center md:hidden">
           <div className="w-1/2 aspect-square">
             {slots[4] ? (
-              <TeamCard team={slots[4]} index={4} />
+              <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} />
             ) : (
               <PlaceholderCard index={4} />
             )}
@@ -252,7 +257,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           {slots.map((team, index) => (
             <div key={index} className="aspect-square">
               {team ? (
-                <TeamCard team={team} index={index} />
+                <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} />
               ) : (
                 <PlaceholderCard index={index} />
               )}
@@ -269,7 +274,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
             Bench Team
           </h3>
           <div className="scale-75 origin-center">
-            <TeamCard team={benchTeam} index={5} />
+            <TeamCard team={benchTeam} index={5} onRemove={() => onRemoveTeam?.(5)} />
           </div>
         </div>
       )}
