@@ -188,6 +188,25 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         </p>
       </div>
 
+      {/* Budget Progress */}
+      <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-xl p-4 border border-gray-700/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="text-gray-300 font-medium">Budget</span>
+          <span className="text-white font-bold">
+            {budgetSpent}/{salaryCapacity} credits • 
+            <span className="text-green-400 ml-1">{budgetRemaining} remaining</span>
+          </span>
+        </div>
+        <Progress 
+          value={Math.min(100, Math.round((budgetSpent / salaryCapacity) * 100))} 
+          className="h-3 bg-gray-800 rounded-full overflow-hidden"
+        />
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>0</span>
+          <span>{salaryCapacity}</span>
+        </div>
+      </div>
+
       {/* Team Cards Grid */}
       <div className="grid grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
         {/* Mobile: 3 cards on first row */}
@@ -241,24 +260,6 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         </div>
       )}
 
-      {/* Budget Progress */}
-      <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-xl p-4 border border-gray-700/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-gray-300 font-medium">Budget</span>
-          <span className="text-white font-bold">
-            {budgetSpent}/{salaryCapacity} credits • 
-            <span className="text-green-400 ml-1">{budgetRemaining} remaining</span>
-          </span>
-        </div>
-        <Progress 
-          value={Math.min(100, Math.round((budgetSpent / salaryCapacity) * 100))} 
-          className="h-3 bg-gray-800 rounded-full overflow-hidden"
-        />
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
-          <span>0</span>
-          <span>{salaryCapacity}</span>
-        </div>
-      </div>
     </div>
   );
 };
