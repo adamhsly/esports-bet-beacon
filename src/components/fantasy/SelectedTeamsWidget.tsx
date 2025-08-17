@@ -36,13 +36,13 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
 
   return (
     <div 
-      className={`relative rounded-xl ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow`}
+      className={`relative rounded-xl w-full h-full ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow`}
       style={{
         animation: 'pulse-glow 3s ease-in-out infinite alternate'
       }}
     >
       <div 
-        className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4 min-h-[200px] flex flex-col justify-between overflow-hidden"
+        className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4 h-full flex flex-col justify-between overflow-hidden"
         style={{
           background: `linear-gradient(135deg, 
             ${isAmateur 
@@ -130,8 +130,8 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
 
 const PlaceholderCard: React.FC<{ index: number }> = ({ index }) => {
   return (
-    <div className="relative rounded-xl border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group">
-      <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 p-4 min-h-[200px] flex flex-col justify-center items-center backdrop-blur-sm overflow-hidden">
+    <div className="relative rounded-xl w-full h-full border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group">
+      <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 p-4 h-full flex flex-col justify-center items-center backdrop-blur-sm overflow-hidden">
         {/* Animated background particles */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-3 right-3 w-1 h-1 rounded-full bg-gray-400 animate-ping"></div>
@@ -208,43 +208,56 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       </div>
 
       {/* Team Cards Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
-        {/* Mobile: 3 cards on first row */}
-        {slots.slice(0, 3).map((team, index) => (
-          <div key={index} className="col-span-1">
-            {team ? (
-              <TeamCard team={team} index={index} />
-            ) : (
-              <PlaceholderCard index={index} />
-            )}
-          </div>
-        ))}
+      <div className="space-y-3 md:space-y-0">
+        {/* Mobile: First row - 2 cards */}
+        <div className="grid grid-cols-2 gap-3 md:hidden">
+          {slots.slice(0, 2).map((team, index) => (
+            <div key={index} className="aspect-square">
+              {team ? (
+                <TeamCard team={team} index={index} />
+              ) : (
+                <PlaceholderCard index={index} />
+              )}
+            </div>
+          ))}
+        </div>
         
-        {/* Mobile: 2 cards on second row, centered */}
-        <div className="col-span-3 md:hidden">
-          <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-            {slots.slice(3, 5).map((team, index) => (
-              <div key={index + 3}>
-                {team ? (
-                  <TeamCard team={team} index={index + 3} />
-                ) : (
-                  <PlaceholderCard index={index + 3} />
-                )}
-              </div>
-            ))}
+        {/* Mobile: Second row - 2 cards */}
+        <div className="grid grid-cols-2 gap-3 md:hidden">
+          {slots.slice(2, 4).map((team, index) => (
+            <div key={index + 2} className="aspect-square">
+              {team ? (
+                <TeamCard team={team} index={index + 2} />
+              ) : (
+                <PlaceholderCard index={index + 2} />
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* Mobile: Third row - 1 card centered */}
+        <div className="flex justify-center md:hidden">
+          <div className="w-1/2 aspect-square">
+            {slots[4] ? (
+              <TeamCard team={slots[4]} index={4} />
+            ) : (
+              <PlaceholderCard index={4} />
+            )}
           </div>
         </div>
 
-        {/* Desktop: Show remaining cards normally */}
-        {slots.slice(3, 5).map((team, index) => (
-          <div key={index + 3} className="hidden md:block col-span-1">
-            {team ? (
-              <TeamCard team={team} index={index + 3} />
-            ) : (
-              <PlaceholderCard index={index + 3} />
-            )}
-          </div>
-        ))}
+        {/* Desktop: All 5 cards in one row */}
+        <div className="hidden md:grid md:grid-cols-5 md:gap-4">
+          {slots.map((team, index) => (
+            <div key={index} className="aspect-square">
+              {team ? (
+                <TeamCard team={team} index={index} />
+              ) : (
+                <PlaceholderCard index={index} />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Bench Team */}
