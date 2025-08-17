@@ -296,6 +296,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setSelectedTeams([...selectedTeams, team]);
   };
+
+  const handleRemoveTeam = (index: number) => {
+    const newSelectedTeams = [...selectedTeams];
+    newSelectedTeams.splice(index, 1);
+    setSelectedTeams(newSelectedTeams);
+  };
   const handleBenchSelect = (team: Team) => {
     if (team.type !== 'amateur') {
       toast.error('Bench team must be an amateur team');
@@ -429,7 +435,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} roundType={round.type} />
+      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} roundType={round.type} onRemoveTeam={handleRemoveTeam} />
 
       {/* Team Selection Tabs */}
       <Tabs defaultValue="pro" className="space-y-4">
