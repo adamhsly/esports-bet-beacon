@@ -36,13 +36,13 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
 
   return (
     <div 
-      className={`relative rounded-xl w-full h-full ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow`}
+      className={`relative rounded-xl w-full aspect-square ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow`}
       style={{
         animation: 'pulse-glow 3s ease-in-out infinite alternate'
       }}
     >
       <div 
-        className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4 h-full flex flex-col justify-between overflow-hidden"
+        className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-3 h-full flex flex-col overflow-hidden"
         style={{
           background: `linear-gradient(135deg, 
             ${isAmateur 
@@ -58,46 +58,47 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
           <div className={`absolute bottom-4 left-4 w-1 h-1 rounded-full ${isAmateur ? 'bg-red-400' : 'bg-blue-400'} animate-ping delay-300`}></div>
         </div>
 
-        {/* Team Logo */}
-        <div className="flex justify-center mb-4 relative z-10">
+        {/* Very Prominent Team Logo */}
+        <div className="flex justify-center mb-3 relative z-10">
           {team.logo_url ? (
-            <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20' : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20'} border ${isAmateur ? 'border-orange-400/30' : 'border-purple-400/30'}`}>
+            <div className={`relative p-3 rounded-xl ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30'} border-2 ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'} shadow-lg`}>
               <img 
                 src={team.logo_url} 
                 alt={team.name} 
-                className="w-10 h-10 object-contain filter drop-shadow-lg"
+                className="w-16 h-16 object-contain filter drop-shadow-xl"
               />
             </div>
           ) : (
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-400/30' : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-purple-400/30'} border`}>
-              {isAmateur ? <Users className="w-6 h-6 text-orange-400" /> : <Trophy className="w-6 h-6 text-purple-400" />}
+            <div className={`w-20 h-20 rounded-xl flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30 border-orange-400/50' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30 border-purple-400/50'} border-2 shadow-lg`}>
+              {isAmateur ? <Users className="w-10 h-10 text-orange-400" /> : <Trophy className="w-10 h-10 text-purple-400" />}
             </div>
           )}
         </div>
 
-        {/* Team Name */}
-        <h3 className={`font-bold text-sm text-center mb-4 line-clamp-2 leading-tight min-h-[32px] flex items-center justify-center tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
+        {/* Team Name - Larger than other data */}
+        <h3 className={`font-bold text-base text-center mb-3 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
           {team.name.toUpperCase()}
         </h3>
 
-        {/* Team Stats - Top Trumps Style */}
-        <div className="space-y-3 flex-grow relative z-10">
-          <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">CREDITS COST</div>
-            <div className={`font-bold text-xl ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
-              {team.price || 0}
+        {/* Compact Stats Grid */}
+        <div className="space-y-2 flex-grow relative z-10">
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <div>
+              <div className="text-orange-400 font-bold text-xs mb-1 tracking-wider">CREDITS</div>
+              <div className={`font-bold text-lg ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+                {team.price || 0}
+              </div>
+            </div>
+            <div>
+              <div className="text-orange-400 font-bold text-xs mb-1 tracking-wider">MATCHES</div>
+              <div className={`font-bold text-lg ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+                {team.type === 'pro' ? (team.matches_in_period || 0) : (team.matches_prev_window || 0)}
+              </div>
             </div>
           </div>
           
           <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">MATCHES SCHEDULED</div>
-            <div className={`font-bold text-xl ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
-              {team.type === 'pro' ? (team.matches_in_period || 0) : (team.matches_prev_window || 0)}
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">ESPORTS</div>
+            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">TYPE</div>
             <div className={`font-bold text-sm tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
               {isAmateur ? 'AMATEUR' : 'PRO'}
             </div>
@@ -105,8 +106,8 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
         </div>
 
         {/* Selected Status Button */}
-        <div className="mt-4 relative z-10">
-          <div className={`w-full py-2 px-3 rounded-lg text-center font-bold text-xs tracking-widest ${
+        <div className="mt-3 relative z-10">
+          <div className={`w-full py-2 px-2 rounded-lg text-center font-bold text-xs tracking-widest ${
             isAmateur 
               ? 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
               : 'bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.5)]'
