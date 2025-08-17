@@ -59,47 +59,47 @@ const TeamCard: React.FC<{ team: Team; index: number }> = ({ team, index }) => {
         </div>
 
         {/* Very Prominent Team Logo */}
-        <div className="flex justify-center mb-3 relative z-10">
+        <div className="flex justify-center mb-2 relative z-10">
           {team.logo_url ? (
-            <div className={`relative p-3 rounded-xl ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30'} border-2 ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'} shadow-lg`}>
+            <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30'} border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'} shadow-lg`}>
               <img 
                 src={team.logo_url} 
                 alt={team.name} 
-                className="w-16 h-16 object-contain filter drop-shadow-xl"
+                className="w-12 h-12 object-contain filter drop-shadow-xl"
               />
             </div>
           ) : (
-            <div className={`w-20 h-20 rounded-xl flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30 border-orange-400/50' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30 border-purple-400/50'} border-2 shadow-lg`}>
-              {isAmateur ? <Users className="w-10 h-10 text-orange-400" /> : <Trophy className="w-10 h-10 text-purple-400" />}
+            <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30 border-orange-400/50' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30 border-purple-400/50'} border shadow-lg`}>
+              {isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-purple-400" />}
             </div>
           )}
         </div>
 
         {/* Team Name - Larger than other data */}
-        <h3 className={`font-bold text-base text-center mb-3 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
+        <h3 className={`font-bold text-sm text-center mb-2 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
           {team.name.toUpperCase()}
         </h3>
 
         {/* Compact Stats Grid */}
-        <div className="space-y-2 flex-grow relative z-10">
-          <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="space-y-1.5 flex-grow relative z-10">
+          <div className="grid grid-cols-2 gap-1.5 text-center">
             <div>
-              <div className="text-orange-400 font-bold text-xs mb-1 tracking-wider">CREDITS</div>
-              <div className={`font-bold text-lg ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+              <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">CREDITS</div>
+              <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
                 {team.price || 0}
               </div>
             </div>
             <div>
-              <div className="text-orange-400 font-bold text-xs mb-1 tracking-wider">MATCHES</div>
-              <div className={`font-bold text-lg ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+              <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">MATCHES</div>
+              <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
                 {team.type === 'pro' ? (team.matches_in_period || 0) : (team.matches_prev_window || 0)}
               </div>
             </div>
           </div>
           
           <div className="text-center">
-            <div className="text-orange-400 font-bold text-xs mb-1 tracking-widest">TYPE</div>
-            <div className={`font-bold text-sm tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
+            <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">TYPE</div>
+            <div className={`font-bold text-xs tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
               {isAmateur ? 'AMATEUR' : 'PRO'}
             </div>
           </div>
