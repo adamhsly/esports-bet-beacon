@@ -108,7 +108,7 @@ const TeamCard: React.FC<{ team: Team; index: number; onRemove?: () => void }> =
 
         {/* Amateur Bonus Badge - Top Left */}
         {isAmateur && (
-          <div className="absolute -top-2 -left-2 z-20">
+          <div className="absolute top-1 left-1 z-20">
             <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1 border border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] animate-pulse">
               +25%
             </Badge>
@@ -116,7 +116,7 @@ const TeamCard: React.FC<{ team: Team; index: number; onRemove?: () => void }> =
         )}
 
         {/* Remove Button - Top Right */}
-        <div className="absolute -top-2 -right-2 z-20">
+        <div className="absolute top-1 right-1 z-20">
           <button
             onClick={onRemove}
             className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 ${
