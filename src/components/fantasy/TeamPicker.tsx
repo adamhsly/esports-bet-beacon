@@ -434,7 +434,18 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} roundType={round.type} onRemoveTeam={handleRemoveTeam} />
+      <SelectedTeamsWidget 
+        selectedTeams={selectedTeams} 
+        benchTeam={benchTeam} 
+        budgetSpent={budgetSpent} 
+        budgetRemaining={budgetRemaining} 
+        salaryCapacity={SALARY_CAP} 
+        roundType={round.type} 
+        onRemoveTeam={handleRemoveTeam}
+        proTeams={proTeams}
+        amateurTeams={amateurTeams}
+        onTeamSelect={handleTeamSelect}
+      />
 
       {/* Team Selection Tabs */}
       <Tabs defaultValue="pro" className="space-y-4">

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, Trophy, Star, X } from 'lucide-react';
+import { TeamSelectionModal } from './TeamSelectionModal';
 interface Team {
   id: string;
   name: string;
@@ -19,6 +20,9 @@ interface SelectedTeamsWidgetProps {
   salaryCapacity: number;
   roundType: 'daily' | 'weekly' | 'monthly';
   onRemoveTeam?: (index: number) => void;
+  proTeams?: Team[];
+  amateurTeams?: Team[];
+  onTeamSelect?: (team: Team) => void;
 }
 const TeamCard: React.FC<{
   team: Team;
@@ -105,10 +109,15 @@ const TeamCard: React.FC<{
 };
 const PlaceholderCard: React.FC<{
   index: number;
+  onClick?: () => void;
 }> = ({
-  index
+  index,
+  onClick
 }) => {
-  return <div className="relative rounded-xl w-full h-full border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group">
+  return <div 
+    className="relative rounded-xl w-full h-full border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group cursor-pointer"
+    onClick={onClick}
+  >
       <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 p-4 h-full flex flex-col justify-center items-center backdrop-blur-sm overflow-hidden">
         {/* Animated background particles */}
         <div className="absolute inset-0 opacity-10">
@@ -143,8 +152,27 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   budgetRemaining,
   salaryCapacity,
   roundType,
-  onRemoveTeam
+  onRemoveTeam,
+  proTeams = [],
+  amateurTeams = [],
+  onTeamSelect
 }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
+
+  const handleSlotClick = (index: number) => {
+    if (onTeamSelect && (proTeams.length > 0 || amateurTeams.length > 0)) {
+      setSelectedSlotIndex(index);
+      setModalOpen(true);
+    }
+  };
+
+  const handleTeamSelect = (team: Team) => {
+    if (onTeamSelect) {
+      onTeamSelect(team);
+    }
+    setModalOpen(false);
+  };
   // Create array of 5 slots
   const slots = Array.from({
     length: 5
@@ -185,28 +213,28 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         {/* Mobile: First row - 2 cards */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square">
-              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} />}
+              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
             </div>)}
         </div>
         
         {/* Mobile: Second row - 2 cards */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square">
-              {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} /> : <PlaceholderCard index={index + 2} />}
+              {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
             </div>)}
         </div>
         
         {/* Mobile: Third row - 1 card centered */}
         <div className="flex justify-center md:hidden">
           <div className="w-1/2 aspect-square">
-            {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} /> : <PlaceholderCard index={4} />}
+            {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
           </div>
         </div>
 
         {/* Desktop: All 5 cards in one row */}
         <div className="hidden md:grid md:grid-cols-5 md:gap-4">
           {slots.map((team, index) => <div key={index} className="aspect-square">
-              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} />}
+              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
             </div>)}
         </div>
       </div>
@@ -221,6 +249,18 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
             <TeamCard team={benchTeam} index={5} onRemove={() => onRemoveTeam?.(5)} />
           </div>
         </div>}
+
+      {/* Team Selection Modal */}
+      <TeamSelectionModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        proTeams={proTeams}
+        amateurTeams={amateurTeams}
+        selectedTeams={selectedTeams}
+        onTeamSelect={handleTeamSelect}
+        budgetRemaining={budgetRemaining}
+        slotIndex={selectedSlotIndex}
+      />
 
     </div>;
 };
