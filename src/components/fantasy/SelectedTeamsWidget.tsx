@@ -153,14 +153,13 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   });
   return <div className="space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-          
-          <span className="bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold" style={{ color: '#8B5CF6' }}>
             {roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round Team
-          </span>
-        </h2>
-        <p className="text-gray-400 text-sm">
+          </h2>
+        </div>
+        <p className="text-gray-400 text-sm text-center">
           Select 5 teams to build your ultimate fantasy roster
         </p>
       </div>
