@@ -296,7 +296,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setSelectedTeams([...selectedTeams, team]);
   };
-
   const handleRemoveTeam = (index: number) => {
     const newSelectedTeams = [...selectedTeams];
     newSelectedTeams.splice(index, 1);
@@ -517,30 +516,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               </Select>
 
               {/* Selected Pro Teams Display */}
-              {selectedTeams.filter(t => t.type === 'pro').length > 0 && <div className="space-y-2">
-                  <h4 className="font-medium text-sm text-white">Selected Pro Teams:</h4>
-                  <div className="grid gap-2">
-                    {selectedTeams.filter(t => t.type === 'pro').map(team => <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />}
-                          <div>
-                            <div className="font-medium text-white">{team.name}</div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {team.esport_type?.toUpperCase()}
-                              </Badge>
-                              <Badge variant="default" className="text-xs">
-                                Pro
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => handleTeamSelect(team)} className="text-red-600 hover:text-red-700">
-                          Remove
-                        </Button>
-                      </div>)}
-                  </div>
-                </div>}
+              {selectedTeams.filter(t => t.type === 'pro').length > 0}
             </div>}
         </TabsContent>
 
