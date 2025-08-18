@@ -156,7 +156,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-center">
           <h2 className="text-2xl font-bold" style={{ color: '#8B5CF6' }}>
-            {roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round Team
+            {roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round
           </h2>
         </div>
         <p className="text-gray-400 text-sm text-center">
