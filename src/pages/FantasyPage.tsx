@@ -9,12 +9,14 @@ import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPicker';
 import { Calendar, Clock, Trophy, Home } from 'lucide-react';
+import { EngagementBar, useEngagementData } from '@/components/fantasy/EngagementBar';
 
 
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const engagementData = useEngagementData();
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
@@ -110,6 +112,9 @@ const FantasyPage: React.FC = () => {
       </div>
 
       <Footer />
+      
+      {/* Engagement Bar */}
+      <EngagementBar data={engagementData} />
     </div>
   );
 };
