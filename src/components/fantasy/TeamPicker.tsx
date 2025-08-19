@@ -120,14 +120,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           match.teams.forEach((teamObj: any) => {
             if (teamObj.type === 'Team' && teamObj.opponent) {
               const team = teamObj.opponent;
-              // Use slug as primary ID since that's what fantasy_team_prices uses
-              const teamId = team.slug || String(team.id);
-              const existing = proTeamMap.get(teamId);
+              // Use numeric PandaScore ID as primary (this matches fantasy_team_prices)
+              const numericId = String(team.id);
+              const existing = proTeamMap.get(numericId);
               if (existing) {
                 existing.matches_in_period = (existing.matches_in_period || 0) + 1;
               } else {
-                proTeamMap.set(teamId, {
-                  id: teamId,
+                proTeamMap.set(numericId, {
+                  id: numericId,
                   name: team.name || team.slug || 'Unknown Team',
                   type: 'pro',
                   logo_url: team.image_url,
@@ -164,13 +164,18 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       // Attach prices to pro teams
       const proTeamDataWithPrice: Team[] = proTeamData.map(t => {
-        const p = proPriceMap.get(t.id); // Now t.id is already the slug
+        const p = proPriceMap.get(t.id) ?? (t.slug ? proPriceMap.get(t.slug) : undefined);
         return {
           ...t,
-          price: p?.price ?? undefined,
+          price: typeof p?.price === 'number' ? p.price : undefined,
           recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined,
           match_volume: typeof p?.match_volume === 'number' ? p.match_volume : t.matches_in_period
         } as Team;
+      });
+      console.debug('[TeamPicker] Pro teams priced', {
+        roundId: round.id,
+        total: proTeamDataWithPrice.length,
+        priced: proTeamDataWithPrice.filter(tt => typeof tt.price === 'number').length
       });
       const stats: Array<any> = prevStatsRes.data || [];
       const statsMap = new Map<string, any>();
@@ -221,7 +226,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const row = payload.new || payload.old;
       if (!row) return;
       if (row.team_type === 'pro') {
-        setProTeams(prev => prev.map(t => t.id === row.team_id ? {
+        setProTeams(prev => prev.map(t => (t.id === row.team_id || t.slug === row.team_id) ? {
           ...t,
           price: typeof row.price === 'number' ? row.price : t.price,
           recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
