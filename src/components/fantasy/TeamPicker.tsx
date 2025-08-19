@@ -120,13 +120,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           match.teams.forEach((teamObj: any) => {
             if (teamObj.type === 'Team' && teamObj.opponent) {
               const team = teamObj.opponent;
-              const numericId = String(team.id);
-              const existing = proTeamMap.get(numericId);
+              // Use slug as primary ID since that's what fantasy_team_prices uses
+              const teamId = team.slug || String(team.id);
+              const existing = proTeamMap.get(teamId);
               if (existing) {
                 existing.matches_in_period = (existing.matches_in_period || 0) + 1;
               } else {
-                proTeamMap.set(numericId, {
-                  id: numericId,
+                proTeamMap.set(teamId, {
+                  id: teamId,
                   name: team.name || team.slug || 'Unknown Team',
                   type: 'pro',
                   logo_url: team.image_url,
@@ -163,7 +164,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       // Attach prices to pro teams
       const proTeamDataWithPrice: Team[] = proTeamData.map(t => {
-        const p = proPriceMap.get(t.id) ?? (t.slug ? proPriceMap.get(t.slug) : undefined);
+        const p = proPriceMap.get(t.id); // Now t.id is already the slug
         return {
           ...t,
           price: p?.price ?? undefined,
@@ -220,7 +221,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const row = payload.new || payload.old;
       if (!row) return;
       if (row.team_type === 'pro') {
-        setProTeams(prev => prev.map(t => (t.id === row.team_id || (t as any).slug === row.team_id) ? {
+        setProTeams(prev => prev.map(t => t.id === row.team_id ? {
           ...t,
           price: typeof row.price === 'number' ? row.price : t.price,
           recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
