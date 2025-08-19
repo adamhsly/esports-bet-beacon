@@ -30,6 +30,7 @@ interface Team {
   matches_in_period?: number; // Pro teams
   logo_url?: string;
   esport_type?: string;
+  slug?: string; // optional slug for pro teams
   // Amateur metrics (previous fantasy window)
   matches_prev_window?: number;
   missed_pct?: number;
@@ -119,17 +120,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           match.teams.forEach((teamObj: any) => {
             if (teamObj.type === 'Team' && teamObj.opponent) {
               const team = teamObj.opponent;
-              const existing = proTeamMap.get(team.id);
+              const numericId = String(team.id);
+              const existing = proTeamMap.get(numericId);
               if (existing) {
                 existing.matches_in_period = (existing.matches_in_period || 0) + 1;
               } else {
-                proTeamMap.set(String(team.id), {
-                  id: String(team.id),
+                proTeamMap.set(numericId, {
+                  id: numericId,
                   name: team.name || team.slug || 'Unknown Team',
                   type: 'pro',
                   logo_url: team.image_url,
                   esport_type: match.esport_type,
-                  matches_in_period: 1
+                  matches_in_period: 1,
+                  slug: team.slug
                 });
               }
             }
@@ -160,7 +163,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       // Attach prices to pro teams
       const proTeamDataWithPrice: Team[] = proTeamData.map(t => {
-        const p = proPriceMap.get(t.id);
+        const p = proPriceMap.get(t.id) ?? (t.slug ? proPriceMap.get(t.slug) : undefined);
         return {
           ...t,
           price: p?.price ?? undefined,
@@ -217,7 +220,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const row = payload.new || payload.old;
       if (!row) return;
       if (row.team_type === 'pro') {
-        setProTeams(prev => prev.map(t => t.id === row.team_id ? {
+        setProTeams(prev => prev.map(t => (t.id === row.team_id || (t as any).slug === row.team_id) ? {
           ...t,
           price: typeof row.price === 'number' ? row.price : t.price,
           recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
