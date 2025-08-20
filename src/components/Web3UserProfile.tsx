@@ -144,28 +144,12 @@ const Web3UserProfile: React.FC = () => {
 
   const xpProgress = ((userStats.currentXP / (userStats.currentXP + userStats.xpToNext)) * 100);
 
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-engagement-bg-start to-engagement-bg-end flex items-center justify-center">
-        <Card className="w-full max-w-md bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-neon-purple/20 rounded-full flex items-center justify-center mb-4">
-              <User className="w-8 h-8 text-neon-purple" />
-            </div>
-            <CardTitle className="text-2xl font-gaming text-white">Connect Wallet</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-6">
-              Connect your wallet to access your esports fantasy hub
-            </p>
-            <Button className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/80 hover:to-neon-blue/80 text-white font-gaming">
-              Connect Wallet
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Load default stats for non-connected users
+  useEffect(() => {
+    if (!isConnected) {
+      setIsLoading(false);
+    }
+  }, [isConnected]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-engagement-bg-start to-engagement-bg-end">
@@ -178,7 +162,7 @@ const Web3UserProfile: React.FC = () => {
               {/* Avatar */}
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-neon-purple to-neon-blue rounded-full flex items-center justify-center text-3xl font-gaming text-white animate-premium-glow">
-                  {currentWallet?.address.slice(0, 2).toUpperCase()}
+                  {isConnected ? currentWallet?.address.slice(0, 2).toUpperCase() : <User className="w-10 h-10" />}
                 </div>
                 <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 rounded-full p-2 bg-engagement-card border-neon-blue">
                   <Upload className="w-3 h-3" />
@@ -410,6 +394,34 @@ const Web3UserProfile: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Web3 Integration */}
+            {!isConnected && (
+              <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white font-gaming">
+                    <User className="w-5 h-5 text-neon-purple" />
+                    Web3 Integration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-neon-purple/20 rounded-full flex items-center justify-center mx-auto">
+                      <User className="w-8 h-8 text-neon-purple" />
+                    </div>
+                    <div>
+                      <p className="text-white font-gaming mb-2">Connect Wallet</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Connect your wallet to unlock NFT trading and blockchain features
+                      </p>
+                    </div>
+                    <Button className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/80 hover:to-neon-blue/80 text-white font-gaming">
+                      Connect Wallet
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Actions */}
             <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
