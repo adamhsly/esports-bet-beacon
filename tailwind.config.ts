@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -77,6 +76,14 @@ export default {
 					'blue': 'hsl(var(--neon-blue))',
 					'orange': 'hsl(var(--neon-orange))',
 					'pink': 'hsl(var(--neon-pink))',
+					'green': 'hsl(var(--neon-green))',
+					'gold': 'hsl(var(--neon-gold))',
+				},
+				'engagement': {
+					'bg-start': 'hsl(var(--engagement-bg-start))',
+					'bg-end': 'hsl(var(--engagement-bg-end))',
+					'card': 'hsl(var(--engagement-card))',
+					'border': 'hsl(var(--engagement-border))',
 				}
 			},
 			borderRadius: {
@@ -117,12 +124,41 @@ export default {
 						transform: 'translateY(-10px)' 
 					},
 				},
+				'neon-pulse': {
+					'0%, 100%': { 
+						boxShadow: '0 0 5px hsl(var(--neon-blue) / 0.5)' 
+					},
+					'50%': { 
+						boxShadow: '0 0 20px hsl(var(--neon-blue) / 0.8), 0 0 30px hsl(var(--neon-blue) / 0.4)' 
+					},
+				},
+				'streak-fire': {
+					'0%, 100%': { 
+						boxShadow: '0 0 10px hsl(var(--neon-orange) / 0.6)',
+						filter: 'brightness(1)'
+					},
+					'50%': { 
+						boxShadow: '0 0 25px hsl(var(--neon-orange) / 0.9), 0 0 40px hsl(var(--neon-orange) / 0.5)',
+						filter: 'brightness(1.2)'
+					},
+				},
+				'premium-glow': {
+					'0%, 100%': { 
+						boxShadow: '0 0 8px hsl(var(--neon-gold) / 0.4)' 
+					},
+					'50%': { 
+						boxShadow: '0 0 20px hsl(var(--neon-gold) / 0.7), 0 0 35px hsl(var(--neon-gold) / 0.3)' 
+					},
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
 				'float': 'float 6s ease-in-out infinite',
+				'neon-pulse': 'neon-pulse 2s ease-in-out infinite',
+				'streak-fire': 'streak-fire 1.5s ease-in-out infinite',
+				'premium-glow': 'premium-glow 3s ease-in-out infinite',
 			},
 			fontFamily: {
 				'gaming': ['"Rajdhani"', 'sans-serif'],

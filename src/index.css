@@ -73,6 +73,14 @@
     --neon-blue: 217 91% 60%;
     --neon-orange: 25 95% 53%;
     --neon-pink: 329 86% 70%;
+    --neon-green: 142 76% 36%;
+    --neon-gold: 45 93% 47%;
+    
+    /* Engagement Bar Dark Gradients */
+    --engagement-bg-start: 213 23% 7%;
+    --engagement-bg-end: 217 19% 11%;
+    --engagement-card: 217 32.6% 17.5%;
+    --engagement-border: 217 32.6% 25%;
   }
 }
 
@@ -444,19 +452,120 @@ nav a:hover {
     display: none;  /* Safari and Chrome */
   }
 
-  /* Neon Top Trumps Animations */
+  /* Neon Gaming Animations */
   .animate-pulse-glow {
     animation: pulse-glow 3s ease-in-out infinite alternate;
   }
+  
+  .animate-neon-pulse {
+    animation: neon-pulse 2s ease-in-out infinite;
+  }
+  
+  .animate-streak-fire {
+    animation: streak-fire 1.5s ease-in-out infinite;
+  }
+  
+  .animate-premium-glow {
+    animation: premium-glow 3s ease-in-out infinite;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+  
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out;
+  }
+  
+  .animate-slide-right {
+    animation: slide-right 0.3s ease-out;
+  }
+  
+  .animate-slide-left {
+    animation: slide-left 0.3s ease-out;
+  }
 }
 
-/* Keyframes for neon glow animation */
+/* Neon gaming keyframes */
 @keyframes pulse-glow {
   0% {
     filter: brightness(1) saturate(1);
   }
   100% {
     filter: brightness(1.1) saturate(1.2);
+  }
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--neon-blue) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--neon-blue) / 0.8), 0 0 30px hsl(var(--neon-blue) / 0.4);
+  }
+}
+
+@keyframes streak-fire {
+  0%, 100% {
+    box-shadow: 0 0 10px hsl(var(--neon-orange) / 0.6);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 25px hsl(var(--neon-orange) / 0.9), 0 0 40px hsl(var(--neon-orange) / 0.5);
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes premium-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px hsl(var(--neon-gold) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--neon-gold) / 0.7), 0 0 35px hsl(var(--neon-gold) / 0.3);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-right {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
   }
 }
 
