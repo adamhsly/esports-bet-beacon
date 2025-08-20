@@ -3,15 +3,58 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useWeb3 } from '@/contexts/Web3Context';
 import { supabase } from '@/integrations/supabase/client';
-import { Wallet, Trophy, Star, Plus } from 'lucide-react';
+import { 
+  User, 
+  Trophy, 
+  Star, 
+  Plus, 
+  Zap, 
+  Target, 
+  Flame, 
+  Crown, 
+  Settings, 
+  Upload,
+  Lock,
+  Gift,
+  Medal,
+  Coins,
+  TrendingUp,
+  Users,
+  Award
+} from 'lucide-react';
 
 interface UserStats {
   totalCards: number;
   fantasyTeams: number;
   tournamentsEntered: number;
   totalSpent: number;
+  currentLevel: number;
+  currentXP: number;
+  xpToNext: number;
+  globalRank: number;
+  highestRank: number;
+  currentStreak: number;
+  hasPremiumPass: boolean;
+}
+
+interface RecentTeamCard {
+  id: string;
+  roundName: string;
+  rank: number;
+  score: number;
+  teamName: string;
+}
+
+interface CollectionItem {
+  id: string;
+  name: string;
+  type: 'frame' | 'border' | 'badge' | 'title';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  unlocked: boolean;
+  imageUrl?: string;
 }
 
 const Web3UserProfile: React.FC = () => {
@@ -21,7 +64,25 @@ const Web3UserProfile: React.FC = () => {
     fantasyTeams: 0,
     tournamentsEntered: 0,
     totalSpent: 0,
+    currentLevel: 12,
+    currentXP: 2840,
+    xpToNext: 660,
+    globalRank: 1247,
+    highestRank: 89,
+    currentStreak: 7,
+    hasPremiumPass: false,
   });
+  const [recentTeams, setRecentTeams] = useState<RecentTeamCard[]>([
+    { id: '1', roundName: 'Weekly Round #12', rank: 145, score: 2840, teamName: 'Lightning Bolts' },
+    { id: '2', roundName: 'Daily Round #89', rank: 23, score: 3200, teamName: 'Neon Guardians' },
+    { id: '3', roundName: 'Monthly Round #3', rank: 512, score: 1890, teamName: 'Cyber Strikers' },
+  ]);
+  const [collections, setCollections] = useState<CollectionItem[]>([
+    { id: '1', name: 'Champion Frame', type: 'frame', rarity: 'legendary', unlocked: true },
+    { id: '2', name: 'Neon Border', type: 'border', rarity: 'epic', unlocked: true },
+    { id: '3', name: 'Pro Badge', type: 'badge', rarity: 'rare', unlocked: false },
+    { id: '4', name: 'Master Title', type: 'title', rarity: 'legendary', unlocked: false },
+  ]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -55,12 +116,12 @@ const Web3UserProfile: React.FC = () => {
 
       const totalSpent = purchases?.reduce((sum, purchase) => sum + purchase.pack_price, 0) || 0;
 
-      setUserStats({
+      setUserStats(prev => ({
+        ...prev,
         totalCards: cardCount || 0,
         fantasyTeams: teamsCount || 0,
-        tournamentsEntered: 0, // TODO: Calculate from tournament entries
         totalSpent,
-      });
+      }));
     } catch (error) {
       console.error('Error loading user stats:', error);
     } finally {
@@ -72,126 +133,312 @@ const Web3UserProfile: React.FC = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'legendary': return 'text-neon-gold';
+      case 'epic': return 'text-neon-purple';
+      case 'rare': return 'text-neon-blue';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const xpProgress = ((userStats.currentXP / (userStats.currentXP + userStats.xpToNext)) * 100);
+
   if (!isConnected) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet size={20} />
-            Web3 Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            Connect your wallet to view your web3 profile
-          </p>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-gradient-to-br from-engagement-bg-start to-engagement-bg-end flex items-center justify-center">
+        <Card className="w-full max-w-md bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-neon-purple/20 rounded-full flex items-center justify-center mb-4">
+              <User className="w-8 h-8 text-neon-purple" />
+            </div>
+            <CardTitle className="text-2xl font-gaming text-white">Connect Wallet</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-6">
+              Connect your wallet to access your esports fantasy hub
+            </p>
+            <Button className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/80 hover:to-neon-blue/80 text-white font-gaming">
+              Connect Wallet
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Wallet Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet size={20} />
-            Connected Wallets
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {userWallets.map((wallet) => (
-              <div
-                key={wallet.address}
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  currentWallet?.address === wallet.address 
-                    ? 'bg-theme-purple/10 border-theme-purple' 
-                    : 'bg-muted/50'
-                }`}
-              >
+    <div className="min-h-screen bg-gradient-to-br from-engagement-bg-start to-engagement-bg-end">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Hero Section */}
+        <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 animate-neon-pulse"></div>
+          <CardContent className="relative z-10 p-8">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-neon-purple to-neon-blue rounded-full flex items-center justify-center text-3xl font-gaming text-white animate-premium-glow">
+                  {currentWallet?.address.slice(0, 2).toUpperCase()}
+                </div>
+                <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 rounded-full p-2 bg-engagement-card border-neon-blue">
+                  <Upload className="w-3 h-3" />
+                </Button>
+              </div>
+              
+              {/* User Info */}
+              <div className="flex-1 text-center md:text-left">
+                <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
+                  <h1 className="text-3xl font-gaming text-white">Cyber Champion</h1>
+                  <Badge className="bg-gradient-to-r from-neon-purple to-neon-blue text-white border-none animate-neon-pulse">
+                    <Star className="w-3 h-3 mr-1" />
+                    Level {userStats.currentLevel}
+                  </Badge>
+                </div>
+                <p className="text-neon-blue font-gaming mb-4">Master of the Virtual Arena</p>
+                
+                {/* XP Progress */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-white font-gaming">
+                    <span>Level {userStats.currentLevel}</span>
+                    <span>{userStats.currentXP} / {userStats.currentXP + userStats.xpToNext} XP</span>
+                  </div>
+                  <Progress 
+                    value={xpProgress} 
+                    className="h-3 bg-engagement-bg-start [&>div]:bg-gradient-to-r [&>div]:from-neon-blue [&>div]:to-neon-purple [&>div]:animate-neon-pulse [&>div]:shadow-lg [&>div]:shadow-neon-blue/50"
+                  />
+                  <p className="text-xs text-neon-blue/80 font-gaming">{userStats.xpToNext} XP to next level</p>
+                </div>
+              </div>
+
+              {/* Streak & Premium */}
+              <div className="flex flex-col gap-3">
+                <Badge className="bg-neon-orange/20 text-neon-orange border-neon-orange/30 animate-streak-fire font-gaming">
+                  <Flame className="w-4 h-4 mr-2" />
+                  {userStats.currentStreak} Day Streak
+                </Badge>
+                {userStats.hasPremiumPass ? (
+                  <Badge className="bg-neon-gold/20 text-neon-gold border-neon-gold/30 animate-premium-glow font-gaming">
+                    <Crown className="w-4 h-4 mr-2" />
+                    Premium Active
+                  </Badge>
+                ) : (
+                  <Button size="sm" className="bg-gradient-to-r from-neon-gold to-neon-orange hover:from-neon-gold/80 hover:to-neon-orange/80 text-white font-gaming animate-premium-glow">
+                    <Crown className="w-4 h-4 mr-2" />
+                    Unlock Premium
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Fantasy Performance */}
+            <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white font-gaming">
+                  <Trophy className="w-5 h-5 text-neon-purple" />
+                  Fantasy Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="text-center p-4 bg-neon-purple/10 rounded-lg border border-neon-purple/20">
+                    <Medal className="w-8 h-8 text-neon-purple mx-auto mb-2" />
+                    <p className="text-3xl font-gaming text-neon-purple">#{userStats.highestRank}</p>
+                    <p className="text-sm text-white font-gaming">Highest Rank</p>
+                  </div>
+                  <div className="text-center p-4 bg-neon-blue/10 rounded-lg border border-neon-blue/20">
+                    <TrendingUp className="w-8 h-8 text-neon-blue mx-auto mb-2" />
+                    <p className="text-3xl font-gaming text-neon-blue">#{userStats.globalRank}</p>
+                    <p className="text-sm text-white font-gaming">Global Rank</p>
+                  </div>
+                  <div className="text-center p-4 bg-neon-green/10 rounded-lg border border-neon-green/20">
+                    <Users className="w-8 h-8 text-neon-green mx-auto mb-2" />
+                    <p className="text-3xl font-gaming text-neon-green">{userStats.fantasyTeams}</p>
+                    <p className="text-sm text-white font-gaming">Teams Created</p>
+                  </div>
+                </div>
+
+                {/* Recent Teams */}
                 <div>
-                  <p className="font-mono text-sm">{formatAddress(wallet.address)}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {wallet.walletType} • {wallet.blockchain}
-                  </p>
+                  <h3 className="text-lg font-gaming text-white mb-4 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-neon-green" />
+                    Recent Fantasy Teams
+                  </h3>
+                  <div className="space-y-3">
+                    {recentTeams.map((team) => (
+                      <div key={team.id} className="flex items-center justify-between p-3 bg-engagement-bg-start rounded-lg border border-engagement-border">
+                        <div>
+                          <p className="font-gaming text-white">{team.teamName}</p>
+                          <p className="text-sm text-muted-foreground">{team.roundName}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={`${team.rank <= 50 ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : team.rank <= 200 ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
+                            #{team.rank}
+                          </Badge>
+                          <p className="text-sm text-neon-blue font-gaming mt-1">{team.score} pts</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  {wallet.isPrimary && (
-                    <Badge variant="default" className="text-xs">Primary</Badge>
-                  )}
-                  {currentWallet?.address === wallet.address && (
-                    <Badge variant="secondary" className="text-xs">Active</Badge>
-                  )}
+              </CardContent>
+            </Card>
+
+            {/* Season Pass Track */}
+            <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white font-gaming">
+                  <Gift className="w-5 h-5 text-neon-blue" />
+                  Season Pass Rewards
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Free Track */}
+                  <div className="p-4 bg-neon-blue/10 rounded-lg border border-neon-blue/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-neon-blue" />
+                        <span className="font-gaming text-white">Free Rewards</span>
+                      </div>
+                      <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 font-gaming">Tier 5</Badge>
+                    </div>
+                    <p className="text-sm text-neon-blue/80 font-gaming">Next: Team Boost Pack</p>
+                    <Progress value={45} className="h-2 mt-2 bg-engagement-bg-start [&>div]:bg-neon-blue" />
+                  </div>
+
+                  {/* Premium Track */}
+                  <div className={`p-4 rounded-lg border ${userStats.hasPremiumPass ? 'bg-neon-gold/10 border-neon-gold/20 animate-premium-glow' : 'bg-muted/10 border-muted/20'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {userStats.hasPremiumPass ? (
+                          <Crown className="w-4 h-4 text-neon-gold" />
+                        ) : (
+                          <Lock className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span className={`font-gaming ${userStats.hasPremiumPass ? 'text-neon-gold' : 'text-muted-foreground'}`}>
+                          Premium Rewards
+                        </span>
+                      </div>
+                      <Badge className={`${userStats.hasPremiumPass ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
+                        Tier 5
+                      </Badge>
+                    </div>
+                    <p className={`text-sm font-gaming ${userStats.hasPremiumPass ? 'text-neon-gold/80' : 'text-muted-foreground'}`}>
+                      Next: Legendary Card Pack
+                    </p>
+                    <Progress 
+                      value={45} 
+                      className={`h-2 mt-2 bg-engagement-bg-start ${userStats.hasPremiumPass ? '[&>div]:bg-neon-gold' : '[&>div]:bg-muted'}`} 
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* User Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy size={20} />
-            Statistics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading statistics...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-theme-purple">{userStats.totalCards}</p>
-                <p className="text-xs text-muted-foreground">Total Cards</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-theme-green">{userStats.fantasyTeams}</p>
-                <p className="text-xs text-muted-foreground">Fantasy Teams</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-orange-400">{userStats.tournamentsEntered}</p>
-                <p className="text-xs text-muted-foreground">Tournaments</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-2xl font-bold text-blue-400">${userStats.totalSpent}</p>
-                <p className="text-xs text-muted-foreground">Total Spent</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          {/* Right Column */}
+          <div className="space-y-8">
+            {/* Statistics */}
+            <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white font-gaming">
+                  <Award className="w-5 h-5 text-neon-green" />
+                  Statistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground font-gaming">Loading statistics...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-engagement-bg-start rounded-lg">
+                      <span className="text-white font-gaming">Total Cards</span>
+                      <span className="text-neon-purple font-gaming font-bold">{userStats.totalCards}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-engagement-bg-start rounded-lg">
+                      <span className="text-white font-gaming">Tournaments</span>
+                      <span className="text-neon-orange font-gaming font-bold">{userStats.tournamentsEntered}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-engagement-bg-start rounded-lg">
+                      <span className="text-white font-gaming">Total Spent</span>
+                      <span className="text-neon-blue font-gaming font-bold">${userStats.totalSpent}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star size={20} />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
-              <Plus size={20} />
-              <span className="text-sm">Buy Packs</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
-              <Trophy size={20} />
-              <span className="text-sm">Create Team</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
-              <Wallet size={20} />
-              <span className="text-sm">Trade Cards</span>
-            </Button>
+            {/* Collections */}
+            <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white font-gaming">
+                  <Coins className="w-5 h-5 text-neon-gold" />
+                  Collections
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {collections.map((item) => (
+                    <div key={item.id} className={`flex items-center justify-between p-3 rounded-lg border ${item.unlocked ? 'bg-engagement-bg-start border-engagement-border' : 'bg-muted/10 border-muted/20'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center ${item.unlocked ? `border-current ${getRarityColor(item.rarity)}` : 'border-muted-foreground'}`}>
+                          {item.unlocked ? (
+                            <Star className="w-4 h-4" />
+                          ) : (
+                            <Lock className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div>
+                          <p className={`font-gaming text-sm ${item.unlocked ? getRarityColor(item.rarity) : 'text-muted-foreground'}`}>
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">{item.type}</p>
+                        </div>
+                      </div>
+                      {!item.unlocked && (
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white font-gaming">
+                  <Zap className="w-5 h-5 text-neon-green" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Button className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/80 hover:to-neon-blue/80 text-white font-gaming">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Buy Card Packs
+                  </Button>
+                  <Button variant="outline" className="w-full border-neon-green text-neon-green hover:bg-neon-green/10 font-gaming">
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Create Fantasy Team
+                  </Button>
+                  <Button variant="outline" className="w-full border-neon-orange text-neon-orange hover:bg-neon-orange/10 font-gaming">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
