@@ -72,6 +72,7 @@ function App() {
           <Route path="/advanced-cards" element={<AdvancedCardsPage />} />
           <Route path="/fantasy" element={<FantasyPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/profile" element={<Web3ProfilePage />} />
           <Route path="/web3-profile" element={<Web3ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
