@@ -333,9 +333,6 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
                 <AlertTriangle className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-semibold text-orange-400 mb-1">Amateur Team Bonus 25%</h4>
-                  <p className="text-orange-200 text-sm">
-                    Amateur teams earn 25% bonus points but activity varies. Teams with fewer matches may reduce your score.
-                  </p>
                 </div>
               </div>
             </div>
