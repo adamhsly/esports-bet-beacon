@@ -385,15 +385,6 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="am-logo" 
-                      checked={hasLogoOnlyAm} 
-                      onCheckedChange={(checked) => setHasLogoOnlyAm(checked === true)}
-                      className="border-gray-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-400"
-                    />
-                    <Label htmlFor="am-logo" className="text-gray-300 text-sm">With logo only</Label>
-                  </div>
                   
                   <div className="flex items-center space-x-2">
                     <Checkbox 
