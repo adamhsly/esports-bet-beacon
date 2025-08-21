@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseUnsafe as supabase } from '@/integrations/supabase/unsafeClient';
 import { useToast } from './use-toast';
 import { useProgress, useMissions, useRewards } from './useSupabaseData';
 
@@ -20,21 +20,27 @@ export const useRPCActions = () => {
 
       if (error) throw error;
 
+      const result = (data as any) as {
+        xp?: number;
+        unlocked_rewards_count?: number;
+        deduped?: boolean;
+      } | null;
+
       // Invalidate related data
       await Promise.all([
         refetchProgress(),
         refetchRewards()
       ]);
 
-      if (data && !data.deduped) {
+      if (result && !result.deduped) {
         toast({
           title: "XP Awarded!",
-          description: `+${data.xp} XP earned! ${data.unlocked_rewards_count > 0 ? `🎁 ${data.unlocked_rewards_count} rewards unlocked!` : ''}`,
+          description: `+${result.xp ?? 0} XP earned! ${result.unlocked_rewards_count && result.unlocked_rewards_count > 0 ? `🎁 ${result.unlocked_rewards_count} rewards unlocked!` : ''}`,
           duration: 3000
         });
       }
 
-      return data;
+      return result;
     } catch (err: any) {
       toast({
         title: "Error awarding XP",
@@ -54,6 +60,12 @@ export const useRPCActions = () => {
 
       if (error) throw error;
 
+      const result = (data as any) as {
+        ok?: boolean;
+        completed?: boolean;
+        awarded_xp?: number;
+      } | null;
+
       // Invalidate related data
       await Promise.all([
         refetchMissions(),
@@ -61,15 +73,15 @@ export const useRPCActions = () => {
         refetchRewards()
       ]);
 
-      if (data && data.ok && data.completed) {
+      if (result && result.ok && result.completed) {
         toast({
           title: "Mission Complete!",
-          description: `${data.awarded_xp > 0 ? `+${data.awarded_xp} XP earned!` : 'Mission completed!'}`,
+          description: `${(result.awarded_xp ?? 0) > 0 ? `+${result.awarded_xp} XP earned!` : 'Mission completed!'}`,
           duration: 3000
         });
       }
 
-      return data;
+      return result;
     } catch (err: any) {
       toast({
         title: "Error updating mission",

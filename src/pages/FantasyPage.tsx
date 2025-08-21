@@ -9,7 +9,8 @@ import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPicker';
 import { Calendar, Clock, Trophy, Home } from 'lucide-react';
-import { EngagementBar, useEngagementData } from '@/components/fantasy/EngagementBar';
+import { useRPCActions } from '@/hooks/useRPCActions';
+import { EngagementBarLive } from '@/components/fantasy/EngagementBarLive';
 
 
 const FantasyPage: React.FC = () => {
@@ -114,7 +115,7 @@ const FantasyPage: React.FC = () => {
       <Footer />
       
       {/* Engagement Bar */}
-      <EngagementBar data={engagementData} />
+      <EngagementBarLive />
     </div>
   );
 };
