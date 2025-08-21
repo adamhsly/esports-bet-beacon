@@ -55,6 +55,77 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   const fetchPlayerData = async () => {
     try {
+      // Check if this is a PandaScore player (numeric ID for games like Valorant, CS2, etc.)
+      const isPandaScorePlayer = /^\d+$/.test(playerId);
+      
+      if (isPandaScorePlayer) {
+        // Use new RPC function for PandaScore players
+        const { data: rpcData, error: rpcError } = await supabase.rpc(
+          'get_pandascore_player_details',
+          { p_player_id: parseInt(playerId) }
+        );
+
+        if (rpcError) {
+          console.error('Error calling RPC:', rpcError);
+          return;
+        }
+
+        if (rpcData && typeof rpcData === 'object' && rpcData !== null) {
+          const response = rpcData as any;
+          
+          if (response.found) {
+            const profile = response.profile;
+            const stats = response.stats;
+            
+            setPlayerData({
+              player_id: profile.id.toString(),
+              name: profile.name || 'Unknown Player',
+              slug: profile.slug || undefined,
+              image_url: profile.image_url || undefined,
+              nationality: profile.nationality || undefined,
+              role: profile.role || undefined,
+              team_id: profile.team?.id?.toString() || undefined,
+              team_name: profile.team?.name || undefined,
+              career_stats: {
+                total_matches: stats.total_matches,
+                wins: stats.wins,
+                losses: stats.losses,
+                win_rate: stats.win_rate,
+                videogame: profile.videogame
+              },
+              recent_stats: {
+                recent_form: stats.recent_form,
+                win_rate: stats.win_rate,
+                matches_played: stats.total_matches
+              },
+              kda_ratio: undefined, // PandaScore doesn't have individual KDA in this aggregation
+              avg_kills: undefined,
+              avg_deaths: undefined,
+              avg_assists: undefined,
+              achievements: []
+            });
+
+            // Set recent matches from last_10_matches
+            if (stats.last_10_matches && Array.isArray(stats.last_10_matches)) {
+              setRecentMatches(stats.last_10_matches.map((match: any) => ({
+                tournament_name: match.tournament || 'Unknown Tournament',
+                opponent_team: match.opponent || 'Unknown Opponent',
+                result: match.result === 'W' ? 'win' : 'loss',
+                date: match.date,
+                match_id: match.matchId,
+                map_name: 'N/A', // PandaScore doesn't provide map info in this context
+                kills: 0, // Individual stats not available
+                deaths: 0,
+                assists: 0,
+                kda_ratio: 0
+              })));
+            }
+            return;
+          }
+        }
+      }
+
+      // Fallback to original method for other types of players
       const { data, error } = await supabase
         .from('pandascore_players_master')
         .select('*')

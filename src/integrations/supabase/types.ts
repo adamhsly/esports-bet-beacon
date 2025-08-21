@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1134,6 +1134,42 @@ export type Database = {
         }
         Relationships: []
       }
+      missions: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          target: number
+          title: string
+          xp_reward: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          kind: string
+          target?: number
+          title: string
+          xp_reward?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          target?: number
+          title?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       nft_cards: {
         Row: {
           block_number: number | null
@@ -1908,6 +1944,109 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          created_at: string
+          id: string
+          premium_active: boolean
+          season_id: string
+          stripe_customer_id: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          premium_active?: boolean
+          season_id: string
+          stripe_customer_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          premium_active?: boolean
+          season_id?: string
+          stripe_customer_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          level_required: number
+          reward_type: string
+          reward_value: string
+          season_id: string
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level_required: number
+          reward_type: string
+          reward_value: string
+          season_id: string
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level_required?: number
+          reward_type?: string
+          reward_value?: string
+          season_id?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_rewards_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          ends_at: string
+          id: string
+          name: string
+          premium_price_cents: number
+          starts_at: string
+        }
+        Insert: {
+          ends_at: string
+          id?: string
+          name: string
+          premium_price_cents?: number
+          starts_at: string
+        }
+        Update: {
+          ends_at?: string
+          id?: string
+          name?: string
+          premium_price_cents?: number
+          starts_at?: string
+        }
+        Relationships: []
+      }
       sportdevs_matches: {
         Row: {
           best_of: number | null
@@ -2303,6 +2442,127 @@ export type Database = {
           },
         ]
       }
+      user_events: {
+        Row: {
+          id: string
+          kind: string
+          occurred_at: string
+          ref_id: string | null
+          user_id: string
+          xp_awarded: number
+        }
+        Insert: {
+          id?: string
+          kind: string
+          occurred_at?: string
+          ref_id?: string | null
+          user_id: string
+          xp_awarded?: number
+        }
+        Update: {
+          id?: string
+          kind?: string
+          occurred_at?: string
+          ref_id?: string | null
+          user_id?: string
+          xp_awarded?: number
+        }
+        Relationships: []
+      }
+      user_missions: {
+        Row: {
+          completed: boolean
+          mission_id: string
+          progress: number
+          reset_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          mission_id: string
+          progress?: number
+          reset_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          mission_id?: string
+          progress?: number
+          reset_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_progress: {
+        Row: {
+          last_active_date: string | null
+          level: number
+          streak_count: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          last_active_date?: string | null
+          level?: number
+          streak_count?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          last_active_date?: string | null
+          level?: number
+          streak_count?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      user_rewards: {
+        Row: {
+          reward_id: string
+          unlocked: boolean
+          unlocked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          reward_id: string
+          unlocked?: boolean
+          unlocked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          reward_id?: string
+          unlocked?: boolean
+          unlocked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "season_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_wallets: {
         Row: {
           blockchain: string
@@ -2336,6 +2596,21 @@ export type Database = {
           user_id?: string
           wallet_address?: string
           wallet_type?: string
+        }
+        Relationships: []
+      }
+      xp_rules: {
+        Row: {
+          kind: string
+          xp: number
+        }
+        Insert: {
+          kind: string
+          xp: number
+        }
+        Update: {
+          kind?: string
+          xp?: number
         }
         Relationships: []
       }
@@ -2388,87 +2663,97 @@ export type Database = {
       }
     }
     Functions: {
+      active_season_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      award_xp: {
+        Args: { p_kind: string; p_ref_id?: string }
+        Returns: Json
+      }
       calculate_fantasy_points: {
-        Args: {
-          kills: number
-          deaths: number
-          assists: number
-          adr: number
-          mvp_rounds: number
-          clutch_rounds: number
-          scoring_config: Json
-        }
-        Returns: number
+        Args:
+          | {
+              adr: number
+              assists: number
+              clutch_rounds: number
+              deaths: number
+              kills: number
+              mvp_rounds: number
+              scoring_config: Json
+            }
+          | { team_id: string }
+        Returns: Json
       }
       faceit_get_match_counts_around_date: {
         Args: { target_date: string }
         Returns: {
+          match_count: number
           match_date: string
           source: string
-          match_count: number
         }[]
       }
       get_all_faceit_teams: {
         Args: Record<PropertyKey, never>
         Returns: {
+          game: string
+          logo_url: string
           team_id: string
           team_name: string
-          logo_url: string
-          game: string
         }[]
       }
       get_faceit_matches_around_date: {
         Args: { target_date: string }
         Returns: {
-          match_date: string
-          id: string
-          match_id: string
-          game: string
-          region: string
+          auto_refresh_interval: number
+          calculate_elo: boolean
+          championship_raw_data: Json
+          championship_stream_url: string
           competition_name: string
           competition_type: string
-          organized_by: string
-          status: string
-          started_at: string
-          finished_at: string
           configured_at: string
-          calculate_elo: boolean
-          version: number
-          teams: Json
-          voting: Json
-          faceit_data: Json
-          raw_data: Json
           created_at: string
-          updated_at: string
-          scheduled_at: string
-          championship_stream_url: string
-          championship_raw_data: Json
-          match_phase: string
           current_round: number
-          round_timer_seconds: number
-          overtime_rounds: number
+          economy_data: Json
+          faceit_data: Json
+          finished_at: string
+          game: string
+          id: string
+          kill_feed: Json
+          last_live_update: string
+          live_player_status: Json
           live_team_scores: Json
           maps_played: Json
-          round_results: Json
-          live_player_status: Json
-          kill_feed: Json
-          economy_data: Json
+          match_date: string
+          match_id: string
+          match_phase: string
           objectives_status: Json
-          auto_refresh_interval: number
-          last_live_update: string
+          organized_by: string
+          overtime_rounds: number
+          raw_data: Json
+          region: string
+          round_results: Json
+          round_timer_seconds: number
+          scheduled_at: string
+          started_at: string
+          status: string
+          teams: Json
+          updated_at: string
+          version: number
+          voting: Json
         }[]
       }
       get_faceit_teams_prev_window_stats: {
-        Args: { start_ts: string; end_ts: string }
+        Args: { end_ts: string; start_ts: string }
         Returns: {
+          byes: number
+          game: string
+          logo_url: string
+          missed_pct: number
+          played_matches: number
           team_id: string
           team_name: string
-          logo_url: string
-          game: string
           total_scheduled: number
-          played_matches: number
-          byes: number
-          missed_pct: number
         }[]
       }
       get_head_to_head_stats: {
@@ -2478,43 +2763,47 @@ export type Database = {
       get_pandascore_matches_around_date: {
         Args: { target_date: string }
         Returns: {
-          match_date: string
-          id: string
-          match_id: string
-          esport_type: string
-          teams: Json
-          start_time: string
+          created_at: string
+          detailed_stats: boolean
+          draw: boolean
           end_time: string
-          tournament_id: string
-          tournament_name: string
+          esport_type: string
+          forfeit: boolean
+          id: string
+          last_synced_at: string
           league_id: string
           league_name: string
+          match_date: string
+          match_id: string
+          match_type: string
+          modified_at: string
+          number_of_games: number
+          original_scheduled_at: string
+          raw_data: Json
+          rescheduled: boolean
+          row_id: number
           serie_id: string
           serie_name: string
-          status: string
-          match_type: string
-          number_of_games: number
-          raw_data: Json
-          created_at: string
-          updated_at: string
-          last_synced_at: string
           slug: string
-          draw: boolean
-          forfeit: boolean
-          original_scheduled_at: string
-          rescheduled: boolean
-          detailed_stats: boolean
-          winner_id: string
-          winner_type: string
-          videogame_id: string
-          videogame_name: string
+          start_time: string
+          status: string
           stream_url_1: string
           stream_url_2: string
-          modified_at: string
           team_a_player_ids: Json
           team_b_player_ids: Json
-          row_id: number
+          teams: Json
+          tournament_id: string
+          tournament_name: string
+          updated_at: string
+          videogame_id: string
+          videogame_name: string
+          winner_id: string
+          winner_type: string
         }[]
+      }
+      get_pandascore_player_details: {
+        Args: { p_player_id: number }
+        Returns: Json
       }
       get_team_stats: {
         Args: { team_id: string }
@@ -2524,13 +2813,37 @@ export type Database = {
         Args: { team_id: string }
         Returns: Json
       }
+      increment_xp: {
+        Args: { p_user_id: string; p_xp: number }
+        Returns: undefined
+      }
+      level_for_xp: {
+        Args: { x: number }
+        Returns: number
+      }
+      next_daily_reset_utc: {
+        Args: { ts?: string }
+        Returns: string
+      }
+      next_weekly_reset_utc: {
+        Args: { ts?: string }
+        Returns: string
+      }
       pandascore_get_match_counts_around_date: {
         Args: { target_date: string }
         Returns: {
+          match_count: number
           match_date: string
           source: string
-          match_count: number
         }[]
+      }
+      progress_mission: {
+        Args: { p_code: string; p_inc?: number }
+        Returns: Json
+      }
+      seed_user_missions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_expired_fantasy_rounds: {
         Args: Record<PropertyKey, never>
