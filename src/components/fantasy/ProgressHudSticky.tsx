@@ -163,7 +163,7 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
               <h3 className="text-[#CFE3FF] font-medium">Mission Progress</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-gradient-to-r from-neon-purple/10 to-neon-purple/5 border border-neon-purple/20 rounded-xl">
-                  <div className="text-xs uppercase text-neon-purple font-medium tracking-wide mb-1">
+                  <div className="text-xs uppercase text-[#EAEFFC] font-medium tracking-wide mb-1">
                     Daily Missions
                   </div>
                   <div className="text-lg text-white font-semibold">
@@ -177,7 +177,7 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
                   </div>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-neon-cyan/10 to-neon-cyan/5 border border-neon-cyan/20 rounded-xl">
-                  <div className="text-xs uppercase text-neon-cyan font-medium tracking-wide mb-1">
+                  <div className="text-xs uppercase text-[#EAEFFC] font-medium tracking-wide mb-1">
                     Weekly Missions
                   </div>
                   <div className="text-lg text-white font-semibold">
