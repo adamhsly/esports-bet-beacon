@@ -213,7 +213,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
   };
 
   const modalContent = (
-    <div className="flex flex-col h-full max-h-[80vh] bg-gradient-to-br from-[#0B0F14] to-[#12161C]">
+    <div className="flex flex-col h-full bg-gradient-to-br from-[#0B0F14] to-[#12161C]">
       {/* Header */}
       <div className="relative p-6 border-b border-gray-700/50">
         <div className="flex items-center justify-between">
@@ -257,9 +257,9 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        <Tabs value={activeTab} className="h-full flex flex-col">
-          <TabsContent value="pro" className="flex-1 overflow-hidden m-0 p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto">
+        <Tabs value={activeTab} className="h-full">
+          <TabsContent value="pro" className="m-0 p-6 space-y-4 h-full">
             {/* Filters */}
             <div className="space-y-4">
               <div className="relative">
@@ -309,7 +309,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
             </div>
             
             {/* Team List */}
-            <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="space-y-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
               {filteredProTeams.map(team => (
                 <TeamCard
                   key={team.id}
@@ -326,7 +326,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="amateur" className="flex-1 overflow-hidden m-0 p-6 space-y-4">
+          <TabsContent value="amateur" className="m-0 p-6 space-y-4 h-full">
             {/* Amateur Warning Banner */}
             <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 rounded-lg p-4 mb-4">
               <div className="flex items-start gap-3">
@@ -400,7 +400,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
             </div>
             
             {/* Team List */}
-            <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="space-y-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
               {filteredAmateurTeams.map(team => (
                 <TeamCard
                   key={team.id}
