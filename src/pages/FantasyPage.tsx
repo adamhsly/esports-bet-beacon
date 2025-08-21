@@ -16,7 +16,7 @@ const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const engagementData = useEngagementData();
+  const { awardXP, progressMission } = useRPCActions();
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">

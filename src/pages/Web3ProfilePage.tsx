@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import Web3UserProfile from '@/components/Web3UserProfile';
+import ProfilePageLive from '@/components/ProfilePageLive';
 
 const Web3ProfilePage: React.FC = () => {
   return (
@@ -26,7 +26,12 @@ const Web3ProfilePage: React.FC = () => {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <Web3UserProfile />
+            <ProfilePageLive 
+              onUnlockPremium={() => {
+                // Handle premium unlock navigation
+                console.log('Navigate to premium checkout');
+              }}
+            />
           </div>
         </div>
       </div>
