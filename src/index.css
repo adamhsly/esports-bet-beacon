@@ -584,3 +584,55 @@ nav a:hover {
   }
 }
 
+/* Custom Animations for Fantasy HUD */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 16px currentColor, 0 0 8px rgba(138,43,226,0.4); }
+  50% { box-shadow: 0 0 24px currentColor, 0 0 12px rgba(138,43,226,0.6); }
+}
+
+@keyframes slide-across {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 16px rgba(251,146,60,0.4);
+    opacity: 1;
+  }
+  50% { 
+    box-shadow: 0 0 24px rgba(251,146,60,0.6);
+    opacity: 0.9;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-slide-across {
+  animation: slide-across 2s linear infinite;
+}
+
+.animate-flicker {
+  animation: flicker 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
