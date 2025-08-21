@@ -76,6 +76,8 @@ const Web3UserProfile: React.FC = () => {
     { id: '1', roundName: 'Weekly Round #12', rank: 145, score: 2840, teamName: 'Lightning Bolts' },
     { id: '2', roundName: 'Daily Round #89', rank: 23, score: 3200, teamName: 'Neon Guardians' },
     { id: '3', roundName: 'Monthly Round #3', rank: 512, score: 1890, teamName: 'Cyber Strikers' },
+    { id: '4', roundName: 'Weekly Round #11', rank: 78, score: 2645, teamName: 'Thunder Hawks' },
+    { id: '5', roundName: 'Daily Round #88', rank: 234, score: 2156, teamName: 'Plasma Wolves' },
   ]);
   const [collections, setCollections] = useState<CollectionItem[]>([
     { id: '1', name: 'Champion Frame', type: 'frame', rarity: 'legendary', unlocked: true },
@@ -248,26 +250,91 @@ const Web3UserProfile: React.FC = () => {
 
                 {/* Recent Teams */}
                 <div>
-                  <h3 className="text-lg font-gaming text-white mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-gaming text-white mb-6 flex items-center gap-2">
                     <Target className="w-4 h-4 text-neon-green" />
                     Recent Fantasy Teams
                   </h3>
-                  <div className="space-y-3">
-                    {recentTeams.map((team) => (
-                      <div key={team.id} className="flex items-center justify-between p-3 bg-engagement-bg-start rounded-lg border border-engagement-border">
-                        <div>
-                          <p className="font-gaming text-white">{team.teamName}</p>
-                          <p className="text-sm text-muted-foreground">{team.roundName}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge className={`${team.rank <= 50 ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : team.rank <= 200 ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
-                            #{team.rank}
-                          </Badge>
-                          <p className="text-sm text-neon-blue font-gaming mt-1">{team.score} pts</p>
-                        </div>
-                      </div>
+                  {/* Mobile: Single column, Desktop: 3+2 layout with larger cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 lg:gap-6">
+                    {recentTeams.slice(0, 3).map((team) => (
+                      <Card key={team.id} className="bg-gradient-to-br from-engagement-bg-start to-engagement-card border-engagement-border hover:border-neon-purple/50 transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/20 lg:h-48">
+                        <CardContent className="p-4 lg:p-6 h-full flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <Badge className={`${team.rank <= 50 ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : team.rank <= 200 ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming text-xs lg:text-sm`}>
+                                #{team.rank}
+                              </Badge>
+                              <Trophy className="w-4 h-4 lg:w-5 lg:h-5 text-neon-gold" />
+                            </div>
+                            <h4 className="font-gaming text-white text-base lg:text-lg mb-2 line-clamp-2">{team.teamName}</h4>
+                            <p className="text-sm lg:text-base text-muted-foreground mb-3">{team.roundName}</p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-left">
+                              <p className="text-xs lg:text-sm text-muted-foreground">Score</p>
+                              <p className="text-lg lg:text-xl text-neon-blue font-gaming font-bold">{team.score}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs lg:text-sm text-muted-foreground">Rank</p>
+                              <p className="text-lg lg:text-xl text-neon-green font-gaming font-bold">#{team.rank}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
+                  
+                  {/* Second row for desktop (2 cards) */}
+                  {recentTeams.length > 3 && (
+                    <div className="hidden lg:grid grid-cols-2 gap-6 mt-6">
+                      {recentTeams.slice(3, 5).map((team) => (
+                        <Card key={team.id} className="bg-gradient-to-br from-engagement-bg-start to-engagement-card border-engagement-border hover:border-neon-purple/50 transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/20 h-48">
+                          <CardContent className="p-6 h-full flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <Badge className={`${team.rank <= 50 ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : team.rank <= 200 ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
+                                  #{team.rank}
+                                </Badge>
+                                <Trophy className="w-5 h-5 text-neon-gold" />
+                              </div>
+                              <h4 className="font-gaming text-white text-lg mb-2 line-clamp-2">{team.teamName}</h4>
+                              <p className="text-base text-muted-foreground mb-3">{team.roundName}</p>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="text-left">
+                                <p className="text-sm text-muted-foreground">Score</p>
+                                <p className="text-xl text-neon-blue font-gaming font-bold">{team.score}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground">Rank</p>
+                                <p className="text-xl text-neon-green font-gaming font-bold">#{team.rank}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Mobile: Show remaining teams in simple list */}
+                  {recentTeams.length > 3 && (
+                    <div className="lg:hidden space-y-3 mt-4">
+                      {recentTeams.slice(3).map((team) => (
+                        <div key={team.id} className="flex items-center justify-between p-3 bg-engagement-bg-start rounded-lg border border-engagement-border">
+                          <div>
+                            <p className="font-gaming text-white">{team.teamName}</p>
+                            <p className="text-sm text-muted-foreground">{team.roundName}</p>
+                          </div>
+                          <div className="text-right">
+                            <Badge className={`${team.rank <= 50 ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : team.rank <= 200 ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
+                              #{team.rank}
+                            </Badge>
+                            <p className="text-sm text-neon-blue font-gaming mt-1">{team.score} pts</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
