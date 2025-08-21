@@ -71,10 +71,12 @@
     /* Neon Fantasy Colors */
     --neon-purple: 272 91% 65%;
     --neon-blue: 217 91% 60%;
+    --neon-cyan: 178 100% 50%;
     --neon-orange: 25 95% 53%;
     --neon-pink: 329 86% 70%;
     --neon-green: 142 76% 36%;
     --neon-gold: 45 93% 47%;
+    --golden: 45 93% 47%;
     
     /* Engagement Bar Dark Gradients */
     --engagement-bg-start: 213 23% 7%;
@@ -457,6 +459,10 @@ nav a:hover {
     animation: pulse-glow 3s ease-in-out infinite alternate;
   }
   
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
+  
   .animate-neon-pulse {
     animation: neon-pulse 2s ease-in-out infinite;
   }
@@ -493,6 +499,15 @@ nav a:hover {
   }
   100% {
     filter: brightness(1.1) saturate(1.2);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

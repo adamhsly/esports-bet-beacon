@@ -10,7 +10,7 @@ import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPicker';
 import { Calendar, Clock, Trophy, Home } from 'lucide-react';
 import { useRPCActions } from '@/hooks/useRPCActions';
-import { EngagementBarLive } from '@/components/fantasy/EngagementBarLive';
+import { ProgressHud } from '@/components/fantasy/ProgressHud';
 
 
 const FantasyPage: React.FC = () => {
@@ -114,8 +114,10 @@ const FantasyPage: React.FC = () => {
 
       <Footer />
       
-      {/* Engagement Bar */}
-      <EngagementBarLive />
+      {/* Progress HUD */}
+      <div className="fixed bottom-4 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] md:max-w-80">
+        <ProgressHud />
+      </div>
     </div>
   );
 };
