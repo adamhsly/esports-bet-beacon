@@ -10,7 +10,9 @@ import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPicker';
 import { Calendar, Clock, Trophy, Home } from 'lucide-react';
 import { useRPCActions } from '@/hooks/useRPCActions';
-import { ProgressHud } from '@/components/fantasy/ProgressHud';
+import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
+import { ProgressHudSidebar } from '@/components/fantasy/ProgressHudSidebar';
+import { useMobile } from '@/hooks/useMobile';
 
 
 const FantasyPage: React.FC = () => {
@@ -18,6 +20,7 @@ const FantasyPage: React.FC = () => {
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { awardXP, progressMission } = useRPCActions();
+  const isMobile = useMobile();
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
@@ -114,10 +117,14 @@ const FantasyPage: React.FC = () => {
 
       <Footer />
       
-      {/* Progress HUD */}
-      <div className="fixed bottom-4 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] md:max-w-80">
-        <ProgressHud />
-      </div>
+      {/* Progress HUD - Responsive */}
+      {isMobile ? (
+        <ProgressHudSticky />
+      ) : (
+        <div className="fixed bottom-4 right-4 z-50">
+          <ProgressHudSidebar />
+        </div>
+      )}
     </div>
   );
 };
