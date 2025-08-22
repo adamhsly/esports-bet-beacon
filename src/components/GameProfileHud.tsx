@@ -31,7 +31,7 @@ interface ProfilePageProps {
   onUnlockPremium?: () => void;
 }
 
-export const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPremium }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPremium }) => {
   const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
@@ -410,6 +410,9 @@ const RewardCard: React.FC<RewardCardProps> = ({ item, onClick }) => {
   );
 };
 
-// Legacy export for backward compatibility
+// Named export for sheet usage
+export { ProfilePage };
+
+// Legacy export for backward compatibility  
 const GameProfileHud = ProfilePage;
 export default GameProfileHud;
