@@ -26,11 +26,12 @@ import {
 import { cn } from '@/lib/utils';
 import { useProgress, useMissions } from '@/hooks/useSupabaseData';
 
-interface GameProfileHudProps {
+interface ProfilePageProps {
+  variant?: 'page' | 'sheet';
   onUnlockPremium?: () => void;
 }
 
-const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
+export const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPremium }) => {
   const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
@@ -73,9 +74,15 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
     );
   }
 
+  const isSheet = variant === 'sheet';
+  const containerClass = isSheet 
+    ? "bg-[#0F1420] text-white" 
+    : "min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] text-white";
+  const paddingClass = isSheet ? "p-4 sm:p-6" : "p-4";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] text-white">
-      <div className="p-4 space-y-6">
+    <div className={containerClass}>
+      <div className={`${paddingClass} space-y-6`}>
         {/* Avatar & Level Header */}
         <Card className="bg-gradient-to-br from-[#1A1F26] via-[#252A32] to-[#12161C] border border-white/[0.08] overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 to-neon-purple/5"></div>
@@ -403,4 +410,6 @@ const RewardCard: React.FC<RewardCardProps> = ({ item, onClick }) => {
   );
 };
 
+// Legacy export for backward compatibility
+const GameProfileHud = ProfilePage;
 export default GameProfileHud;

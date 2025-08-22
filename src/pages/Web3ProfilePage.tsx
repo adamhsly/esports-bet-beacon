@@ -5,14 +5,15 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import GameProfileHud from '@/components/GameProfileHud';
+import { ProfilePage } from '@/components/GameProfileHud';
 
 const Web3ProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
       <div className="flex-grow">
-        <GameProfileHud 
+        <ProfilePage 
+          variant="page"
           onUnlockPremium={() => {
             // Handle premium unlock navigation
             console.log('Navigate to premium checkout');

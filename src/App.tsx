@@ -24,6 +24,8 @@ import FantasyPage from '@/pages/FantasyPage';
 import AuthPage from '@/pages/AuthPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
 import NotFound from '@/pages/NotFound';
+import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
+import { StickyProfileHud } from '@/components/StickyProfileHud';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -35,23 +37,29 @@ const queryClient = new QueryClient({
   },
 });
 
-const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <ToastProvider>
-        <Web3Provider>
-          {children}
-          <Toaster />
-        </Web3Provider>
-      </ToastProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isOpen, openProfile, closeProfile } = useProfilePanel();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ToastProvider>
+          <Web3Provider>
+            {children}
+            <StickyProfileHud onClick={openProfile} />
+            <ProfileSheet isOpen={isOpen} onOpenChange={(open) => open ? openProfile() : closeProfile()} />
+            <Toaster />
+          </Web3Provider>
+        </ToastProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 function App() {
   return (
-    <QueryClientWrapper>
-      <Router>
+    <Router>
+      <QueryClientWrapper>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/esports/:gameType" element={<EsportPage />} />
@@ -76,8 +84,8 @@ function App() {
           <Route path="/web3-profile" element={<Web3ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
-    </QueryClientWrapper>
+      </QueryClientWrapper>
+    </Router>
   );
 }
 
