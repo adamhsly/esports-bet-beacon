@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useProgress, useMissions, useRewards, useEntitlement } from '@/hooks/useSupabaseData';
+import { useProgress, useMissions } from '@/hooks/useSupabaseData';
+import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { 
   User, 
   Crown,
@@ -30,8 +31,7 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   const { missions, loading: missionsLoading } = useMissions();
-  const { freeRewards, premiumRewards, loading: rewardsLoading } = useRewards();
-  const { premiumActive, loading: entitlementLoading } = useEntitlement();
+  const { free, premium, premiumActive } = useRewardsTrack();
 
   if (!isAuthenticated) {
     return (
@@ -45,7 +45,7 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
     );
   }
 
-  const loading = progressLoading || missionsLoading || rewardsLoading || entitlementLoading;
+  const loading = progressLoading || missionsLoading;
 
   // Calculate XP progress
   const baseXPForLevel = 1000 + (level - 1) * 100;
@@ -68,9 +68,6 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
       </div>
     );
   }
-
-  // Create reward levels array
-  const rewardLevels = [...Array(20)].map((_, i) => (i + 1) * 5);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] text-white">
@@ -142,36 +139,41 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
             </div>
             <ScrollArea className="w-full">
               <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
-                {rewardLevels.slice(0, 10).map((rewardLevel) => {
-                  const freeReward = freeRewards.find(r => r.level_required === rewardLevel);
-                  const isUnlocked = level >= rewardLevel;
-                  const isClaimed = freeReward?.unlocked || false;
+                {free.map((item) => {
+                  const isUnlocked = item.state === 'unlocked';
+                  const isClaimable = item.state === 'claimable';
 
                   return (
                     <div 
-                      key={`free-${rewardLevel}`}
+                      key={`free-${item.id}`}
                       className={cn(
                         "relative w-20 h-24 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300",
-                        isUnlocked 
-                          ? isClaimed
-                            ? "bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-400/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                            : "bg-gradient-to-b from-neon-blue/20 to-neon-purple/20 border-neon-blue/50 shadow-[0_0_15px_rgba(79,172,254,0.3)] animate-pulse-glow"
-                          : "bg-gradient-to-b from-white/5 to-white/[0.02] border-white/10"
+                        isUnlocked
+                          ? "bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-400/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                          : isClaimable
+                            ? "bg-gradient-to-b from-neon-blue/20 to-neon-purple/20 border-neon-blue/50 shadow-[0_0_15px_rgba(79,172,254,0.3)] animate-pulse-glow"
+                            : "bg-gradient-to-b from-white/5 to-white/[0.02] border-white/10"
                       )}
                     >
-                      {/* Reward Icon */}
+                      {/* Reward Visual */}
                       <div className="mb-1">
-                        {rewardLevel <= 10 ? (
-                          <Coins className={cn("w-6 h-6", isUnlocked ? "text-yellow-400" : "text-white/30")} />
-                        ) : rewardLevel <= 20 ? (
-                          <Gift className={cn("w-6 h-6", isUnlocked ? "text-purple-400" : "text-white/30")} />
+                        {item.assetUrl ? (
+                          <img src={item.assetUrl} alt={`${item.type} reward`} className="w-8 h-8 object-contain" loading="lazy" />
+                        ) : item.type === 'credits' ? (
+                          <Coins className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-yellow-400" : "text-white/30")} />
+                        ) : item.type === 'badge' ? (
+                          <Star className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-neon-blue" : "text-white/30")} />
+                        ) : item.type === 'frame' ? (
+                          <Trophy className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-purple-400" : "text-white/30")} />
+                        ) : item.type === 'border' ? (
+                          <Target className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-neon-purple" : "text-white/30")} />
                         ) : (
-                          <Trophy className={cn("w-6 h-6", isUnlocked ? "text-yellow-500" : "text-white/30")} />
+                          <Crown className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-yellow-400" : "text-white/30")} />
                         )}
                       </div>
-                      
+
                       {/* Status */}
-                      {isClaimed && (
+                      {isUnlocked && (
                         <CheckCircle className="absolute -top-1 -right-1 w-5 h-5 text-green-400 bg-[#12161C] rounded-full" />
                       )}
                       
@@ -180,7 +182,7 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
                         "absolute -bottom-2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full",
                         "transform rotate-12"
                       )}>
-                        {rewardLevel}
+                        {item.level}
                       </div>
                     </div>
                   );
@@ -198,42 +200,47 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
             </div>
             <ScrollArea className="w-full">
               <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
-                {rewardLevels.slice(0, 10).map((rewardLevel) => {
-                  const premiumReward = premiumRewards.find(r => r.level_required === rewardLevel);
-                  const isUnlocked = level >= rewardLevel && premiumActive;
-                  const isClaimed = premiumReward?.unlocked || false;
-                  const isLocked = !premiumActive;
+                {premium.map((item) => {
+                  const isUnlocked = item.state === 'unlocked';
+                  const isClaimable = item.state === 'claimable';
+                  const lockedByEntitlement = !premiumActive;
 
                   return (
                     <div 
-                      key={`premium-${rewardLevel}`}
+                      key={`premium-${item.id}`}
                       className={cn(
                         "relative w-20 h-24 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300",
-                        isLocked
+                        lockedByEntitlement
                           ? "bg-gradient-to-b from-white/5 to-white/[0.02] border-yellow-500/30"
-                          : isUnlocked 
-                            ? isClaimed
-                              ? "bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-400/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                              : "bg-gradient-to-b from-yellow-500/20 to-orange-500/20 border-yellow-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse-glow"
-                            : "bg-gradient-to-b from-white/5 to-white/[0.02] border-white/10"
+                          : isUnlocked
+                            ? "bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-400/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                            : isClaimable
+                              ? "bg-gradient-to-b from-yellow-500/20 to-orange-500/20 border-yellow-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse-glow"
+                              : "bg-gradient-to-b from-white/5 to-white/[0.02] border-white/10"
                       )}
                     >
-                      {/* Reward Icon */}
+                      {/* Reward Visual */}
                       <div className="mb-1">
-                        {rewardLevel <= 10 ? (
-                          <Coins className={cn("w-6 h-6", isUnlocked && !isLocked ? "text-yellow-400" : "text-white/30")} />
-                        ) : rewardLevel <= 20 ? (
-                          <Gift className={cn("w-6 h-6", isUnlocked && !isLocked ? "text-purple-400" : "text-white/30")} />
+                        {item.assetUrl ? (
+                          <img src={item.assetUrl} alt={`${item.type} reward`} className="w-8 h-8 object-contain" loading="lazy" />
+                        ) : item.type === 'credits' ? (
+                          <Coins className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-yellow-400" : "text-white/30")} />
+                        ) : item.type === 'badge' ? (
+                          <Star className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-neon-blue" : "text-white/30")} />
+                        ) : item.type === 'frame' ? (
+                          <Trophy className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-purple-400" : "text-white/30")} />
+                        ) : item.type === 'border' ? (
+                          <Target className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-neon-purple" : "text-white/30")} />
                         ) : (
-                          <Trophy className={cn("w-6 h-6", isUnlocked && !isLocked ? "text-yellow-500" : "text-white/30")} />
+                          <Crown className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-yellow-400" : "text-white/30")} />
                         )}
                       </div>
-                      
+
                       {/* Status Icons */}
-                      {isLocked && (
+                      {lockedByEntitlement && (
                         <Crown className="absolute -top-1 -right-1 w-5 h-5 text-yellow-400 bg-[#12161C] rounded-full animate-pulse-subtle" />
                       )}
-                      {isClaimed && !isLocked && (
+                      {isUnlocked && !lockedByEntitlement && (
                         <CheckCircle className="absolute -top-1 -right-1 w-5 h-5 text-green-400 bg-[#12161C] rounded-full" />
                       )}
                       
@@ -242,7 +249,7 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
                         "absolute -bottom-2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full",
                         "transform rotate-12"
                       )}>
-                        {rewardLevel}
+                        {item.level}
                       </div>
                     </div>
                   );
