@@ -454,6 +454,11 @@ nav a:hover {
     display: none;  /* Safari and Chrome */
   }
 
+  /* Hide scrollbars for horizontal scroll containers */
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Neon Gaming Animations */
   .animate-pulse-glow {
     animation: pulse-glow 3s ease-in-out infinite alternate;

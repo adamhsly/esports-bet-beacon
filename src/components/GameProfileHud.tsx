@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useProgress, useMissions } from '@/hooks/useSupabaseData';
-import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+import { useRewardsTrack, type RewardItem } from '@/hooks/useRewardsTrack';
 import { 
   User, 
   Crown,
@@ -19,19 +18,24 @@ import {
   Zap,
   Trophy,
   Target,
-  Star
+  Star,
+  Lock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useProgress, useMissions } from '@/hooks/useSupabaseData';
 
 interface GameProfileHudProps {
   onUnlockPremium?: () => void;
 }
 
 const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
+  const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   const { missions, loading: missionsLoading } = useMissions();
-  const { free, premium, premiumActive } = useRewardsTrack();
+  const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
 
   if (!isAuthenticated) {
     return (
@@ -116,9 +120,9 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
         </Card>
 
         {/* Rewards Section */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-gaming text-white">Rewards</h2>
+            <h2 className="text-xl font-gaming text-[#EAF2FF]">Rewards</h2>
             {!premiumActive && (
               <Button 
                 onClick={onUnlockPremium}
@@ -132,63 +136,44 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
 
           {/* FREE Track */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 font-gaming text-sm px-3 py-1">
-                FREE
-              </Badge>
-            </div>
-            <ScrollArea className="w-full">
-              <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
-                {free.map((item) => {
-                  const isUnlocked = item.state === 'unlocked';
-                  const isClaimable = item.state === 'claimable';
-
-                  return (
-                    <div 
-                      key={`free-${item.id}`}
-                      className={cn(
-                        "relative w-20 h-24 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300",
-                        isUnlocked
-                          ? "bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-400/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                          : isClaimable
-                            ? "bg-gradient-to-b from-neon-blue/20 to-neon-purple/20 border-neon-blue/50 shadow-[0_0_15px_rgba(79,172,254,0.3)] animate-pulse-glow"
-                            : "bg-gradient-to-b from-white/5 to-white/[0.02] border-white/10"
-                      )}
-                    >
-                      {/* Reward Visual */}
-                      <div className="mb-1">
-                        {item.assetUrl ? (
-                          <img src={item.assetUrl} alt={`${item.type} reward`} className="w-8 h-8 object-contain" loading="lazy" />
-                        ) : item.type === 'credits' ? (
-                          <Coins className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-yellow-400" : "text-white/30")} />
-                        ) : item.type === 'badge' ? (
-                          <Star className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-neon-blue" : "text-white/30")} />
-                        ) : item.type === 'frame' ? (
-                          <Trophy className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-purple-400" : "text-white/30")} />
-                        ) : item.type === 'border' ? (
-                          <Target className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-neon-purple" : "text-white/30")} />
-                        ) : (
-                          <Crown className={cn("w-6 h-6", isUnlocked || isClaimable ? "text-yellow-400" : "text-white/30")} />
-                        )}
-                      </div>
-
-                      {/* Status */}
-                      {isUnlocked && (
-                        <CheckCircle className="absolute -top-1 -right-1 w-5 h-5 text-green-400 bg-[#12161C] rounded-full" />
-                      )}
-                      
-                      {/* Level Number */}
-                      <div className={cn(
-                        "absolute -bottom-2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full",
-                        "transform rotate-12"
-                      )}>
-                        {item.level}
-                      </div>
-                    </div>
-                  );
-                })}
+            <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 font-gaming text-sm px-3 py-1">
+              FREE
+            </Badge>
+            
+            <div className="relative">
+              <div 
+                className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+                style={{ 
+                  scrollbarWidth: 'none', 
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {free.map((item) => (
+                  <RewardCard 
+                    key={`free-${item.id}`} 
+                    item={item} 
+                    onClick={() => setSelectedReward(item)} 
+                  />
+                ))}
               </div>
-            </ScrollArea>
+              
+              {/* Progress Indicator */}
+              {free.length > 0 && (
+                <div className="relative mt-2">
+                  <div className="h-0.5 bg-[#223049] rounded-full" />
+                  <div 
+                    className="absolute top-0 w-2 h-2 bg-neon-blue rounded-full transform -translate-y-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(79,172,254,0.6)]"
+                    style={{
+                      left: `${Math.min(100, Math.max(0, 
+                        ((currentLevel - (free[0]?.level || 1)) / 
+                        Math.max(1, (free[free.length - 1]?.level || 1) - (free[0]?.level || 1))) * 100
+                      ))}%`
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* PREMIUM Track */}
@@ -197,65 +182,33 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
               <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 font-gaming text-sm px-3 py-1">
                 PREMIUM
               </Badge>
+              {!premiumActive && (
+                <Button 
+                  onClick={onUnlockPremium}
+                  size="sm"
+                  className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 text-yellow-400 border border-yellow-400/30 font-gaming text-xs px-2 py-1"
+                >
+                  Unlock Premium
+                </Button>
+              )}
             </div>
-            <ScrollArea className="w-full">
-              <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
-                {premium.map((item) => {
-                  const isUnlocked = item.state === 'unlocked';
-                  const isClaimable = item.state === 'claimable';
-                  const lockedByEntitlement = !premiumActive;
-
-                  return (
-                    <div 
-                      key={`premium-${item.id}`}
-                      className={cn(
-                        "relative w-20 h-24 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300",
-                        lockedByEntitlement
-                          ? "bg-gradient-to-b from-white/5 to-white/[0.02] border-yellow-500/30"
-                          : isUnlocked
-                            ? "bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-400/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                            : isClaimable
-                              ? "bg-gradient-to-b from-yellow-500/20 to-orange-500/20 border-yellow-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse-glow"
-                              : "bg-gradient-to-b from-white/5 to-white/[0.02] border-white/10"
-                      )}
-                    >
-                      {/* Reward Visual */}
-                      <div className="mb-1">
-                        {item.assetUrl ? (
-                          <img src={item.assetUrl} alt={`${item.type} reward`} className="w-8 h-8 object-contain" loading="lazy" />
-                        ) : item.type === 'credits' ? (
-                          <Coins className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-yellow-400" : "text-white/30")} />
-                        ) : item.type === 'badge' ? (
-                          <Star className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-neon-blue" : "text-white/30")} />
-                        ) : item.type === 'frame' ? (
-                          <Trophy className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-purple-400" : "text-white/30")} />
-                        ) : item.type === 'border' ? (
-                          <Target className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-neon-purple" : "text-white/30")} />
-                        ) : (
-                          <Crown className={cn("w-6 h-6", (isUnlocked || isClaimable) && !lockedByEntitlement ? "text-yellow-400" : "text-white/30")} />
-                        )}
-                      </div>
-
-                      {/* Status Icons */}
-                      {lockedByEntitlement && (
-                        <Crown className="absolute -top-1 -right-1 w-5 h-5 text-yellow-400 bg-[#12161C] rounded-full animate-pulse-subtle" />
-                      )}
-                      {isUnlocked && !lockedByEntitlement && (
-                        <CheckCircle className="absolute -top-1 -right-1 w-5 h-5 text-green-400 bg-[#12161C] rounded-full" />
-                      )}
-                      
-                      {/* Level Number */}
-                      <div className={cn(
-                        "absolute -bottom-2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full",
-                        "transform rotate-12"
-                      )}>
-                        {item.level}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+            
+            <div 
+              className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+              style={{ 
+                scrollbarWidth: 'none', 
+                msOverflowStyle: 'none',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              {premium.map((item) => (
+                <RewardCard 
+                  key={`premium-${item.id}`} 
+                  item={item} 
+                  onClick={() => setSelectedReward(item)} 
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -318,6 +271,133 @@ const GameProfileHud: React.FC<GameProfileHudProps> = ({ onUnlockPremium }) => {
             ))}
           </div>
         </div>
+
+        {/* Reward Detail Modal */}
+        <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>
+          <DialogContent className="bg-[#0B1220] border border-[#223049] text-[#EAF2FF] max-w-sm mx-auto rounded-xl">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-gaming text-[#EAF2FF]">
+                {selectedReward?.value || `${selectedReward?.type?.charAt(0).toUpperCase()}${selectedReward?.type?.slice(1)}`}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Large Icon */}
+              <div className="flex justify-center">
+                <div className="w-24 h-24 flex items-center justify-center">
+                  {selectedReward?.assetUrl ? (
+                    <img 
+                      src={selectedReward.assetUrl} 
+                      alt={`${selectedReward.type} reward`} 
+                      className="w-20 h-20 object-contain" 
+                    />
+                  ) : selectedReward?.type === 'credits' ? (
+                    <Coins className="w-20 h-20 text-yellow-400" />
+                  ) : selectedReward?.type === 'badge' ? (
+                    <Star className="w-20 h-20 text-neon-blue" />
+                  ) : selectedReward?.type === 'frame' ? (
+                    <Trophy className="w-20 h-20 text-purple-400" />
+                  ) : selectedReward?.type === 'border' ? (
+                    <Target className="w-20 h-20 text-neon-purple" />
+                  ) : (
+                    <Crown className="w-20 h-20 text-yellow-400" />
+                  )}
+                </div>
+              </div>
+
+              {/* Unlock Level */}
+              <div className="text-center">
+                <p className="text-[#CFE3FF] text-sm">
+                  Unlocks at Level {selectedReward?.level}
+                </p>
+              </div>
+
+              {/* State Display */}
+              <div className="flex justify-center">
+                {selectedReward?.state === 'unlocked' && (
+                  <Badge className="bg-green-500/20 text-[#79FFD7] border-[#79FFD7]/30">
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Unlocked
+                  </Badge>
+                )}
+                {selectedReward?.state === 'claimable' && (
+                  <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
+                    <Gift className="w-4 h-4 mr-1" />
+                    Ready to Claim
+                  </Badge>
+                )}
+                {selectedReward?.state === 'locked' && (
+                  <Badge className="bg-[#F5C042]/20 text-[#F5C042] border-[#F5C042]/30">
+                    <Lock className="w-4 h-4 mr-1" />
+                    Locked
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+};
+
+// Reward Card Component
+interface RewardCardProps {
+  item: RewardItem;
+  onClick: () => void;
+}
+
+const RewardCard: React.FC<RewardCardProps> = ({ item, onClick }) => {
+  const isUnlocked = item.state === 'unlocked';
+  const isClaimable = item.state === 'claimable';
+  const isLocked = item.state === 'locked';
+
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative w-20 h-24 rounded-xl border cursor-pointer transition-all duration-300 flex flex-col items-center justify-center snap-start flex-shrink-0",
+        "bg-[#0B1220] border-[#223049]",
+        isUnlocked && "border-[#79FFD7]/50 shadow-[0_0_12px_rgba(121,255,215,0.3)]",
+        isClaimable && "border-neon-blue/50 shadow-[0_0_18px_rgba(138,117,255,0.45)] animate-pulse",
+        isLocked && "border-[#223049] opacity-60"
+      )}
+    >
+      {/* Reward Visual */}
+      <div className="mb-2">
+        {item.assetUrl ? (
+          <img 
+            src={item.assetUrl} 
+            alt={`${item.type} reward`} 
+            className={cn(
+              "w-8 h-8 object-contain transition-all duration-300",
+              isLocked && "grayscale opacity-50"
+            )} 
+            loading="lazy" 
+          />
+        ) : item.type === 'credits' ? (
+          <Coins className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-yellow-400")} />
+        ) : item.type === 'badge' ? (
+          <Star className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-neon-blue")} />
+        ) : item.type === 'frame' ? (
+          <Trophy className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-purple-400")} />
+        ) : item.type === 'border' ? (
+          <Target className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-neon-purple")} />
+        ) : (
+          <Crown className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-yellow-400")} />
+        )}
+      </div>
+
+      {/* Status Icon */}
+      {isUnlocked && (
+        <CheckCircle className="absolute -top-1 -right-1 w-5 h-5 text-[#79FFD7] bg-[#0B1220] rounded-full border border-[#223049]" />
+      )}
+      {isLocked && (
+        <Lock className="absolute -top-1 -right-1 w-4 h-4 text-[#F5C042] bg-[#0B1220] rounded-full border border-[#223049] p-0.5" />
+      )}
+      
+      {/* Level Badge */}
+      <div className="absolute -bottom-2 bg-[#F5C042] text-black text-xs font-bold px-2 py-0.5 rounded-full transform rotate-12">
+        {item.level}
       </div>
     </div>
   );
