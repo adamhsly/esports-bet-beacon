@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { ProfilePage } from '@/components/GameProfileHud';
 import { useMobile } from '@/hooks/useMobile';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface ProfileSheetProps {
   isOpen: boolean;
@@ -37,6 +38,11 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-[820px] max-h-[88vh] overflow-auto bg-[#0F1420] border-[#223049] rounded-xl p-0">
+        <VisuallyHidden>
+          <DialogHeader>
+            <DialogTitle>Profile</DialogTitle>
+          </DialogHeader>
+        </VisuallyHidden>
         <ProfilePage 
           variant="sheet"
           onUnlockPremium={() => {
