@@ -446,7 +446,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
       <Drawer open={isOpen} onOpenChange={onClose}>
         <DrawerPortal>
           <DrawerOverlay className="fixed inset-0 z-50 bg-black/80" />
-          <DrawerContent className="fixed inset-x-0 bottom-0 z-50 h-[70vh] rounded-t-xl border-t border-gray-700/50">
+          <DrawerContent className="fixed inset-x-0 bottom-0 z-50 h-[85vh] rounded-t-xl border-t border-gray-700/50">
             {modalContent}
           </DrawerContent>
         </DrawerPortal>
