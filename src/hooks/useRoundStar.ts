@@ -23,12 +23,24 @@ export function useRoundStar(roundId: string) {
     try {
       setLoading(true);
       
-      // TODO: Replace with actual RPC call when implemented
-      // For now, return stub data
+      const { data, error } = await supabase.rpc('get_star_team_state', {
+        p_round_id: roundId
+      });
+
+      if (error) {
+        console.error('Error fetching star state:', error);
+        setState({
+          starTeamId: null,
+          changeUsed: false,
+          canChange: true
+        });
+        return;
+      }
+
       setState({
-        starTeamId: null,
-        changeUsed: false,
-        canChange: true
+        starTeamId: (data as any)?.star_team_id || null,
+        changeUsed: (data as any)?.change_used || false,
+        canChange: (data as any)?.can_change || true
       });
     } catch (error) {
       console.error('Error fetching star state:', error);
@@ -39,18 +51,29 @@ export function useRoundStar(roundId: string) {
 
   const setStarTeam = async (teamId: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // TODO: Replace with actual RPC call when implemented
-      // const { data, error } = await supabase.rpc('set_star_team', {
-      //   p_round_id: roundId,
-      //   p_team_id: teamId
-      // });
-      
-      // For now, update local state
+      const { data, error } = await supabase.functions.invoke('set-star-team', {
+        body: {
+          round_id: roundId,
+          team_id: teamId
+        }
+      });
+
+      if (error) {
+        console.error('Error setting star team:', error);
+        return { success: false, error: error.message || 'Failed to set star team' };
+      }
+
+      if (!data?.success) {
+        console.error('Star team RPC failed:', data);
+        return { success: false, error: data?.error || 'Failed to set star team' };
+      }
+
+      // Update local state on success
       setState(prev => ({
         ...prev,
-        starTeamId: teamId,
-        changeUsed: prev.starTeamId !== null, // If we had a star before, mark change as used
-        canChange: prev.starTeamId === null // Can only change if this is the first time
+        starTeamId: data.star_team_id,
+        changeUsed: data.change_used,
+        canChange: !data.change_used
       }));
 
       return { success: true };

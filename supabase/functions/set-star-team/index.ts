@@ -13,25 +13,40 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
     )
 
     const { round_id, team_id } = await req.json()
     
     console.log('Setting star team:', { round_id, team_id });
 
-    // TODO: Implement actual star team logic with database tables
-    // For now, return a successful response
-    const result = {
-      star_team_id: team_id,
-      change_used: false, // This would be calculated based on existing data
-      success: true
-    };
+    // Call the RPC function to set star team
+    const { data, error } = await supabaseClient.rpc('set_star_team', {
+      p_round_id: round_id,
+      p_team_id: team_id
+    });
+
+    if (error) {
+      console.error('RPC error:', error);
+      throw new Error(error.message || 'Failed to set star team');
+    }
+
+    console.log('Star team set successfully:', data);
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify(data),
       { 
         headers: { 
           ...corsHeaders, 
@@ -43,8 +58,8 @@ serve(async (req) => {
     console.error('Error setting star team:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        success: false 
+        success: false,
+        error: error.message
       }),
       { 
         status: 400,

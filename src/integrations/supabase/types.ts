@@ -978,6 +978,36 @@ export type Database = {
           },
         ]
       }
+      fantasy_round_star_teams: {
+        Row: {
+          change_used: boolean
+          created_at: string
+          id: string
+          round_id: string
+          star_team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          change_used?: boolean
+          created_at?: string
+          id?: string
+          round_id: string
+          star_team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          change_used?: boolean
+          created_at?: string
+          id?: string
+          round_id?: string
+          star_team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fantasy_rounds: {
         Row: {
           created_at: string
@@ -2805,6 +2835,10 @@ export type Database = {
         Args: { p_player_id: number }
         Returns: Json
       }
+      get_star_team_state: {
+        Args: { p_round_id: string }
+        Returns: Json
+      }
       get_team_stats: {
         Args: { team_id: string }
         Returns: Json
@@ -2844,6 +2878,10 @@ export type Database = {
       seed_user_missions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      set_star_team: {
+        Args: { p_round_id: string; p_team_id: string }
+        Returns: Json
       }
       update_expired_fantasy_rounds: {
         Args: Record<PropertyKey, never>

@@ -38,9 +38,6 @@ export const InProgressRounds: React.FC = () => {
   const { user } = useAuth();
   const [rounds, setRounds] = useState<InProgressRound[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRoundForStar, setSelectedRoundForStar] = useState<string | null>(null);
-  const [showStarChangeModal, setShowStarChangeModal] = useState(false);
-  const [pendingStarTeamId, setPendingStarTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -292,39 +289,54 @@ export const InProgressRounds: React.FC = () => {
           </Card>
         ))}
       </div>
-      {/* Star Change Modal */}
-      <StarTeamConfirmModal
-        open={showStarChangeModal}
-        onOpenChange={setShowStarChangeModal}
-        title="Change Star Team?"
-        description="You can change your Star Team only once per round. The new Star Team will score double points from now on."
-        onConfirm={async () => {
-          if (selectedRoundForStar && pendingStarTeamId) {
-            // TODO: Call setStarTeam RPC when implemented
-            toast.success('Star Team updated!');
-          }
-          setShowStarChangeModal(false);
-          setSelectedRoundForStar(null);
-          setPendingStarTeamId(null);
-        }}
-        onCancel={() => {
-          setShowStarChangeModal(false);
-          setSelectedRoundForStar(null);
-          setPendingStarTeamId(null);
-        }}
-        confirmText="Confirm Change"
-        cancelText="Cancel"
-      />
     </div>
   );
 };
 
 // Helper component for rendering teams in progress rounds
 const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) => {
-  // TODO: Use actual star team data from useRoundStar hook
-  const starTeamId = null; // Placeholder
-  const changeUsed = false; // Placeholder
-  const canChange = true; // Placeholder
+  const { starTeamId, changeUsed, canChange, setStarTeam } = useRoundStar(round.id);
+  const [showStarModal, setShowStarModal] = useState(false);
+  const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
+
+  const handleStarToggle = (teamId: string) => {
+    if (!canChange || changeUsed) return;
+    
+    if (starTeamId === teamId) {
+      // Already starred, do nothing
+      return;
+    }
+
+    setPendingTeamId(teamId);
+    setShowStarModal(true);
+  };
+
+  const handleConfirmStarChange = async () => {
+    if (!pendingTeamId) return;
+
+    const result = await setStarTeam(pendingTeamId);
+    if (result.success) {
+      toast.success('Star Team updated!');
+    } else {
+      toast.error(result.error || 'Failed to update Star Team');
+    }
+
+    setShowStarModal(false);
+    setPendingTeamId(null);
+  };
+
+  const getStarTeamName = () => {
+    if (!starTeamId) return 'None';
+    
+    // Find team name from scores or picks
+    if (round.scores.length > 0) {
+      const team = round.scores.find(s => s.team_id === starTeamId);
+      return team?.team_name || 'Unknown';
+    } else {
+      const team = round.team_picks.find(t => t.id === starTeamId);
+      return team?.name || 'Unknown';
+    }
+  };
 
   return (
     <>
@@ -332,7 +344,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
       <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
         <Star className={`h-4 w-4 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
         <span>
-          Star Team: {starTeamId ? 'TeamName' : 'None'} • Change left: {changeUsed ? '0/1' : '1/1'}
+          Star Team: {getStarTeamName()} • Change left: {changeUsed ? '0/1' : '1/1'}
         </span>
         {!canChange && (
           <div className="flex items-center gap-1">
@@ -358,12 +370,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
               onClick={() => {}}
               showStarToggle={true}
               isStarred={starTeamId === score.team_id}
-              onToggleStar={() => {
-                if (canChange && !changeUsed) {
-                  // TODO: Show star change modal
-                  console.log('Change star to:', score.team_id);
-                }
-              }}
+              onToggleStar={() => handleStarToggle(score.team_id)}
               disabledReason={!canChange || changeUsed ? "Star change used" : null}
             />
           ))
@@ -377,17 +384,27 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
               onClick={() => {}}
               showStarToggle={true}
               isStarred={starTeamId === team.id}
-              onToggleStar={() => {
-                if (canChange && !changeUsed) {
-                  // TODO: Show star change modal
-                  console.log('Change star to:', team.id);
-                }
-              }}
+              onToggleStar={() => handleStarToggle(team.id)}
               disabledReason={!canChange || changeUsed ? "Star change used" : null}
             />
           ))
         )}
       </div>
+
+      {/* Star Change Modal */}
+      <StarTeamConfirmModal
+        open={showStarModal}
+        onOpenChange={setShowStarModal}
+        title="Change Star Team?"
+        description="You can change your Star Team only once per round. The new Star Team will score double points from now on."
+        onConfirm={handleConfirmStarChange}
+        onCancel={() => {
+          setShowStarModal(false);
+          setPendingTeamId(null);
+        }}
+        confirmText="Confirm Change"
+        cancelText="Cancel"
+      />
     </>
   );
 };
