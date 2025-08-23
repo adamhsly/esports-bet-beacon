@@ -21,7 +21,7 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
   if (isMobile) {
     return (
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent className="h-[90vh] bg-[#0F1420] border-t-[#223049] rounded-t-2xl">
+        <DrawerContent className="h-[70vh] bg-[#0F1420] border-t-[#223049] rounded-t-2xl">
           <div className="flex-1 overflow-auto">
             <ProfilePage 
               variant="sheet"
