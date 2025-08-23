@@ -353,10 +353,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       if (error) throw error;
       toast.success('Team submitted successfully!');
       console.log('Team submission successful, navigating to in-progress...');
+      // Reset selected round to go back to main fantasy view
+      onBack();
+      // Then navigate to in-progress tab
       if (onNavigateToInProgress) {
         onNavigateToInProgress();
-      } else {
-        onBack();
       }
     } catch (error: any) {
       console.error('Error submitting team:', error);
