@@ -23,6 +23,8 @@ interface SelectedTeamsWidgetProps {
   proTeams?: Team[];
   amateurTeams?: Team[];
   onTeamSelect?: (team: Team) => void;
+  starTeamId?: string | null;
+  onToggleStar?: (teamId: string) => void;
 }
 const TeamCard: React.FC<{
   team: Team;
@@ -155,7 +157,9 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   onRemoveTeam,
   proTeams = [],
   amateurTeams = [],
-  onTeamSelect
+  onTeamSelect,
+  starTeamId = null,
+  onToggleStar
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);

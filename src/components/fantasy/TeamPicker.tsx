@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +17,9 @@ import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Progress } from '@/components/ui/progress';
 import { SelectedTeamsWidget } from './SelectedTeamsWidget';
+import { TeamCard } from './TeamCard';
+import { StarTeamConfirmModal } from './StarTeamConfirmModal';
+import { useRoundStar } from '@/hooks/useRoundStar';
 interface FantasyRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
@@ -62,6 +66,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
+  
+  // Star Team functionality
+  const [starTeamId, setStarTeamId] = useState<string | null>(null);
+  const [showNoStarModal, setShowNoStarModal] = useState(false);
+  const { setStarTeam } = useRoundStar(round.id);
 
   // Salary cap
   const SALARY_CAP = 50;
@@ -290,6 +299,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, amSortBy, amSortDir]);
   const handleTeamSelect = (team: Team) => {
     if (selectedTeams.find(t => t.id === team.id)) {
+      // If removing the starred team, clear star
+      if (starTeamId === team.id) {
+        setStarTeamId(null);
+      }
       setSelectedTeams(selectedTeams.filter(t => t.id !== team.id));
       return;
     }
@@ -306,6 +319,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     setSelectedTeams([...selectedTeams, team]);
   };
   const handleRemoveTeam = (index: number) => {
+    const removedTeam = selectedTeams[index];
+    // If removing the starred team, clear star
+    if (starTeamId === removedTeam.id) {
+      setStarTeamId(null);
+    }
     const newSelectedTeams = [...selectedTeams];
     newSelectedTeams.splice(index, 1);
     setSelectedTeams(newSelectedTeams);
@@ -317,18 +335,27 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setBenchTeam(benchTeam?.id === team.id ? null : team);
   };
-  const handleSubmit = async () => {
-    if (!user) {
-      setShowAuthModal(true);
-      setPendingSubmission(true);
-      return;
+
+  const handleToggleStar = (teamId: string) => {
+    if (starTeamId === teamId) {
+      setStarTeamId(null);
+    } else {
+      setStarTeamId(teamId);
     }
-    if (selectedTeams.length !== 5) {
-      toast.error('Please select exactly 5 teams');
-      return;
-    }
+  };
+
+  const submitTeams = async () => {
     try {
       setSubmitting(true);
+
+      // Set star team if one is selected
+      if (starTeamId) {
+        const starResult = await setStarTeam(starTeamId);
+        if (!starResult.success) {
+          toast.error(starResult.error || 'Failed to set star team');
+          return;
+        }
+      }
 
       // Need to convert team objects to plain objects for Supabase
       const teamPicksData = selectedTeams.map(team => ({
@@ -351,7 +378,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         bench_team: benchTeamData
       });
       if (error) throw error;
-      toast.success('Team submitted successfully!');
+      
+      if (starTeamId) {
+        toast.success('Team and Star Team submitted successfully!');
+      } else {
+        toast.success('Team submitted successfully!');
+      }
       console.log('Team submission successful, navigating to in-progress...');
       // Reset selected round to go back to main fantasy view
       onBack();
@@ -376,7 +408,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       setPendingSubmission(false);
       // Wait a bit for user state to update
       setTimeout(() => {
-        handleSubmit();
+        submitTeams();
       }, 500);
     }
   };
@@ -384,56 +416,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     setShowAuthModal(false);
     setPendingSubmission(false);
   };
-  const TeamCard: React.FC<{
-    team: Team;
-    isSelected: boolean;
-    onClick: () => void;
-    showBench?: boolean;
-    isBench?: boolean;
-  }> = ({
-    team,
-    isSelected,
-    onClick,
-    showBench = false,
-    isBench = false
-  }) => <Card className={`cursor-pointer transition-all hover:shadow-md bg-card border-border ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''} ${isBench ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`} onClick={onClick}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />}
-            <div>
-              <h4 className="font-semibold">{team.name}</h4>
-              <div className="flex items-center gap-2">
-                <Badge variant={team.type === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                  {team.type === 'pro' ? 'Pro' : 'Amateur'}
-                </Badge>
-                {team.type === 'amateur' && <>
-                    <Badge variant="outline" className="text-xs">
-                      {team.esport_type?.toUpperCase() || 'FACEIT'}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      {team.matches_prev_window ?? 0} matches
-                    </Badge>
-                    {typeof team.missed_pct === 'number' && <Badge variant="outline" className="text-xs">
-                        {team.missed_pct}% missed
-                      </Badge>}
-                    <Badge variant="outline" className="text-xs">+25% bonus</Badge>
-                  </>}
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {team.type === 'amateur' && <div className="text-right">
-                <div className="text-sm font-medium text-white">{team.matches_prev_window ?? 0} matches</div>
-                <div className="text-xs text-muted-foreground">last window</div>
-              </div>}
-            {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
-            {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
-          </div>
-        </div>
-      </CardContent>
-    </Card>;
+  const getStarredTeamName = () => {
+    const starredTeam = selectedTeams.find(t => t.id === starTeamId);
+    return starredTeam?.name || null;
+  };
   if (loading) {
     return <div className="text-center py-12">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -455,6 +441,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         proTeams={proTeams}
         amateurTeams={amateurTeams}
         onTeamSelect={handleTeamSelect}
+        starTeamId={starTeamId}
+        onToggleStar={handleToggleStar}
       />
 
       {/* Team Selection Tabs */}
@@ -703,12 +691,79 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         </TabsContent>
       </Tabs>
 
+      {/* Star Team Summary */}
+      {selectedTeams.length > 0 && (
+        <div className="bg-muted/30 rounded-lg p-4 border border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Star className={`h-5 w-5 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
+              <div>
+                <div className="font-medium">
+                  {getStarredTeamName() ? (
+                    <>Star Team: <span className="text-[#F5C042]">{getStarredTeamName()}</span> (Double Points)</>
+                  ) : (
+                    'No Star Team selected'
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Your Star Team scores double points this round. Choose wisely!
+                </div>
+              </div>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      )}
+
       {/* Submit Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={selectedTeams.length !== 5 || submitting} className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90">
+        <Button onClick={async () => {
+          if (!user) {
+            setShowAuthModal(true);
+            setPendingSubmission(true);
+            return;
+          }
+          if (selectedTeams.length !== 5) {
+            toast.error('Please select exactly 5 teams');
+            return;
+          }
+          
+          if (!starTeamId) {
+            setShowNoStarModal(true);
+            return;
+          }
+          
+          await submitTeams();
+        }} disabled={selectedTeams.length !== 5 || submitting} className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90">
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
       </div>
+
+      {/* No Star Team Confirmation Modal */}
+      <StarTeamConfirmModal
+        open={showNoStarModal}
+        onOpenChange={setShowNoStarModal}
+        title="Proceed without a Star Team?"
+        description="Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed."
+        onConfirm={async () => {
+          setShowNoStarModal(false);
+          await submitTeams();
+        }}
+        onCancel={() => setShowNoStarModal(false)}
+        confirmText="Submit without Star"
+        cancelText="Choose Star Team"
+      />
 
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
     </div>;

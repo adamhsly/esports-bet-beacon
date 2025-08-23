@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, Trophy, TrendingUp, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, Trophy, TrendingUp, Users, Star, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { TeamCard } from './TeamCard';
+import { StarTeamConfirmModal } from './StarTeamConfirmModal';
+import { useRoundStar } from '@/hooks/useRoundStar';
 
 interface InProgressRound {
   id: string;
@@ -34,6 +38,9 @@ export const InProgressRounds: React.FC = () => {
   const { user } = useAuth();
   const [rounds, setRounds] = useState<InProgressRound[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRoundForStar, setSelectedRoundForStar] = useState<string | null>(null);
+  const [showStarChangeModal, setShowStarChangeModal] = useState(false);
+  const [pendingStarTeamId, setPendingStarTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -231,77 +238,7 @@ export const InProgressRounds: React.FC = () => {
                     Team Performance
                   </h4>
                   
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {round.scores.length > 0 ? (
-                      // Show scored teams
-                      round.scores.map((score) => (
-                        <div 
-                          key={score.team_id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                        >
-                          <div>
-                            <div className="font-medium">{score.team_name}</div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant={score.team_type === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                                {score.team_type}
-                              </Badge>
-                              {score.team_type === 'amateur' && (
-                                <Badge variant="outline" className="text-xs text-green-600">
-                                  +25% bonus
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-primary">
-                              {score.current_score} pts
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {score.matches_played} matches played
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      // Show picked teams without scores
-                      round.team_picks.map((team, index) => (
-                        <div 
-                          key={team.id || index}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                        >
-                          <div className="flex items-center gap-3">
-                            {team.logo_url && (
-                              <img 
-                                src={team.logo_url} 
-                                alt={team.name}
-                                className="w-8 h-8 rounded object-contain"
-                              />
-                            )}
-                            <div>
-                              <div className="font-medium">{team.name}</div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Badge variant={team.type === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                                  {team.type}
-                                </Badge>
-                                {team.type === 'amateur' && (
-                                  <Badge variant="outline" className="text-xs text-green-600">
-                                    +25% bonus
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-sm text-muted-foreground">
-                              Waiting for matches...
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <InProgressTeamsList round={round} />
                 </div>
 
                 {/* Scoring Breakdown */}
@@ -355,6 +292,102 @@ export const InProgressRounds: React.FC = () => {
           </Card>
         ))}
       </div>
+      {/* Star Change Modal */}
+      <StarTeamConfirmModal
+        open={showStarChangeModal}
+        onOpenChange={setShowStarChangeModal}
+        title="Change Star Team?"
+        description="You can change your Star Team only once per round. The new Star Team will score double points from now on."
+        onConfirm={async () => {
+          if (selectedRoundForStar && pendingStarTeamId) {
+            // TODO: Call setStarTeam RPC when implemented
+            toast.success('Star Team updated!');
+          }
+          setShowStarChangeModal(false);
+          setSelectedRoundForStar(null);
+          setPendingStarTeamId(null);
+        }}
+        onCancel={() => {
+          setShowStarChangeModal(false);
+          setSelectedRoundForStar(null);
+          setPendingStarTeamId(null);
+        }}
+        confirmText="Confirm Change"
+        cancelText="Cancel"
+      />
     </div>
+  );
+};
+
+// Helper component for rendering teams in progress rounds
+const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) => {
+  // TODO: Use actual star team data from useRoundStar hook
+  const starTeamId = null; // Placeholder
+  const changeUsed = false; // Placeholder
+  const canChange = true; // Placeholder
+
+  return (
+    <>
+      {/* Star Team Status */}
+      <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
+        <Star className={`h-4 w-4 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
+        <span>
+          Star Team: {starTeamId ? 'TeamName' : 'None'} • Change left: {changeUsed ? '0/1' : '1/1'}
+        </span>
+        {!canChange && (
+          <div className="flex items-center gap-1">
+            <Lock className="h-3 w-3" />
+            <span className="text-xs">Star change used</span>
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {round.scores.length > 0 ? (
+          // Show scored teams
+          round.scores.map((score) => (
+            <TeamCard
+              key={score.team_id}
+              team={{
+                id: score.team_id,
+                name: score.team_name,
+                type: score.team_type,
+                logo_url: undefined // TODO: Add logo_url to scores table
+              }}
+              isSelected={true}
+              onClick={() => {}}
+              showStarToggle={true}
+              isStarred={starTeamId === score.team_id}
+              onToggleStar={() => {
+                if (canChange && !changeUsed) {
+                  // TODO: Show star change modal
+                  console.log('Change star to:', score.team_id);
+                }
+              }}
+              disabledReason={!canChange || changeUsed ? "Star change used" : null}
+            />
+          ))
+        ) : (
+          // Show picked teams without scores
+          round.team_picks.map((team, index) => (
+            <TeamCard
+              key={team.id || index}
+              team={team}
+              isSelected={true}
+              onClick={() => {}}
+              showStarToggle={true}
+              isStarred={starTeamId === team.id}
+              onToggleStar={() => {
+                if (canChange && !changeUsed) {
+                  // TODO: Show star change modal
+                  console.log('Change star to:', team.id);
+                }
+              }}
+              disabledReason={!canChange || changeUsed ? "Star change used" : null}
+            />
+          ))
+        )}
+      </div>
+    </>
   );
 };
