@@ -60,6 +60,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
   const [selectedGamePro, setSelectedGamePro] = useState<string>('all');
   const [minMatchesPro, setMinMatchesPro] = useState<number>(0);
   const [hasLogoOnlyPro, setHasLogoOnlyPro] = useState<boolean>(false);
+  const [priceRangePro, setPriceRangePro] = useState<number[]>([0, 100]);
 
   // Amateur team filters
   const [amSearch, setAmSearch] = useState('');
@@ -68,11 +69,12 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
   const [maxMissedPct, setMaxMissedPct] = useState<number>(100);
   const [hasLogoOnlyAm, setHasLogoOnlyAm] = useState<boolean>(false);
   const [hasPrevMatchesOnlyAm, setHasPrevMatchesOnlyAm] = useState<boolean>(false);
+  const [priceRangeAm, setPriceRangeAm] = useState<number[]>([0, 100]);
 
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
 
-  // Get unique games
+  // Get unique games and price ranges
   const proGames = useMemo(() => 
     Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], 
     [proTeams]
@@ -81,6 +83,21 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
     Array.from(new Set(amateurTeams.map(t => t.esport_type).filter(Boolean))) as string[], 
     [amateurTeams]
   );
+
+  // Calculate price ranges
+  const proPrices = useMemo(() => proTeams.map(t => t.price ?? 0), [proTeams]);
+  const amateurPrices = useMemo(() => amateurTeams.map(t => t.price ?? 0), [amateurTeams]);
+  const maxProPrice = useMemo(() => Math.max(...proPrices, 0), [proPrices]);
+  const maxAmateurPrice = useMemo(() => Math.max(...amateurPrices, 0), [amateurPrices]);
+
+  // Update price ranges when teams change
+  useEffect(() => {
+    setPriceRangePro([0, maxProPrice]);
+  }, [maxProPrice]);
+
+  useEffect(() => {
+    setPriceRangeAm([0, maxAmateurPrice]);
+  }, [maxAmateurPrice]);
 
   // Filter teams
   const filteredProTeams = useMemo(() => {
@@ -91,11 +108,12 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
       const matchesMatch = matches >= minMatchesPro;
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
       const budgetMatch = (t.price ?? 0) <= budgetRemaining;
+      const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
       const notAlreadySelected = !selectedTeams.find(st => st.id === t.id);
       
-      return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && notAlreadySelected;
+      return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && notAlreadySelected;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-  }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, budgetRemaining, selectedTeams]);
+  }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, budgetRemaining, priceRangePro, selectedTeams]);
 
   const filteredAmateurTeams = useMemo(() => {
     return amateurTeams.filter(t => {
@@ -108,11 +126,12 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
       const logoMatch = !hasLogoOnlyAm || !!t.logo_url;
       const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchesPrev > 0;
       const budgetMatch = (t.price ?? 0) <= budgetRemaining;
+      const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
       const notAlreadySelected = !selectedTeams.find(st => st.id === t.id);
       
-      return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && notAlreadySelected;
+      return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && notAlreadySelected;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
-  }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, budgetRemaining, selectedTeams]);
+  }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, budgetRemaining, priceRangeAm, selectedTeams]);
 
   const handleTeamClick = (team: Team) => {
     setSelectedTeam(team);
@@ -306,6 +325,19 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
                   <Label htmlFor="pro-logo" className="text-gray-300 text-sm">With logo only</Label>
                 </div>
               </div>
+              
+              <div className="space-y-2">
+                <Label className="text-gray-300 text-sm">
+                  Price Range: {priceRangePro[0]} - {priceRangePro[1]} credits
+                </Label>
+                <Slider
+                  value={priceRangePro}
+                  onValueChange={setPriceRangePro}
+                  max={maxProPrice}
+                  step={1}
+                  className="[&_[role=slider]]:bg-blue-500 [&_[role=slider]]:border-blue-400"
+                />
+              </div>
             </div>
             
             {/* Team List */}
@@ -385,7 +417,6 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
                 </div>
                 
                 <div className="space-y-3">
-                  
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="am-matches" 
@@ -396,6 +427,19 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({
                     <Label htmlFor="am-matches" className="text-gray-300 text-sm">Has matches last window</Label>
                   </div>
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-gray-300 text-sm">
+                  Price Range: {priceRangeAm[0]} - {priceRangeAm[1]} credits
+                </Label>
+                <Slider
+                  value={priceRangeAm}
+                  onValueChange={setPriceRangeAm}
+                  max={maxAmateurPrice}
+                  step={1}
+                  className="[&_[role=slider]]:bg-orange-500 [&_[role=slider]]:border-orange-400"
+                />
               </div>
             </div>
             
