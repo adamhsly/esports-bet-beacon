@@ -68,29 +68,40 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   return (
     <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
       {rounds.map((round) => (
-        <Card key={round.id} className="overflow-hidden bg-card border-border hover:shadow-lg transition-shadow">
-          <img
-            src={getRoundImage(round.type)}
-            alt={`${round.type} round`}
-            className="w-full h-20 object-contain bg-card rounded-t-lg"
-          />
-          <CardHeader className="pt-2 pb-1" />
-          <CardContent className="space-y-2">
-            <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-              <span>
-                <Calendar className="inline mr-1 h-3 w-3" />
-                Start: {new Date(round.start_date).toLocaleDateString()}
-              </span>
-              <span>
-                <Calendar className="inline mr-1 h-3 w-3" />
-                End: {new Date(round.end_date).toLocaleDateString()}
-              </span>
+        <Card 
+          key={round.id} 
+          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50 overflow-hidden"
+          onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
+        >
+          <CardContent className="p-4">
+            {/* Round Logo */}
+            <div className="flex justify-center mb-3">
+              <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
+                <img
+                  src={getRoundImage(round.type)}
+                  alt={`${round.type} round`}
+                  className="w-12 h-12 object-contain"
+                />
+              </div>
+            </div>
+            
+            {/* Round Info */}
+            <div className="text-center mb-3">
+              <h4 className="font-semibold text-white mb-2 capitalize">{round.type} Round</h4>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div className="flex items-center justify-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center justify-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
+                </div>
+              </div>
             </div>
 
-            <Button
-              className="w-full bg-theme-purple hover:bg-theme-purple/90 text-xs py-1.5"
-              onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
-            >
+            {/* Join Button */}
+            <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium text-sm py-2">
               Join Round
             </Button>
           </CardContent>
