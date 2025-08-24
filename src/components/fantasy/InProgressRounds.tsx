@@ -195,7 +195,9 @@ export const InProgressRounds: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Your Active Rounds</h2>
+        <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          Your Active Rounds
+        </h2>
         <p className="text-muted-foreground">
           Track your team performance in real-time across all active fantasy rounds.
         </p>
@@ -203,34 +205,39 @@ export const InProgressRounds: React.FC = () => {
 
       <div className="space-y-6">
         {rounds.map((round) => (
-          <Card key={round.id} className="bg-card border-border hover:shadow-lg transition-shadow">
-            <CardHeader>
+          <Card key={round.id} className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250">
+            <CardHeader className="border-b border-gray-700/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CardTitle className="text-xl capitalize">{round.type} Round</CardTitle>
+                  <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    {round.type} Round
+                  </CardTitle>
                   <Badge className={getRoundTypeColor(round.type)}>
                     {round.type}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     {formatTimeRemaining(round.end_date)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Trophy className="h-4 w-4" />
-                    {round.total_score} pts
+                    <span className="text-green-400 font-medium">{round.total_score} pts</span>
                   </span>
                 </div>
               </div>
-              <Progress value={calculateProgress(round.start_date, round.end_date)} className="h-2" />
+              <Progress 
+                value={calculateProgress(round.start_date, round.end_date)} 
+                className="h-2 bg-gray-800/50 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500" 
+              />
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="p-6">
               <div className="space-y-6">
                 {/* Team Performance */}
                 <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
                     <Users className="h-4 w-4" />
                     Team Performance
                   </h4>
@@ -241,35 +248,35 @@ export const InProgressRounds: React.FC = () => {
                 {/* Scoring Breakdown */}
                 {round.scores.length > 0 && (
                   <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
                       <TrendingUp className="h-4 w-4" />
                       Scoring Breakdown
                     </h4>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-green-600">
+                      <div className="p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                        <div className="text-xl font-bold text-green-400">
                           {round.scores.reduce((sum, s) => sum + s.match_wins, 0)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Match Wins</div>
+                        <div className="text-xs text-gray-400">Match Wins</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-blue-600">
+                      <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                        <div className="text-xl font-bold text-blue-400">
                           {round.scores.reduce((sum, s) => sum + s.map_wins, 0)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Map Wins</div>
+                        <div className="text-xs text-gray-400">Map Wins</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-purple-600">
+                      <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                        <div className="text-xl font-bold text-purple-400">
                           {round.scores.reduce((sum, s) => sum + s.clean_sweeps, 0)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Clean Sweeps</div>
+                        <div className="text-xs text-gray-400">Clean Sweeps</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-orange-600">
+                      <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30">
+                        <div className="text-xl font-bold text-orange-400">
                           {round.scores.reduce((sum, s) => sum + s.tournaments_won, 0)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Tournaments</div>
+                        <div className="text-xs text-gray-400">Tournaments</div>
                       </div>
                     </div>
                   </div>
@@ -278,8 +285,8 @@ export const InProgressRounds: React.FC = () => {
                 {/* Bench Team */}
                 {round.bench_team && (
                   <div>
-                    <h4 className="font-semibold mb-2 text-sm">Bench Team</h4>
-                    <Badge variant="outline" className="text-sm">
+                    <h4 className="font-semibold mb-2 text-sm text-white">Bench Team</h4>
+                    <Badge variant="outline" className="text-sm bg-orange-500/10 border-orange-400/30 text-orange-400">
                       {round.bench_team.name} (Amateur)
                     </Badge>
                   </div>
@@ -341,17 +348,20 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
   return (
     <>
       {/* Star Team Status */}
-      <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
-        <Star className={`h-4 w-4 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
-        <span>
-          Star Team: {getStarTeamName()} • Change left: {changeUsed ? '0/1' : '1/1'}
-        </span>
-        {!canChange && (
-          <div className="flex items-center gap-1">
-            <Lock className="h-3 w-3" />
-            <span className="text-xs">Star change used</span>
-          </div>
-        )}
+      <div className="mb-4 p-3 rounded-lg bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50">
+        <div className="flex items-center gap-2 text-sm">
+          <Star className={`h-4 w-4 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-gray-400'}`} />
+          <span className="text-gray-300">
+            Star Team: <span className="text-white font-medium">{getStarTeamName()}</span> • 
+            Change left: <span className="text-white font-medium">{changeUsed ? '0/1' : '1/1'}</span>
+          </span>
+          {!canChange && (
+            <div className="flex items-center gap-1 ml-2">
+              <Lock className="h-3 w-3 text-orange-400" />
+              <span className="text-xs text-orange-400">Star change used</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -372,6 +382,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
               isStarred={starTeamId === score.team_id}
               onToggleStar={() => handleStarToggle(score.team_id)}
               disabledReason={!canChange || changeUsed ? "Star change used" : null}
+              variant="progress"
             />
           ))
         ) : (
@@ -386,6 +397,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
               isStarred={starTeamId === team.id}
               onToggleStar={() => handleStarToggle(team.id)}
               disabledReason={!canChange || changeUsed ? "Star change used" : null}
+              variant="progress"
             />
           ))
         )}

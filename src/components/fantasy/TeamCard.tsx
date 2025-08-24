@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Star, Lock } from 'lucide-react';
+import { CheckCircle, Star, Lock, Users, Trophy } from 'lucide-react';
 
 interface Team {
   id: string;
@@ -32,6 +32,9 @@ interface TeamCardProps {
   isStarred?: boolean;
   onToggleStar?: () => void;
   disabledReason?: string | null;
+  showPrice?: boolean;
+  budgetRemaining?: number;
+  variant?: 'selection' | 'progress';
 }
 
 export const TeamCard: React.FC<TeamCardProps> = ({
@@ -43,8 +46,14 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   showStarToggle = false,
   isStarred = false,
   onToggleStar,
-  disabledReason = null
+  disabledReason = null,
+  showPrice = false,
+  budgetRemaining = 0,
+  variant = 'progress'
 }) => {
+  const isAmateur = team.type === 'amateur';
+  const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
+
   const StarButton = () => {
     if (!showStarToggle || !isSelected) return null;
 
@@ -98,73 +107,151 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     return button;
   };
 
-  return (
-    <Card 
-      className={`relative cursor-pointer transition-all hover:shadow-md bg-card border-border ${
-        isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
-      } ${isBench ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`} 
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
+  // Selection modal variant (rich styling)
+  if (variant === 'selection') {
+    return (
+      <Card 
+        className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${
+          isSelected 
+            ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` 
+            : `hover:shadow-md ${canAfford ? 'hover:ring-1 hover:ring-gray-400/30' : 'opacity-50 cursor-not-allowed'}`
+        } bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`}
+        onClick={canAfford ? onClick : undefined}
+      >
+        <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            {team.logo_url && (
-              <img 
-                src={team.logo_url} 
-                alt={team.name} 
-                className="w-8 h-8 rounded" 
-              />
-            )}
-            <div>
-              <h4 className="font-semibold">{team.name}</h4>
-              <div className="flex items-center gap-2">
-                <Badge 
-                  variant={team.type === 'pro' ? 'default' : 'secondary'} 
-                  className="text-xs"
-                >
-                  {team.type === 'pro' ? 'Pro' : 'Amateur'}
+            {/* Team Logo */}
+            <div className={`relative p-2 rounded-lg ${
+              isAmateur 
+                ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' 
+                : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'
+            }`}>
+              {team.logo_url ? (
+                <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain" />
+              ) : (
+                isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-blue-400" />
+              )}
+            </div>
+            
+            {/* Team Info */}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-white truncate">{team.name}</h4>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
+                  {isAmateur ? 'Amateur' : 'Pro'}
                 </Badge>
-                {team.type === 'amateur' && (
-                  <>
-                    <Badge variant="outline" className="text-xs">
-                      {team.esport_type?.toUpperCase() || 'FACEIT'}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      {team.matches_prev_window ?? 0} matches
-                    </Badge>
-                    {typeof team.missed_pct === 'number' && (
-                      <Badge variant="outline" className="text-xs">
-                        {team.missed_pct}% missed
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs">
-                      +25% bonus
-                    </Badge>
-                  </>
+                {isAmateur && (
+                  <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+                    +25% Bonus
+                  </Badge>
                 )}
               </div>
             </div>
+            
+            {/* Price */}
+            {showPrice && (
+              <div className="text-right">
+                <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+                  {team.price ?? 0}
+                </div>
+                <div className="text-xs text-gray-400">credits</div>
+              </div>
+            )}
           </div>
           
+          {/* Stats */}
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-400">Matches:</span>
+              <span className="ml-1 text-white font-medium">
+                {isAmateur ? team.matches_prev_window ?? 0 : team.matches_in_period ?? 0}
+              </span>
+            </div>
+            {team.recent_win_rate !== undefined && (
+              <div>
+                <span className="text-gray-400">Win Rate:</span>
+                <span className="ml-1 text-white font-medium">
+                  {Math.round((team.recent_win_rate ?? 0) * 100)}%
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Star Team Double Points Label */}
+          {isStarred && isSelected && (
+            <div className="mt-2 pt-2 border-t border-gray-600/50">
+              <div className="text-xs text-[#F5C042] font-medium">
+                DOUBLE POINTS
+              </div>
+            </div>
+          )}
+        </CardContent>
+        
+        <StarButton />
+      </Card>
+    );
+  }
+
+  // Progress variant (enhanced with selection styling)
+  return (
+    <Card 
+      className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${
+        isSelected 
+          ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` 
+          : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'
+      } ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`}
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Team Logo */}
+          <div className={`relative p-2 rounded-lg ${
+            isAmateur 
+              ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' 
+              : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'
+          }`}>
+            {team.logo_url ? (
+              <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain" />
+            ) : (
+              isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-blue-400" />
+            )}
+          </div>
+          
+          {/* Team Info */}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-white truncate">{team.name}</h4>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
+                {isAmateur ? 'Amateur' : 'Pro'}
+              </Badge>
+              {isAmateur && (
+                <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+                  +25% Bonus
+                </Badge>
+              )}
+              {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
+            </div>
+          </div>
+          
+          {/* Status Icons */}
           <div className="flex items-center gap-2">
             {team.type === 'amateur' && (
               <div className="text-right">
                 <div className="text-sm font-medium text-white">
-                  {team.matches_prev_window ?? 0} matches
+                  {team.matches_prev_window ?? 0}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  last window
+                <div className="text-xs text-gray-400">
+                  matches
                 </div>
               </div>
             )}
             {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
-            {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
           </div>
         </div>
         
         {/* Star Team Double Points Label */}
         {isStarred && isSelected && (
-          <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="mt-2 pt-2 border-t border-gray-600/50">
             <div className="text-xs text-[#F5C042] font-medium">
               DOUBLE POINTS
             </div>
