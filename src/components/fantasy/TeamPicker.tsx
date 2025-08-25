@@ -68,6 +68,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
+  const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
   
   // Star Team functionality
   const [starTeamId, setStarTeamId] = useState<string | null>(null);
@@ -109,8 +110,45 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
   useEffect(() => {
+    if (user) {
+      checkExistingSubmission();
+    }
     fetchAvailableTeams();
-  }, [round]);
+  }, [round, user]);
+
+  const checkExistingSubmission = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('fantasy_round_picks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('round_id', round.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setHasExistingSubmission(true);
+        // Show message and redirect to in-progress tab
+        toast.error('You already have an active team for this round. You can only submit one lineup per round.', {
+          action: {
+            label: 'View In Progress',
+            onClick: () => {
+              onBack();
+              if (onNavigateToInProgress) {
+                onNavigateToInProgress();
+              }
+            }
+          },
+          duration: 8000
+        });
+      }
+    } catch (error) {
+      console.error('Error checking existing submission:', error);
+    }
+  };
   const fetchAvailableTeams = async () => {
     try {
       setLoading(true);
@@ -347,6 +385,23 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   };
 
   const submitTeams = async () => {
+    // Check again before submission in case user navigated directly
+    if (hasExistingSubmission) {
+      toast.error('You already have an active team for this round. You can only submit one lineup per round.', {
+        action: {
+          label: 'View In Progress',
+          onClick: () => {
+            onBack();
+            if (onNavigateToInProgress) {
+              onNavigateToInProgress();
+            }
+          }
+        },
+        duration: 8000
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
 
