@@ -384,21 +384,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       // Progress missions after successful submission
       try {
         // Mission: Set your lineup
-        await progressMission('set_lineup');
+        await progressMission('daily_set_lineup');
         
         // Mission: Pick 3 teams (if they selected 3 or more)
         if (selectedTeams.length >= 3) {
-          await progressMission('pick_3_teams');
+          await progressMission('daily_pick3');
         }
         
         // Mission: Draft 1 amateur team (if they have at least 1 amateur team)
         const amateurCount = selectedTeams.filter(team => team.type === 'amateur').length;
         if (amateurCount >= 1) {
-          await progressMission('draft_amateur_team');
+          await progressMission('daily_amateur1');
         }
         
         // Mission: Join rounds (progress towards weekly goal)
-        await progressMission('join_rounds');
+        await progressMission('weekly_join3');
         
       } catch (missionError) {
         console.error('Error progressing missions:', missionError);
