@@ -20,6 +20,7 @@ import { SelectedTeamsWidget } from './SelectedTeamsWidget';
 import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { useRoundStar } from '@/hooks/useRoundStar';
+import { useRPCActions } from '@/hooks/useRPCActions';
 interface FantasyRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
@@ -58,6 +59,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const {
     user
   } = useAuth();
+  const { progressMission } = useRPCActions();
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
@@ -378,6 +380,30 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         bench_team: benchTeamData
       });
       if (error) throw error;
+
+      // Progress missions after successful submission
+      try {
+        // Mission: Set your lineup
+        await progressMission('set_lineup');
+        
+        // Mission: Pick 3 teams (if they selected 3 or more)
+        if (selectedTeams.length >= 3) {
+          await progressMission('pick_3_teams');
+        }
+        
+        // Mission: Draft 1 amateur team (if they have at least 1 amateur team)
+        const amateurCount = selectedTeams.filter(team => team.type === 'amateur').length;
+        if (amateurCount >= 1) {
+          await progressMission('draft_amateur_team');
+        }
+        
+        // Mission: Join rounds (progress towards weekly goal)
+        await progressMission('join_rounds');
+        
+      } catch (missionError) {
+        console.error('Error progressing missions:', missionError);
+        // Don't block the main flow if mission progression fails
+      }
       
       if (starTeamId) {
         toast.success('Team and Star Team submitted successfully!');
