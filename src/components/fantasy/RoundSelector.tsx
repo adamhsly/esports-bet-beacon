@@ -101,7 +101,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
             </div>
 
             {/* Join Button */}
-            <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium text-sm py-2">
+            <Button className="background:_#8B5CF6 hover:from-blue-600 hover:to-purple-600 text-white font-medium text-sm py-2">
               Join Round
             </Button>
           </CardContent>
