@@ -6,14 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helpers
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -22,7 +19,6 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-
     const {
       round_id,
       PRO_MULTIPLIER = 1.2,
@@ -32,7 +28,6 @@ serve(async (req) => {
       ABANDON_PENALTY_MULTIPLIER = 5,
     } = body || {};
 
-    // Determine rounds to process
     let rounds: Array<{ id: string; type: string; start_date: string; end_date: string }>;
     if (round_id) {
       const { data, error } = await supabase
@@ -57,7 +52,6 @@ serve(async (req) => {
       console.log("=== Processing round ===", r);
 
       // 1) PRO TEAMS
-      console.log("Fetching pro matches for", r.id, r.type);
       const { data: pandaMatches, error: pandaErr } = await supabase
         .from("pandascore_matches")
         .select("teams, esport_type, start_time")
@@ -67,10 +61,7 @@ serve(async (req) => {
       if (pandaErr) throw pandaErr;
       console.log("pandaMatches count:", pandaMatches?.length || 0);
 
-      const proTeamMap = new Map<
-        string,
-        { id: string; name: string; esport_type?: string; match_volume: number }
-      >();
+      const proTeamMap = new Map<string, { id: string; name: string; esport_type?: string; match_volume: number }>();
       (pandaMatches || []).forEach((m: any) => {
         if (Array.isArray(m.teams)) {
           m.teams.forEach((t: any) => {
@@ -78,62 +69,50 @@ serve(async (req) => {
               const id = String(t.opponent.id);
               const name = t.opponent.name || t.opponent.slug || "Unknown Team";
               const existing = proTeamMap.get(id);
-              if (existing) {
-                existing.match_volume += 1;
-              } else {
-                proTeamMap.set(id, {
-                  id,
-                  name,
-                  esport_type: m.esport_type,
-                  match_volume: 1,
-                });
-              }
+              if (existing) existing.match_volume += 1;
+              else proTeamMap.set(id, { id, name, esport_type: m.esport_type, match_volume: 1 });
             }
           });
         }
       });
-
       console.log("Pro teams found:", proTeamMap.size);
 
-      for (const [teamId, info] of proTeamMap.entries()) {
-        const { data: stats, error: statsErr } = await (supabase as any).rpc(
-          "get_team_stats_optimized",
-          { team_id: teamId }
-        );
-        if (statsErr) {
-          console.error("get_team_stats_optimized error", teamId, statsErr);
+      // Parallel fetch of pro team stats
+      const proStatsPromises = Array.from(proTeamMap.entries()).map(async ([teamId, info]) => {
+        try {
+          const { data: stats, error: statsErr } = await (supabase as any).rpc("get_team_stats_optimized", { team_id: teamId });
+          if (statsErr) console.error("get_team_stats_optimized error", teamId, statsErr);
+          const recent_win_rate = stats?.win_rate ? Number(stats.win_rate) / 100 : 0.5;
+          const base_score = (recent_win_rate * 10) + (info.match_volume * 2);
+          const raw_price = base_score * Number(PRO_MULTIPLIER);
+          const price = clamp(Math.round(raw_price), Number(MIN_PRICE), Number(MAX_PRICE));
+          return { teamId, price, info, recent_win_rate };
+        } catch (e) {
+          console.error("Error fetching pro stats for", teamId, e);
+          return null;
         }
-        const recent_win_rate = stats?.win_rate
-          ? Number(stats.win_rate) / 100
-          : 0.5;
-        const base_score = recent_win_rate * 10 + info.match_volume * 2;
-        const raw_price = base_score * Number(PRO_MULTIPLIER);
-        const price = clamp(
-          Math.round(raw_price),
-          Number(MIN_PRICE),
-          Number(MAX_PRICE)
-        );
+      });
+      const proStatsResults = (await Promise.all(proStatsPromises)).filter(Boolean) as any[];
 
+      // Upsert all pro teams sequentially (can batch here too if needed)
+      for (const p of proStatsResults) {
         try {
           const { error: upErr } = await supabase
             .from("fantasy_team_prices")
-            .upsert(
-              {
-                round_id: r.id,
-                team_type: "pro",
-                team_id: teamId,
-                team_name: info.name,
-                price,
-                recent_win_rate,
-                match_volume: info.match_volume,
-                last_price_update: new Date().toISOString(),
-              },
-              { onConflict: "round_id,team_type,team_id" }
-            );
+            .upsert({
+              round_id: r.id,
+              team_type: "pro",
+              team_id: p.teamId,
+              team_name: p.info.name,
+              price: p.price,
+              recent_win_rate: p.recent_win_rate,
+              match_volume: p.info.match_volume,
+              last_price_update: new Date().toISOString(),
+            }, { onConflict: "round_id,team_type,team_id" });
           if (upErr) throw upErr;
-          results.push({ round_id: r.id, team_type: "pro", team_id: teamId, price });
+          results.push({ round_id: r.id, team_type: "pro", team_id: p.teamId, price: p.price });
         } catch (e) {
-          console.error("Upsert error (pro)", { round: r.id, teamId, error: e });
+          console.error("Upsert error (pro)", { round: r.id, teamId: p.teamId, error: e });
         }
       }
 
@@ -142,82 +121,55 @@ serve(async (req) => {
       const end = new Date(r.end_date);
       const prevEnd = start;
       const prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
+      console.log("Amateur window", { round_id: r.id, prevStart: prevStart.toISOString(), prevEnd: prevEnd.toISOString() });
 
-      console.log("Amateur window", {
-        round_id: r.id,
-        type: r.type,
-        prevStart: prevStart.toISOString(),
-        prevEnd: prevEnd.toISOString(),
-      });
-
-      // Updated RPC call for Faceit
       const { data: prevStats, error: prevErr } = await (supabase as any).rpc(
         "get_faceit_teams_prev_window_stats",
-        {
-          start_ts: prevStart.toISOString(),
-          end_ts: prevEnd.toISOString(),
-        }
+        { start_ts: prevStart.toISOString(), end_ts: prevEnd.toISOString() }
       );
-      if (prevErr) {
-        console.error("get_faceit_teams_prev_window_stats error", prevErr);
-      } else {
-        console.log("prevStats count:", prevStats?.length || 0);
-      }
+      if (prevErr) console.error("get_faceit_teams_prev_window_stats error", prevErr);
+      else console.log("prevStats count:", prevStats?.length || 0);
 
-      const { data: allFaceitTeams, error: allErr } = await (supabase as any).rpc(
-        "get_all_faceit_teams"
-      );
-      if (allErr) {
-        console.error("get_all_faceit_teams error", allErr);
-      } else {
-        console.log("allFaceitTeams count:", allFaceitTeams?.length || 0);
-      }
+      const { data: allFaceitTeams, error: allErr } = await (supabase as any).rpc("get_all_faceit_teams");
+      if (allErr) console.error("get_all_faceit_teams error", allErr);
+      else console.log("allFaceitTeams count:", allFaceitTeams?.length || 0);
 
       const statsMap = new Map<string, any>();
       (prevStats || []).forEach((s: any) => statsMap.set(s.team_id, s));
 
-      for (const t of allFaceitTeams || []) {
+      // Prepare batched amateur upsert
+      const amateurRows = (allFaceitTeams || []).map((t: any) => {
         const s = statsMap.get(t.team_id);
-        if (!s) console.log(`No prev window stats found for team ${t.team_id}`);
-
-        const abandon_rate =
-          typeof s?.missed_pct === "number" ? Math.max(0, Math.min(100, Number(s.missed_pct))) / 100 : 0;
-
-        const recent_win_rate = 0.5; // fallback
+        if (!s) console.log(`No prev window stats for team ${t.team_id}`);
+        const abandon_rate = typeof s?.missed_pct === "number" ? Math.max(0, Math.min(100, Number(s.missed_pct))) / 100 : 0;
+        const recent_win_rate = 0.5;
         const base_score = recent_win_rate * 10 - abandon_rate * Number(ABANDON_PENALTY_MULTIPLIER);
         const raw_price = base_score * Number(AMATEUR_MULTIPLIER);
         const price = clamp(Math.round(raw_price), Number(MIN_PRICE), Number(MAX_PRICE));
+        results.push({ round_id: r.id, team_type: "amateur", team_id: t.team_id, price });
+        return {
+          round_id: r.id,
+          team_type: "amateur",
+          team_id: t.team_id,
+          team_name: t.team_name,
+          price,
+          recent_win_rate,
+          abandon_rate,
+          last_price_update: new Date().toISOString(),
+        };
+      });
 
-        try {
-          const { error: upErr2 } = await supabase
-            .from("fantasy_team_prices")
-            .upsert(
-              {
-                round_id: r.id,
-                team_type: "amateur",
-                team_id: t.team_id,
-                team_name: t.team_name,
-                price,
-                recent_win_rate,
-                abandon_rate,
-                last_price_update: new Date().toISOString(),
-              },
-              { onConflict: "round_id,team_type,team_id" }
-            );
-          if (upErr2) throw upErr2;
-          results.push({ round_id: r.id, team_type: "amateur", team_id: t.team_id, price });
-        } catch (e) {
-          console.error("Upsert error (amateur)", { round: r.id, teamId: t.team_id, error: e });
-        }
+      if (amateurRows.length > 0) {
+        const { error: upErr } = await supabase
+          .from("fantasy_team_prices")
+          .upsert(amateurRows, { onConflict: "round_id,team_type,team_id" });
+        if (upErr) console.error("Batch upsert error (amateur)", upErr);
       }
     }
 
-    return new Response(
-      JSON.stringify({ ok: true, updated: results.length, results }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ ok: true, updated: results.length, results }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     console.error("calculate-team-prices error", err);
     return new Response(JSON.stringify({ error: err?.message || String(err) }), {
