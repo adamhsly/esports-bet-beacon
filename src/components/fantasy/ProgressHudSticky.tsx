@@ -1,3 +1,4 @@
+// Progress HUD component for sticky display
 import React from 'react';
 import { ChevronUp, Flame } from 'lucide-react';
 import { useProgress, useMissions, useRewards, useEntitlement } from '@/hooks/useSupabaseData';
