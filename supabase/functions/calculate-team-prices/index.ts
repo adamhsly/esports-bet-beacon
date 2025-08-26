@@ -150,6 +150,7 @@ serve(async (req) => {
         prevEnd: prevEnd.toISOString(),
       });
 
+      // Updated RPC call for Faceit
       const { data: prevStats, error: prevErr } = await (supabase as any).rpc(
         "get_faceit_teams_prev_window_stats",
         {
@@ -177,25 +178,15 @@ serve(async (req) => {
 
       for (const t of allFaceitTeams || []) {
         const s = statsMap.get(t.team_id);
-        console.log("Processing amateur team", {
-          team_id: t.team_id,
-          team_name: t.team_name,
-          stats: s,
-        });
+        if (!s) console.log(`No prev window stats found for team ${t.team_id}`);
 
         const abandon_rate =
-          typeof s?.missed_pct === "number"
-            ? Math.max(0, Math.min(100, Number(s.missed_pct))) / 100
-            : 0;
+          typeof s?.missed_pct === "number" ? Math.max(0, Math.min(100, Number(s.missed_pct))) / 100 : 0;
 
-        const recent_win_rate = 0.5;
+        const recent_win_rate = 0.5; // fallback
         const base_score = recent_win_rate * 10 - abandon_rate * Number(ABANDON_PENALTY_MULTIPLIER);
         const raw_price = base_score * Number(AMATEUR_MULTIPLIER);
-        const price = clamp(
-          Math.round(raw_price),
-          Number(MIN_PRICE),
-          Number(MAX_PRICE)
-        );
+        const price = clamp(Math.round(raw_price), Number(MIN_PRICE), Number(MAX_PRICE));
 
         try {
           const { error: upErr2 } = await supabase
@@ -214,12 +205,7 @@ serve(async (req) => {
               { onConflict: "round_id,team_type,team_id" }
             );
           if (upErr2) throw upErr2;
-          results.push({
-            round_id: r.id,
-            team_type: "amateur",
-            team_id: t.team_id,
-            price,
-          });
+          results.push({ round_id: r.id, team_type: "amateur", team_id: t.team_id, price });
         } catch (e) {
           console.error("Upsert error (amateur)", { round: r.id, teamId: t.team_id, error: e });
         }
