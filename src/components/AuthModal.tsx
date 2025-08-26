@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -26,6 +27,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [signInError, setSignInError] = useState('');
+  const [signUpError, setSignUpError] = useState('');
+  const [resetError, setResetError] = useState('');
   
   const { signIn, signUp, resetPassword, user } = useAuth();
   const { toast } = useToast();
@@ -40,16 +44,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSignInError('');
 
     const { error } = await signIn(signInEmail, signInPassword);
     
     if (error) {
+      const errorMessage = error.message;
+      setSignInError(errorMessage);
       toast({
         title: "Sign in failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } else {
+      setSignInError('');
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -61,20 +69,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignUpError('');
     
     if (signUpPassword !== signUpConfirmPassword) {
+      const errorMessage = "Please make sure your passwords match.";
+      setSignUpError(errorMessage);
       toast({
         title: "Password mismatch",
-        description: "Please make sure your passwords match.",
+        description: errorMessage,
         variant: "destructive",
       });
       return;
     }
 
     if (signUpPassword.length < 6) {
+      const errorMessage = "Password must be at least 6 characters long.";
+      setSignUpError(errorMessage);
       toast({
         title: "Password too short",
-        description: "Password must be at least 6 characters long.",
+        description: errorMessage,
         variant: "destructive",
       });
       return;
@@ -88,12 +101,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
     });
     
     if (error) {
+      const errorMessage = error.message;
+      setSignUpError(errorMessage);
       toast({
         title: "Sign up failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } else {
+      setSignUpError('');
       toast({
         title: "Account created successfully!",
         description: "Welcome to EsportsHub! Please check your email to verify your account.",
@@ -117,16 +133,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setResetError('');
 
     const { error } = await resetPassword(resetEmail);
     
     if (error) {
+      const errorMessage = error.message;
+      setResetError(errorMessage);
       toast({
         title: "Reset failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } else {
+      setResetError('');
       toast({
         title: "Reset link sent!",
         description: "Please check your email for the password reset link.",
@@ -165,6 +185,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
           <TabsContent value="signin" className="space-y-4">
             {!showResetForm ? (
               <form onSubmit={handleSignIn} className="space-y-4">
+                {signInError && (
+                  <Alert variant="destructive" className="bg-red-950/50 border-red-800 text-red-200">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{signInError}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="signin-email" className="text-gray-300">
                     <Mail className="inline w-4 h-4 mr-2" />
@@ -216,6 +242,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
               </form>
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
+                {resetError && (
+                  <Alert variant="destructive" className="bg-red-950/50 border-red-800 text-red-200">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{resetError}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="text-center mb-4">
                   <h3 className="text-lg font-semibold text-white">Reset Password</h3>
                   <p className="text-sm text-gray-300">Enter your email to receive a reset link</p>
@@ -261,6 +293,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
 
           <TabsContent value="signup" className="space-y-4">
             <form onSubmit={handleSignUp} className="space-y-4">
+              {signUpError && (
+                <Alert variant="destructive" className="bg-red-950/50 border-red-800 text-red-200">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{signUpError}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="signup-fullname" className="text-gray-300">
                   <User className="inline w-4 h-4 mr-2" />
