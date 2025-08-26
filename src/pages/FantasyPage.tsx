@@ -58,7 +58,7 @@ const FantasyPage: React.FC = () => {
                 <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
                   <TabsTrigger
                     value="join"
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[w-full bg-gradient-to-r from-blue-500 to-purple-500] data-[state=active]:text-white transition-colors"
                   >
                     <Calendar className="h-4 w-4" />
                     Join a Round
