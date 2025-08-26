@@ -29,7 +29,7 @@ export const StickyProfileHud: React.FC<StickyProfileHudProps> = ({ onClick, cla
   return (
     <Card 
       className={cn(
-        "fixed bottom-4 right-4 z-40 bg-gradient-to-r from-[#1A1F26] to-[#252A32] border border-white/[0.08] cursor-pointer transition-all duration-300 hover:border-neon-blue/30 hover:shadow-[0_0_20px_rgba(79,172,254,0.2)] active:scale-95",
+        "fixed bottom-4 right-4 z-40 bg-gradient-to-r from-[#1A1F26] to-[#252A32] border border-white/[0.08] cursor-pointer transition-all duration-300 hover:border-neon-blue/30 hover:shadow-[0_0_20px_rgba(79,172,254,0.2)] active:scale-95 hidden md:block",
         className
       )}
       onClick={onClick}
