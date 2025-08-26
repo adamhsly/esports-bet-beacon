@@ -80,14 +80,13 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
                 <img
                   src={getRoundImage(round.type)}
                   alt={`${round.type} round`}
-                  className="w-12 h-12 object-contain"
+                  className="w-24 h-24 object-contain"
                 />
               </div>
             </div>
             
             {/* Round Info */}
             <div className="text-center mb-3">
-              <h4 className="font-semibold text-white mb-2 capitalize">{round.type} Round</h4>
               <div className="space-y-1 text-xs text-gray-400">
                 <div className="flex items-center justify-center gap-1">
                   <Calendar className="h-3 w-3" />
