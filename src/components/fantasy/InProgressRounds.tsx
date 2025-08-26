@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { useRoundStar } from '@/hooks/useRoundStar';
+import { RoundLeaderboard } from './RoundLeaderboard';
 
 interface InProgressRound {
   id: string;
@@ -243,6 +244,16 @@ export const InProgressRounds: React.FC = () => {
                   </h4>
                   
                   <InProgressTeamsList round={round} />
+                </div>
+
+                {/* Leaderboard */}
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                    <Trophy className="h-4 w-4" />
+                    Round Leaderboard
+                  </h4>
+                  
+                  <RoundLeaderboard roundId={round.id} />
                 </div>
 
                 {/* Scoring Breakdown */}
