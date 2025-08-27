@@ -49,10 +49,14 @@ export async function renderShareCard(
     // Fetch data
     const shareData = await fetchShareCardData(roundId, userId);
     
+    console.log('Share data fetched:', shareData);
+    
     // Render share card
     await renderShareCardHTML(container, shareData);
     
-    // Generate image
+    console.log('HTML rendered, generating canvas...');
+    
+    // Generate image with error handling
     const canvas = await html2canvas(container, {
       width: FRAME_WIDTH,
       height: FRAME_HEIGHT,
@@ -60,12 +64,24 @@ export async function renderShareCard(
       scale: 1,
       useCORS: true,
       allowTaint: true,
+      logging: false, // Disable logging to prevent conflicts
+      foreignObjectRendering: false, // Disable to avoid React conflicts
     });
 
+    console.log('Canvas generated, converting to blob...');
+
     // Convert to blob
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob!), 'image/png', 1.0);
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Failed to generate blob from canvas'));
+        }
+      }, 'image/png', 1.0);
     });
+
+    console.log('Blob created, uploading to storage...');
 
     // Upload to Supabase Storage
     const fileName = `${roundId}/${userId}.png`;
@@ -78,19 +94,32 @@ export async function renderShareCard(
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      throw new Error('Failed to upload share card');
+      throw new Error(`Failed to upload share card: ${uploadError.message}`);
     }
+
+    console.log('File uploaded successfully');
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('shares')
       .getPublicUrl(fileName);
 
+    console.log('Public URL generated:', publicUrl);
+
     return { publicUrl, blob };
     
+  } catch (error) {
+    console.error('Share card generation failed:', error);
+    throw error;
   } finally {
     // Cleanup
-    document.body.removeChild(container);
+    try {
+      if (container.parentNode) {
+        document.body.removeChild(container);
+      }
+    } catch (cleanupError) {
+      console.warn('Cleanup error:', cleanupError);
+    }
   }
 }
 

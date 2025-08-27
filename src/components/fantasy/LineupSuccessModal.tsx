@@ -35,8 +35,12 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     setIsGenerating(true);
     
     try {
+      console.log('Starting share card generation...');
+      
       const result = await renderShareCard(roundId, userId);
       setShareData(result);
+      
+      console.log('Share card generated successfully');
       
       // Check if Web Share API supports files
       if (navigator.canShare?.({ files: [new File([result.blob], 'lineup.png', { type: 'image/png' })] })) {
@@ -50,19 +54,24 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           toast.success('Share card ready!');
         } catch (shareError) {
           if ((shareError as Error).name !== 'AbortError') {
+            console.log('Native share failed, showing custom sheet');
             // If native share fails, show our custom share sheet
             setShowShareSheet(true);
           }
         }
       } else {
         // Show custom share sheet for browsers without file sharing support
+        console.log('Native share not supported, showing custom sheet');
         setShowShareSheet(true);
       }
       
       toast.success('Share card ready!');
     } catch (error) {
       console.error('Share card generation failed:', error);
-      toast.error("Couldn't generate card, please try again.");
+      
+      // Provide more specific error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to generate share card: ${errorMessage}`);
     } finally {
       setIsGenerating(false);
     }
