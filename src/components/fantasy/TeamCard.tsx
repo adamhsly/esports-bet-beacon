@@ -55,7 +55,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
 
   const StarButton = () => {
-    if (!showStarToggle || !isSelected) return null;
+    if (!showStarToggle) return null;
 
     const isDisabled = !!disabledReason;
     const StarIcon = isDisabled ? Lock : Star;
