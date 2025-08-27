@@ -358,14 +358,26 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setSelectedTeams([...selectedTeams, team]);
   };
-  const handleRemoveTeam = (index: number) => {
-    const removedTeam = selectedTeams[index];
+  const handleRemoveTeam = (indexOrId: number | string) => {
+    let removedTeam: Team;
+    let newSelectedTeams: Team[];
+    
+    if (typeof indexOrId === 'number') {
+      // Handle by index (existing behavior)
+      removedTeam = selectedTeams[indexOrId];
+      newSelectedTeams = [...selectedTeams];
+      newSelectedTeams.splice(indexOrId, 1);
+    } else {
+      // Handle by team ID (new behavior for TeamCard)
+      removedTeam = selectedTeams.find(t => t.id === indexOrId)!;
+      newSelectedTeams = selectedTeams.filter(t => t.id !== indexOrId);
+    }
+    
     // If removing the starred team, clear star
     if (starTeamId === removedTeam.id) {
       setStarTeamId(null);
     }
-    const newSelectedTeams = [...selectedTeams];
-    newSelectedTeams.splice(index, 1);
+    
     setSelectedTeams(newSelectedTeams);
   };
   const handleBenchSelect = (team: Team) => {
@@ -606,7 +618,29 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               </Select>
 
               {/* Selected Pro Teams Display */}
-              {selectedTeams.filter(t => t.type === 'pro').length > 0}
+              {selectedTeams.filter(t => t.type === 'pro').length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm text-white">Selected Pro Teams:</h4>
+                  <div className="grid gap-3">
+                    {selectedTeams
+                      .filter(t => t.type === 'pro')
+                      .map(team => (
+                        <TeamCard
+                          key={team.id}
+                          team={team}
+                          isSelected={true}
+                          onClick={() => handleRemoveTeam(team.id)}
+                          variant="selection"
+                          showStarToggle={true}
+                          isStarred={starTeamId === team.id}
+                          onToggleStar={() => handleToggleStar(team.id)}
+                          showPrice={true}
+                          budgetRemaining={budgetRemaining}
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>}
         </TabsContent>
 
@@ -707,30 +741,29 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               </Select>
 
               {/* Selected Amateur Teams Display */}
-              {selectedTeams.filter(t => t.type === 'amateur').length > 0 && <div className="space-y-2">
+              {selectedTeams.filter(t => t.type === 'amateur').length > 0 && (
+                <div className="space-y-2">
                   <h4 className="font-medium text-sm text-white">Selected Amateur Teams:</h4>
-                  <div className="grid gap-2">
-                    {selectedTeams.filter(t => t.type === 'amateur').map(team => <div key={team.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded" />}
-                          <div>
-                            <div className="font-medium text-white">{team.name}</div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {team.esport_type?.toUpperCase()}
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs">
-                                Amateur
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => handleTeamSelect(team)} className="text-red-600 hover:text-red-700">
-                          Remove
-                        </Button>
-                      </div>)}
+                  <div className="grid gap-3">
+                    {selectedTeams
+                      .filter(t => t.type === 'amateur')
+                      .map(team => (
+                        <TeamCard
+                          key={team.id}
+                          team={team}
+                          isSelected={true}
+                          onClick={() => handleRemoveTeam(team.id)}
+                          variant="selection"
+                          showStarToggle={true}
+                          isStarred={starTeamId === team.id}
+                          onToggleStar={() => handleToggleStar(team.id)}
+                          showPrice={true}
+                          budgetRemaining={budgetRemaining}
+                        />
+                      ))}
                   </div>
-                </div>}
+                </div>
+              )}
 
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
