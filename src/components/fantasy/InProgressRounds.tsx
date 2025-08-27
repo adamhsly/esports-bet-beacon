@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Clock, Trophy, TrendingUp, Users, Star, Lock } from 'lucide-react';
+import { Clock, Trophy, TrendingUp, Users, Star, Lock, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { RoundLeaderboard } from './RoundLeaderboard';
+import { renderShareCard } from '@/utils/shareCardRenderer';
 
 interface InProgressRound {
   id: string;
@@ -226,6 +227,7 @@ export const InProgressRounds: React.FC = () => {
                     <Trophy className="h-4 w-4" />
                     <span className="text-green-400 font-medium">{round.total_score} pts</span>
                   </span>
+                  <ShareButton roundId={round.id} userId={user?.id} roundType={round.type} />
                 </div>
               </div>
               <Progress 
@@ -429,5 +431,66 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
         cancelText="Cancel"
       />
     </>
+  );
+};
+
+// Share Button Component
+const ShareButton: React.FC<{ roundId: string; userId?: string; roundType: string }> = ({ 
+  roundId, 
+  userId, 
+  roundType 
+}) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleShare = async () => {
+    if (!userId) return;
+    
+    setIsGenerating(true);
+    
+    try {
+      const result = await renderShareCard(roundId, userId);
+      const roundName = `${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`;
+      
+      // Check if Web Share API supports files
+      if (navigator.canShare?.({ files: [new File([result.blob], 'lineup.png', { type: 'image/png' })] })) {
+        try {
+          await navigator.share({
+            title: 'My Fantasy Picks',
+            text: `My ${roundName} picks - Check out my live progress!`,
+            files: [new File([result.blob], 'lineup.png', { type: 'image/png' })],
+            url: result.publicUrl
+          });
+          toast.success('Share card ready!');
+        } catch (shareError) {
+          if ((shareError as Error).name !== 'AbortError') {
+            // If native share fails, copy link as fallback
+            await navigator.clipboard.writeText(`${window.location.origin}/lineup/${roundId}/${userId}`);
+            toast.success('Link copied to clipboard!');
+          }
+        }
+      } else {
+        // Show link copy as fallback
+        await navigator.clipboard.writeText(`${window.location.origin}/lineup/${roundId}/${userId}`);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+      toast.error("Couldn't generate share card, please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleShare}
+      disabled={isGenerating || !userId}
+      className="h-8 px-2 text-gray-400 hover:text-white hover:bg-gray-700/50"
+    >
+      <Share2 className="h-4 w-4" />
+      {isGenerating && <span className="ml-1 text-xs">Sharing...</span>}
+    </Button>
   );
 };
