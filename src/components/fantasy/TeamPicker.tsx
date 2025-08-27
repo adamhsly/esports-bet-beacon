@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { SelectedTeamsWidget } from './SelectedTeamsWidget';
 import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
+import { LineupSuccessModal } from './LineupSuccessModal';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 interface FantasyRound {
@@ -73,6 +74,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   // Star Team functionality
   const [starTeamId, setStarTeamId] = useState<string | null>(null);
   const [showNoStarModal, setShowNoStarModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { setStarTeam } = useRoundStar(round.id);
 
   // Salary cap
@@ -472,18 +474,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         // Don't block the main flow if mission progression fails
       }
       
-      if (starTeamId) {
-        toast.success('Team and Star Team submitted successfully!');
-      } else {
-        toast.success('Team submitted successfully!');
-      }
-      console.log('Team submission successful, navigating to in-progress...');
-      // Reset selected round to go back to main fantasy view
-      onBack();
-      // Then navigate to in-progress tab
-      if (onNavigateToInProgress) {
-        onNavigateToInProgress();
-      }
+      // Show success modal instead of navigating back immediately
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Error submitting team:', error);
       if (error.code === '23505') {
@@ -877,6 +869,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         onCancel={() => setShowNoStarModal(false)}
         confirmText="Submit without Star"
         cancelText="Choose Star Team"
+      />
+
+      <LineupSuccessModal
+        open={showSuccessModal}
+        onOpenChange={setShowSuccessModal}
+        roundId={round.id}
+        roundName={`${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`}
+        userId={user?.id || ''}
+        starTeamName={getStarredTeamName()}
+        onCheckProgress={() => {
+          setShowSuccessModal(false);
+          onBack();
+        }}
       />
 
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />

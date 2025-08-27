@@ -2776,14 +2776,10 @@ export type Database = {
       get_faceit_teams_prev_window_stats: {
         Args: { end_ts: string; start_ts: string }
         Returns: {
-          byes: number
-          game: string
-          logo_url: string
+          matches_played: number
           missed_pct: number
-          played_matches: number
           team_id: string
           team_name: string
-          total_scheduled: number
         }[]
       }
       get_head_to_head_stats: {
