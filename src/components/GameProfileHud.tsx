@@ -24,7 +24,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProgress, useMissions } from '@/hooks/useSupabaseData';
+import { useProgress } from '@/hooks/useSupabaseData';
+import MissionsView from '@/components/MissionsView';
 
 interface ProfilePageProps {
   variant?: 'page' | 'sheet';
@@ -35,7 +36,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
-  const { missions, loading: missionsLoading } = useMissions();
+  // Removed missions loading as it's now handled in MissionsView
   const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
 
   if (!isAuthenticated) {
@@ -50,7 +51,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     );
   }
 
-  const loading = progressLoading || missionsLoading;
+  const loading = progressLoading;
 
   // Calculate XP progress
   const baseXPForLevel = 1000 + (level - 1) * 100;
@@ -220,64 +221,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
         </div>
 
         {/* Missions Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-gaming text-white">Missions</h2>
-          
-          <div className="space-y-3">
-            {missions.map((mission) => (
-              <Card 
-                key={mission.id}
-                className={cn(
-                  "bg-gradient-to-r border transition-all duration-300",
-                  mission.completed
-                    ? "from-green-500/10 to-green-600/10 border-green-400/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]"
-                    : "from-[#1A1F26] to-[#252A32] border-white/[0.08] hover:border-neon-blue/30"
-                )}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    {/* Status Icon */}
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      mission.completed
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-neon-blue/20 text-neon-blue"
-                    )}>
-                      {mission.completed ? (
-                        <CheckCircle className="w-5 h-5" />
-                      ) : (
-                        <Clock className="w-5 h-5" />
-                      )}
-                    </div>
-                    
-                    {/* Mission Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-gaming text-white text-sm leading-tight">
-                        {mission.title}
-                      </h3>
-                      <p className="text-xs text-white/60 mt-1">
-                        {mission.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* XP Reward */}
-                  <div className="text-right flex-shrink-0 ml-3">
-                    <div className={cn(
-                      "text-lg font-gaming font-bold",
-                      mission.completed ? "text-green-400" : "text-neon-blue"
-                    )}>
-                      +{mission.xp_reward} XP
-                    </div>
-                    <div className="text-xs text-white/40">
-                      {mission.progress}/{mission.target}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <MissionsView />
 
         {/* Reward Detail Modal */}
         <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>

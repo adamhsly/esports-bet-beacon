@@ -23,7 +23,7 @@ interface UserProgress {
 interface Mission {
   id: string;
   code: string;
-  kind: 'daily' | 'weekly';
+  kind: 'daily' | 'weekly' | 'monthly' | 'seasonal';
   title: string;
   description: string;
   xp_reward: number;
