@@ -42,6 +42,17 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
       
       console.log('Share card generated successfully');
       
+      // Missions: sharing
+      try {
+        const { MissionBus } = await import('@/lib/missionBus');
+        MissionBus.onShareLineup(roundId);
+        MissionBus.onShareThisWeek();
+        // Optional: Month 2 share (caller may gate by calendar externally)
+        // MissionBus.onM2_Share();
+      } catch (e) {
+        console.warn('Mission share tracking failed', e);
+      }
+      
       // Check if Web Share API supports files
       if (navigator.canShare?.({ files: [new File([result.blob], 'lineup.png', { type: 'image/png' })] })) {
         try {
@@ -98,6 +109,14 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     
     try {
       await navigator.clipboard.writeText(shareUrl);
+      // Missions on successful copy
+      try {
+        const { MissionBus } = await import('@/lib/missionBus');
+        MissionBus.onShareLineup(roundId);
+        MissionBus.onShareThisWeek();
+      } catch (e) {
+        console.warn('Mission share tracking failed', e);
+      }
       toast.success('Link copied!');
     } catch (error) {
       toast.error('Failed to copy link');

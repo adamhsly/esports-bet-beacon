@@ -49,6 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  // Trigger daily login mission once per day when a session exists
+  useEffect(() => {
+    if (session?.user) {
+      import('@/lib/missionBus').then(({ MissionBus }) => MissionBus.onAppOpen());
+    }
+  }, [session?.user?.id]);
   const signUp = async (email: string, password: string, metadata: any = {}) => {
     const redirectUrl = `${window.location.origin}/`;
     

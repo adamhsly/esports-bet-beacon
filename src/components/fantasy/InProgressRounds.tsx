@@ -450,6 +450,16 @@ const ShareButton: React.FC<{ roundId: string; userId?: string; roundType: strin
     try {
       const result = await renderShareCard(roundId, userId);
       const roundName = `${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`;
+
+      // Track missions for share
+      try {
+        const { MissionBus } = await import('@/lib/missionBus');
+        MissionBus.onShareLineup(roundId);
+        MissionBus.onShareThisWeek();
+        // MissionBus.onM2_Share(); // optional gating by calendar
+      } catch (e) {
+        console.warn('Mission share tracking failed', e);
+      }
       
       // Check if Web Share API supports files
       if (navigator.canShare?.({ files: [new File([result.blob], 'lineup.png', { type: 'image/png' })] })) {

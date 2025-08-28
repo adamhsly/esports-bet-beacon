@@ -440,9 +440,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         name: benchTeam.name,
         type: benchTeam.type
       } : null;
-      const {
-        error
-      } = await supabase.from('fantasy_round_picks').insert({
+      const { error } = await supabase.from('fantasy_round_picks').insert({
         user_id: user.id,
         round_id: round.id,
         team_picks: teamPicksData,
@@ -450,28 +448,26 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       });
       if (error) throw error;
 
-      // Progress missions after successful submission
+      // Progress missions using MissionBus (non-blocking)
       try {
-        // Mission: Set your lineup
-        await progressMission('daily_set_lineup');
-        
-        // Mission: Pick 3 teams (if they selected 3 or more)
+        const { MissionBus } = await import('@/lib/missionBus');
+        MissionBus.onSubmitLineup();
+        MissionBus.onJoinRoundAny();
+        MissionBus.recordJoinType(round.type);
+        MissionBus.onM2_JoinedType();
         if (selectedTeams.length >= 3) {
-          await progressMission('daily_pick3');
+          MissionBus.onLineupHasThree();
         }
-        
-        // Mission: Draft 1 amateur team (if they have at least 1 amateur team)
         const amateurCount = selectedTeams.filter(team => team.type === 'amateur').length;
-        if (amateurCount >= 1) {
-          await progressMission('daily_amateur1');
-        }
-        
-        // Mission: Join rounds (progress towards weekly goal)
-        await progressMission('weekly_join3');
-        
+        const proCount = selectedTeams.filter(team => team.type === 'pro').length;
+        if (amateurCount >= 1) MissionBus.onLineupHasAmateur();
+        if (amateurCount >= 3) MissionBus.onLineupHasThreeAmateurs();
+        if (proCount >= 3) MissionBus.onLineupHasThreePros();
+        if (starTeamId) MissionBus.onStarTeamChosen();
+        // Month 1 submit (caller may gate by calendar externally)
+        MissionBus.onM1_SubmitLineup();
       } catch (missionError) {
-        console.error('Error progressing missions:', missionError);
-        // Don't block the main flow if mission progression fails
+        console.warn('Mission progression failed (non-blocking)', missionError);
       }
       
       // Show success modal instead of navigating back immediately
