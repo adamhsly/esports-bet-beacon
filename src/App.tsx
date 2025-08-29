@@ -25,6 +25,7 @@ import FantasyPage from '@/pages/FantasyPage';
 import AuthPage from '@/pages/AuthPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
 import NotFound from '@/pages/NotFound';
+import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
 import './App.css';
 
@@ -38,13 +39,16 @@ const queryClient = new QueryClient({
 });
 
 const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isOpen, openProfile, closeProfile } = useProfilePanel();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
           <Web3Provider>
             {children}
-            <StickyProfileHud />
+            <StickyProfileHud onClick={openProfile} />
+            <ProfileSheet isOpen={isOpen} onOpenChange={(open) => open ? openProfile() : closeProfile()} />
             <Toaster />
           </Web3Provider>
         </ToastProvider>
