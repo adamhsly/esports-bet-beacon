@@ -317,40 +317,63 @@ export const useRewards = () => {
 // User entitlement hook
 export const useEntitlement = () => {
   const { user } = useAuthUser();
-  const { season } = useSeason();
   const [premiumActive, setPremiumActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchEntitlement = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('premium_pass')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setPremiumActive(data?.premium_pass || false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const fetchEntitlement = async () => {
-      if (!user || !season) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('purchases')
-          .select('premium_active')
-          .eq('user_id', user.id)
-          .eq('season_id', season.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-
-        setPremiumActive(data?.premium_active || false);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEntitlement();
-  }, [user, season]);
+  }, [fetchEntitlement]);
+
+  // Set up realtime subscription for profile changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('profile_premium_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        () => {
+          fetchEntitlement();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchEntitlement]);
 
   return { 
     premiumActive, 
