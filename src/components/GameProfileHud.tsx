@@ -41,7 +41,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] flex items-center justify-center p-4">
+      <div className={cn(
+        variant === 'sheet' 
+          ? "p-4 text-center" 
+          : "min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] flex items-center justify-center p-4"
+      )}>
         <Card className="bg-gradient-to-br from-[#1A1F26] to-[#12161C] border border-white/[0.08] p-8 max-w-md w-full text-center">
           <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-2xl font-gaming text-white mb-2">Profile Unavailable</h2>
@@ -77,15 +81,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
 
   const isSheet = variant === 'sheet';
   const containerClass = isSheet 
-    ? "bg-[#0F1420] text-white" 
+    ? "bg-[#0B1220] text-[#EAF2FF]" 
     : "min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] text-white";
-  const paddingClass = isSheet ? "p-4 sm:p-6" : "p-4";
+  const paddingClass = isSheet ? "p-3 sm:p-4" : "p-4";
+  const spaceClass = isSheet ? "space-y-4" : "space-y-6";
 
   return (
     <div className={containerClass}>
-      <div className={`${paddingClass} space-y-6`}>
+      <div className={`${paddingClass} ${spaceClass}`}>
         {/* Avatar & Level Header */}
-        <Card className="bg-gradient-to-br from-[#1A1F26] via-[#252A32] to-[#12161C] border border-white/[0.08] overflow-hidden relative">
+        <Card className={cn(
+          "bg-gradient-to-br from-[#1A1F26] via-[#252A32] to-[#12161C] border border-white/[0.08] overflow-hidden relative",
+          isSheet && "border-[#223049]"
+        )}>
           <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 to-neon-purple/5"></div>
           <CardContent className="relative z-10 p-6 text-center">
             {/* Avatar */}
