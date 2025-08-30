@@ -124,6 +124,59 @@ export type Database = {
           },
         ]
       }
+      credit_transactions: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          kind: string
+          reason: string
+          ref_id: string | null
+          ref_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          kind: string
+          reason: string
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          kind?: string
+          reason?: string
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_kind_fkey"
+            columns: ["kind"]
+            isOneToOne: false
+            referencedRelation: "currency_kinds"
+            referencedColumns: ["kind"]
+          },
+        ]
+      }
+      currency_kinds: {
+        Row: {
+          kind: string
+        }
+        Insert: {
+          kind: string
+        }
+        Update: {
+          kind?: string
+        }
+        Relationships: []
+      }
       esports_news: {
         Row: {
           created_at: string | null
@@ -1083,6 +1136,41 @@ export type Database = {
         }
         Relationships: []
       }
+      level_rewards: {
+        Row: {
+          amount: number | null
+          id: string
+          item_code: string | null
+          level: number
+          reward_type: string
+          track: string
+        }
+        Insert: {
+          amount?: number | null
+          id?: string
+          item_code?: string | null
+          level: number
+          reward_type: string
+          track: string
+        }
+        Update: {
+          amount?: number | null
+          id?: string
+          item_code?: string | null
+          level?: number
+          reward_type?: string
+          track?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_rewards_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       live_player_performance: {
         Row: {
           clutch_rounds: number
@@ -1905,69 +1993,48 @@ export type Database = {
         }
         Relationships: []
       }
-      player_data: {
-        Row: {
-          created_at: string
-          game: string
-          id: string
-          last_synced_at: string
-          performance_metrics: Json
-          player_id: string
-          player_name: string
-          position: string | null
-          stats: Json
-          team_name: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          game?: string
-          id?: string
-          last_synced_at?: string
-          performance_metrics?: Json
-          player_id: string
-          player_name: string
-          position?: string | null
-          stats?: Json
-          team_name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          game?: string
-          id?: string
-          last_synced_at?: string
-          performance_metrics?: Json
-          player_id?: string
-          player_name?: string
-          position?: string | null
-          stats?: Json
-          team_name?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
+          avatar_frame_id: string | null
+          avatar_url: string | null
+          bio: string | null
+          country: string | null
           created_at: string
           full_name: string | null
           id: string
+          last_login_at: string | null
+          premium_pass: boolean
+          streak_count: number
           updated_at: string
           username: string | null
           welcome_pack_claimed: boolean | null
         }
         Insert: {
+          avatar_frame_id?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          country?: string | null
           created_at?: string
           full_name?: string | null
           id: string
+          last_login_at?: string | null
+          premium_pass?: boolean
+          streak_count?: number
           updated_at?: string
           username?: string | null
           welcome_pack_claimed?: boolean | null
         }
         Update: {
+          avatar_frame_id?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          country?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          last_login_at?: string | null
+          premium_pass?: boolean
+          streak_count?: number
           updated_at?: string
           username?: string | null
           welcome_pack_claimed?: boolean | null
@@ -2014,6 +2081,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reward_items: {
+        Row: {
+          code: string
+          id: string
+          meta: Json
+          name: string
+          type: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          meta?: Json
+          name: string
+          type: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          meta?: Json
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      round_credit_spend: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       season_rewards: {
         Row: {
@@ -2472,6 +2587,52 @@ export type Database = {
           },
         ]
       }
+      user_equipped: {
+        Row: {
+          avatar_frame: string | null
+          hud_theme: string | null
+          profile_border: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_frame?: string | null
+          hud_theme?: string | null
+          profile_border?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_frame?: string | null
+          hud_theme?: string | null
+          profile_border?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_equipped_avatar_frame_fkey"
+            columns: ["avatar_frame"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "user_equipped_hud_theme_fkey"
+            columns: ["hud_theme"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "user_equipped_profile_border_fkey"
+            columns: ["profile_border"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       user_events: {
         Row: {
           id: string
@@ -2498,6 +2659,44 @@ export type Database = {
           xp_awarded?: number
         }
         Relationships: []
+      }
+      user_items: {
+        Row: {
+          acquired_via: string | null
+          created_at: string | null
+          id: string
+          item_code: string
+          quantity: number
+          source_ref: Json | null
+          user_id: string
+        }
+        Insert: {
+          acquired_via?: string | null
+          created_at?: string | null
+          id?: string
+          item_code: string
+          quantity?: number
+          source_ref?: Json | null
+          user_id: string
+        }
+        Update: {
+          acquired_via?: string | null
+          created_at?: string | null
+          id?: string
+          item_code?: string
+          quantity?: number
+          source_ref?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_items_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       user_missions: {
         Row: {
@@ -2691,15 +2890,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credit_balances: {
+        Row: {
+          balance: number | null
+          kind: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_kind_fkey"
+            columns: ["kind"]
+            isOneToOne: false
+            referencedRelation: "currency_kinds"
+            referencedColumns: ["kind"]
+          },
+        ]
+      }
     }
     Functions: {
       active_season_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      allocate_round_extra: {
+        Args: { p_amount: number; p_round: string }
+        Returns: boolean
+      }
       award_xp: {
         Args: { p_kind: string; p_ref_id?: string }
         Returns: Json
+      }
+      bump_login_streak: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       calculate_fantasy_points: {
         Args:
@@ -2843,6 +3066,20 @@ export type Database = {
         Args: { team_id: string }
         Returns: Json
       }
+      grant_credits: {
+        Args: {
+          p_amount: number
+          p_reason: string
+          p_ref_id?: string
+          p_ref_type?: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      grant_level_rewards: {
+        Args: { p_level: number; p_user: string }
+        Returns: Json
+      }
       increment_xp: {
         Args: { p_user_id: string; p_xp: number }
         Returns: undefined
@@ -2875,13 +3112,51 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      set_premium_pass: {
+        Args: { p_active: boolean; p_user: string }
+        Returns: undefined
+      }
       set_star_team: {
         Args: { p_round_id: string; p_team_id: string }
         Returns: Json
       }
+      spend_credits: {
+        Args: {
+          p_amount: number
+          p_reason: string
+          p_ref_id: string
+          p_ref_type: string
+          p_user: string
+        }
+        Returns: boolean
+      }
       update_expired_fantasy_rounds: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      update_my_profile: {
+        Args: {
+          p_avatar_url?: string
+          p_bio?: string
+          p_country?: string
+          p_full_name?: string
+          p_username?: string
+        }
+        Returns: {
+          avatar_frame_id: string | null
+          avatar_url: string | null
+          bio: string | null
+          country: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          last_login_at: string | null
+          premium_pass: boolean
+          streak_count: number
+          updated_at: string
+          username: string | null
+          welcome_pack_claimed: boolean | null
+        }
       }
       update_panda_team_head_to_head: {
         Args: Record<PropertyKey, never>

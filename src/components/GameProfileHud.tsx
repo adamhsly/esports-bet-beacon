@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack, type RewardItem } from '@/hooks/useRewardsTrack';
+import { AvatarUpload } from '@/components/AvatarUpload';
+import { AvatarFrameSelector } from '@/components/AvatarFrameSelector';
 import { 
   User, 
   Crown,
@@ -21,7 +24,8 @@ import {
   Star,
   Lock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProgress } from '@/hooks/useSupabaseData';
@@ -34,9 +38,11 @@ interface ProfilePageProps {
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPremium }) => {
   const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [showFrameSelector, setShowFrameSelector] = useState(false);
   const { user, isAuthenticated } = useAuthUser();
+  const { profile, loading: profileLoading } = useProfile();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
-  // Removed missions loading as it's now handled in MissionsView
   const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
 
   if (!isAuthenticated) {
@@ -51,7 +57,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     );
   }
 
-  const loading = progressLoading;
+  const loading = progressLoading || profileLoading;
+
+  // Get current avatar frame asset URL
+  const currentFrameAsset = useMemo(() => {
+    if (!profile?.avatar_frame_id) return null;
+    const frameReward = [...free, ...premium].find(
+      item => item.id === profile.avatar_frame_id && item.type === 'frame'
+    );
+    return frameReward?.assetUrl || null;
+  }, [profile?.avatar_frame_id, free, premium]);
 
   // Calculate XP progress
   const baseXPForLevel = 1000 + (level - 1) * 100;
@@ -90,15 +105,45 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           <CardContent className="relative z-10 p-6 text-center">
             {/* Avatar */}
             <div className="relative mx-auto w-20 h-20 mb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-neon-blue to-neon-purple rounded-full flex items-center justify-center text-2xl font-gaming text-white shadow-[0_0_30px_rgba(79,172,254,0.3)]">
-                {user?.email?.slice(0, 2).toUpperCase() || <User className="w-8 h-8" />}
+              <div className="w-20 h-20 bg-gradient-to-br from-neon-blue to-neon-purple rounded-full flex items-center justify-center text-2xl font-gaming text-white shadow-[0_0_30px_rgba(79,172,254,0.3)] overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user?.email?.slice(0, 2).toUpperCase() || <User className="w-8 h-8" />
+                )}
               </div>
+              
+              {/* Avatar Frame Overlay */}
+              {currentFrameAsset && (
+                <img 
+                  src={currentFrameAsset}
+                  alt="Avatar frame"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                />
+              )}
+              
+              {/* Upload Avatar Button */}
               <Button 
                 size="sm" 
                 variant="outline" 
+                onClick={() => setShowAvatarUpload(true)}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-neon-blue/50 hover:border-neon-blue"
               >
                 <Upload className="w-3 h-3" />
+              </Button>
+              
+              {/* Frame Settings Button */}
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setShowFrameSelector(true)}
+                className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-purple/50 hover:border-purple"
+              >
+                <Settings className="w-3 h-3" />
               </Button>
             </div>
 
@@ -222,6 +267,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
 
         {/* Missions Section */}
         <MissionsView />
+
+        {/* Avatar Upload Modal */}
+        <AvatarUpload
+          isOpen={showAvatarUpload}
+          onOpenChange={setShowAvatarUpload}
+          currentAvatarUrl={profile?.avatar_url}
+          avatarFrameUrl={currentFrameAsset}
+        />
+
+        {/* Avatar Frame Selector Modal */}
+        <AvatarFrameSelector
+          isOpen={showFrameSelector}
+          onOpenChange={setShowFrameSelector}
+          currentAvatarUrl={profile?.avatar_url}
+          currentFrameId={profile?.avatar_frame_id}
+        />
 
         {/* Reward Detail Modal */}
         <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>
