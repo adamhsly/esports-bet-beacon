@@ -124,41 +124,71 @@ export async function renderShareCard(
 }
 
 async function fetchShareCardData(roundId: string, userId: string): Promise<ShareCardData> {
+  console.log('Fetching share card data for roundId:', roundId, 'userId:', userId);
+  
   // Fetch user profile and progress
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('username')
     .eq('id', userId)
     .single();
 
-  const { data: progress } = await supabase
+  if (profileError) {
+    console.error('Profile fetch error:', profileError);
+    throw new Error(`Failed to fetch user profile: ${profileError.message}`);
+  }
+
+  const { data: progress, error: progressError } = await supabase
     .from('user_progress')
     .select('level, xp')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
+
+  if (progressError) {
+    console.error('Progress fetch error:', progressError);
+    // Don't throw, just use defaults
+  }
 
   // Fetch user's lineup for the round
-  const { data: picks } = await supabase
+  const { data: picks, error: picksError } = await supabase
     .from('fantasy_round_picks')
     .select('team_picks')
     .eq('round_id', roundId)
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
+
+  if (picksError) {
+    console.error('Picks fetch error:', picksError);
+    throw new Error(`Failed to fetch lineup picks: ${picksError.message}`);
+  }
+
+  if (!picks || !picks.team_picks) {
+    throw new Error('No lineup found for this round');
+  }
 
   // Fetch star team
-  const { data: starTeam } = await supabase
+  const { data: starTeam, error: starTeamError } = await supabase
     .from('fantasy_round_star_teams')
     .select('star_team_id')
     .eq('round_id', roundId)
     .eq('user_id', userId)
     .maybeSingle();
 
+  if (starTeamError) {
+    console.error('Star team fetch error:', starTeamError);
+  }
+
   // Fetch round info
-  const { data: round } = await supabase
+  const { data: round, error: roundError } = await supabase
     .from('fantasy_rounds')
     .select('type')
     .eq('id', roundId)
-    .single();
+    .maybeSingle();
+
+  if (roundError) {
+    console.error('Round fetch error:', roundError);
+    // Don't throw, use default
+  }
 
   // Fetch user badges (recent 4)
   const { data: badges } = await supabase
@@ -172,7 +202,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
   // Calculate next XP threshold (simple calculation)
   const nextXpThreshold = Math.pow(progress?.level + 1 || 2, 2) * 100;
 
-  const roundName = `${round?.type?.charAt(0).toUpperCase() + round?.type?.slice(1)} Round`;
+  const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
 
   return {
     user: {
