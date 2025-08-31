@@ -329,6 +329,18 @@ const Index = () => {
     return Number.isFinite(value) && value > 0 ? value : null;
   };
 
+  // Helper to get tier value for sorting (tier "a" = 0, "b" = 1, etc.)
+  const getTierValueFromMetadata = (metadata: any): number => {
+    if (!metadata || !metadata.tier) return 999; // Unknown tiers go to end
+    const tier = metadata.tier.toLowerCase();
+    if (tier === 'a') return 0;
+    if (tier === 'b') return 1;
+    if (tier === 'c') return 2;
+    if (tier === 'd') return 3;
+    if (tier === 's') return -1; // S tier goes first if it exists
+    return 999; // Unknown tiers go to end
+  };
+
   // Helper function to render tournament metadata
   const renderTournamentMetadata = (metadata: any) => {
     if (!metadata) return null;
@@ -570,14 +582,23 @@ const Index = () => {
                 }]) => {
                   const metadata = getTournamentMetadata(matches);
                   const prizeValue = getPrizeValueFromMetadata(metadata);
+                  const tierValue = getTierValueFromMetadata(metadata);
                   return {
                     league,
                     matches,
                     tournamentId,
                     metadata,
-                    prizeValue
+                    prizeValue,
+                    tierValue
                   };
-                }).sort((a, b) => (b.prizeValue ?? -1) - (a.prizeValue ?? -1));
+                }).sort((a, b) => {
+                  // Primary sort: tier (a=0, b=1, etc., with smaller numbers first)
+                  if (a.tierValue !== b.tierValue) {
+                    return a.tierValue - b.tierValue;
+                  }
+                  // Secondary sort: prize pool (higher values first)
+                  return (b.prizeValue ?? -1) - (a.prizeValue ?? -1);
+                });
                 return groups.map(({
                   league,
                   matches,
@@ -613,14 +634,23 @@ const Index = () => {
                 }]) => {
                   const metadata = getTournamentMetadata(matches);
                   const prizeValue = getPrizeValueFromMetadata(metadata);
+                  const tierValue = getTierValueFromMetadata(metadata);
                   return {
                     league,
                     matches,
                     tournamentId,
                     metadata,
-                    prizeValue
+                    prizeValue,
+                    tierValue
                   };
-                }).sort((a, b) => (b.prizeValue ?? -1) - (a.prizeValue ?? -1));
+                }).sort((a, b) => {
+                  // Primary sort: tier (a=0, b=1, etc., with smaller numbers first)
+                  if (a.tierValue !== b.tierValue) {
+                    return a.tierValue - b.tierValue;
+                  }
+                  // Secondary sort: prize pool (higher values first)
+                  return (b.prizeValue ?? -1) - (a.prizeValue ?? -1);
+                });
                 return groups.map(({
                   league,
                   matches,
@@ -656,14 +686,23 @@ const Index = () => {
                 }]) => {
                   const metadata = getTournamentMetadata(matches);
                   const prizeValue = getPrizeValueFromMetadata(metadata);
+                  const tierValue = getTierValueFromMetadata(metadata);
                   return {
                     league,
                     matches,
                     tournamentId,
                     metadata,
-                    prizeValue
+                    prizeValue,
+                    tierValue
                   };
-                }).sort((a, b) => (b.prizeValue ?? -1) - (a.prizeValue ?? -1));
+                }).sort((a, b) => {
+                  // Primary sort: tier (a=0, b=1, etc., with smaller numbers first)
+                  if (a.tierValue !== b.tierValue) {
+                    return a.tierValue - b.tierValue;
+                  }
+                  // Secondary sort: prize pool (higher values first)
+                  return (b.prizeValue ?? -1) - (a.prizeValue ?? -1);
+                });
                 return groups.map(({
                   league,
                   matches,
