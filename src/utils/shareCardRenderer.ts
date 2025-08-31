@@ -35,6 +35,10 @@ export async function renderShareCard(
   roundId: string, 
   userId: string
 ): Promise<ShareCardResult> {
+  console.log('=== Share Card Generation Started ===');
+  console.log('Round ID:', roundId);
+  console.log('User ID:', userId);
+
   // Create offscreen container
   const container = document.createElement('div');
   container.style.position = 'fixed';
@@ -47,14 +51,16 @@ export async function renderShareCard(
 
   try {
     // Fetch data
+    console.log('Step 1: Fetching share card data...');
     const shareData = await fetchShareCardData(roundId, userId);
     
-    console.log('Share data fetched:', shareData);
+    console.log('Step 2: Share data fetched successfully:', shareData);
     
     // Render share card
+    console.log('Step 3: Rendering HTML...');
     await renderShareCardHTML(container, shareData);
     
-    console.log('HTML rendered, generating canvas...');
+    console.log('Step 4: HTML rendered, generating canvas...');
     
     // Generate image with error handling
     const canvas = await html2canvas(container, {
@@ -64,16 +70,18 @@ export async function renderShareCard(
       scale: 1,
       useCORS: true,
       allowTaint: true,
-      logging: false, // Disable logging to prevent conflicts
+      logging: true, // Enable logging to see what's happening
       foreignObjectRendering: false, // Disable to avoid React conflicts
     });
 
-    console.log('Canvas generated, converting to blob...');
+    console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
 
     // Convert to blob
+    console.log('Step 6: Converting canvas to blob...');
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (blob) {
+          console.log('Step 7: Blob created successfully, size:', blob.size, 'bytes');
           resolve(blob);
         } else {
           reject(new Error('Failed to generate blob from canvas'));
@@ -81,7 +89,7 @@ export async function renderShareCard(
       }, 'image/png', 1.0);
     });
 
-    console.log('Blob created, uploading to storage...');
+    console.log('Step 8: Uploading to Supabase storage...');
 
     // Upload to Supabase Storage
     const fileName = `${roundId}/${userId}.png`;
@@ -93,23 +101,25 @@ export async function renderShareCard(
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      console.error('Step 8 FAILED - Upload error:', uploadError);
       throw new Error(`Failed to upload share card: ${uploadError.message}`);
     }
 
-    console.log('File uploaded successfully');
+    console.log('Step 9: File uploaded successfully');
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('shares')
       .getPublicUrl(fileName);
 
-    console.log('Public URL generated:', publicUrl);
+    console.log('Step 10: Public URL generated:', publicUrl);
+    console.log('=== Share Card Generation Completed Successfully ===');
 
     return { publicUrl, blob };
     
   } catch (error) {
-    console.error('Share card generation failed:', error);
+    console.error('=== Share Card Generation FAILED ===');
+    console.error('Error details:', error);
     throw error;
   } finally {
     // Cleanup
