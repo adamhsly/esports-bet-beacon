@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info, Plus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import { SelectedTeamsWidget } from './SelectedTeamsWidget';
 import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { LineupSuccessModal } from './LineupSuccessModal';
+import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 interface FantasyRound {
@@ -75,6 +76,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [starTeamId, setStarTeamId] = useState<string | null>(null);
   const [showNoStarModal, setShowNoStarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
   const { setStarTeam } = useRoundStar(round.id);
 
   // Salary cap
@@ -360,6 +362,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setSelectedTeams([...selectedTeams, team]);
   };
+
+  const handleTeamsUpdate = (teams: Team[]) => {
+    // Clear star if the starred team is no longer selected
+    if (starTeamId && !teams.find(t => t.id === starTeamId)) {
+      setStarTeamId(null);
+    }
+    setSelectedTeams(teams);
+  };
   const handleRemoveTeam = (indexOrId: number | string) => {
     let removedTeam: Team;
     let newSelectedTeams: Team[];
@@ -526,272 +536,57 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         onToggleStar={handleToggleStar}
       />
 
-      {/* Team Selection Tabs */}
-      <Tabs defaultValue="pro" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="pro">Pro Teams ({proTeams.length})</TabsTrigger>
-          <TabsTrigger value="amateur">Amateur Teams ({amateurTeams.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pro" className="space-y-4">
-          {proTeams.length === 0 ? <Card>
-              <CardContent className="text-center py-8">
-                <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No pro teams available for this round period</p>
-              </CardContent>
-            </Card> : <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Select Pro Team</h3>
-                <p className="text-sm text-muted-foreground">Choose teams scheduled to play in this period</p>
-              </div>
-              
-              <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between overflow-x-auto md:overflow-visible px-2">
-                <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-                  <Input placeholder="Search teams..." value={proSearch} onChange={e => setProSearch(e.target.value)} className="w-full md:w-64 text-white placeholder:text-white/60" />
-                  <Select value={selectedGamePro} onValueChange={setSelectedGamePro}>
-                    <SelectTrigger className="w-[160px] rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
-                      <SelectValue placeholder="Game" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                      <SelectItem value="all" className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">All games</SelectItem>
-                      {proGames.map(g => <SelectItem key={g} value={g as string} className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
-                          {(g as string)?.toUpperCase()}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-white">Min matches</Label>
-                    <Slider min={0} max={10} step={1} value={[minMatchesPro]} onValueChange={v => setMinMatchesPro(v[0] ?? 0)} className="w-40" />
-                    <span className="text-sm text-white/80 w-10 text-right">{minMatchesPro}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="pro-logo" checked={hasLogoOnlyPro} onCheckedChange={c => setHasLogoOnlyPro(Boolean(c))} />
-                    <Label htmlFor="pro-logo" className="text-white">With logo</Label>
-                  </div>
-                </div>
-                <div className="text-sm text-white/80">Showing {filteredProTeams.length} of {proTeams.length}</div>
-              </div>
-
-              <Select onValueChange={teamId => {
-            const team = filteredProTeams.find(t => t.id === teamId);
-            if (team) handleTeamSelect(team);
-          }}>
-                <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
-                  <SelectValue placeholder="Select a pro team..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                  {filteredProTeams.map(team => <SelectItem key={team.id} value={team.id} aria-label={team.name} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none" disabled={!!selectedTeams.find(t => t.id === team.id) || typeof team.price === 'number' && team.price > budgetRemaining}>
-                      <div className="flex items-center gap-3 w-full">
-                        {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />}
-                        <div className="flex-1 min-w-0">
-                            <div className="font-medium text-white truncate flex items-center gap-2">
-                              <span className="truncate">{team.name}</span>
-                              {typeof team.price === 'number' && <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>}
-                            </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {team.esport_type?.toUpperCase()}
-                            </Badge>
-                            <Badge variant="default" className="text-xs">
-                              Pro
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {team.matches_in_period} matches
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
-
-              {/* Selected Pro Teams Display */}
-              {selectedTeams.filter(t => t.type === 'pro').length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm text-white">Selected Pro Teams:</h4>
-                  <div className="grid gap-3">
-                    {selectedTeams
-                      .filter(t => t.type === 'pro')
-                      .map(team => (
-                        <TeamCard
-                          key={team.id}
-                          team={team}
-                          isSelected={true}
-                          onClick={() => handleRemoveTeam(team.id)}
-                          variant="selection"
-                          showStarToggle={true}
-                          isStarred={starTeamId === team.id}
-                          onToggleStar={() => handleToggleStar(team.id)}
-                          showPrice={true}
-                          budgetRemaining={budgetRemaining}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>}
-        </TabsContent>
-
-        <TabsContent value="amateur" className="space-y-4">
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
-              <div>
-                <p className="font-medium text-orange-800">Amateur Team Notice</p>
-                <p className="text-sm text-orange-700">
-                  Amateur teams earn 25% bonus points but match activity varies. Teams with fewer matches may reduce your total score.
-                </p>
+      {/* Team Selection Button */}
+      <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Select Your Teams</h3>
+              <p className="text-gray-400 text-sm">Choose up to 5 teams across pro and amateur categories</p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-gray-400">Available Teams</div>
+              <div className="text-lg font-medium text-white">
+                {proTeams.length + amateurTeams.length} total
               </div>
             </div>
           </div>
+          
+          <Button 
+            onClick={() => setShowTeamSelectionSheet(true)}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-medium py-3"
+            size="lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            {selectedTeams.length === 0 ? 'Select Teams' : `Manage Teams (${selectedTeams.length}/5)`}
+          </Button>
+        </CardContent>
+      </Card>
 
-          {amateurTeams.length === 0 ? <Card>
-              <CardContent className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No amateur teams available for this round period</p>
-              </CardContent>
-            </Card> : <div className="space-y-4">
-              <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between overflow-x-auto md:overflow-visible px-2">
-                <h3 className="font-semibold">Select Amateur Team</h3>
-                <p className="text-sm text-muted-foreground">Choose amateur teams to add to your lineup</p>
-              </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-                  <Input placeholder="Search teams..." value={amSearch} onChange={e => setAmSearch(e.target.value)} className="w-full md:w-64 text-white placeholder:text-white/60" />
-                  <Select value={selectedGameAm} onValueChange={setSelectedGameAm}>
-                    <SelectTrigger className="w-[160px] rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
-                      <SelectValue placeholder="Game" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                      <SelectItem value="all" className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">All games</SelectItem>
-                       {amateurGames.map(g => <SelectItem key={g} value={g as string} className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
-                           {(g as string)?.toUpperCase()}
-                         </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-white">Min matches</Label>
-                    <Slider min={0} max={20} step={1} value={[minMatchesPrev]} onValueChange={v => setMinMatchesPrev(v[0] ?? 0)} className="w-40" />
-                    <span className="text-sm text-white/80 w-10 text-right">{minMatchesPrev}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-white">Max missed %</Label>
-                    <Slider min={0} max={100} step={5} value={[maxMissedPct]} onValueChange={v => setMaxMissedPct(v[0] ?? 100)} className="w-40" />
-                    <span className="text-sm text-white/80 w-12 text-right">{maxMissedPct}%</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="am-logo" checked={hasLogoOnlyAm} onCheckedChange={c => setHasLogoOnlyAm(Boolean(c))} />
-                    <Label htmlFor="am-logo" className="text-white">With logo</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="am-hasprev" checked={hasPrevMatchesOnlyAm} onCheckedChange={c => setHasPrevMatchesOnlyAm(Boolean(c))} />
-                    <Label htmlFor="am-hasprev" className="text-white">Has matches last window</Label>
-                  </div>
-                </div>
-                <div className="text-sm text-white/80">Showing {filteredAmateurTeams.length} of {amateurTeams.length}</div>
-              </div>
-
-              {/* Amateur dropdown selection */}
-              <Select onValueChange={teamId => {
-            const team = filteredAmateurTeams.find(t => t.id === teamId);
-            if (team) handleTeamSelect(team);
-          }}>
-                <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
-                  <SelectValue placeholder="Select an amateur team..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                  {filteredAmateurTeams.map(team => <SelectItem key={team.id} value={team.id} aria-label={team.name} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none" disabled={!!selectedTeams.find(t => t.id === team.id) || typeof team.price === 'number' && team.price > budgetRemaining}>
-                      <div className="flex items-center gap-3 w-full">
-                        {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />}
-                        <div className="flex-1 min-w-0">
-                            <div className="font-medium text-white truncate flex items-center gap-2">
-                              <span className="truncate">{team.name}</span>
-                              {typeof team.price === 'number' && <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>}
-                            </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {team.esport_type?.toUpperCase()}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              Amateur
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {team.matches_prev_window ?? 0} matches
-                            </Badge>
-                            {typeof team.missed_pct === 'number' && <Badge variant="outline" className="text-xs">
-                                {team.missed_pct}% missed
-                              </Badge>}
-                          </div>
-                        </div>
-                      </div>
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
-
-              {/* Selected Amateur Teams Display */}
-              {selectedTeams.filter(t => t.type === 'amateur').length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm text-white">Selected Amateur Teams:</h4>
-                  <div className="grid gap-3">
-                    {selectedTeams
-                      .filter(t => t.type === 'amateur')
-                      .map(team => (
-                        <TeamCard
-                          key={team.id}
-                          team={team}
-                          isSelected={true}
-                          onClick={() => handleRemoveTeam(team.id)}
-                          variant="selection"
-                          showStarToggle={true}
-                          isStarred={starTeamId === team.id}
-                          onToggleStar={() => handleToggleStar(team.id)}
-                          showPrice={true}
-                          budgetRemaining={budgetRemaining}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold">Bench Team (Optional)</h3>
-                  <p className="text-sm text-muted-foreground">Used if main team doesn't play</p>
-                </div>
-
-                <Select value={benchTeam?.id ?? "__none__"} onValueChange={teamId => {
-              if (teamId === "__none__") {
-                setBenchTeam(null);
-                return;
-              }
-              const team = filteredAmateurTeams.find(t => t.id === teamId);
-              if (team) handleBenchSelect(team);
-            }}>
-                  <SelectTrigger className="w-full rounded-xl bg-theme-gray-dark text-white border border-theme-gray-medium hover:bg-theme-purple/20 hover:border-theme-purple">
-                    <SelectValue placeholder="Select an amateur bench team..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] z-50 bg-theme-gray-dark text-white border border-theme-gray-medium">
-                    <SelectItem value="__none__" className="text-white text-sm md:text-base hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">None</SelectItem>
-                    {filteredAmateurTeams.map(team => <SelectItem key={`bench-${team.id}`} value={team.id} className="text-white hover:bg-theme-purple/10 focus:bg-theme-purple/20 data-[state=checked]:bg-theme-purple/20 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-theme-purple outline-none">
-                        <div className="flex items-center gap-3 w-full">
-                          {team.logo_url && <img src={team.logo_url} alt={team.name} className="w-6 h-6 rounded flex-shrink-0" />}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-white truncate flex items-center gap-2"><span className="truncate">{team.name}</span>{typeof team.price === 'number' && <span className="text-xs opacity-80">— {formatMillions(team.price)}</span>}</div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {team.esport_type?.toUpperCase()}
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs">Amateur</Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>}
-        </TabsContent>
-      </Tabs>
+      {/* Selected Teams Display */}
+      {selectedTeams.length > 0 && (
+        <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Your Selected Teams ({selectedTeams.length}/5)</h3>
+            <div className="grid gap-3">
+              {selectedTeams.map(team => (
+                <TeamCard
+                  key={team.id}
+                  team={team}
+                  isSelected={true}
+                  onClick={() => handleRemoveTeam(team.id)}
+                  variant="selection"
+                  showStarToggle={true}
+                  isStarred={starTeamId === team.id}
+                  onToggleStar={() => handleToggleStar(team.id)}
+                  showPrice={true}
+                  budgetRemaining={budgetRemaining}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Star Team Summary */}
       {selectedTeams.length > 0 && (
@@ -881,5 +676,17 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       />
 
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
+      
+      {/* Multi Team Selection Sheet */}
+      <MultiTeamSelectionSheet
+        isOpen={showTeamSelectionSheet}
+        onClose={() => setShowTeamSelectionSheet(false)}
+        proTeams={proTeams}
+        amateurTeams={amateurTeams}
+        selectedTeams={selectedTeams}
+        onTeamsUpdate={handleTeamsUpdate}
+        budgetRemaining={budgetRemaining}
+        totalBudget={SALARY_CAP}
+      />
     </div>;
 };
