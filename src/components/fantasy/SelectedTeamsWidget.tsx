@@ -239,27 +239,11 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           </div>
         </div>
 
-        {/* Desktop: 3+2 layout over two rows with larger cards */}
-        <div className="hidden md:block md:space-y-4">
-          {/* First row - 3 cards */}
-          <div className="grid grid-cols-3 gap-6">
-            {slots.slice(0, 3).map((team, index) => (
-              <div key={index} className="aspect-square scale-150 origin-center">
-                {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
-              </div>
-            ))}
-          </div>
-          
-          {/* Second row - 2 cards centered */}
-          <div className="grid grid-cols-4 gap-6">
-            <div></div> {/* Empty space for centering */}
-            {slots.slice(3, 5).map((team, index) => (
-              <div key={index + 3} className="aspect-square scale-150 origin-center">
-                {team ? <TeamCard team={team} index={index + 3} onRemove={() => onRemoveTeam?.(index + 3)} /> : <PlaceholderCard index={index + 3} onClick={() => handleSlotClick(index + 3)} />}
-              </div>
-            ))}
-            <div></div> {/* Empty space for centering */}
-          </div>
+        {/* Desktop: All 5 cards in one row */}
+        <div className="hidden md:grid md:grid-cols-5 md:gap-4">
+          {slots.map((team, index) => <div key={index} className="aspect-square">
+              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
+            </div>)}
         </div>
       </div>
 
