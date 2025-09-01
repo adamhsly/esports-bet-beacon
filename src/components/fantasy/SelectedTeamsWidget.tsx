@@ -25,6 +25,7 @@ interface SelectedTeamsWidgetProps {
   onTeamSelect?: (team: Team) => void;
   starTeamId?: string | null;
   onToggleStar?: (teamId: string) => void;
+  onOpenMultiTeamSelector?: () => void;
 }
 const TeamCard: React.FC<{
   team: Team;
@@ -159,13 +160,16 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   amateurTeams = [],
   onTeamSelect,
   starTeamId = null,
-  onToggleStar
+  onToggleStar,
+  onOpenMultiTeamSelector
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
 
   const handleSlotClick = (index: number) => {
-    if (onTeamSelect && (proTeams.length > 0 || amateurTeams.length > 0)) {
+    if (onOpenMultiTeamSelector) {
+      onOpenMultiTeamSelector();
+    } else if (onTeamSelect && (proTeams.length > 0 || amateurTeams.length > 0)) {
       setSelectedSlotIndex(index);
       setModalOpen(true);
     }
