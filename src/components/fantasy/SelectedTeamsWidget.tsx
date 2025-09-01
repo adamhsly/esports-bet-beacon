@@ -44,67 +44,67 @@ const TeamCard: React.FC<{
   return <div className={`relative rounded-xl w-full aspect-square ${neonBorder} ${glowEffect} transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-pulse-glow`} style={{
     animation: 'pulse-glow 3s ease-in-out infinite alternate'
   }}>
-      <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-3 h-full flex flex-col overflow-hidden" style={{
+      <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900 via-black to-gray-900 p-2 h-full flex flex-col overflow-hidden" style={{
       background: `linear-gradient(135deg, 
             ${isAmateur ? 'rgba(15,15,15,0.95) 0%, rgba(30,15,15,0.9) 30%, rgba(45,20,10,0.95) 100%' : 'rgba(15,15,15,0.95) 0%, rgba(15,15,30,0.9) 30%, rgba(20,10,45,0.95) 100%'})`,
       backdropFilter: 'blur(10px)'
     }}>
         {/* Animated background particles */}
         <div className="absolute inset-0 opacity-20">
-          <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${isAmateur ? 'bg-orange-400' : 'bg-purple-400'} animate-ping`}></div>
-          <div className={`absolute bottom-4 left-4 w-1 h-1 rounded-full ${isAmateur ? 'bg-red-400' : 'bg-blue-400'} animate-ping delay-300`}></div>
+          <div className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${isAmateur ? 'bg-orange-400' : 'bg-purple-400'} animate-ping`}></div>
+          <div className={`absolute bottom-3 left-3 w-0.5 h-0.5 rounded-full ${isAmateur ? 'bg-red-400' : 'bg-blue-400'} animate-ping delay-300`}></div>
         </div>
 
         {/* Very Prominent Team Logo */}
-        <div className="flex justify-center mb-2 relative z-10">
-          {team.logo_url ? <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30'} border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'} shadow-lg`}>
-              <img src={team.logo_url} alt={team.name} className="w-12 h-12 object-contain filter drop-shadow-xl" />
-            </div> : <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30 border-orange-400/50' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30 border-purple-400/50'} border shadow-lg`}>
-              {isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-purple-400" />}
+        <div className="flex justify-center mb-1 relative z-10">
+          {team.logo_url ? <div className={`relative p-1 rounded-md ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30'} border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'} shadow-lg`}>
+              <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain filter drop-shadow-xl" />
+            </div> : <div className={`w-10 h-10 rounded-md flex items-center justify-center ${isAmateur ? 'bg-gradient-to-br from-orange-500/30 to-red-500/30 border-orange-400/50' : 'bg-gradient-to-br from-purple-500/30 to-blue-500/30 border-purple-400/50'} border shadow-lg`}>
+              {isAmateur ? <Users className="w-5 h-5 text-orange-400" /> : <Trophy className="w-5 h-5 text-purple-400" />}
             </div>}
         </div>
 
-        {/* Team Name - Larger than other data */}
-        <h3 className={`font-bold text-sm text-center mb-2 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
+        {/* Team Name - Reduced size */}
+        <h3 className={`font-bold text-xs text-center mb-1 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
           {team.name.toUpperCase()}
         </h3>
 
         {/* Compact Stats Grid */}
-        <div className="space-y-1.5 flex-grow relative z-10">
-          <div className="grid grid-cols-2 gap-1.5 text-center">
+        <div className="space-y-1 flex-grow relative z-10">
+          <div className="grid grid-cols-2 gap-1 text-center">
             <div>
-              <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">CREDITS</div>
-              <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+              <div className="text-orange-400 font-bold text-[8px] mb-0.5 tracking-wide">CREDITS</div>
+              <div className={`font-bold text-xs ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
                 {team.price || 0}
               </div>
             </div>
             <div>
-              <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">MATCHES</div>
-              <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
+              <div className="text-orange-400 font-bold text-[8px] mb-0.5 tracking-wide">MATCHES</div>
+              <div className={`font-bold text-xs ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
                 {team.type === 'pro' ? team.matches_in_period || 0 : team.matches_prev_window || 0}
               </div>
             </div>
           </div>
           
           <div className="text-center">
-            <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">TYPE</div>
-            <div className={`font-bold text-xs tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
+            <div className="text-orange-400 font-bold text-[8px] mb-0.5 tracking-wide">TYPE</div>
+            <div className={`font-bold text-[10px] tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
               {isAmateur ? 'AMATEUR' : 'PRO'}
             </div>
           </div>
         </div>
 
         {/* Amateur Bonus Badge - Top Left */}
-        {isAmateur && <div className="absolute top-1 left-1 z-20">
-            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1 border border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] animate-pulse">
+        {isAmateur && <div className="absolute top-0.5 left-0.5 z-20">
+            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[8px] px-1 py-0.5 border border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] animate-pulse">
               +25%
             </Badge>
           </div>}
 
         {/* Remove Button - Top Right */}
-        <div className="absolute top-1 right-1 z-20">
-          <button onClick={onRemove} className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 ${isAmateur ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-[0_0_10px_rgba(147,51,234,0.5)]'} border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'}`}>
-            <X className="w-3 h-3 text-white" />
+        <div className="absolute top-0.5 right-0.5 z-20">
+          <button onClick={onRemove} className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 ${isAmateur ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-[0_0_10px_rgba(147,51,234,0.5)]'} border ${isAmateur ? 'border-orange-400/50' : 'border-purple-400/50'}`}>
+            <X className="w-2.5 h-2.5 text-white" />
           </button>
         </div>
       </div>
@@ -239,27 +239,20 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           </div>
         </div>
 
-        {/* Tablet/Desktop: 2+2+1 layout over three rows with 30% larger cards */}
-        <div className="hidden md:block space-y-4 max-w-4xl mx-auto">
-          {/* First row - 2 cards */}
-          <div className="grid grid-cols-2 gap-4 justify-center">
-            {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
+        {/* Tablet/Desktop: 3+2 layout over two rows */}
+        <div className="hidden md:block space-y-4 max-w-5xl mx-auto">
+          {/* First row - 3 cards */}
+          <div className="grid grid-cols-3 gap-4 justify-center">
+            {slots.slice(0, 3).map((team, index) => <div key={index} className="aspect-square mx-auto" style={{ width: '140px' }}>
                 {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
               </div>)}
           </div>
           
-          {/* Second row - 2 cards */}
-          <div className="grid grid-cols-2 gap-4 justify-center">
-            {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
-                {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
+          {/* Second row - 2 cards centered */}
+          <div className="grid grid-cols-2 gap-4 justify-center max-w-xs mx-auto">
+            {slots.slice(3, 5).map((team, index) => <div key={index + 3} className="aspect-square mx-auto" style={{ width: '140px' }}>
+                {team ? <TeamCard team={team} index={index + 3} onRemove={() => onRemoveTeam?.(index + 3)} /> : <PlaceholderCard index={index + 3} onClick={() => handleSlotClick(index + 3)} />}
               </div>)}
-          </div>
-          
-          {/* Third row - 1 card centered */}
-          <div className="flex justify-center">
-            <div className="aspect-square scale-130" style={{ width: '160px' }}>
-              {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
-            </div>
           </div>
         </div>
       </div>
