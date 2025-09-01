@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { PlayerDetailsModal } from '@/components/PlayerDetailsModal';
 interface PandaScorePlayerRosterProps {
   teams: Array<{
@@ -76,152 +77,201 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
     }
   });
 
-  // Game-specific position colors
-  const getPositionColor = (position: string, game: string) => {
-    const colorMaps = {
-      'dota2': {
-        'Carry': 'bg-red-500/20 text-red-400 border-red-400/30',
-        'Mid': 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30',
-        'Offlaner': 'bg-orange-500/20 text-orange-400 border-orange-400/30',
-        'Support': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
-        'Hard Support': 'bg-purple-500/20 text-purple-400 border-purple-400/30',
-        'Core': 'bg-green-500/20 text-green-400 border-green-400/30'
-      },
-      'csgo': {
-        'AWPer': 'bg-red-500/20 text-red-400 border-red-400/30',
-        'IGL': 'bg-purple-500/20 text-purple-400 border-purple-400/30',
-        'Entry Fragger': 'bg-orange-500/20 text-orange-400 border-orange-400/30',
-        'Support': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
-        'Lurker': 'bg-green-500/20 text-green-400 border-green-400/30',
-        'Rifler': 'bg-gray-500/20 text-gray-400 border-gray-400/30'
-      },
-      'lol': {
-        'Top': 'bg-red-500/20 text-red-400 border-red-400/30',
-        'Jungle': 'bg-green-500/20 text-green-400 border-green-400/30',
-        'Mid': 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30',
-        'ADC': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
-        'Support': 'bg-purple-500/20 text-purple-400 border-purple-400/30'
-      },
-      'valorant': {
-        'Duelist': 'bg-red-500/20 text-red-400 border-red-400/30',
-        'Controller': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
-        'Initiator': 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30',
-        'Sentinel': 'bg-green-500/20 text-green-400 border-green-400/30',
-        'Flex': 'bg-purple-500/20 text-purple-400 border-purple-400/30'
-      },
-      'ow': {
-        'Tank': 'bg-blue-500/20 text-blue-400 border-blue-400/30',
-        'DPS': 'bg-red-500/20 text-red-400 border-red-400/30',
-        'Support': 'bg-green-500/20 text-green-400 border-green-400/30',
-        'Flex': 'bg-purple-500/20 text-purple-400 border-purple-400/30'
-      }
-    };
-    const gameColors = colorMaps[game] || colorMaps['csgo'];
-    return gameColors[position] || 'bg-gray-500/20 text-gray-400 border-gray-400/30';
-  };
-  const PlayerCard = ({
-    player,
-    teamName
-  }: {
-    player: any;
-    teamName: string;
-  }) => {
+  const renderPlayerRow = (player: any, index: number) => {
+    const playerName = player.nickname || 'Unknown Player';
+    const playerCountry = player.nationality || 'Unknown';
+    const playerImage = player.image_url || '/placeholder.svg';
     const code = (player.nationality || '').toLowerCase();
     const flagUrl = code ? `https://flagcdn.com/24x18/${code}.png` : null;
-    return <Card className="bg-theme-gray-medium/60 border border-theme-gray-light p-5 rounded-lg hover:shadow-lg transition-shadow duration-300">
-      <div className="flex items-center gap-4">
-        {/* Player image */}
-        <img src={player.image_url || '/placeholder.svg'} alt={player.nickname} className="w-16 h-16 rounded-full object-cover border-2 border-theme-gray-light" onError={e => {
-          (e.target as HTMLImageElement).src = '/placeholder.svg';
-        }} />
-
-        {/* Player info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
-            <button onClick={() => handlePlayerClick(player.player_id)} className="truncate text-left text-white text-lg font-semibold hover:text-blue-400 transition-colors" title={`View details for ${player.nickname}`}>
-              {player.nickname || 'Unknown Player'}
-            </button>
-            {flagUrl && <img src={flagUrl} alt={`Flag of ${player.nationality}`} className="h-4 w-6 rounded-sm border border-theme-gray-light" loading="lazy" onError={e => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }} />}
-            {player.role && player.role.trim() !== '' && <Badge variant="outline" className="text-xs bg-accent/20 text-accent-foreground border-accent/40">
-                {player.role}
-              </Badge>}
+    
+    return (
+      <TableRow key={`${player.player_id || index}`} className="cursor-pointer hover:bg-theme-gray-medium/20" onClick={() => handlePlayerClick(player.player_id)}>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <img 
+              src={playerImage}
+              alt={playerName} 
+              className="w-8 h-8 rounded-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+            <div>
+              <div className="font-medium text-white">{playerName}</div>
+            </div>
           </div>
-
-          
-
-          
-        </div>
-      </div>
-    </Card>;
+        </TableCell>
+        <TableCell>
+          {player.position || player.role ? (
+            <Badge variant="outline" className="text-xs">
+              {player.position || player.role}
+            </Badge>
+          ) : (
+            'N/A'
+          )}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            {flagUrl && (
+              <img 
+                src={flagUrl} 
+                alt={`Flag of ${player.nationality}`} 
+                className="h-4 w-6 rounded-sm border border-theme-gray-light" 
+                loading="lazy" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }} 
+              />
+            )}
+            <span>{playerCountry}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge variant="outline" className="text-xs">
+            {esportType.toUpperCase()}
+          </Badge>
+        </TableCell>
+      </TableRow>
+    );
   };
-  const RosterStatus = ({
-    teamName,
-    playerCount
-  }: {
-    teamName: string;
-    playerCount: number;
-  }) => <div className="flex items-center gap-2 text-sm mb-2">
-      {playerCount > 0 ? <>
+
+  const renderNoDataMessage = (teamName: string, hasOtherTeamData: boolean) => (
+    <div className="text-center py-4 text-gray-400 bg-theme-gray-medium/20 rounded-lg">
+      <AlertCircle className="h-5 w-5 mx-auto mb-2 text-gray-500" />
+      <p>No player data available for {teamName}</p>
+      {hasOtherTeamData && (
+        <p className="text-xs text-gray-500 mt-1">Player data may not be available for all teams</p>
+      )}
+    </div>
+  );
+
+  const renderDataStatus = (teamName: string, playerCount: number) => (
+    <div className="flex items-center gap-2 text-sm">
+      {playerCount > 0 ? (
+        <>
           <CheckCircle className="h-4 w-4 text-green-500" />
           <span className="text-green-400">{playerCount} players loaded</span>
-        </> : <>
-          <AlertCircle className="h-4 w-4 text-yellow-500" />
-          <span className="text-yellow-400">No roster data available</span>
-        </>}
-    </div>;
-  return <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
-          <div className="flex items-center space-x-3 mb-4">
-            <img src={team1.logo || '/placeholder.svg'} alt={team1.name} className="w-8 h-8 object-contain rounded" onError={e => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }} />
-            <h3 className="text-xl font-bold text-white">{team1.name}</h3>
-            <Badge variant="outline" className="text-xs">
-              {esportType.toUpperCase()}
-            </Badge>
-          </div>
-          
-          <RosterStatus teamName={team1.name} playerCount={team1Players.length} />
-          
-          <div className="space-y-3">
-            {team1Players.length > 0 ? team1Players.map((player, index) => <PlayerCard key={`${player.player_id || index}`} player={player} teamName={team1.name} />) : <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
-                <div className="text-center text-gray-400">
-                  <AlertCircle className="h-5 w-5 mx-auto mb-2" />
-                  <p>No roster data available for {team1.name}</p>
-                  <p className="text-xs mt-1">Tournament roster data may not be synced yet</p>
-                </div>
-              </Card>}
-          </div>
-        </div>
+        </>
+      ) : (
+        <>
+          <XCircle className="h-4 w-4 text-red-500" />
+          <span className="text-red-400">No player data</span>
+        </>
+      )}
+    </div>
+  );
 
-        <div>
-          <div className="flex items-center space-x-3 mb-4">
-            <img src={team2.logo || '/placeholder.svg'} alt={team2.name} className="w-8 h-8 object-contain rounded" onError={e => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }} />
-            <h3 className="text-xl font-bold text-white">{team2.name}</h3>
+  const hasTeam1Data = (team1Players?.length || 0) > 0;
+  const hasTeam2Data = (team2Players?.length || 0) > 0;
+  const hasAnyData = hasTeam1Data || hasTeam2Data;
+
+  return (
+    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden mb-8">
+      <div className="p-4 border-b border-theme-gray-medium">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white flex items-center">
+            <Users className="h-5 w-5 mr-2 text-theme-purple" />
+            Team Rosters
+          </h2>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-400">
+              Data: {hasTeam1Data ? 1 : 0} + {hasTeam2Data ? 1 : 0} / 2 teams
+            </div>
             <Badge variant="outline" className="text-xs">
               {esportType.toUpperCase()}
             </Badge>
-          </div>
-          
-          <RosterStatus teamName={team2.name} playerCount={team2Players.length} />
-          
-          <div className="space-y-3">
-            {team2Players.length > 0 ? team2Players.map((player, index) => <PlayerCard key={`${player.player_id || index}`} player={player} teamName={team2.name} />) : <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
-                <div className="text-center text-gray-400">
-                  <AlertCircle className="h-5 w-5 mx-auto mb-2" />
-                  <p>No roster data available for {team2.name}</p>
-                  <p className="text-xs mt-1">Tournament roster data may not be synced yet</p>
-                </div>
-              </Card>}
           </div>
         </div>
       </div>
       
-      <PlayerDetailsModal isOpen={isPlayerModalOpen} onClose={() => setIsPlayerModalOpen(false)} playerId={selectedPlayerId} esportType={esportType} />
-    </div>;
+      <div className="p-4">
+        {/* Team 1 Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <img 
+                src={team1.logo || '/placeholder.svg'} 
+                alt={team1.name} 
+                className="w-6 h-6 object-contain rounded" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }} 
+              />
+              <h3 className="text-md font-medium text-white">{team1.name}</h3>
+            </div>
+            {renderDataStatus(team1.name, team1Players?.length || 0)}
+          </div>
+          {hasTeam1Data ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-400">Player</TableHead>
+                  <TableHead className="text-gray-400">Position/Role</TableHead>
+                  <TableHead className="text-gray-400">Country</TableHead>
+                  <TableHead className="text-gray-400">Game</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {team1Players.map(renderPlayerRow)}
+              </TableBody>
+            </Table>
+          ) : (
+            renderNoDataMessage(team1.name, hasTeam2Data)
+          )}
+        </div>
+        
+        {/* Team 2 Section */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <img 
+                src={team2.logo || '/placeholder.svg'} 
+                alt={team2.name} 
+                className="w-6 h-6 object-contain rounded" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }} 
+              />
+              <h3 className="text-md font-medium text-white">{team2.name}</h3>
+            </div>
+            {renderDataStatus(team2.name, team2Players?.length || 0)}
+          </div>
+          {hasTeam2Data ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-400">Player</TableHead>
+                  <TableHead className="text-gray-400">Position/Role</TableHead>
+                  <TableHead className="text-gray-400">Country</TableHead>
+                  <TableHead className="text-gray-400">Game</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {team2Players.map(renderPlayerRow)}
+              </TableBody>
+            </Table>
+          ) : (
+            renderNoDataMessage(team2.name, hasTeam1Data)
+          )}
+        </div>
+        
+        {/* Show loading message only if no data at all */}
+        {!hasAnyData && (
+          <div className="text-center py-8 text-gray-400 bg-theme-gray-medium/10 rounded-lg">
+            <AlertCircle className="h-6 w-6 mx-auto mb-2 text-yellow-500" />
+            <p className="font-medium">No player roster information available</p>
+            <p className="text-sm mt-1">Player data may not be available for this match</p>
+            <p className="text-xs mt-2 text-yellow-400">Check console logs for detailed debugging information</p>
+          </div>
+        )}
+      </div>
+      
+      <PlayerDetailsModal 
+        isOpen={isPlayerModalOpen} 
+        onClose={() => setIsPlayerModalOpen(false)} 
+        playerId={selectedPlayerId} 
+        esportType={esportType} 
+      />
+    </Card>
+  );
 };
