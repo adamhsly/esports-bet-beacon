@@ -85,13 +85,6 @@ const TeamCard: React.FC<{
               </div>
             </div>
           </div>
-          
-          <div className="text-center">
-            <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">TYPE</div>
-            <div className={`font-bold text-xs tracking-wide ${isAmateur ? 'text-red-300' : 'text-blue-300'} drop-shadow-lg`}>
-              {isAmateur ? 'AMATEUR' : 'PRO'}
-            </div>
-          </div>
         </div>
 
         {/* Amateur Bonus Badge - Top Left */}
@@ -239,27 +232,20 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           </div>
         </div>
 
-        {/* Tablet/Desktop: 2+2+1 layout over three rows with 30% larger cards */}
-        <div className="hidden md:block space-y-4 max-w-4xl mx-auto">
-          {/* First row - 2 cards */}
-          <div className="grid grid-cols-2 gap-4 justify-center">
-            {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
+        {/* Tablet/Desktop: 3+2 layout over two rows with 30% larger cards */}
+        <div className="hidden md:block space-y-4 max-w-5xl mx-auto">
+          {/* First row - 3 cards */}
+          <div className="grid grid-cols-3 gap-4 justify-center">
+            {slots.slice(0, 3).map((team, index) => <div key={index} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
                 {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
               </div>)}
           </div>
           
-          {/* Second row - 2 cards */}
-          <div className="grid grid-cols-2 gap-4 justify-center">
-            {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
-                {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
+          {/* Second row - 2 cards centered */}
+          <div className="grid grid-cols-2 gap-4 justify-center max-w-xl mx-auto">
+            {slots.slice(3, 5).map((team, index) => <div key={index + 3} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
+                {team ? <TeamCard team={team} index={index + 3} onRemove={() => onRemoveTeam?.(index + 3)} /> : <PlaceholderCard index={index + 3} onClick={() => handleSlotClick(index + 3)} />}
               </div>)}
-          </div>
-          
-          {/* Third row - 1 card centered */}
-          <div className="flex justify-center">
-            <div className="aspect-square scale-130" style={{ width: '160px' }}>
-              {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
-            </div>
           </div>
         </div>
       </div>
