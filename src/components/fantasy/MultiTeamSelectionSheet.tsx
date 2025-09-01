@@ -327,21 +327,56 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
           </Tabs>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="border-t border-gray-700/50 pt-6 mt-6 space-y-3">
+        {/* Selected Teams Summary - Fixed at bottom */}
+        {tempSelectedTeams.length > 0 && (
+          <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-gray-700/50 p-4 mt-6">
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-300">Selected Teams ({tempSelectedTeams.length}/5)</h4>
+              <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
+                {tempSelectedTeams.map(team => (
+                  <Badge 
+                    key={team.id} 
+                    variant="secondary" 
+                    className="flex items-center gap-2 bg-gray-800/50 text-gray-300 border-gray-600/50 px-3 py-1"
+                  >
+                    <span className="truncate max-w-24">{team.name}</span>
+                    <span className="text-xs text-green-400">{team.price}c</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveSelectedTeam(team.id)}
+                      className="p-0 h-4 w-4 hover:bg-red-500/20"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Actions - Always sticky */}
+        <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-gray-700/50 pt-6 mt-6 space-y-3">
           <div className="flex gap-3">
-            <Button variant="outline" onClick={handleCancel} className="flex-1">
+            <Button variant="outline" onClick={handleCancel} className="flex-1 border-gray-600/50 text-gray-300 hover:bg-gray-800/50">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={!canSubmit} className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400">
+            <Button 
+              onClick={handleSubmit} 
+              disabled={!canSubmit} 
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Confirm Selection ({tempSelectedTeams.length}/5)
             </Button>
           </div>
           
-          {!canSubmit && <div className="text-center text-red-400 text-sm">
+          {!canSubmit && (
+            <div className="text-center text-red-400 text-sm">
               {tempSelectedTeams.length > 5 && "Too many teams selected"}
               {tempBudgetSpent > totalBudget && "Budget exceeded"}
-            </div>}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>;
