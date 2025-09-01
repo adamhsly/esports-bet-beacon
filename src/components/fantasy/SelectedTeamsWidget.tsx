@@ -243,21 +243,21 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         <div className="hidden md:block space-y-4 max-w-4xl mx-auto">
           {/* First row - 2 cards */}
           <div className="grid grid-cols-2 gap-4 justify-center">
-            {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
+            {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square mx-auto" style={{ width: '168px', transform: 'scale(1.35)' }}>
                 {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
               </div>)}
           </div>
           
           {/* Second row - 2 cards */}
           <div className="grid grid-cols-2 gap-4 justify-center">
-            {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
+            {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square mx-auto" style={{ width: '168px', transform: 'scale(1.35)' }}>
                 {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
               </div>)}
           </div>
           
           {/* Third row - 1 card centered */}
           <div className="flex justify-center">
-            <div className="aspect-square scale-130" style={{ width: '160px' }}>
+            <div className="aspect-square" style={{ width: '168px', transform: 'scale(1.35)' }}>
               {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
             </div>
           </div>
