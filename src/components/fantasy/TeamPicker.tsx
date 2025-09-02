@@ -234,6 +234,18 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const amateurTeamData: Team[] = (allTeamsRes.data || []).map((t: any) => {
         const s = statsMap.get(t.team_id);
         const p = amPriceMap.get(t.team_id);
+        
+        // Debug logging for first few teams
+        if (Math.random() < 0.01) { // Log ~1% of teams to avoid spam
+          console.log('[TeamPicker] Amateur team debug:', {
+            teamId: t.team_id,
+            teamName: t.team_name,
+            priceData: p,
+            matchVolume: p?.match_volume,
+            finalMatchVolume: typeof p?.match_volume === 'number' ? p.match_volume : undefined
+          });
+        }
+        
         return {
           id: t.team_id,
           name: t.team_name,
