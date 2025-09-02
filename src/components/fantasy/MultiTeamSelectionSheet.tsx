@@ -72,14 +72,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Advanced filters state - Initialize with proper ranges
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
     pro: {
-      matches: [0, 100],
-      credits: [0, 1000],
-      winRate: [0, 100]
+      matches: 100,
+      credits: 1000,
+      winRate: 100
     },
     amateur: {
-      matches: [0, 100],
-      credits: [0, 1000],
-      abandonRate: [0, 100]
+      matches: 100,
+      credits: 1000,
+      abandonRate: 100
     }
   });
 
@@ -131,14 +131,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     if (proTeams.length > 0 || amateurTeams.length > 0) {
       setAdvancedFilters({
         pro: {
-          matches: [proRanges.matches.min, proRanges.matches.max],
-          credits: [proRanges.credits.min, proRanges.credits.max],
-          winRate: [proRanges.winRate.min, proRanges.winRate.max]
+          matches: proRanges.matches.max,
+          credits: proRanges.credits.max,
+          winRate: proRanges.winRate.max
         },
         amateur: {
-          matches: [amateurRanges.matches.min, amateurRanges.matches.max],
-          credits: [amateurRanges.credits.min, amateurRanges.credits.max],
-          abandonRate: [amateurRanges.abandonRate.min, amateurRanges.abandonRate.max]
+          matches: amateurRanges.matches.max,
+          credits: amateurRanges.credits.max,
+          abandonRate: amateurRanges.abandonRate.max
         }
       });
     }
