@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Share2, TrendingUp, Download, Copy, ExternalLink } from 'lucide-react';
+import { Share2, TrendingUp, Download, Copy, ExternalLink, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { renderShareCard } from '@/utils/shareCardRenderer';
 import { useMobile } from '@/hooks/useMobile';
@@ -102,6 +102,34 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     toast.success('Image saved!');
   };
 
+  const handleCopyImage = async () => {
+    if (!shareData) return;
+    
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const item = new ClipboardItem({ 'image/png': shareData.blob });
+        await navigator.clipboard.write([item]);
+        toast.success('Image copied to clipboard!');
+      } else {
+        // Fallback: save image instead
+        handleSaveImage();
+        toast.success('Image saved (clipboard not supported)');
+      }
+      
+      // Missions on successful copy
+      try {
+        const { MissionBus } = await import('@/lib/missionBus');
+        MissionBus.onShareLineup(roundId);
+        MissionBus.onShareThisWeek();
+      } catch (e) {
+        console.warn('Mission share tracking failed', e);
+      }
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      toast.error('Failed to copy image');
+    }
+  };
+
   const handleCopyLink = async () => {
     if (!shareData) return;
     
@@ -139,6 +167,18 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
         break;
       case 'whatsapp':
         url = `https://wa.me/?text=${encodeURIComponent(`${text} ${shareUrl}`)}`;
+        break;
+      case 'discord':
+        // Discord doesn't have a direct share URL, copy to clipboard with instructions
+        navigator.clipboard.writeText(`${text}\n${shareUrl}\n\nImage: ${shareData.publicUrl}`)
+          .then(() => toast.success('Discord share info copied! Paste in Discord.'))
+          .catch(() => toast.error('Failed to copy Discord share info'));
+        return;
+      case 'reddit':
+        url = `https://reddit.com/submit?title=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+        break;
+      case 'telegram':
+        url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
         break;
     }
     
@@ -194,21 +234,58 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
             Save Image
           </Button>
           
-          <Button onClick={handleCopyLink} variant="outline" className="h-12">
+          <Button onClick={handleCopyImage} variant="outline" className="h-12">
             <Copy className="w-4 h-4 mr-2" />
-            Copy Link
+            Copy Image
           </Button>
         </div>
         
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Quick Share:</p>
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-muted-foreground">Share to Platforms:</p>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              onClick={() => openSocialShare('discord')} 
+              variant="outline" 
+              size="sm"
+              className="h-10"
+            >
+              <MessageSquare className="w-3 h-3 mr-1" />
+              Discord
+            </Button>
+            
+            <Button 
+              onClick={() => openSocialShare('reddit')} 
+              variant="outline" 
+              size="sm"
+              className="h-10"
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              Reddit
+            </Button>
+            
+            <Button 
+              onClick={() => openSocialShare('telegram')} 
+              variant="outline" 
+              size="sm"
+              className="h-10"
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              Telegram
+            </Button>
+            
+            <Button onClick={handleCopyLink} variant="outline" size="sm" className="h-10">
+              <Copy className="w-3 h-3 mr-1" />
+              Copy Link
+            </Button>
+          </div>
           
           <div className="grid grid-cols-3 gap-2">
             <Button 
               onClick={() => openSocialShare('twitter')} 
               variant="outline" 
               size="sm"
-              className="h-10"
+              className="h-9"
             >
               <ExternalLink className="w-3 h-3 mr-1" />
               Twitter/X
@@ -218,7 +295,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
               onClick={() => openSocialShare('facebook')} 
               variant="outline" 
               size="sm"
-              className="h-10"
+              className="h-9"
             >
               <ExternalLink className="w-3 h-3 mr-1" />
               Facebook
@@ -228,7 +305,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
               onClick={() => openSocialShare('whatsapp')} 
               variant="outline" 
               size="sm"
-              className="h-10"
+              className="h-9"
             >
               <ExternalLink className="w-3 h-3 mr-1" />
               WhatsApp

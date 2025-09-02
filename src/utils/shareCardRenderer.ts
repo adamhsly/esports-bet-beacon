@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 interface ShareCardData {
   user: {
@@ -293,16 +294,16 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       <!-- Team Lineup -->
       <div style="position: absolute; left: 72px; top: 540px;">
         <!-- First Row (3 teams) -->
-        <div style="display: flex; gap: 72px; margin-bottom: 64px;">
+        <div style="display: flex; gap: 72px; margin-bottom: 64px; justify-content: center;">
           ${data.lineup.slice(0, 3).map((team, index) => 
-            renderTeamSlot(team, data.starTeamId === team.id, [72 + index * 336, 540])
+            renderTeamSlot(team, data.starTeamId === team.id)
           ).join('')}
         </div>
         
         <!-- Second Row (2 teams) -->
-        <div style="display: flex; gap: 336px;">
+        <div style="display: flex; gap: 168px; justify-content: center;">
           ${data.lineup.slice(3, 5).map((team, index) => 
-            renderTeamSlot(team, data.starTeamId === team.id, [240 + index * 336, 860])
+            renderTeamSlot(team, data.starTeamId === team.id)
           ).join('')}
         </div>
       </div>
@@ -324,8 +325,9 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
   `;
 }
 
-function renderTeamSlot(team: any, isStarred: boolean, position: [number, number]) {
+function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = team.type === 'pro' ? '#8B5CF6' : '#F97316';
+  const logoUrl = getEnhancedTeamLogoUrl(team);
   
   return `
     <div style="
@@ -375,23 +377,26 @@ function renderTeamSlot(team: any, isStarred: boolean, position: [number, number
       <div style="
         width: 120px;
         height: 120px;
-        background: ${team.logo_url ? `url('${team.logo_url}')` : 'rgba(255,255,255,0.3)'};
-        background-size: cover;
+        background: url('${logoUrl}');
+        background-size: contain;
+        background-repeat: no-repeat;
         background-position: center;
         border-radius: 12px;
       "></div>
       
       <!-- Team Name -->
       <div style="
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         color: #EAF2FF;
         text-align: center;
         max-width: 240px;
-        line-height: 1.2;
+        line-height: 1.3;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        padding: 0 8px;
       ">
         ${team.name}
       </div>
