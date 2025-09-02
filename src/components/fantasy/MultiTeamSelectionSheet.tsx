@@ -119,7 +119,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     return proTeams.filter(t => {
       const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
-      const matches = t.matches_in_period ?? 0;
+      const matches = t.match_volume ?? 0;
       const matchesMatch = matches >= minMatchesPro;
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
