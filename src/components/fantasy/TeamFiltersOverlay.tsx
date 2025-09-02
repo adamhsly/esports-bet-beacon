@@ -16,14 +16,14 @@ interface TeamFiltersOverlayProps {
 
 export interface FilterState {
   pro: {
-    matches: number[];
-    credits: number[];
-    winRate: number[];
+    matches: number;
+    credits: number;
+    winRate: number;
   };
   amateur: {
-    matches: number[];
-    credits: number[];
-    abandonRate: number[];
+    matches: number;
+    credits: number;
+    abandonRate: number;
   };
 }
 
@@ -64,14 +64,14 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
     if (isOpen && (proTeams.length > 0 || amateurTeams.length > 0)) {
       const dynamicFilters: FilterState = {
         pro: {
-          matches: [proRanges.matches.min, proRanges.matches.max],
-          credits: [proRanges.credits.min, proRanges.credits.max],
-          winRate: [proRanges.winRate.min, proRanges.winRate.max]
+          matches: proRanges.matches.max,
+          credits: proRanges.credits.max,
+          winRate: proRanges.winRate.max
         },
         amateur: {
-          matches: [amateurRanges.matches.min, amateurRanges.matches.max],
-          credits: [amateurRanges.credits.min, amateurRanges.credits.max],
-          abandonRate: [amateurRanges.abandonRate.min, amateurRanges.abandonRate.max]
+          matches: amateurRanges.matches.max,
+          credits: amateurRanges.credits.max,
+          abandonRate: amateurRanges.abandonRate.max
         }
       };
       setFilters(dynamicFilters);
@@ -93,14 +93,14 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
   const handleReset = () => {
     const resetFilters: FilterState = {
       pro: {
-        matches: [proRanges.matches.min, proRanges.matches.max],
-        credits: [proRanges.credits.min, proRanges.credits.max],
-        winRate: [proRanges.winRate.min, proRanges.winRate.max]
+        matches: proRanges.matches.max,
+        credits: proRanges.credits.max,
+        winRate: proRanges.winRate.max
       },
       amateur: {
-        matches: [amateurRanges.matches.min, amateurRanges.matches.max],
-        credits: [amateurRanges.credits.min, amateurRanges.credits.max],
-        abandonRate: [amateurRanges.abandonRate.min, amateurRanges.abandonRate.max]
+        matches: amateurRanges.matches.max,
+        credits: amateurRanges.credits.max,
+        abandonRate: amateurRanges.abandonRate.max
       }
     };
     setFilters(resetFilters);
@@ -121,13 +121,13 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
               {/* Matches Filter */}
               <div className="space-y-3">
                 <Label className="text-gray-300 text-sm">
-                  Matches: {filters.pro.matches[0]} - {filters.pro.matches[1]}
+                  Matches: 0 - {filters.pro.matches}
                 </Label>
                 <Slider
-                  value={filters.pro.matches}
+                  value={[filters.pro.matches]}
                   onValueChange={(value) => setFilters(prev => ({
                     ...prev,
-                    pro: { ...prev.pro, matches: value }
+                    pro: { ...prev.pro, matches: value[0] }
                   }))}
                   min={proRanges.matches.min}
                   max={proRanges.matches.max}
@@ -139,13 +139,13 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
               {/* Credits Filter */}
               <div className="space-y-3">
                 <Label className="text-gray-300 text-sm">
-                  Credits: {filters.pro.credits[0]} - {filters.pro.credits[1]}
+                  Credits: 0 - {filters.pro.credits}
                 </Label>
                 <Slider
-                  value={filters.pro.credits}
+                  value={[filters.pro.credits]}
                   onValueChange={(value) => setFilters(prev => ({
                     ...prev,
-                    pro: { ...prev.pro, credits: value }
+                    pro: { ...prev.pro, credits: value[0] }
                   }))}
                   min={proRanges.credits.min}
                   max={proRanges.credits.max}
@@ -157,13 +157,13 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
               {/* Win Rate Filter */}
               <div className="space-y-3">
                 <Label className="text-gray-300 text-sm">
-                  Win Rate: {filters.pro.winRate[0]}% - {filters.pro.winRate[1]}%
+                  Win Rate: 0% - {filters.pro.winRate}%
                 </Label>
                 <Slider
-                  value={filters.pro.winRate}
+                  value={[filters.pro.winRate]}
                   onValueChange={(value) => setFilters(prev => ({
                     ...prev,
-                    pro: { ...prev.pro, winRate: value }
+                    pro: { ...prev.pro, winRate: value[0] }
                   }))}
                   min={proRanges.winRate.min}
                   max={proRanges.winRate.max}
@@ -177,13 +177,13 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
               {/* Matches Filter */}
               <div className="space-y-3">
                 <Label className="text-gray-300 text-sm">
-                  Matches: {filters.amateur.matches[0]} - {filters.amateur.matches[1]}
+                  Matches: 0 - {filters.amateur.matches}
                 </Label>
                 <Slider
-                  value={filters.amateur.matches}
+                  value={[filters.amateur.matches]}
                   onValueChange={(value) => setFilters(prev => ({
                     ...prev,
-                    amateur: { ...prev.amateur, matches: value }
+                    amateur: { ...prev.amateur, matches: value[0] }
                   }))}
                   min={amateurRanges.matches.min}
                   max={amateurRanges.matches.max}
@@ -195,13 +195,13 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
               {/* Credits Filter */}
               <div className="space-y-3">
                 <Label className="text-gray-300 text-sm">
-                  Credits: {filters.amateur.credits[0]} - {filters.amateur.credits[1]}
+                  Credits: 0 - {filters.amateur.credits}
                 </Label>
                 <Slider
-                  value={filters.amateur.credits}
+                  value={[filters.amateur.credits]}
                   onValueChange={(value) => setFilters(prev => ({
                     ...prev,
-                    amateur: { ...prev.amateur, credits: value }
+                    amateur: { ...prev.amateur, credits: value[0] }
                   }))}
                   min={amateurRanges.credits.min}
                   max={amateurRanges.credits.max}
@@ -213,13 +213,13 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
               {/* Abandon Rate Filter */}
               <div className="space-y-3">
                 <Label className="text-gray-300 text-sm">
-                  Abandon Rate: {filters.amateur.abandonRate[0]}% - {filters.amateur.abandonRate[1]}%
+                  Abandon Rate: 0% - {filters.amateur.abandonRate}%
                 </Label>
                 <Slider
-                  value={filters.amateur.abandonRate}
+                  value={[filters.amateur.abandonRate]}
                   onValueChange={(value) => setFilters(prev => ({
                     ...prev,
-                    amateur: { ...prev.amateur, abandonRate: value }
+                    amateur: { ...prev.amateur, abandonRate: value[0] }
                   }))}
                   min={amateurRanges.abandonRate.min}
                   max={amateurRanges.abandonRate.max}
