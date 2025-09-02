@@ -324,14 +324,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-4">
-                  
-                  <div className="space-y-2">
-                    <Label className="text-gray-300 text-sm">Min Matches: {minMatchesPrev}</Label>
-                    <Slider value={[minMatchesPrev]} onValueChange={([value]) => setMinMatchesPrev(value)} max={20} step={1} />
-                  </div>
-                </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox id="am-matches" checked={hasPrevMatchesOnlyAm} onCheckedChange={checked => setHasPrevMatchesOnlyAm(checked === true)} />
                   <Label htmlFor="am-matches" className="text-gray-300 text-sm">Has matches last window</Label>
