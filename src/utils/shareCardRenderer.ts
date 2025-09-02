@@ -1,6 +1,6 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
-import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
 
 interface ShareCardData {
   user: {
@@ -15,6 +15,7 @@ interface ShareCardData {
     name: string;
     type: 'pro' | 'amateur';
     logo_url?: string;
+    image_url?: string;
   }>;
   starTeamId?: string;
   roundName: string;
@@ -31,28 +32,6 @@ interface ShareCardResult {
 
 const FRAME_WIDTH = 1080;
 const FRAME_HEIGHT = 1350;
-
-// CORS-safe image proxy for external logos (Faceit CDN etc.)
-const SUPABASE_FUNCTIONS_BASE = 'https://zcjzeafelunqxmxzznos.supabase.co/functions/v1';
-const IMAGE_PROXY_URL = `${SUPABASE_FUNCTIONS_BASE}/image-proxy`;
-function corsSafeUrl(url?: string) {
-  if (!url) return '';
-  try {
-    const u = new URL(url, window.location.origin);
-    const host = u.hostname;
-    // Route external CDN URLs through proxy to avoid CORS issues
-    if (host.endsWith('faceit-cdn.net') || 
-        host.includes('faceit-cdn') || 
-        host === 'cdn.pandascore.co' ||
-        host.includes('sportdevs.com') ||
-        host === 'raw.githubusercontent.com') {
-      return `${IMAGE_PROXY_URL}?url=${encodeURIComponent(u.toString())}`;
-    }
-    return url;
-  } catch {
-    return url || '';
-  }
-}
 
 export async function renderShareCard(
   roundId: string, 
@@ -93,9 +72,8 @@ export async function renderShareCard(
       scale: 1,
       useCORS: true,
       allowTaint: false,
-      logging: true, // Enable logging to see what's happening
+      logging: false, // Disable excessive logging
       foreignObjectRendering: false, // Disable to avoid React conflicts
-      proxy: IMAGE_PROXY_URL,
     });
 
     console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
@@ -200,69 +178,33 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     throw new Error('No lineup found for this round');
   }
 
-  // Enhance team picks with logo data using the same approach as TeamPicker
+  // Enhance team picks with logos using direct DB lookup
   const enhancedTeamPicks = await Promise.all(
     (picks.team_picks as any[]).map(async (team) => {
-      console.log(`Enhancing team data for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
+      console.log(`Resolving logo for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
       
-      if (team.type === 'pro') {
-        // For professional teams, fetch from pandascore_matches using recent date range
-        const now = new Date();
-        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const oneMonthFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        
-        const { data: pandaMatches } = await supabase
-          .from('pandascore_matches')
-          .select('teams, esport_type')
-          .gte('start_time', oneMonthAgo.toISOString())
-          .lte('start_time', oneMonthFromNow.toISOString())
-          .not('teams', 'is', null)
-          .limit(50);
-
-        if (pandaMatches) {
-          for (const match of pandaMatches) {
-             if (match.teams && Array.isArray(match.teams)) {
-               for (const teamObj of match.teams as any[]) {
-                 if (teamObj.type === 'Team' && teamObj.opponent) {
-                   const opponent = teamObj.opponent;
-                   if (String(opponent.id) === team.id || opponent.slug === team.id) {
-                     console.log(`Found pro team logo for ${team.name}:`, opponent.image_url);
-                     return {
-                       ...team,
-                       logo_url: opponent.image_url,
-                       image_url: opponent.image_url,
-                       slug: opponent.slug
-                     };
-                   }
-                 }
-               }
-             }
-          }
-        }
-      } else if (team.type === 'amateur') {
-        // For amateur teams, fetch from FACEIT database using the same logic as TeamPicker
-        const { data: faceitTeam } = await supabase
-          .rpc('get_all_faceit_teams')
-          .then((res: any) => {
-            if (res.data) {
-              const found = res.data.find((t: any) => t.team_id === team.id);
-              return { data: found };
-            }
-            return { data: null };
-          });
-
-        if (faceitTeam) {
-          console.log(`Found amateur team logo for ${team.name}:`, faceitTeam.logo_url);
-          return {
-            ...team,
-            logo_url: faceitTeam.logo_url,
-            image_url: faceitTeam.logo_url
-          };
-        }
+      const logoUrl = await getTeamLogoUrl({
+        supabase: supabase as any,
+        teamType: team.type,
+        teamId: team.id,
+        teamName: team.name
+      });
+      
+      if (logoUrl) {
+        console.log(`Found logo for ${team.name}:`, logoUrl);
+        return {
+          ...team,
+          logo_url: logoUrl,
+          image_url: logoUrl
+        };
       }
       
-      console.log(`No enhanced data found for ${team.name}, using original`);
-      return team;
+      console.log(`No logo found for ${team.name}, will use placeholder`);
+      return {
+        ...team,
+        logo_url: null,
+        image_url: null
+      };
     })
   );
 
@@ -321,6 +263,22 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
+  // Preload all images before rendering
+  const imagesToPreload = [
+    '/public/assets/share-frame.png',
+    ...data.lineup.map(team => team.image_url).filter(Boolean) as string[],
+    ...data.badges.map(badge => badge.asset_url).filter(Boolean)
+  ];
+  
+  // Preload images with CORS settings (but don't fail if any fail)
+  try {
+    await Promise.allSettled(
+      imagesToPreload.map(url => preloadImage(url).catch(() => console.warn(`Failed to preload: ${url}`)))
+    );
+  } catch (error) {
+    console.warn('Image preloading failed, continuing with render:', error);
+  }
+  
   container.innerHTML = `
     <div style="
       position: relative;
@@ -416,8 +374,8 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 
 function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = team.type === 'pro' ? '#8B5CF6' : '#F97316';
-  const logoUrl = getEnhancedTeamLogoUrl(team);
-  const safeLogoUrl = corsSafeUrl(logoUrl);
+  const logoUrl = team.image_url || team.logo_url;
+  const safeLogoUrl = logoUrl || getPlaceholderLogo(team.name);
   
   return `
     <div style="
