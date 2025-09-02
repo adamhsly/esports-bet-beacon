@@ -195,6 +195,41 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     throw new Error('No lineup found for this round');
   }
 
+  // Enhance team picks with logo data from pandascore_matches
+  const enhancedTeamPicks = await Promise.all(
+    (picks.team_picks as any[]).map(async (team) => {
+      console.log(`Enhancing team data for: ${team.name} (ID: ${team.id})`);
+      
+      // For professional teams, try to fetch logo from pandascore_matches
+      if (team.type === 'pro' && team.id) {
+        const { data: matchTeam } = await supabase
+          .from('pandascore_matches')
+          .select('teams')
+          .contains('teams', [{ opponent: { id: team.id } }])
+          .limit(1)
+          .maybeSingle();
+
+        if (matchTeam?.teams && Array.isArray(matchTeam.teams)) {
+          const teamData = (matchTeam.teams as any[]).find((t: any) => 
+            t.opponent?.id === team.id
+          );
+          
+          if (teamData?.opponent) {
+            console.log(`Found enhanced data for ${team.name}:`, teamData.opponent);
+            return {
+              ...team,
+              logo: teamData.opponent.image_url,
+              image_url: teamData.opponent.image_url,
+              hash_image: teamData.opponent.slug
+            };
+          }
+        }
+      }
+      
+      return team;
+    })
+  );
+
   // Fetch star team
   const { data: starTeam, error: starTeamError } = await supabase
     .from('fantasy_round_star_teams')
@@ -241,7 +276,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
       xp: progress?.xp || 0,
       next_xp_threshold: nextXpThreshold,
     },
-    lineup: (picks?.team_picks as any) || [],
+    lineup: enhancedTeamPicks,
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
@@ -337,7 +372,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         color: #EAF2FF;
         font-weight: 600;
       ">
-        Think you can beat me? Join the ${data.roundName} at fragsandfortunes.gg
+        Think you can beat me? Join the ${data.roundName} at fragsandfortunes.com
       </div>
     </div>
   `;
@@ -405,17 +440,18 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       
       <!-- Team Name -->
       <div style="
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 600;
         color: #EAF2FF;
         text-align: center;
         max-width: 240px;
-        line-height: 1.3;
+        line-height: 1.2;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         padding: 0 8px;
+        word-break: break-word;
       ">
         ${team.name}
       </div>

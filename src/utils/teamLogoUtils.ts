@@ -92,6 +92,26 @@ const teamLogoMap: Record<string, string> = {
   'nord esports': 'placeholder',
   'the ruddy sack': 'placeholder',
   
+  // Brazilian teams
+  'oddik': 'oddik',
+  'fluxo': 'fluxo',
+  'imperial': 'imperial',
+  'imperial esports': 'imperial',
+  'mibr': 'mibr',
+  'made in brazil': 'mibr',
+  'furia': 'furia',
+  'furia esports': 'furia',
+  'loud': 'loud',
+  
+  // Additional CS2 teams
+  'pain gaming': 'pain',
+  'pain': 'pain',
+  'legacy': 'legacy',
+  'legacy esports': 'legacy',
+  'red canids': 'redcanids',
+  'sharks': 'sharks',
+  'sharks esports': 'sharks',
+  
   // General default values for testing/placeholder
   'team1': 'placeholder',
   'team2': 'placeholder',
