@@ -1,6 +1,8 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
-import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
+import { getTeamLogoUrl, getPlaceholderLogo, preloadImage, proxifyIfNeeded } from '@/lib/resolveLogoUrl';
+import shareFrameUrl from '/assets/share-frame.png';
+import neonBlueUrl from '/assets/rewards/neon_blue.png';
 
 interface ShareCardData {
   user: {
@@ -183,27 +185,34 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     (picks.team_picks as any[]).map(async (team) => {
       console.log(`Resolving logo for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
       
-      const logoUrl = await getTeamLogoUrl({
+      const rawLogo = await getTeamLogoUrl({
         supabase: supabase as any,
         teamType: team.type,
         teamId: team.id,
         teamName: team.name
       });
       
-      if (logoUrl) {
-        console.log(`Found logo for ${team.name}:`, logoUrl);
+      const safeLogo = proxifyIfNeeded(rawLogo);
+      
+      if (safeLogo) {
+        console.log(`Found logo for ${team.name}:`, rawLogo, '-> proxied:', safeLogo);
+        try {
+          await preloadImage(safeLogo);
+        } catch (e) {
+          console.warn(`Failed to preload ${team.name} logo:`, e);
+        }
         return {
           ...team,
-          logo_url: logoUrl,
-          image_url: logoUrl
+          logo_url: safeLogo,
+          image_url: safeLogo
         };
       }
       
       console.log(`No logo found for ${team.name}, will use placeholder`);
       return {
         ...team,
-        logo_url: null,
-        image_url: null
+        logo_url: getPlaceholderLogo(team.name),
+        image_url: getPlaceholderLogo(team.name)
       };
     })
   );
@@ -263,28 +272,22 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  // Preload all images before rendering
-  const imagesToPreload = [
-    '/public/assets/share-frame.png',
-    ...data.lineup.map(team => team.image_url).filter(Boolean) as string[],
-    ...data.badges.map(badge => badge.asset_url).filter(Boolean)
-  ];
-  
-  // Preload images with CORS settings (but don't fail if any fail)
+  // Preload background images first
   try {
-    await Promise.allSettled(
-      imagesToPreload.map(url => preloadImage(url).catch(() => console.warn(`Failed to preload: ${url}`)))
-    );
+    await preloadImage(shareFrameUrl);
+    await preloadImage(neonBlueUrl);
   } catch (error) {
-    console.warn('Image preloading failed, continuing with render:', error);
+    console.warn('Background image preloading failed:', error);
   }
+  
+  // Team logos are already preloaded during data enhancement
   
   container.innerHTML = `
     <div style="
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
-      background-image: url('/public/assets/share-frame.png');
+      background-image: url('${shareFrameUrl}');
       background-size: cover;
       background-position: center;
       color: #EAF2FF;
@@ -330,7 +333,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
           <div style="
             width: 56px;
             height: 56px;
-            background: url('${badge.asset_url}');
+            background: url('${badge.asset_url.startsWith('/public/') ? badge.asset_url.replace('/public/', '/') : badge.asset_url}');
             background-size: cover;
             background-position: center;
             border-radius: 8px;
@@ -374,8 +377,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 
 function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = team.type === 'pro' ? '#8B5CF6' : '#F97316';
-  const logoUrl = team.image_url || team.logo_url;
-  const safeLogoUrl = logoUrl || getPlaceholderLogo(team.name);
+  const safeLogoUrl = team.image_url || team.logo_url || getPlaceholderLogo(team.name);
   
   return `
     <div style="

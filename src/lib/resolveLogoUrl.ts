@@ -103,12 +103,13 @@ async function getProTeamLogo(
   const canNumeric = !Number.isNaN(n);
 
   if (canNumeric) {
+    const containsNumeric = JSON.stringify([{ opponent: { id: n } }]);
     const { data, error } = await supabase
       .from('pandascore_matches')
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
       .in('status', ['finished', 'running', 'not_started', 'upcoming'])
-      .contains('teams', [{ opponent: { id: n } }]) // jsonb @> partial match
+      .filter('teams', 'cs', containsNumeric)
       .order('start_time', { ascending: false })
       .limit(60);
     if (!error) matches = data;
@@ -116,12 +117,13 @@ async function getProTeamLogo(
 
   // 2) Fallback: string id containment (some payloads store ids as strings)
   if (!matches || matches.length === 0) {
+    const containsString = JSON.stringify([{ opponent: { id: String(teamId) } }]);
     const { data, error } = await supabase
       .from('pandascore_matches')
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
       .in('status', ['finished', 'running', 'not_started', 'upcoming'])
-      .contains('teams', [{ opponent: { id: teamId } }])
+      .filter('teams', 'cs', containsString)
       .order('start_time', { ascending: false })
       .limit(80);
     if (!error) matches = data;
@@ -162,7 +164,7 @@ async function getProTeamLogo(
         .eq('id', n)
         .limit(1)
         .maybeSingle();
-      const url = pickFirstUrl(data?.image_url, data?.logo);
+      const url = pickFirstUrl(String(data?.image_url || ''), String(data?.logo || ''));
       if (url) return url;
     }
   } catch {}
@@ -232,10 +234,10 @@ async function getAmateurTeamLogo(
     const { data } = await supabase
       .from('faceit_teams')
       .select('logo_url,avatar,image,logo,team_id,team_name')
-      .or(`team_id.eq.${teamId},team_name.ilike.${teamName ? `%${teamName}%` : ''}`)
+      .or(`team_id.eq.${String(teamId)},team_name.ilike.${teamName ? `%${teamName}%` : ''}`)
       .limit(1)
       .maybeSingle();
-    const url = pickFirstUrl(data?.logo_url, data?.avatar, data?.image, data?.logo);
+    const url = pickFirstUrl(String(data?.logo_url || ''), String(data?.avatar || ''), String(data?.image || ''), String(data?.logo || ''));
     if (url) return url;
   } catch {}
 
@@ -299,4 +301,18 @@ export function getPlaceholderLogo(teamName?: string): string {
     </svg>
   `.trim();
   return `data:image/svg+xml;base64,${toBase64Unicode(svg)}`;
+}
+
+export function proxifyIfNeeded(url?: string | null) {
+  if (!url) return '';
+  try {
+    const u = new URL(url, location.origin);
+    // same-origin is fine
+    if (u.origin === location.origin) return u.href;
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    if (!base) return url;
+    return `${base}/functions/v1/public-image-proxy?url=${encodeURIComponent(u.href)}`;
+  } catch {
+    return url;
+  }
 }
