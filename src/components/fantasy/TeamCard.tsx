@@ -112,7 +112,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             <div>
               <span className="text-gray-400">Matches:</span>
               <span className="ml-1 text-white font-medium">
-                {isAmateur ? team.matches_prev_window ?? 0 : team.matches_in_period ?? 0}
+                {team.match_volume ?? 0}
               </span>
             </div>
             {team.recent_win_rate !== undefined && <div>
