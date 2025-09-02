@@ -69,20 +69,19 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [hasPrevMatchesOnlyAm, setHasPrevMatchesOnlyAm] = useState<boolean>(false);
   const [priceRangeAm, setPriceRangeAm] = useState<number[]>([0, 100]);
 
-  // Advanced filters state - Initialize with proper max values
+  // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
     pro: {
-      matches: 100,
-      credits: 1000,
-      winRate: 100
+      matches: [0, 100],
+      credits: [0, 1000],
+      winRate: [0, 100]
     },
     amateur: {
-      matches: 100,
-      credits: 1000,
-      abandonRate: 100
+      matches: [0, 100],
+      credits: [0, 1000],
+      abandonRate: [0, 100]
     }
   });
-
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
 
@@ -100,49 +99,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Get unique games and price ranges
   const proGames = useMemo(() => Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], [proTeams]);
   const amateurGames = useMemo(() => Array.from(new Set(amateurTeams.map(t => t.esport_type).filter(Boolean))) as string[], [amateurTeams]);
-
-  // Calculate dynamic ranges for initial filter setup
-  const proRanges = useMemo(() => {
-    const matchVolumes = proTeams.map(t => t.match_volume ?? 0);
-    const credits = proTeams.map(t => t.price ?? 0);
-    const winRates = proTeams.map(t => (t.recent_win_rate ?? 0) * 100); // Convert to percentage
-    
-    return {
-      matches: { min: Math.min(...matchVolumes, 0), max: Math.max(...matchVolumes, 100) },
-      credits: { min: Math.min(...credits, 0), max: Math.max(...credits, 1000) },
-      winRate: { min: Math.min(...winRates, 0), max: Math.max(...winRates, 100) }
-    };
-  }, [proTeams]);
-
-  const amateurRanges = useMemo(() => {
-    const matchVolumes = amateurTeams.map(t => t.matches_prev_window ?? 0);
-    const credits = amateurTeams.map(t => t.price ?? 0);
-    const abandonRates = amateurTeams.map(t => (t.abandon_rate ?? 0) * 100); // Convert to percentage
-    
-    return {
-      matches: { min: Math.min(...matchVolumes, 0), max: Math.max(...matchVolumes, 100) },
-      credits: { min: Math.min(...credits, 0), max: Math.max(...credits, 1000) },
-      abandonRate: { min: Math.min(...abandonRates, 0), max: Math.max(...abandonRates, 100) }
-    };
-  }, [amateurTeams]);
-
-  // Initialize filters with actual data ranges when teams are loaded
-  useEffect(() => {
-    if (proTeams.length > 0 || amateurTeams.length > 0) {
-      setAdvancedFilters({
-        pro: {
-          matches: proRanges.matches.max,
-          credits: proRanges.credits.max,
-          winRate: proRanges.winRate.max
-        },
-        amateur: {
-          matches: amateurRanges.matches.max,
-          credits: amateurRanges.credits.max,
-          abandonRate: amateurRanges.abandonRate.max
-        }
-      });
-    }
-  }, [proTeams, amateurTeams, proRanges, amateurRanges]);
 
   // Calculate price ranges
   const proPrices = useMemo(() => proTeams.map(t => t.price ?? 0), [proTeams]);
@@ -169,10 +125,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
 
-      // Advanced filters - Filter based on max values (less than or equal to slider position)
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.pro.matches;
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.pro.credits;
-      const winRateMatch = ((t.recent_win_rate ?? 0) * 100) <= advancedFilters.pro.winRate;
+      // Advanced filters
+      const matchVolumeMatch = (t.match_volume ?? 0) >= advancedFilters.pro.matches[0] && (t.match_volume ?? 0) <= advancedFilters.pro.matches[1];
+      const creditsMatch = (t.price ?? 0) >= advancedFilters.pro.credits[0] && (t.price ?? 0) <= advancedFilters.pro.credits[1];
+      const winRateMatch = (t.recent_win_rate ?? 0) >= advancedFilters.pro.winRate[0] && (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate[1];
       return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
   }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, advancedFilters.pro]);
@@ -189,10 +145,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
 
-      // Advanced filters - Filter based on max values (less than or equal to slider position)
-      const matchVolumeMatch = (t.matches_prev_window ?? 0) <= advancedFilters.amateur.matches;
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits;
-      const abandonRateMatch = ((t.abandon_rate ?? 0) * 100) <= advancedFilters.amateur.abandonRate;
+      // Advanced filters
+      const matchVolumeMatch = (t.matches_prev_window ?? 0) >= advancedFilters.amateur.matches[0] && (t.matches_prev_window ?? 0) <= advancedFilters.amateur.matches[1];
+      const creditsMatch = (t.price ?? 0) >= advancedFilters.amateur.credits[0] && (t.price ?? 0) <= advancedFilters.amateur.credits[1];
+      const abandonRateMatch = (t.abandon_rate ?? 0) >= advancedFilters.amateur.abandonRate[0] && (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate[1];
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
@@ -401,20 +357,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         </div>
 
         {/* Selected Teams Summary - Fixed at bottom */}
-        {tempSelectedTeams.length > 0 && <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-gray-700/50 p-4 mt-6">
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-300">Selected Teams ({tempSelectedTeams.length}/5)</h4>
-              <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
-                {tempSelectedTeams.map(team => <Badge key={team.id} variant="secondary" className="flex items-center gap-2 bg-gray-800/50 text-gray-300 border-gray-600/50 px-3 py-1">
-                    <span className="truncate max-w-24">{team.name}</span>
-                    <span className="text-xs text-green-400">{team.price}c</span>
-                    <Button size="sm" variant="ghost" onClick={() => handleRemoveSelectedTeam(team.id)} className="p-0 h-4 w-4 hover:bg-red-500/20">
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </Badge>)}
-              </div>
-            </div>
-          </div>}
+        {tempSelectedTeams.length > 0}
 
         {/* Bottom Actions - Always sticky */}
         <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-gray-700/50 pt-6 mt-6 space-y-3">
