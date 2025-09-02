@@ -69,7 +69,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [hasPrevMatchesOnlyAm, setHasPrevMatchesOnlyAm] = useState<boolean>(false);
   const [priceRangeAm, setPriceRangeAm] = useState<number[]>([0, 100]);
 
-  // Advanced filters state
+  // Advanced filters state - Initialize with proper ranges
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
     pro: {
       matches: [0, 100],
@@ -82,6 +82,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       abandonRate: [0, 100]
     }
   });
+
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
 
@@ -99,6 +100,49 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Get unique games and price ranges
   const proGames = useMemo(() => Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], [proTeams]);
   const amateurGames = useMemo(() => Array.from(new Set(amateurTeams.map(t => t.esport_type).filter(Boolean))) as string[], [amateurTeams]);
+
+  // Calculate dynamic ranges for initial filter setup
+  const proRanges = useMemo(() => {
+    const matchVolumes = proTeams.map(t => t.match_volume ?? 0);
+    const credits = proTeams.map(t => t.price ?? 0);
+    const winRates = proTeams.map(t => (t.recent_win_rate ?? 0) * 100); // Convert to percentage
+    
+    return {
+      matches: { min: Math.min(...matchVolumes, 0), max: Math.max(...matchVolumes, 100) },
+      credits: { min: Math.min(...credits, 0), max: Math.max(...credits, 1000) },
+      winRate: { min: Math.min(...winRates, 0), max: Math.max(...winRates, 100) }
+    };
+  }, [proTeams]);
+
+  const amateurRanges = useMemo(() => {
+    const matchVolumes = amateurTeams.map(t => t.matches_prev_window ?? 0);
+    const credits = amateurTeams.map(t => t.price ?? 0);
+    const abandonRates = amateurTeams.map(t => (t.abandon_rate ?? 0) * 100); // Convert to percentage
+    
+    return {
+      matches: { min: Math.min(...matchVolumes, 0), max: Math.max(...matchVolumes, 100) },
+      credits: { min: Math.min(...credits, 0), max: Math.max(...credits, 1000) },
+      abandonRate: { min: Math.min(...abandonRates, 0), max: Math.max(...abandonRates, 100) }
+    };
+  }, [amateurTeams]);
+
+  // Initialize filters with actual data ranges when teams are loaded
+  useEffect(() => {
+    if (proTeams.length > 0 || amateurTeams.length > 0) {
+      setAdvancedFilters({
+        pro: {
+          matches: [proRanges.matches.min, proRanges.matches.max],
+          credits: [proRanges.credits.min, proRanges.credits.max],
+          winRate: [proRanges.winRate.min, proRanges.winRate.max]
+        },
+        amateur: {
+          matches: [amateurRanges.matches.min, amateurRanges.matches.max],
+          credits: [amateurRanges.credits.min, amateurRanges.credits.max],
+          abandonRate: [amateurRanges.abandonRate.min, amateurRanges.abandonRate.max]
+        }
+      });
+    }
+  }, [proTeams, amateurTeams, proRanges, amateurRanges]);
 
   // Calculate price ranges
   const proPrices = useMemo(() => proTeams.map(t => t.price ?? 0), [proTeams]);
@@ -125,10 +169,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
 
-      // Advanced filters
+      // Advanced filters - Convert win rate to percentage for comparison
       const matchVolumeMatch = (t.match_volume ?? 0) >= advancedFilters.pro.matches[0] && (t.match_volume ?? 0) <= advancedFilters.pro.matches[1];
       const creditsMatch = (t.price ?? 0) >= advancedFilters.pro.credits[0] && (t.price ?? 0) <= advancedFilters.pro.credits[1];
-      const winRateMatch = (t.recent_win_rate ?? 0) >= advancedFilters.pro.winRate[0] && (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate[1];
+      const winRateMatch = ((t.recent_win_rate ?? 0) * 100) >= advancedFilters.pro.winRate[0] && ((t.recent_win_rate ?? 0) * 100) <= advancedFilters.pro.winRate[1];
       return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
   }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, advancedFilters.pro]);
@@ -145,10 +189,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
 
-      // Advanced filters
+      // Advanced filters - Convert abandon rate to percentage for comparison
       const matchVolumeMatch = (t.matches_prev_window ?? 0) >= advancedFilters.amateur.matches[0] && (t.matches_prev_window ?? 0) <= advancedFilters.amateur.matches[1];
       const creditsMatch = (t.price ?? 0) >= advancedFilters.amateur.credits[0] && (t.price ?? 0) <= advancedFilters.amateur.credits[1];
-      const abandonRateMatch = (t.abandon_rate ?? 0) >= advancedFilters.amateur.abandonRate[0] && (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate[1];
+      const abandonRateMatch = ((t.abandon_rate ?? 0) * 100) >= advancedFilters.amateur.abandonRate[0] && ((t.abandon_rate ?? 0) * 100) <= advancedFilters.amateur.abandonRate[1];
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);

@@ -41,11 +41,11 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
   // Calculate dynamic ranges
   const proMatchVolumes = proTeams.map(t => t.match_volume ?? 0);
   const proCredits = proTeams.map(t => t.price ?? 0);
-  const proWinRates = proTeams.map(t => t.recent_win_rate ?? 0);
+  const proWinRates = proTeams.map(t => (t.recent_win_rate ?? 0) * 100); // Convert to percentage
   
   const amateurMatchVolumes = amateurTeams.map(t => t.matches_prev_window ?? 0);
   const amateurCredits = amateurTeams.map(t => t.price ?? 0);
-  const amateurAbandonRates = amateurTeams.map(t => t.abandon_rate ?? 0);
+  const amateurAbandonRates = amateurTeams.map(t => (t.abandon_rate ?? 0) * 100); // Convert to percentage
 
   const proRanges = {
     matches: { min: Math.min(...proMatchVolumes), max: Math.max(...proMatchVolumes) },
