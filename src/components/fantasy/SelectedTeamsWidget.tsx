@@ -11,6 +11,7 @@ interface Team {
   logo_url?: string;
   matches_in_period?: number;
   matches_prev_window?: number;
+  match_volume?: number;
 }
 interface SelectedTeamsWidgetProps {
   selectedTeams: Team[];
@@ -81,7 +82,7 @@ const TeamCard: React.FC<{
             <div>
               <div className="text-orange-400 font-bold text-[10px] mb-0.5 tracking-wide">MATCHES</div>
               <div className={`font-bold text-sm ${isAmateur ? 'text-orange-300' : 'text-cyan-300'} drop-shadow-lg`}>
-                {team.type === 'pro' ? team.matches_in_period || 0 : team.matches_prev_window || 0}
+                {team.type === 'pro' ? team.matches_in_period || 0 : team.match_volume || 0}
               </div>
             </div>
           </div>
