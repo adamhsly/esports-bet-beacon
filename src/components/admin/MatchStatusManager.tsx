@@ -20,7 +20,6 @@ export const MatchStatusManager: React.FC = () => {
     isUpdating, 
     lastUpdate, 
     triggerStatusUpdate, 
-    setupCronJob, 
     syncLiveMatch 
   } = useMatchStatusUpdater();
   
@@ -74,7 +73,7 @@ export const MatchStatusManager: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 gap-4 mb-6">
           <div className="space-y-3">
             <Button 
               onClick={triggerStatusUpdate}
@@ -93,16 +92,6 @@ export const MatchStatusManager: React.FC = () => {
                   Manual Update
                 </>
               )}
-            </Button>
-
-            <Button 
-              onClick={setupCronJob}
-              variant="outline"
-              className="w-full"
-              size="sm"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Setup Auto Updates
             </Button>
           </div>
 

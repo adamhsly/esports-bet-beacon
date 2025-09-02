@@ -1136,6 +1136,36 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_team_prices_audit: {
+        Row: {
+          changed_at: string
+          id: string
+          new_price: number | null
+          old_price: number | null
+          round_id: string
+          team_id: string
+          team_type: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_price?: number | null
+          old_price?: number | null
+          round_id: string
+          team_id: string
+          team_type: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_price?: number | null
+          old_price?: number | null
+          round_id?: string
+          team_id?: string
+          team_type?: string
+        }
+        Relationships: []
+      }
       level_rewards: {
         Row: {
           amount: number | null
@@ -2005,6 +2035,7 @@ export type Database = {
           last_login_at: string | null
           premium_pass: boolean
           streak_count: number
+          test: boolean
           updated_at: string
           username: string | null
           welcome_pack_claimed: boolean | null
@@ -2020,6 +2051,7 @@ export type Database = {
           last_login_at?: string | null
           premium_pass?: boolean
           streak_count?: number
+          test?: boolean
           updated_at?: string
           username?: string | null
           welcome_pack_claimed?: boolean | null
@@ -2035,6 +2067,7 @@ export type Database = {
           last_login_at?: string | null
           premium_pass?: boolean
           streak_count?: number
+          test?: boolean
           updated_at?: string
           username?: string | null
           welcome_pack_claimed?: boolean | null
@@ -3112,6 +3145,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      select_random_test_users_fallback: {
+        Args: { p_limit: number; p_round_id: string }
+        Returns: {
+          id: string
+        }[]
+      }
+      select_random_test_users_without_picks: {
+        Args: { p_limit: number; p_round_id: string }
+        Returns: {
+          id: string
+        }[]
+      }
       set_premium_pass: {
         Args: { p_active: boolean; p_user: string }
         Returns: undefined
@@ -3153,6 +3198,7 @@ export type Database = {
           last_login_at: string | null
           premium_pass: boolean
           streak_count: number
+          test: boolean
           updated_at: string
           username: string | null
           welcome_pack_claimed: boolean | null

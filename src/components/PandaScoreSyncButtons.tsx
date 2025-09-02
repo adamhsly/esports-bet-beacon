@@ -38,27 +38,6 @@ export const PandaScoreSyncButtons = () => {
     }
   };
 
-  const handleSetupCron = async () => {
-    setSyncing(prev => ({ ...prev, cron: true }));
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('setup-pandascore-cron');
-      
-      if (error) {
-        console.error('Cron setup error:', error);
-        toast.error(`Cron setup failed: ${error.message}`);
-      } else {
-        console.log('Cron setup result:', data);
-        toast.success('PandaScore cron jobs configured successfully');
-      }
-    } catch (error) {
-      console.error('Cron setup error:', error);
-      toast.error('Cron setup failed');
-    } finally {
-      setSyncing(prev => ({ ...prev, cron: false }));
-    }
-  };
-
   const checkMatchCount = async () => {
     try {
       const { data, error } = await supabase
@@ -145,15 +124,6 @@ export const PandaScoreSyncButtons = () => {
           >
             <AlertCircle className="h-4 w-4 mr-2" />
             Check DB Count
-          </Button>
-          
-          <Button
-            onClick={handleSetupCron}
-            disabled={syncing['cron']}
-            variant="default"
-            size="sm"
-          >
-            {syncing['cron'] ? 'Setting up...' : 'Setup Cron Jobs'}
           </Button>
         </div>
         

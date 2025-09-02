@@ -18,43 +18,33 @@ serve(async (req) => {
   )
 
   try {
-    console.log('🕒 Managing dynamic cron jobs for active matches...');
-    
-    const projectRef = Deno.env.get('SUPABASE_URL')?.split('//')[1]?.split('.')[0];
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    
-    if (!projectRef || !anonKey) {
-      throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY');
-    }
+    console.log('🔧 Dynamic cron management function called - scheduling logic removed');
+    console.log('ℹ️  This function is now available for external cron management');
 
     const now = new Date();
     const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
 
-    // Get matches starting within 15 minutes that aren't finished
-    const { data: upcomingMatches, error: faceitError } = await supabase
+    // Fetch upcoming matches for monitoring purposes only
+    const { data: upcomingMatches } = await supabase
       .from('faceit_matches')
       .select('match_id, scheduled_at, status')
       .gte('scheduled_at', now.toISOString())
       .lte('scheduled_at', fifteenMinutesFromNow.toISOString())
       .not('status', 'in', '(finished,completed,cancelled,aborted)');
 
-    const { data: pandaScoreMatches, error: pandaError } = await supabase
+    const { data: pandaScoreMatches } = await supabase
       .from('pandascore_matches')
       .select('match_id, start_time, status')
       .gte('start_time', now.toISOString())
       .lte('start_time', fifteenMinutesFromNow.toISOString())
       .not('status', 'in', '(finished,completed,cancelled)');
 
-    const { data: sportDevsMatches, error: sportError } = await supabase
+    const { data: sportDevsMatches } = await supabase
       .from('sportdevs_matches')
       .select('match_id, start_time, status')
       .gte('start_time', now.toISOString())
       .lte('start_time', fifteenMinutesFromNow.toISOString())
       .not('status', 'in', '(finished,completed,cancelled)');
-
-    if (faceitError || pandaError || sportError) {
-      console.error('Error fetching upcoming matches:', { faceitError, pandaError, sportError });
-    }
 
     const allUpcomingMatches = [
       ...(upcomingMatches || []).map(m => ({ ...m, source: 'faceit' })),
@@ -62,95 +52,24 @@ serve(async (req) => {
       ...(sportDevsMatches || []).map(m => ({ ...m, source: 'sportdevs', scheduled_at: m.start_time }))
     ];
 
-    console.log(`📋 Found ${allUpcomingMatches.length} matches starting within 15 minutes`);
-
-    // Create/update cron jobs for upcoming matches
-    for (const match of allUpcomingMatches) {
-      const cronJobName = `sync-${match.source}-match-${match.match_id}`;
-      
-      console.log(`⚙️ Setting up 5-minute sync for ${match.source} match ${match.match_id}`);
-      
-      // Remove existing cron job if it exists
-      await supabase.rpc('sql', {
-        query: `SELECT cron.unschedule('${cronJobName}');`
-      }).catch(() => {}); // Ignore errors if job doesn't exist
-
-      // Create new 5-minute sync job
-      let syncFunctionName = '';
-      switch (match.source) {
-        case 'faceit':
-          syncFunctionName = 'sync-faceit-live';
-          break;
-        case 'pandascore':
-          syncFunctionName = 'sync-pandascore-matches';
-          break;
-        case 'sportdevs':
-          syncFunctionName = 'sync-sportdevs-live';
-          break;
-      }
-
-      await supabase.rpc('sql', {
-        query: `
-          SELECT cron.schedule(
-            '${cronJobName}',
-            '*/5 * * * *',
-            $$
-            SELECT net.http_post(
-              url := 'https://${projectRef}.supabase.co/functions/v1/${syncFunctionName}',
-              headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${anonKey}"}'::jsonb,
-              body := '{"match_id": "${match.match_id}"}'::jsonb
-            ) as request_id;
-            $$
-          );
-        `
-      });
-    }
-
-    // Clean up cron jobs for finished matches
-    const { data: finishedMatches } = await supabase
-      .from('faceit_matches')
-      .select('match_id')
-      .in('status', ['finished', 'completed', 'cancelled', 'aborted']);
-
-    const { data: finishedPandaMatches } = await supabase
-      .from('pandascore_matches')
-      .select('match_id')
-      .in('status', ['finished', 'completed', 'cancelled']);
-
-    const { data: finishedSportMatches } = await supabase
-      .from('sportdevs_matches')
-      .select('match_id')
-      .in('status', ['finished', 'completed', 'cancelled']);
-
-    const allFinishedMatches = [
-      ...(finishedMatches || []).map(m => ({ ...m, source: 'faceit' })),
-      ...(finishedPandaMatches || []).map(m => ({ ...m, source: 'pandascore' })),
-      ...(finishedSportMatches || []).map(m => ({ ...m, source: 'sportdevs' }))
-    ];
-
-    console.log(`🧹 Cleaning up ${allFinishedMatches.length} finished match cron jobs`);
-
-    for (const match of allFinishedMatches) {
-      const cronJobName = `sync-${match.source}-match-${match.match_id}`;
-      await supabase.rpc('sql', {
-        query: `SELECT cron.unschedule('${cronJobName}');`
-      }).catch(() => {}); // Ignore errors if job doesn't exist
-    }
+    console.log(`📊 Found ${allUpcomingMatches.length} matches starting within 15 minutes`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Dynamic cron jobs managed successfully',
+        message: 'Dynamic cron management function available - scheduling logic removed',
         stats: {
           upcoming_matches: allUpcomingMatches.length,
-          cleaned_up_jobs: allFinishedMatches.length
+          faceit: upcomingMatches?.length || 0,
+          pandascore: pandaScoreMatches?.length || 0,
+          sportdevs: sportDevsMatches?.length || 0
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Error managing dynamic cron jobs:', error);
+    console.error('❌ Error in dynamic cron management:', error);
     
     return new Response(
       JSON.stringify({ 
