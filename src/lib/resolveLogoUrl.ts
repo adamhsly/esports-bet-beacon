@@ -1,3 +1,4 @@
+// resolveLogoUrl.ts
 import { createClient } from '@supabase/supabase-js';
 
 export type TeamType = 'pro' | 'amateur';
@@ -9,218 +10,293 @@ interface ResolveLogoOptions {
   teamName?: string | null;
 }
 
-// In-memory cache for logos
-const logoCache = new Map<string, string | null>();
+type CacheEntry = { url: string | null; timestamp: number };
 
-// Cache duration: 1 hour
-const CACHE_DURATION = 60 * 60 * 1000;
+// ---- Caching (memory + optional localStorage) ----
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const memCache = new Map<string, CacheEntry>();
 
-interface CacheEntry {
-  url: string | null;
-  timestamp: number;
+const hasLS = typeof window !== 'undefined' && !!(window as any).localStorage;
+
+function now() {
+  return Date.now();
 }
 
 function getCacheKey(teamType: TeamType, teamId?: string | number | null, teamName?: string | null): string {
   const normalizedId = teamId ? String(teamId) : '';
-  const normalizedName = teamName ? teamName.toLowerCase().trim() : '';
+  const normalizedName = normalizeName(teamName);
   return `logo:${teamType}:${normalizedId || normalizedName}`;
 }
 
-function getFromLocalStorage(key: string): string | null {
+function readMem(key: string): string | null {
+  const hit = memCache.get(key);
+  if (!hit) return null;
+  if (now() - hit.timestamp < CACHE_DURATION) return hit.url;
+  memCache.delete(key);
+  return null;
+}
+
+function writeMem(key: string, url: string | null) {
+  memCache.set(key, { url, timestamp: now() });
+}
+
+function readLS(key: string): string | null {
+  if (!hasLS) return null;
   try {
-    const cached = localStorage.getItem(key);
-    if (cached) {
-      const entry: CacheEntry = JSON.parse(cached);
-      if (Date.now() - entry.timestamp < CACHE_DURATION) {
-        return entry.url;
-      }
-      localStorage.removeItem(key);
-    }
-  } catch (error) {
-    console.warn('Error reading from localStorage:', error);
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CacheEntry;
+    if (now() - parsed.timestamp < CACHE_DURATION) return parsed.url;
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.warn('Logo cache: localStorage read error', e);
   }
   return null;
 }
 
-function setToLocalStorage(key: string, url: string | null): void {
+function writeLS(key: string, url: string | null) {
+  if (!hasLS) return;
   try {
-    const entry: CacheEntry = {
-      url,
-      timestamp: Date.now()
-    };
+    const entry: CacheEntry = { url, timestamp: now() };
     localStorage.setItem(key, JSON.stringify(entry));
-  } catch (error) {
-    console.warn('Error writing to localStorage:', error);
+  } catch (e) {
+    console.warn('Logo cache: localStorage write error', e);
   }
 }
 
-function isValidHttpsUrl(url: string | null | undefined): boolean {
+// ---- Utils ----
+function normalizeName(s?: string | null) {
+  return (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function isValidHttpsUrl(url?: string | null) {
   if (!url) return false;
   try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.protocol === 'https:';
+    const u = new URL(url);
+    return u.protocol === 'https:';
   } catch {
     return false;
   }
 }
 
+function pickFirstUrl(...candidates: Array<string | null | undefined>): string | null {
+  return (candidates.find(isValidHttpsUrl) as string) ?? null;
+}
+
+function toBase64Unicode(str: string) {
+  // btoa fails on non-ASCII; this safely encodes Unicode
+  // @ts-ignore
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+// ---- Pro (Pandascore) lookup ----
 async function getProTeamLogo(
   supabase: ReturnType<typeof createClient>,
-  teamId: string,
-  teamName?: string | null
+  teamId: string
 ): Promise<string | null> {
-  // Query pandascore_matches for last 6 months
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const { data: matches } = await supabase
-    .from('pandascore_matches')
-    .select('teams')
-    .gte('start_time', sixMonthsAgo.toISOString())
-    .in('status', ['finished', 'upcoming'])
-    .not('teams', 'is', null)
-    .order('start_time', { ascending: false })
-    .limit(20);
+  // 1) Try numeric id containment on the JSONB teams array
+  let matches: any[] | null = null;
+  const n = Number(teamId);
+  const canNumeric = !Number.isNaN(n);
 
-  if (matches) {
-    for (const match of matches) {
-      if (match.teams && Array.isArray(match.teams)) {
-        for (const teamObj of match.teams as any[]) {
-          if (teamObj.type === 'Team' && teamObj.opponent) {
-            const opponent = teamObj.opponent;
-            // String comparison for team ID
-            if (String(opponent.id) === teamId || opponent.slug === teamId) {
-              // Try image_url first, then logo
-              const logoUrl = opponent.image_url || opponent.logo;
-              if (isValidHttpsUrl(logoUrl)) {
-                return logoUrl;
-              }
-            }
-          }
+  if (canNumeric) {
+    const { data, error } = await supabase
+      .from('pandascore_matches')
+      .select('teams,start_time,status')
+      .gte('start_time', sixMonthsAgo.toISOString())
+      .in('status', ['finished', 'running', 'not_started', 'upcoming'])
+      .contains('teams', [{ opponent: { id: n } }]) // jsonb @> partial match
+      .order('start_time', { ascending: false })
+      .limit(60);
+    if (!error) matches = data;
+  }
+
+  // 2) Fallback: string id containment (some payloads store ids as strings)
+  if (!matches || matches.length === 0) {
+    const { data, error } = await supabase
+      .from('pandascore_matches')
+      .select('teams,start_time,status')
+      .gte('start_time', sixMonthsAgo.toISOString())
+      .in('status', ['finished', 'running', 'not_started', 'upcoming'])
+      .contains('teams', [{ opponent: { id: teamId } }])
+      .order('start_time', { ascending: false })
+      .limit(80);
+    if (!error) matches = data;
+  }
+
+  // 3) Last-ditch: recent matches (no contains) then scan in JS
+  if (!matches || matches.length === 0) {
+    const { data } = await supabase
+      .from('pandascore_matches')
+      .select('teams,start_time,status')
+      .gte('start_time', sixMonthsAgo.toISOString())
+      .in('status', ['finished', 'running', 'not_started', 'upcoming'])
+      .order('start_time', { ascending: false })
+      .limit(120);
+    matches = data ?? null;
+  }
+
+  // Extract image from the matching team object
+  for (const m of matches ?? []) {
+    const teams = Array.isArray(m?.teams) ? m.teams : [];
+    for (const t of teams) {
+      if (t?.type === 'Team' && t?.opponent) {
+        const oid = String(t.opponent.id);
+        if (oid === teamId) {
+          const url = pickFirstUrl(t.opponent.image_url, t.opponent.logo, t.opponent.image);
+          if (url) return url;
         }
       }
     }
   }
 
-  // Note: pandascore_teams table may not exist, skipping fallback check
+  // Optional: fallback to a teams table if present
+  try {
+    if (canNumeric) {
+      const { data } = await supabase
+        .from('pandascore_teams')
+        .select('image_url,logo,id')
+        .eq('id', n)
+        .limit(1)
+        .maybeSingle();
+      const url = pickFirstUrl(data?.image_url, data?.logo);
+      if (url) return url;
+    }
+  } catch {}
 
   return null;
 }
 
+// ---- Amateur (Faceit) lookup ----
 async function getAmateurTeamLogo(
   supabase: ReturnType<typeof createClient>,
   teamId: string,
   teamName?: string | null
 ): Promise<string | null> {
-  // First try the RPC function that aggregates all Faceit teams
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const normId = normalizeName(teamId);
+  const normName = normalizeName(teamName);
+
+  // 1) Try consolidated RPC if it exists
   try {
     const { data: faceitTeams } = await supabase.rpc('get_all_faceit_teams');
-    
-    if (faceitTeams && Array.isArray(faceitTeams)) {
-      const team = faceitTeams.find((t: any) => t.team_id === teamId);
-      if (team && isValidHttpsUrl(team.logo_url)) {
-        return team.logo_url;
+    if (Array.isArray(faceitTeams)) {
+      // Prefer exact id match, then name
+      const byId = faceitTeams.find((t: any) => normalizeName(t.team_id) === normId);
+      const byName = faceitTeams.find((t: any) => normalizeName(t.team_name) === normName);
+      const pick = byId ?? byName;
+      if (pick) {
+        const url = pickFirstUrl(pick.logo_url, pick.avatar, pick.image, pick.logo);
+        if (url) return url;
       }
     }
-  } catch (error) {
-    console.warn('Error calling get_all_faceit_teams:', error);
+  } catch (e) {
+    // non-fatal
   }
 
-  // Fallback: query faceit_matches directly
+  // 2) Faceit matches (scan factions) within 6 months
   const { data: matches } = await supabase
     .from('faceit_matches')
-    .select('teams')
+    .select('teams,started_at')
+    .gte('started_at', sixMonthsAgo.toISOString())
     .not('teams', 'is', null)
     .order('started_at', { ascending: false })
-    .limit(50);
+    .limit(200);
 
-  if (matches) {
-    for (const match of matches) {
-      if (match.teams && typeof match.teams === 'object') {
-        // Check both faction1 and faction2
-        for (const factionKey of ['faction1', 'faction2']) {
-          const faction = (match.teams as any)[factionKey];
-          if (faction) {
-            const normalizedName = faction.name?.toLowerCase().trim();
-            const normalizedTeamName = teamName?.toLowerCase().trim();
-            
-            // Match by ID or name
-            if (faction.name === teamName || normalizedName === normalizedTeamName || faction.name === teamId) {
-              const logoUrl = faction.avatar || faction.image || faction.logo;
-              if (isValidHttpsUrl(logoUrl)) {
-                return logoUrl;
-              }
-            }
-          }
-        }
+  for (const m of matches ?? []) {
+    const teams = (m as any)?.teams;
+    for (const key of ['faction1', 'faction2'] as const) {
+      const f = teams?.[key];
+      if (!f) continue;
+      const fName = normalizeName(f.name ?? f.team?.name);
+      const fIdLike = normalizeName(f.team_id ?? f.slug ?? fName);
+
+      // match by id-like OR name
+      if ((normId && fIdLike === normId) || (normName && fName === normName)) {
+        const url = pickFirstUrl(
+          f.avatar, f.image, f.logo,
+          f?.team?.avatar, f?.team?.image, f?.team?.logo
+        );
+        if (url) return url;
       }
     }
   }
+
+  // 3) Optional direct teams table
+  try {
+    const { data } = await supabase
+      .from('faceit_teams')
+      .select('logo_url,avatar,image,logo,team_id,team_name')
+      .or(`team_id.eq.${teamId},team_name.ilike.${teamName ? `%${teamName}%` : ''}`)
+      .limit(1)
+      .maybeSingle();
+    const url = pickFirstUrl(data?.logo_url, data?.avatar, data?.image, data?.logo);
+    if (url) return url;
+  } catch {}
 
   return null;
 }
 
+// ---- Public API ----
 export async function getTeamLogoUrl(opts: ResolveLogoOptions): Promise<string | null> {
-  const { supabase, teamType, teamId, teamName } = opts;
-  
-  // Normalize teamId to string
-  const normalizedTeamId = teamId ? String(teamId) : '';
-  const cacheKey = getCacheKey(teamType, normalizedTeamId, teamName);
-  
-  // Check memory cache first
-  if (logoCache.has(cacheKey)) {
-    return logoCache.get(cacheKey) || null;
+  const { supabase, teamType } = opts;
+  const normalizedTeamId = opts.teamId ? String(opts.teamId) : '';
+  const normalizedTeamName = normalizeName(opts.teamName);
+  const cacheKey = getCacheKey(teamType, normalizedTeamId, normalizedTeamName);
+
+  // Cache: memory first, then localStorage
+  const memHit = readMem(cacheKey);
+  if (memHit !== null) return memHit;
+
+  const lsHit = readLS(cacheKey);
+  if (lsHit !== null) {
+    writeMem(cacheKey, lsHit);
+    return lsHit;
   }
-  
-  // Check localStorage cache
-  const cachedUrl = getFromLocalStorage(cacheKey);
-  if (cachedUrl !== null) {
-    logoCache.set(cacheKey, cachedUrl);
-    return cachedUrl;
-  }
-  
+
   let logoUrl: string | null = null;
-  
   try {
     if (teamType === 'pro' && normalizedTeamId) {
-      logoUrl = await getProTeamLogo(supabase, normalizedTeamId, teamName);
-    } else if (teamType === 'amateur' && (normalizedTeamId || teamName)) {
-      logoUrl = await getAmateurTeamLogo(supabase, normalizedTeamId || '', teamName);
+      logoUrl = await getProTeamLogo(supabase, normalizedTeamId);
+    } else if (teamType === 'amateur' && (normalizedTeamId || normalizedTeamName)) {
+      logoUrl = await getAmateurTeamLogo(supabase, normalizedTeamId, normalizedTeamName);
     }
   } catch (error) {
-    console.warn(`Error resolving logo for ${teamType} team ${normalizedTeamId || teamName}:`, error);
+    console.warn(`Error resolving logo for ${teamType} (${normalizedTeamId || normalizedTeamName}):`, error);
   }
-  
-  // Cache the result (even if null)
-  logoCache.set(cacheKey, logoUrl);
-  setToLocalStorage(cacheKey, logoUrl);
-  
+
+  writeMem(cacheKey, logoUrl);
+  writeLS(cacheKey, logoUrl);
+
   return logoUrl;
 }
 
-// Utility to preload an image with CORS settings
+// ---- Canvas helpers ----
 export function preloadImage(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (!isValidHttpsUrl(url)) return reject(new Error(`Invalid image URL: ${url}`));
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.referrerPolicy = 'no-referrer';
     img.decoding = 'async';
-    
     img.onload = () => resolve();
     img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-    
-    img.src = url;
+    img.src = url!;
   });
 }
 
-// Generate a simple placeholder SVG data URL
 export function getPlaceholderLogo(teamName?: string): string {
-  const initial = teamName ? teamName.charAt(0).toUpperCase() : '?';
+  const initial = (teamName ? teamName.charAt(0) : '?').toUpperCase();
   const svg = `
     <svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
       <rect width="120" height="120" fill="#374151" rx="12"/>
       <text x="60" y="75" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="#9CA3AF">${initial}</text>
     </svg>
-  `;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  `.trim();
+  return `data:image/svg+xml;base64,${toBase64Unicode(svg)}`;
 }
