@@ -40,7 +40,12 @@ function corsSafeUrl(url?: string) {
   try {
     const u = new URL(url, window.location.origin);
     const host = u.hostname;
-    if (host.endsWith('faceit-cdn.net') || host.includes('faceit-cdn')) {
+    // Route external CDN URLs through proxy to avoid CORS issues
+    if (host.endsWith('faceit-cdn.net') || 
+        host.includes('faceit-cdn') || 
+        host === 'cdn.pandascore.co' ||
+        host.includes('sportdevs.com') ||
+        host === 'raw.githubusercontent.com') {
       return `${IMAGE_PROXY_URL}?url=${encodeURIComponent(u.toString())}`;
     }
     return url;

@@ -14,6 +14,7 @@ const ALLOWED_HOSTS = new Set<string>([
   "distribution.faceit-cdn.net",
   "raw.githubusercontent.com",
   "images.sportdevs.com",
+  "cdn.pandascore.co",
 ]);
 
 serve(async (req: Request) => {
