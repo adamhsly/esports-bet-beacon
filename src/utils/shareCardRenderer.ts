@@ -1,8 +1,6 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, getPlaceholderLogo, preloadImage, proxifyIfNeeded } from '@/lib/resolveLogoUrl';
-import shareFrameUrl from '/assets/share-frame.png';
-import neonBlueUrl from '/assets/rewards/neon_blue.png';
 
 interface ShareCardData {
   user: {
@@ -272,10 +270,11 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  // Preload background images first
+  // Preload background images first - using public folder paths
+  const shareFrameUrl = '/assets/share-frame.png';
+  
   try {
     await preloadImage(shareFrameUrl);
-    await preloadImage(neonBlueUrl);
   } catch (error) {
     console.warn('Background image preloading failed:', error);
   }
@@ -287,7 +286,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
-      background-image: url('${shareFrameUrl}');
+      background-image: url('/assets/share-frame.png');
       background-size: cover;
       background-position: center;
       color: #EAF2FF;
