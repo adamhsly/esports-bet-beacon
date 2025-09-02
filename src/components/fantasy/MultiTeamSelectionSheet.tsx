@@ -124,12 +124,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
-      
+
       // Advanced filters
       const matchVolumeMatch = (t.match_volume ?? 0) >= advancedFilters.pro.matches[0] && (t.match_volume ?? 0) <= advancedFilters.pro.matches[1];
       const creditsMatch = (t.price ?? 0) >= advancedFilters.pro.credits[0] && (t.price ?? 0) <= advancedFilters.pro.credits[1];
       const winRateMatch = (t.recent_win_rate ?? 0) >= advancedFilters.pro.winRate[0] && (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate[1];
-      
       return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
   }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, advancedFilters.pro]);
@@ -145,12 +144,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchesPrev > 0;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
-      
+
       // Advanced filters
       const matchVolumeMatch = (t.matches_prev_window ?? 0) >= advancedFilters.amateur.matches[0] && (t.matches_prev_window ?? 0) <= advancedFilters.amateur.matches[1];
       const creditsMatch = (t.price ?? 0) >= advancedFilters.amateur.credits[0] && (t.price ?? 0) <= advancedFilters.amateur.credits[1];
       const abandonRateMatch = (t.abandon_rate ?? 0) >= advancedFilters.amateur.abandonRate[0] && (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate[1];
-      
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
@@ -183,7 +181,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     setTempSelectedTeams([...selectedTeams]); // Reset to original selection
     onClose();
   };
-
   const handleFiltersApply = (newFilters: FilterState) => {
     setAdvancedFilters(newFilters);
   };
@@ -270,28 +267,17 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     </SelectContent>
                   </Select>
                   
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsFiltersOpen(true)}
-                    className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 shrink-0"
-                  >
+                  <Button variant="outline" size="icon" onClick={() => setIsFiltersOpen(true)} className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 shrink-0">
                     <Filter className="w-4 h-4" />
                   </Button>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4">
                   
-                  <div className="space-y-2">
-                    <Label className="text-gray-300 text-sm">Min Matches: {minMatchesPro}</Label>
-                    <Slider value={[minMatchesPro]} onValueChange={([value]) => setMinMatchesPro(value)} max={10} step={1} />
-                  </div>
+                  
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="pro-logo" checked={hasLogoOnlyPro} onCheckedChange={checked => setHasLogoOnlyPro(checked === true)} />
-                  <Label htmlFor="pro-logo" className="text-gray-300 text-sm">With logo only</Label>
-                </div>
+                
               </div>
               
               {/* Pro Team List */}
@@ -333,12 +319,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     </SelectContent>
                   </Select>
                   
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsFiltersOpen(true)}
-                    className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 shrink-0"
-                  >
+                  <Button variant="outline" size="icon" onClick={() => setIsFiltersOpen(true)} className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 shrink-0">
                     <Filter className="w-4 h-4" />
                   </Button>
                 </div>
@@ -409,15 +390,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         </div>
 
         {/* Filters Overlay */}
-        <TeamFiltersOverlay
-          isOpen={isFiltersOpen}
-          onClose={() => setIsFiltersOpen(false)}
-          activeTab={activeTab}
-          proTeams={proTeams}
-          amateurTeams={amateurTeams}
-          onFiltersApply={handleFiltersApply}
-          currentFilters={advancedFilters}
-        />
+        <TeamFiltersOverlay isOpen={isFiltersOpen} onClose={() => setIsFiltersOpen(false)} activeTab={activeTab} proTeams={proTeams} amateurTeams={amateurTeams} onFiltersApply={handleFiltersApply} currentFilters={advancedFilters} />
       </SheetContent>
     </Sheet>;
 };
