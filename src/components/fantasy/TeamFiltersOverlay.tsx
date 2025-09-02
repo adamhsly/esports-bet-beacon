@@ -132,7 +132,7 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
                   min={proRanges.matches.min}
                   max={proRanges.matches.max}
                   step={1}
-                  className="w-full"
+                  className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                 />
               </div>
 
@@ -150,7 +150,7 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
                   min={proRanges.credits.min}
                   max={proRanges.credits.max}
                   step={1}
-                  className="w-full"
+                  className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                 />
               </div>
 
@@ -168,7 +168,7 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
                   min={proRanges.winRate.min}
                   max={proRanges.winRate.max}
                   step={1}
-                  className="w-full"
+                  className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                 />
               </div>
             </>
@@ -188,7 +188,7 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
                   min={amateurRanges.matches.min}
                   max={amateurRanges.matches.max}
                   step={1}
-                  className="w-full"
+                  className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                 />
               </div>
 
@@ -206,7 +206,7 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
                   min={amateurRanges.credits.min}
                   max={amateurRanges.credits.max}
                   step={1}
-                  className="w-full"
+                  className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                 />
               </div>
 
@@ -224,7 +224,7 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
                   min={amateurRanges.abandonRate.min}
                   max={amateurRanges.abandonRate.max}
                   step={1}
-                  className="w-full"
+                  className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                 />
               </div>
             </>
