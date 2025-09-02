@@ -323,11 +323,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     <Filter className="w-4 h-4" />
                   </Button>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="am-matches" checked={hasPrevMatchesOnlyAm} onCheckedChange={checked => setHasPrevMatchesOnlyAm(checked === true)} />
-                  <Label htmlFor="am-matches" className="text-gray-300 text-sm">Has matches last window</Label>
-                </div>
               </div>
               
               {/* Amateur Team List */}
