@@ -59,9 +59,9 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
     abandonRate: { min: Math.min(...amateurAbandonRates), max: Math.max(...amateurAbandonRates) }
   };
 
-  // Initialize filters with dynamic ranges when component mounts or teams change
+  // Initialize filters with dynamic ranges only when the overlay first opens
   useEffect(() => {
-    if (proTeams.length > 0 || amateurTeams.length > 0) {
+    if (isOpen && (proTeams.length > 0 || amateurTeams.length > 0)) {
       const dynamicFilters: FilterState = {
         pro: {
           matches: [proRanges.matches.min, proRanges.matches.max],
@@ -75,10 +75,15 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
         }
       };
       setFilters(dynamicFilters);
-    } else {
+    }
+  }, [isOpen]); // Only run when overlay opens
+
+  // Sync with currentFilters when they change externally (but not when overlay is open)
+  useEffect(() => {
+    if (!isOpen) {
       setFilters(currentFilters);
     }
-  }, [proTeams, amateurTeams, proRanges, amateurRanges, currentFilters, isOpen]);
+  }, [currentFilters, isOpen]);
 
   const handleApply = () => {
     onFiltersApply(filters);
