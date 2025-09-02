@@ -195,37 +195,61 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     throw new Error('No lineup found for this round');
   }
 
-  // Enhance team picks with logo data from pandascore_matches
+  // Enhance team picks with logo data using the same approach as TeamPicker
   const enhancedTeamPicks = await Promise.all(
     (picks.team_picks as any[]).map(async (team) => {
-      console.log(`Enhancing team data for: ${team.name} (ID: ${team.id})`);
+      console.log(`Enhancing team data for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
       
-      // For professional teams, try to fetch logo from pandascore_matches
-      if (team.type === 'pro' && team.id) {
-        const { data: matchTeam } = await supabase
+      if (team.type === 'pro') {
+        // For professional teams, fetch from pandascore_matches using the same logic as TeamPicker
+        const { data: pandaMatches } = await supabase
           .from('pandascore_matches')
-          .select('teams')
-          .contains('teams', [{ opponent: { id: team.id } }])
-          .limit(1)
-          .maybeSingle();
+          .select('teams, esport_type')
+          .gte('start_time', roundId) // Using roundId as a proxy, ideally we'd have round dates
+          .not('teams', 'is', null)
+          .limit(50); // Limit to avoid large queries
 
-        if (matchTeam?.teams && Array.isArray(matchTeam.teams)) {
-          const teamData = (matchTeam.teams as any[]).find((t: any) => 
-            t.opponent?.id === team.id
-          );
-          
-          if (teamData?.opponent) {
-            console.log(`Found enhanced data for ${team.name}:`, teamData.opponent);
-            return {
-              ...team,
-              logo: teamData.opponent.image_url,
-              image_url: teamData.opponent.image_url,
-              hash_image: teamData.opponent.slug
-            };
+        if (pandaMatches) {
+          for (const match of pandaMatches) {
+             if (match.teams && Array.isArray(match.teams)) {
+               for (const teamObj of match.teams as any[]) {
+                 if (teamObj.type === 'Team' && teamObj.opponent) {
+                   const opponent = teamObj.opponent;
+                   if (String(opponent.id) === team.id || opponent.slug === team.id) {
+                     console.log(`Found pro team logo for ${team.name}:`, opponent.image_url);
+                     return {
+                       ...team,
+                       logo_url: opponent.image_url,
+                       slug: opponent.slug
+                     };
+                   }
+                 }
+               }
+             }
           }
+        }
+      } else if (team.type === 'amateur') {
+        // For amateur teams, fetch from FACEIT database using the same logic as TeamPicker
+        const { data: faceitTeam } = await supabase
+          .rpc('get_all_faceit_teams')
+          .then((res: any) => {
+            if (res.data) {
+              const found = res.data.find((t: any) => t.team_id === team.id);
+              return { data: found };
+            }
+            return { data: null };
+          });
+
+        if (faceitTeam) {
+          console.log(`Found amateur team logo for ${team.name}:`, faceitTeam.logo_url);
+          return {
+            ...team,
+            logo_url: faceitTeam.logo_url
+          };
         }
       }
       
+      console.log(`No enhanced data found for ${team.name}, using original`);
       return team;
     })
   );
