@@ -206,13 +206,18 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
       console.log(`Enhancing team data for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
       
       if (team.type === 'pro') {
-        // For professional teams, fetch from pandascore_matches using the same logic as TeamPicker
+        // For professional teams, fetch from pandascore_matches using recent date range
+        const now = new Date();
+        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const oneMonthFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        
         const { data: pandaMatches } = await supabase
           .from('pandascore_matches')
           .select('teams, esport_type')
-          .gte('start_time', roundId) // Using roundId as a proxy, ideally we'd have round dates
+          .gte('start_time', oneMonthAgo.toISOString())
+          .lte('start_time', oneMonthFromNow.toISOString())
           .not('teams', 'is', null)
-          .limit(50); // Limit to avoid large queries
+          .limit(50);
 
         if (pandaMatches) {
           for (const match of pandaMatches) {
@@ -225,6 +230,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
                      return {
                        ...team,
                        logo_url: opponent.image_url,
+                       image_url: opponent.image_url,
                        slug: opponent.slug
                      };
                    }
@@ -249,7 +255,8 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
           console.log(`Found amateur team logo for ${team.name}:`, faceitTeam.logo_url);
           return {
             ...team,
-            logo_url: faceitTeam.logo_url
+            logo_url: faceitTeam.logo_url,
+            image_url: faceitTeam.logo_url
           };
         }
       }
@@ -309,7 +316,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges: badges?.map(b => ({ asset_url: `/assets/rewards/${b.season_rewards?.reward_value}.png` })) || [],
+    badges: badges?.map(b => ({ asset_url: `/public/assets/rewards/${b.season_rewards?.reward_value}.png` })) || [],
   };
 }
 
@@ -319,7 +326,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
-      background-image: url('/assets/share-frame.png');
+      background-image: url('/public/assets/share-frame.png');
       background-size: cover;
       background-position: center;
       color: #EAF2FF;
