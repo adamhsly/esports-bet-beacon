@@ -72,14 +72,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
     pro: {
-      matches: [0, 100],
-      credits: [0, 1000],
-      winRate: [0, 100]
+      matches: 100,
+      credits: 1000,
+      winRate: 100
     },
     amateur: {
-      matches: [0, 100],
-      credits: [0, 1000],
-      abandonRate: [0, 100]
+      matches: 100,
+      credits: 1000,
+      abandonRate: 100
     }
   });
   const debouncedProSearch = useDebounce(proSearch, 300);
@@ -126,9 +126,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
 
       // Advanced filters
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.pro.matches[1];
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.pro.credits[1];
-      const winRateMatch = (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate[1];
+      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.pro.matches;
+      const creditsMatch = (t.price ?? 0) <= advancedFilters.pro.credits;
+      const winRateMatch = (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate;
       return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
   }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, advancedFilters.pro]);
@@ -146,9 +146,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
 
       // Advanced filters
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches[1];
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits[1];
-      const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate[1];
+      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches;
+      const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits;
+      const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate;
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
@@ -322,6 +322,19 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   <Button variant="outline" size="icon" onClick={() => setIsFiltersOpen(true)} className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 shrink-0">
                     <Filter className="w-4 h-4" />
                   </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  
+                  <div className="space-y-2">
+                    <Label className="text-gray-300 text-sm">Min Matches: {minMatchesPrev}</Label>
+                    <Slider value={[minMatchesPrev]} onValueChange={([value]) => setMinMatchesPrev(value)} max={20} step={1} />
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="am-matches" checked={hasPrevMatchesOnlyAm} onCheckedChange={checked => setHasPrevMatchesOnlyAm(checked === true)} />
+                  <Label htmlFor="am-matches" className="text-gray-300 text-sm">Has matches last window</Label>
                 </div>
               </div>
               
