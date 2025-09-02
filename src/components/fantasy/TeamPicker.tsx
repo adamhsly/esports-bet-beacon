@@ -61,7 +61,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const {
     user
   } = useAuth();
-  const { progressMission } = useRPCActions();
+  const {
+    progressMission
+  } = useRPCActions();
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
@@ -71,13 +73,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
-  
+
   // Star Team functionality
   const [starTeamId, setStarTeamId] = useState<string | null>(null);
   const [showNoStarModal, setShowNoStarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
-  const { setStarTeam } = useRoundStar(round.id);
+  const {
+    setStarTeam
+  } = useRoundStar(round.id);
 
   // Salary cap
   const SALARY_CAP = 50;
@@ -119,20 +123,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     fetchAvailableTeams();
   }, [round, user]);
-
   const checkExistingSubmission = async () => {
     if (!user) return;
-    
     try {
-      const { data, error } = await supabase
-        .from('fantasy_round_picks')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('round_id', round.id)
-        .maybeSingle();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('fantasy_round_picks').select('id').eq('user_id', user.id).eq('round_id', round.id).maybeSingle();
       if (error) throw error;
-      
       if (data) {
         setHasExistingSubmission(true);
         // Show message and redirect to in-progress tab
@@ -279,7 +277,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const row = payload.new || payload.old;
       if (!row) return;
       if (row.team_type === 'pro') {
-        setProTeams(prev => prev.map(t => (t.id === row.team_id || t.slug === row.team_id) ? {
+        setProTeams(prev => prev.map(t => t.id === row.team_id || t.slug === row.team_id ? {
           ...t,
           price: typeof row.price === 'number' ? row.price : t.price,
           recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
@@ -362,7 +360,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setSelectedTeams([...selectedTeams, team]);
   };
-
   const handleTeamsUpdate = (teams: Team[]) => {
     // Clear star if the starred team is no longer selected
     if (starTeamId && !teams.find(t => t.id === starTeamId)) {
@@ -373,7 +370,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const handleRemoveTeam = (indexOrId: number | string) => {
     let removedTeam: Team;
     let newSelectedTeams: Team[];
-    
     if (typeof indexOrId === 'number') {
       // Handle by index (existing behavior)
       removedTeam = selectedTeams[indexOrId];
@@ -384,12 +380,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       removedTeam = selectedTeams.find(t => t.id === indexOrId)!;
       newSelectedTeams = selectedTeams.filter(t => t.id !== indexOrId);
     }
-    
+
     // If removing the starred team, clear star
     if (starTeamId === removedTeam.id) {
       setStarTeamId(null);
     }
-    
     setSelectedTeams(newSelectedTeams);
   };
   const handleBenchSelect = (team: Team) => {
@@ -399,7 +394,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     setBenchTeam(benchTeam?.id === team.id ? null : team);
   };
-
   const handleToggleStar = (teamId: string) => {
     if (starTeamId === teamId) {
       setStarTeamId(null);
@@ -407,7 +401,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       setStarTeamId(teamId);
     }
   };
-
   const submitTeams = async () => {
     // Check again before submission in case user navigated directly
     if (hasExistingSubmission) {
@@ -425,7 +418,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       });
       return;
     }
-
     try {
       setSubmitting(true);
 
@@ -450,7 +442,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         name: benchTeam.name,
         type: benchTeam.type
       } : null;
-      const { error } = await supabase.from('fantasy_round_picks').insert({
+      const {
+        error
+      } = await supabase.from('fantasy_round_picks').insert({
         user_id: user.id,
         round_id: round.id,
         team_picks: teamPicksData,
@@ -460,7 +454,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       // Progress missions using MissionBus (non-blocking)
       try {
-        const { MissionBus } = await import('@/lib/missionBus');
+        const {
+          MissionBus
+        } = await import('@/lib/missionBus');
         MissionBus.onSubmitLineup();
         MissionBus.onJoinRoundAny();
         MissionBus.recordJoinType(round.type);
@@ -479,7 +475,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       } catch (missionError) {
         console.warn('Mission progression failed (non-blocking)', missionError);
       }
-      
+
       // Show success modal instead of navigating back immediately
       setShowSuccessModal(true);
     } catch (error: any) {
@@ -521,87 +517,31 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget 
-        selectedTeams={selectedTeams} 
-        benchTeam={benchTeam} 
-        budgetSpent={budgetSpent} 
-        budgetRemaining={budgetRemaining} 
-        salaryCapacity={SALARY_CAP} 
-        roundType={round.type} 
-        onRemoveTeam={handleRemoveTeam}
-        proTeams={proTeams}
-        amateurTeams={amateurTeams}
-        onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)}
-        onTeamSelect={handleTeamSelect}
-        starTeamId={starTeamId}
-        onToggleStar={handleToggleStar}
-      />
+      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
       {/* Team Selection Button */}
       <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-white">Select Your Teams</h3>
-              <p className="text-gray-400 text-sm">Choose up to 5 teams across pro and amateur categories</p>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-400">Available Teams</div>
-              <div className="text-lg font-medium text-white">
-                {proTeams.length + amateurTeams.length} total
-              </div>
-            </div>
-          </div>
-          
-          <Button 
-            onClick={() => setShowTeamSelectionSheet(true)}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-medium py-3"
-            size="lg"
-          >
-            <Users className="w-5 h-5 mr-2" />
-            {selectedTeams.length === 0 ? 'Select Teams' : `Manage Teams (${selectedTeams.length}/5)`}
-          </Button>
-        </CardContent>
+        
       </Card>
 
       {/* Selected Teams Display */}
-      {selectedTeams.length > 0 && (
-        <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
+      {selectedTeams.length > 0 && <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-white mb-4">Your Selected Teams ({selectedTeams.length}/5)</h3>
             <div className="grid gap-3">
-              {selectedTeams.map(team => (
-                <TeamCard
-                  key={team.id}
-                  team={team}
-                  isSelected={true}
-                  onClick={() => handleRemoveTeam(team.id)}
-                  variant="selection"
-                  showStarToggle={true}
-                  isStarred={starTeamId === team.id}
-                  onToggleStar={() => handleToggleStar(team.id)}
-                  showPrice={true}
-                  budgetRemaining={budgetRemaining}
-                />
-              ))}
+              {selectedTeams.map(team => <TeamCard key={team.id} team={team} isSelected={true} onClick={() => handleRemoveTeam(team.id)} variant="selection" showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleToggleStar(team.id)} showPrice={true} budgetRemaining={budgetRemaining} />)}
             </div>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Star Team Summary */}
-      {selectedTeams.length > 0 && (
-        <div className="bg-muted/30 rounded-lg p-4 border border-border">
+      {selectedTeams.length > 0 && <div className="bg-muted/30 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Star className={`h-5 w-5 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
               <div>
                 <div className="font-medium">
-                  {getStarredTeamName() ? (
-                    <>Star Team: <span className="text-[#F5C042]">{getStarredTeamName()}</span> (Double Points)</>
-                  ) : (
-                    'No Star Team selected'
-                  )}
+                  {getStarredTeamName() ? <>Star Team: <span className="text-[#F5C042]">{getStarredTeamName()}</span> (Double Points)</> : 'No Star Team selected'}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Your Star Team scores double points this round. Choose wisely!
@@ -621,73 +561,44 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Submit Button */}
       <div className="flex justify-end">
         <Button onClick={async () => {
-          if (!user) {
-            setShowAuthModal(true);
-            setPendingSubmission(true);
-            return;
-          }
-          if (selectedTeams.length !== 5) {
-            toast.error('Please select exactly 5 teams');
-            return;
-          }
-          
-          if (!starTeamId) {
-            setShowNoStarModal(true);
-            return;
-          }
-          
-          await submitTeams();
-        }} disabled={selectedTeams.length !== 5 || submitting} className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90">
+        if (!user) {
+          setShowAuthModal(true);
+          setPendingSubmission(true);
+          return;
+        }
+        if (selectedTeams.length !== 5) {
+          toast.error('Please select exactly 5 teams');
+          return;
+        }
+        if (!starTeamId) {
+          setShowNoStarModal(true);
+          return;
+        }
+        await submitTeams();
+      }} disabled={selectedTeams.length !== 5 || submitting} className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90">
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
       </div>
 
       {/* No Star Team Confirmation Modal */}
-      <StarTeamConfirmModal
-        open={showNoStarModal}
-        onOpenChange={setShowNoStarModal}
-        title="Proceed without a Star Team?"
-        description="Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed."
-        onConfirm={async () => {
-          setShowNoStarModal(false);
-          await submitTeams();
-        }}
-        onCancel={() => setShowNoStarModal(false)}
-        confirmText="Submit without Star"
-        cancelText="Choose Star Team"
-      />
+      <StarTeamConfirmModal open={showNoStarModal} onOpenChange={setShowNoStarModal} title="Proceed without a Star Team?" description="Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed." onConfirm={async () => {
+      setShowNoStarModal(false);
+      await submitTeams();
+    }} onCancel={() => setShowNoStarModal(false)} confirmText="Submit without Star" cancelText="Choose Star Team" />
 
-      <LineupSuccessModal
-        open={showSuccessModal}
-        onOpenChange={setShowSuccessModal}
-        roundId={round.id}
-        roundName={`${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`}
-        userId={user?.id || ''}
-        starTeamName={getStarredTeamName()}
-        onCheckProgress={() => {
-          setShowSuccessModal(false);
-          onBack();
-        }}
-      />
+      <LineupSuccessModal open={showSuccessModal} onOpenChange={setShowSuccessModal} roundId={round.id} roundName={`${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`} userId={user?.id || ''} starTeamName={getStarredTeamName()} onCheckProgress={() => {
+      setShowSuccessModal(false);
+      onBack();
+    }} />
 
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
       
       {/* Multi Team Selection Sheet */}
-      <MultiTeamSelectionSheet
-        isOpen={showTeamSelectionSheet}
-        onClose={() => setShowTeamSelectionSheet(false)}
-        proTeams={proTeams}
-        amateurTeams={amateurTeams}
-        selectedTeams={selectedTeams}
-        onTeamsUpdate={handleTeamsUpdate}
-        budgetRemaining={budgetRemaining}
-        totalBudget={SALARY_CAP}
-      />
+      <MultiTeamSelectionSheet isOpen={showTeamSelectionSheet} onClose={() => setShowTeamSelectionSheet(false)} proTeams={proTeams} amateurTeams={amateurTeams} selectedTeams={selectedTeams} onTeamsUpdate={handleTeamsUpdate} budgetRemaining={budgetRemaining} totalBudget={SALARY_CAP} />
     </div>;
 };
