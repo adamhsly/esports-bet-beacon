@@ -72,14 +72,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
     pro: {
-      matches: 100,
-      credits: 1000,
-      winRate: 100
+      matches: [0, 100],
+      credits: [0, 1000],
+      winRate: [0, 100]
     },
     amateur: {
-      matches: 100,
-      credits: 1000,
-      abandonRate: 100
+      matches: [0, 100],
+      credits: [0, 1000],
+      abandonRate: [0, 100]
     }
   });
   const debouncedProSearch = useDebounce(proSearch, 300);
@@ -126,9 +126,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
 
       // Advanced filters
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.pro.matches;
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.pro.credits;
-      const winRateMatch = (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate;
+      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.pro.matches[1];
+      const creditsMatch = (t.price ?? 0) <= advancedFilters.pro.credits[1];
+      const winRateMatch = (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate[1];
       return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
   }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, advancedFilters.pro]);
@@ -146,9 +146,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
 
       // Advanced filters
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches;
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits;
-      const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate;
+      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches[1];
+      const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits[1];
+      const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate[1];
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
   }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
