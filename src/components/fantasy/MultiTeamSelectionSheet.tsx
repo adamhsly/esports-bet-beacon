@@ -136,17 +136,17 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     return amateurTeams.filter(t => {
       const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
       const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
-      const matchesPrev = t.matches_prev_window ?? 0;
-      const matchesMatch = matchesPrev >= minMatchesPrev;
+      const matchVolume = t.match_volume ?? 0;
+      const matchesMatch = matchVolume >= minMatchesPrev;
       const missed = t.missed_pct ?? 100;
       const missedMatch = missed <= maxMissedPct;
       const logoMatch = !hasLogoOnlyAm || !!t.logo_url;
-      const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchesPrev > 0;
+      const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchVolume > 0;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
 
       // Advanced filters
-      const matchVolumeMatch = (t.matches_prev_window ?? 0) <= advancedFilters.amateur.matches;
+      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches;
       const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits;
       const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate;
       return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
