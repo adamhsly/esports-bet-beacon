@@ -172,19 +172,6 @@ export const TeamFiltersOverlay: React.FC<TeamFiltersOverlayProps> = ({
             }))} min={amateurRanges.credits.min} max={amateurRanges.credits.max} step={1} className="w-full" />
               </div>
 
-              {/* Abandon Rate Filter */}
-              <div className="space-y-3">
-                <Label className="text-gray-300 text-sm">
-                  Abandon Rate: {filters.amateur.abandonRate[0]}% - {filters.amateur.abandonRate[1]}%
-                </Label>
-                <Slider value={filters.amateur.abandonRate} onValueChange={value => setFilters(prev => ({
-              ...prev,
-              amateur: {
-                ...prev.amateur,
-                abandonRate: value
-              }
-            }))} min={amateurRanges.abandonRate.min} max={amateurRanges.abandonRate.max} step={1} className="w-full" />
-              </div>
             </>}
         </div>
 
