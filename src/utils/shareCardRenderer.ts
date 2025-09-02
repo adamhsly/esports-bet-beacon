@@ -32,6 +32,23 @@ interface ShareCardResult {
 const FRAME_WIDTH = 1080;
 const FRAME_HEIGHT = 1350;
 
+// CORS-safe image proxy for external logos (Faceit CDN etc.)
+const SUPABASE_FUNCTIONS_BASE = 'https://zcjzeafelunqxmxzznos.supabase.co/functions/v1';
+const IMAGE_PROXY_URL = `${SUPABASE_FUNCTIONS_BASE}/image-proxy`;
+function corsSafeUrl(url?: string) {
+  if (!url) return '';
+  try {
+    const u = new URL(url, window.location.origin);
+    const host = u.hostname;
+    if (host.endsWith('faceit-cdn.net') || host.includes('faceit-cdn')) {
+      return `${IMAGE_PROXY_URL}?url=${encodeURIComponent(u.toString())}`;
+    }
+    return url;
+  } catch {
+    return url || '';
+  }
+}
+
 export async function renderShareCard(
   roundId: string, 
   userId: string
@@ -70,9 +87,10 @@ export async function renderShareCard(
       backgroundColor: '#1a1a1a',
       scale: 1,
       useCORS: true,
-      allowTaint: true,
+      allowTaint: false,
       logging: true, // Enable logging to see what's happening
       foreignObjectRendering: false, // Disable to avoid React conflicts
+      proxy: IMAGE_PROXY_URL,
     });
 
     console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
@@ -328,6 +346,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = team.type === 'pro' ? '#8B5CF6' : '#F97316';
   const logoUrl = getEnhancedTeamLogoUrl(team);
+  const safeLogoUrl = corsSafeUrl(logoUrl);
   
   return `
     <div style="
@@ -377,7 +396,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       <div style="
         width: 120px;
         height: 120px;
-        background: url('${logoUrl}');
+        background: url('${safeLogoUrl}');
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
