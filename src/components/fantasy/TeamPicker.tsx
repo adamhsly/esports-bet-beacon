@@ -245,7 +245,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           total_scheduled: s?.total_scheduled ?? undefined,
           price: p?.price ?? undefined,
           abandon_rate: typeof p?.abandon_rate === 'number' ? p.abandon_rate : undefined,
-          recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined
+          recent_win_rate: typeof p?.recent_win_rate === 'number' ? p.recent_win_rate : undefined,
+          match_volume: typeof p?.match_volume === 'number' ? p.match_volume : undefined
         } as Team;
       }).sort((a: Team, b: Team) => {
         const aM = a.matches_prev_window || 0;
