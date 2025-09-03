@@ -1,46 +1,44 @@
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 export type TeamType = 'pro' | 'amateur';
 
 interface ResolveLogoOptions {
-  supabase: ReturnType<typeof createClient> | any;
+  supabase: ReturnType<typeof createClient> | any; // allow injected client
   teamType: TeamType;
   teamId?: string | number | null;
   teamName?: string | null;
+  /** If true, returns a CORS-safe proxied URL suitable for html2canvas */
   forCanvas?: boolean;
 }
 
-/* ----------------- utils ----------------- */
+/* ----------------- small utils ----------------- */
 
 function isValidHttpsUrl(url: string | null | undefined): boolean {
   if (!url) return false;
-  try { return new URL(url).protocol === 'https:'; } catch { return false; }
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function normalizeName(name?: string | null) {
   return (name ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-/** Derive Supabase origin from the *actual* client (no env required). */
-function getSupabaseOriginFromClient(client: any): string | null {
-  try {
-    const { data: { publicUrl } } = client.storage.from('shares').getPublicUrl('__probe__');
-    return new URL(publicUrl).origin;
-  } catch {
-    return null;
-  }
-}
-
-/** Build a CORS-safe proxy URL (Edge Function must be public). */
-function proxifyForCanvas(url?: string | null, client?: any): string | null {
+/** Build a CORS-safe proxy URL (Edge Function must be public, no auth) */
+function proxifyForCanvas(url?: string | null): string | null {
   if (!url) return null;
-  if (!/^https?:\/\//i.test(url)) return url; // relative/data urls are fine
+  if (!/^https?:\/\//i.test(url)) return url; // relative/data: URL are fine
   try {
-    const supaOrigin = getSupabaseOriginFromClient(client);
-    if (!supaOrigin) return url;
+    const base = SUPABASE_URL; // ✅ from client.ts (works in Vite/browser)
+    const supaOrigin = new URL(base).origin;
     const u = new URL(url);
-    if (u.origin === supaOrigin) return u.href; // already same-origin
-    return `${supaOrigin}/functions/v1/public-image-proxy?url=${encodeURIComponent(u.href)}`;
+    // If already same-origin (e.g., your Storage bucket or proxy), return as-is
+    if (u.origin === supaOrigin) return u.href;
+    return `${base}/functions/v1/public-image-proxy?url=${encodeURIComponent(u.href)}`;
   } catch {
     return url;
   }
@@ -56,34 +54,46 @@ async function getProTeamLogo(
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   const numericId = Number(teamId);
+  // IMPORTANT: the 'cs' operator expects a **stringified JSON** value
   const containsNumeric = JSON.stringify([{ opponent: { id: numericId } }]);
   const containsString  = JSON.stringify([{ opponent: { id: String(teamId) } }]);
 
-  // IMPORTANT: the third arg to .filter('cs', ...) **must** be a JSON string
-  // otherwise it becomes cs.{[object Object]} and PostgREST returns 400.
-  let { data: matches } = await supabase
-    .from('pandascore_matches')
-    .select('teams,start_time,status')
-    .gte('start_time', sixMonthsAgo.toISOString())
-    .in('status', ['finished','running','not_started','upcoming'])
-    .filter('teams', 'cs', containsNumeric)
-    .order('start_time', { ascending: false })
-    .limit(60);
+  let matches: any[] | null = null;
 
-  if (!matches?.length) {
-    const resp = await supabase
+  // Try numeric id first (some rows store id as number)
+  try {
+    const { data } = await supabase
       .from('pandascore_matches')
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
       .in('status', ['finished','running','not_started','upcoming'])
-      .filter('teams', 'cs', containsString)
+      .filter('teams', 'cs', containsNumeric)     // ✅ string, not object
       .order('start_time', { ascending: false })
-      .limit(80);
-    matches = resp.data;
+      .limit(60);
+    matches = data;
+  } catch {
+    // ignore and fall back
+  }
+
+  if (!matches?.length) {
+    try {
+      const { data } = await supabase
+        .from('pandascore_matches')
+        .select('teams,start_time,status')
+        .gte('start_time', sixMonthsAgo.toISOString())
+        .in('status', ['finished','running','not_started','upcoming'])
+        .filter('teams', 'cs', containsString)    // ✅ string, not object
+        .order('start_time', { ascending: false })
+        .limit(80);
+      matches = data;
+    } catch {
+      // ignore
+    }
   }
 
   if (!matches?.length) return null;
 
+  // Walk the teams blobs to extract logo
   for (const m of matches) {
     if (!Array.isArray(m?.teams)) continue;
     for (const t of m.teams as any[]) {
@@ -98,6 +108,8 @@ async function getProTeamLogo(
       }
     }
   }
+
+  // NOTE: We intentionally do NOT query pandascore_teams here (common RLS 400s).
   return null;
 }
 
@@ -106,7 +118,7 @@ async function getAmateurTeamLogo(
   teamId: string | undefined,
   teamName?: string | null
 ): Promise<string | null> {
-  // 1) Catalog RPC if available
+  // 1) Try catalog RPC (if available)
   try {
     const { data: faceitTeams } = await supabase.rpc('get_all_faceit_teams');
     if (Array.isArray(faceitTeams)) {
@@ -114,9 +126,11 @@ async function getAmateurTeamLogo(
       const hit = faceitTeams.find((t: any) => String(t.team_id) === String(key));
       if (hit?.logo_url && isValidHttpsUrl(hit.logo_url)) return hit.logo_url;
     }
-  } catch {}
+  } catch {
+    // ignore and fallback to matches
+  }
 
-  // 2) Fallback — scan recent matches for faction avatars
+  // 2) Fallback — scan recent matches for faction logos
   const { data: matches } = await supabase
     .from('faceit_matches')
     .select('teams, started_at')
@@ -131,6 +145,7 @@ async function getAmateurTeamLogo(
     const factions = [m?.teams?.faction1, m?.teams?.faction2].filter(Boolean);
     for (const f of factions as any[]) {
       const fName = normalizeName(f?.name);
+      // match by id (if they used name as id) or by normalized name
       const idMatch = teamId && (String(f?.name) === String(teamId));
       const nameMatch = targetName && fName === targetName;
       if (idMatch || nameMatch) {
@@ -155,8 +170,9 @@ export async function getTeamLogoUrl(opts: ResolveLogoOptions): Promise<string |
     resolved = await getAmateurTeamLogo(supabase, teamId ? String(teamId) : undefined, teamName);
   }
 
+  // Proxy for canvas to avoid cross-origin taint/CORS issues
   if (forCanvas && resolved) {
-    resolved = proxifyForCanvas(resolved, supabase) ?? resolved;
+    resolved = proxifyForCanvas(resolved) ?? resolved;
   }
 
   return resolved;
