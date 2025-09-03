@@ -2,6 +2,21 @@ import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
 
+// ✅ Import the background so Vite builds and serves it correctly
+import shareFrame from '@/assets/share-frame.png';
+
+// ✅ Optionally resolve reward badges via Vite glob (prevents 404s in preview)
+const rewardGlobs = import.meta.glob('@/assets/rewards/*', { as: 'url', eager: true }) as Record<string, string>;
+function resolveRewardAsset(name?: string | null): string | null {
+  if (!name) return null;
+  const candidates = [`${name}.png`, `${name}.webp`, `${name}.jpg`, `${name}.jpeg`];
+  for (const c of candidates) {
+    const hit = Object.entries(rewardGlobs).find(([p]) => p.endsWith(`/rewards/${c}`));
+    if (hit) return hit[1];
+  }
+  return null;
+}
+
 interface ShareCardData {
   user: {
     username: string;
@@ -20,7 +35,9 @@ interface ShareCardData {
   starTeamId?: string;
   roundName: string;
   roundId: string;
-  badges: Array<{ asset_url: string }>;
+  badges: Array<{
+    asset_url: string;
+  }>;
 }
 
 interface ShareCardResult {
@@ -32,13 +49,14 @@ const FRAME_WIDTH = 1080;
 const FRAME_HEIGHT = 1350;
 
 export async function renderShareCard(
-  roundId: string, 
+  roundId: string,
   userId: string
 ): Promise<ShareCardResult> {
   console.log('=== Share Card Generation Started ===');
   console.log('Round ID:', roundId);
   console.log('User ID:', userId);
 
+  // Create offscreen container
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.top = '-9999px';
@@ -49,64 +67,83 @@ export async function renderShareCard(
   document.body.appendChild(container);
 
   try {
+    // Fetch data
     console.log('Step 1: Fetching share card data...');
     const shareData = await fetchShareCardData(roundId, userId);
+
     console.log('Step 2: Share data fetched successfully:', shareData);
 
+    // Render share card
     console.log('Step 3: Rendering HTML...');
     await renderShareCardHTML(container, shareData);
 
     console.log('Step 4: HTML rendered, generating canvas...');
+
+    // Generate image with error handling
     const canvas = await html2canvas(container, {
       width: FRAME_WIDTH,
       height: FRAME_HEIGHT,
-      backgroundColor: '#0B1021',
+      backgroundColor: '#1a1a1a',
       scale: 1,
       useCORS: true,
       allowTaint: false,
       logging: false,
       foreignObjectRendering: false,
-      imageTimeout: 15000,
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0,
-      windowWidth: FRAME_WIDTH,
-      windowHeight: FRAME_HEIGHT,
     });
 
     console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
 
+    // Convert to blob
     console.log('Step 6: Converting canvas to blob...');
     const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to generate blob from canvas'))), 'image/png', 1.0);
+      canvas.toBlob((b) => {
+        if (b) {
+          console.log('Step 7: Blob created successfully, size:', b.size, 'bytes');
+          resolve(b);
+        } else {
+          reject(new Error('Failed to generate blob from canvas'));
+        }
+      }, 'image/png', 1.0);
     });
-    console.log('Step 7: Blob created successfully, size:', blob.size, 'bytes');
 
     console.log('Step 8: Uploading to Supabase storage...');
+
+    // Upload to Supabase Storage
     const fileName = `${roundId}/${userId}.png`;
     const { error: uploadError } = await supabase.storage
       .from('shares')
-      .upload(fileName, blob, { upsert: true, contentType: 'image/png' });
+      .upload(fileName, blob, {
+        upsert: true,
+        contentType: 'image/png'
+      });
 
     if (uploadError) {
       console.error('Step 8 FAILED - Upload error:', uploadError);
       throw new Error(`Failed to upload share card: ${uploadError.message}`);
     }
+
     console.log('Step 9: File uploaded successfully');
 
-    const { data: { publicUrl } } = supabase.storage.from('shares').getPublicUrl(fileName);
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('shares')
+      .getPublicUrl(fileName);
+
     console.log('Step 10: Public URL generated:', publicUrl);
     console.log('=== Share Card Generation Completed Successfully ===');
 
     return { publicUrl, blob };
+
   } catch (error) {
     console.error('=== Share Card Generation FAILED ===');
     console.error('Error details:', error);
     throw error;
   } finally {
+    // Cleanup
     try {
-      if (container.parentNode) document.body.removeChild(container);
+      if (container.parentNode) {
+        document.body.removeChild(container);
+      }
     } catch (cleanupError) {
       console.warn('Cleanup error:', cleanupError);
     }
@@ -115,75 +152,110 @@ export async function renderShareCard(
 
 async function fetchShareCardData(roundId: string, userId: string): Promise<ShareCardData> {
   console.log('Fetching share card data for roundId:', roundId, 'userId:', userId);
-  
+
+  // User profile
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('username')
     .eq('id', userId)
     .single();
+
   if (profileError) {
     console.error('Profile fetch error:', profileError);
     throw new Error(`Failed to fetch user profile: ${profileError.message}`);
   }
 
+  // Progress
   const { data: progress, error: progressError } = await supabase
     .from('user_progress')
     .select('level, xp')
     .eq('user_id', userId)
     .maybeSingle();
-  if (progressError) console.error('Progress fetch error:', progressError);
 
+  if (progressError) {
+    console.error('Progress fetch error:', progressError);
+    // use defaults below
+  }
+
+  // Picks
   const { data: picks, error: picksError } = await supabase
     .from('fantasy_round_picks')
     .select('team_picks')
     .eq('round_id', roundId)
     .eq('user_id', userId)
     .maybeSingle();
+
   if (picksError) {
     console.error('Picks fetch error:', picksError);
     throw new Error(`Failed to fetch lineup picks: ${picksError.message}`);
   }
-  if (!picks?.team_picks) throw new Error('No lineup found for this round');
 
-  // resolve + preload team logos (proxied for canvas)
+  if (!picks || !picks.team_picks) {
+    throw new Error('No lineup found for this round');
+  }
+
+  // Enhance team picks with logos (resolver now proxies for canvas)
   const enhancedTeamPicks = await Promise.all(
     (picks.team_picks as any[]).map(async (team) => {
       console.log(`Resolving logo for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
+
       const safeLogo = await getTeamLogoUrl({
         supabase: supabase as any,
         teamType: team.type,
         teamId: team.id,
         teamName: team.name,
-        forCanvas: true, // ensure CORS-safe on canvas
+        forCanvas: true, // 👈 important for CORS-safe canvas (via proxy)
       });
 
       if (safeLogo) {
         console.log(`Found logo for ${team.name}: ${safeLogo}`);
-        try { await preloadImage(safeLogo); } catch (e) { console.warn(`Failed to preload ${team.name} logo:`, e); }
-        return { ...team, logo_url: safeLogo, image_url: safeLogo };
+        try {
+          await preloadImage(safeLogo);
+        } catch (e) {
+          console.warn(`Failed to preload ${team.name} logo:`, e);
+        }
+        return {
+          ...team,
+          logo_url: safeLogo,
+          image_url: safeLogo
+        };
       }
 
       console.log(`No logo found for ${team.name}, will use placeholder`);
       const ph = getPlaceholderLogo(team.name);
-      return { ...team, logo_url: ph, image_url: ph };
+      return {
+        ...team,
+        logo_url: ph,
+        image_url: ph
+      };
     })
   );
 
-  const { data: starTeam } = await supabase
+  // Star team
+  const { data: starTeam, error: starTeamError } = await supabase
     .from('fantasy_round_star_teams')
     .select('star_team_id')
     .eq('round_id', roundId)
     .eq('user_id', userId)
     .maybeSingle();
 
-  const { data: round } = await supabase
+  if (starTeamError) {
+    console.error('Star team fetch error:', starTeamError);
+  }
+
+  // Round info
+  const { data: round, error: roundError } = await supabase
     .from('fantasy_rounds')
     .select('type')
     .eq('id', roundId)
     .maybeSingle();
 
-  // badges → /assets path
-  const { data: badges } = await supabase
+  if (roundError) {
+    console.error('Round fetch error:', roundError);
+  }
+
+  // User badges (recent 4)
+  const { data: rewards } = await supabase
     .from('user_rewards')
     .select('season_rewards(reward_value)')
     .eq('user_id', userId)
@@ -191,14 +263,17 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .order('unlocked_at', { ascending: false })
     .limit(4);
 
-  // Preload badge assets
-  const badgeAssets = (badges ?? [])
-    .map((b) => `/assets/rewards/${b.season_rewards?.reward_value}.png`)
-    .filter(Boolean) as string[];
-  await Promise.all(badgeAssets.map((u) => preloadImage(u).catch(() => void 0)));
-
+  // Calculate next XP threshold (simple calculation)
   const nextXpThreshold = Math.pow((progress?.level ?? 1) + 1, 2) * 100;
+
   const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
+
+  // Resolve badge assets via glob (prevents 404s), fallback to /assets
+  const badges =
+    (rewards ?? [])
+      .map(b => b.season_rewards?.reward_value)
+      .map(v => resolveRewardAsset(v) || `/assets/rewards/${v}.png`)
+      .map(url => ({ asset_url: url }));
 
   return {
     user: {
@@ -212,52 +287,51 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges: badgeAssets.map((asset_url) => ({ asset_url })),
+    badges,
   };
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  const frameUrl = '/assets/share-frame.png';
-  let frameStyle = '';
+  // Preload background (imported asset URL)
+  const shareFrameUrl = shareFrame;
   try {
-    await preloadImage(frameUrl);
-    frameStyle = `
-      background-image: url('${frameUrl}');
-      background-size: cover;
-      background-position: center;
-    `;
-  } catch {
-    frameStyle = `
-      background: radial-gradient(80% 80% at 10% 0%, #141A35 0%, #0B1021 100%);
-    `;
+    await preloadImage(shareFrameUrl);
+  } catch (error) {
+    console.warn('Background image preloading failed:', error);
   }
-  
+
   container.innerHTML = `
     <div style="
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
-      ${frameStyle}
+      background-image: url('${shareFrameUrl}');
+      background-size: cover;
+      background-position: center;
       color: #EAF2FF;
     ">
-      <!-- User Profile -->
+      <!-- User Profile Section -->
       <div style="position: absolute; left: 72px; top: 160px; display: flex; align-items: center; gap: 24px;">
+        <!-- Avatar -->
         <div style="
           width: 120px;
           height: 120px;
           border-radius: 50%;
-          background: ${data.user.avatar_url ? `url('${escapeHtml(data.user.avatar_url)}')` : 'linear-gradient(135deg, #8B5CF6, #F97316)'};
+          background: ${data.user.avatar_url ? `url('${data.user.avatar_url}')` : 'linear-gradient(135deg, #8B5CF6, #F97316)'};
           background-size: cover;
           background-position: center;
           border: 4px solid #8B5CF6;
         "></div>
+
+        <!-- User Info -->
         <div>
-          <div style="font-size: 32px; font-weight: 700; color: #EAF2FF; margin-bottom: 8px;">
-            ${escapeHtml(data.user.username)}
+          <div style="font-size: 32px; font-weight: bold; color: #EAF2FF; margin-bottom: 8px;">
+            ${data.user.username}
           </div>
           <div style="font-size: 20px; color: #CFE3FF; margin-bottom: 12px;">
             Level ${data.user.level}
           </div>
+          <!-- XP Progress Bar -->
           <div style="width: 610px; height: 14px; background: rgba(255,255,255,0.2); border-radius: 7px; overflow: hidden;">
             <div style="
               width: ${Math.min(100, (data.user.xp / data.user.next_xp_threshold) * 100)}%;
@@ -277,7 +351,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
           <div style="
             width: 56px;
             height: 56px;
-            background: url('${escapeHtml(badge.asset_url)}');
+            background: url('${badge.asset_url}');
             background-size: cover;
             background-position: center;
             border-radius: 8px;
@@ -285,13 +359,16 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         `).join('')}
       </div>
 
-      <!-- Lineup -->
+      <!-- Team Lineup -->
       <div style="position: absolute; left: 72px; top: 540px;">
+        <!-- First Row (3 teams) -->
         <div style="display: flex; gap: 72px; margin-bottom: 64px; justify-content: center;">
           ${data.lineup.slice(0, 3).map((team) =>
             renderTeamSlot(team, data.starTeamId === team.id)
           ).join('')}
         </div>
+
+        <!-- Second Row (2 teams) -->
         <div style="display: flex; gap: 168px; justify-content: center;">
           ${data.lineup.slice(3, 5).map((team) =>
             renderTeamSlot(team, data.starTeamId === team.id)
@@ -299,7 +376,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         </div>
       </div>
 
-      <!-- CTA -->
+      <!-- Footer CTA -->
       <div style="
         position: absolute;
         bottom: 80px;
@@ -310,7 +387,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         color: #EAF2FF;
         font-weight: 600;
       ">
-        Think you can beat me? Join the ${escapeHtml(data.roundName)} at fragsandfortunes.com
+        Think you can beat me? Join the ${data.roundName} at fragsandfortunes.com
       </div>
     </div>
   `;
@@ -319,13 +396,13 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = team.type === 'pro' ? '#8B5CF6' : '#F97316';
   const safeLogoUrl = team.image_url || team.logo_url || getPlaceholderLogo(team.name);
-  
+
   return `
     <div style="
       position: relative;
       width: 264px;
       height: 264px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.1);
       border: 3px solid ${borderColor};
       border-radius: 24px;
       display: flex;
@@ -333,7 +410,6 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       align-items: center;
       justify-content: center;
       gap: 16px;
-      backdrop-filter: blur(2px);
     ">
       ${team.type === 'amateur' ? `
         <div style="
@@ -343,7 +419,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
           background: #F97316;
           color: white;
           font-size: 10px;
-          font-weight: 800;
+          font-weight: bold;
           padding: 4px 8px;
           border-radius: 12px;
         ">
@@ -366,7 +442,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       <div style="
         width: 120px;
         height: 120px;
-        background: url('${escapeHtml(safeLogoUrl)}');
+        background: url('${safeLogoUrl}');
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
@@ -387,19 +463,8 @@ function renderTeamSlot(team: any, isStarred: boolean) {
         padding: 0 8px;
         word-break: break-word;
       ">
-        ${escapeHtml(team.name)}
+        ${team.name}
       </div>
     </div>
   `;
-}
-
-/* ----------------- tiny util ----------------- */
-
-function escapeHtml(s: string) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
