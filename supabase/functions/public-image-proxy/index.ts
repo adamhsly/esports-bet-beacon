@@ -6,6 +6,12 @@ const cors = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+const ALLOWED_HOSTS = new Set([
+  "distribution.faceit-cdn.net",
+  "cdn.pandascore.co",
+  "images.pandascore.co",
+]);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -13,8 +19,19 @@ serve(async (req) => {
   const target = u.searchParams.get("url");
   if (!target) return new Response("Missing url", { status: 400, headers: cors });
 
+  let t: URL;
   try {
-    const r = await fetch(target, { redirect: "follow" });
+    t = new URL(target);
+  } catch {
+    return new Response("Invalid url", { status: 400, headers: cors });
+  }
+
+  if (!ALLOWED_HOSTS.has(t.host)) {
+    return new Response("Host not allowed", { status: 403, headers: cors });
+  }
+
+  try {
+    const r = await fetch(t.href, { redirect: "follow" });
     if (!r.ok) return new Response(`Upstream ${r.status}`, { status: 502, headers: cors });
 
     return new Response(r.body, {
@@ -22,6 +39,7 @@ serve(async (req) => {
         ...cors,
         "Content-Type": r.headers.get("content-type") ?? "image/jpeg",
         "Cache-Control": "public, max-age=3600",
+        "Vary": "Origin",
       },
     });
   } catch (e) {
