@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 export type TeamType = 'pro' | 'amateur';
 
 interface ResolveLogoOptions {
-  supabase: ReturnType<typeof createClient> | any; // injected client
+  supabase: ReturnType<typeof createClient> | any; // allow injected client
   teamType: TeamType;
   teamId?: string | number | null;
   teamName?: string | null;
@@ -27,15 +27,44 @@ function normalizeName(name?: string | null) {
   return (name ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+/** Resolve Supabase base URL across Vite/Next/browser */
+function getSupabaseBaseUrl(): string | null {
+  try {
+    // Vite-first
+    const viteUrl =
+      (import.meta as any)?.env?.VITE_SUPABASE_URL ||
+      (import.meta as any)?.env?.PUBLIC_SUPABASE_URL;
+    if (viteUrl) return String(viteUrl);
+
+    // Next.js / node fallbacks
+    if (typeof process !== 'undefined') {
+      const nx =
+        process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        process.env.SUPABASE_URL ||
+        process.env.PUBLIC_SUPABASE_URL;
+      if (nx) return nx;
+    }
+
+    // last-ditch global (optional)
+    if (typeof window !== 'undefined' && (window as any).__SUPABASE_URL__) {
+      return String((window as any).__SUPABASE_URL__);
+    }
+  } catch {}
+  return null;
+}
+
 /** Build a CORS-safe proxy URL (Edge Function must be public, no auth) */
 function proxifyForCanvas(url?: string | null): string | null {
   if (!url) return null;
-  if (!/^https?:\/\//i.test(url)) return url; // relative/data: OK
+  if (!/^https?:\/\//i.test(url)) return url; // relative/data URLs are fine
+
+  const base = getSupabaseBaseUrl();
+  if (!base) return url;
+
   try {
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supaOrigin = new URL(base).origin;
     const u = new URL(url);
-    // If already same-origin (Storage/proxy), return as-is
+    // Already same-origin (storage/proxy)? keep it
     if (u.origin === supaOrigin) return u.href;
     return `${base}/functions/v1/public-image-proxy?url=${encodeURIComponent(u.href)}`;
   } catch {
@@ -45,6 +74,10 @@ function proxifyForCanvas(url?: string | null): string | null {
 
 /* ----------------- lookups ----------------- */
 
+/**
+ * Find a pro team logo by scanning recent pandascore_matches rows.
+ * Uses PostgREST 'cs' (contains) over the JSONB 'teams' column with a **stringified** JSON fragment.
+ */
 async function getProTeamLogo(
   supabase: any,
   teamId: string,
@@ -53,63 +86,35 @@ async function getProTeamLogo(
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   const numericId = Number(teamId);
-  const hasNumeric = !Number.isNaN(numericId);
+  const containsNumeric = JSON.stringify([{ opponent: { id: numericId } }]);
+  const containsString  = JSON.stringify([{ opponent: { id: String(teamId) } }]);
 
-  // IMPORTANT: stringify JSON for the 'cs' (JSON contains) operator
-  const containsNumeric = hasNumeric
-    ? JSON.stringify([{ opponent: { id: numericId } }])
-    : null;
+  // Try numeric id first
+  let { data: matches, error } = await supabase
+    .from('pandascore_matches')
+    .select('teams,start_time,status')
+    .gte('start_time', sixMonthsAgo.toISOString())
+    .in('status', ['finished','running','not_started','upcoming'])
+    .filter('teams', 'cs', containsNumeric)
+    .order('start_time', { ascending: false })
+    .limit(60);
 
-  const containsString = JSON.stringify([{ opponent: { id: String(teamId) } }]);
-  const containsSlug   = JSON.stringify([{ opponent: { slug: String(teamId) } }]);
-
-  // Try by numeric id first
-  let matches: any[] | null = null;
-
-  if (containsNumeric) {
-    const { data, error } = await supabase
-      .from('pandascore_matches')
-      .select('teams,start_time,status')
-      .gte('start_time', sixMonthsAgo.toISOString())
-      .in('status', ['finished','running','not_started','upcoming'])
-      .filter('teams', 'cs', containsNumeric) // ✅ stringified JSON
-      .order('start_time', { ascending: false })
-      .limit(80);
-
-    if (!error && data?.length) matches = data;
-  }
-
-  // Fallback: id as string
+  // If no rows, try string id
   if (!matches?.length) {
-    const { data, error } = await supabase
+    const resp = await supabase
       .from('pandascore_matches')
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
       .in('status', ['finished','running','not_started','upcoming'])
-      .filter('teams', 'cs', containsString) // ✅ stringified JSON
+      .filter('teams', 'cs', containsString)
       .order('start_time', { ascending: false })
       .limit(80);
-
-    if (!error && data?.length) matches = data;
-  }
-
-  // Fallback: slug match
-  if (!matches?.length) {
-    const { data, error } = await supabase
-      .from('pandascore_matches')
-      .select('teams,start_time,status')
-      .gte('start_time', sixMonthsAgo.toISOString())
-      .in('status', ['finished','running','not_started','upcoming'])
-      .filter('teams', 'cs', containsSlug) // ✅ stringified JSON
-      .order('start_time', { ascending: false })
-      .limit(80);
-
-    if (!error && data?.length) matches = data;
+    matches = resp.data;
   }
 
   if (!matches?.length) return null;
 
-  // Walk the teams blobs to extract logo
+  // Walk the teams blobs to extract a logo
   for (const m of matches) {
     if (!Array.isArray(m?.teams)) continue;
     for (const t of m.teams as any[]) {
@@ -118,26 +123,26 @@ async function getProTeamLogo(
       const oppId = String(opp?.id ?? '');
       const oppSlug = String(opp?.slug ?? '');
 
-      if (
-        oppId === String(teamId) ||
-        (hasNumeric && oppId === String(numericId)) ||
-        oppSlug === String(teamId)
-      ) {
+      if (oppId === String(teamId) || oppId === String(numericId) || oppSlug === String(teamId)) {
         const candidate = opp.image_url || opp.logo;
         if (isValidHttpsUrl(candidate)) return candidate;
       }
     }
   }
-
   return null;
 }
 
+/**
+ * Find an amateur team logo.
+ * 1) Optional RPC catalog (get_all_faceit_teams)
+ * 2) Fallback: scan recent faceit_matches and read faction avatar
+ */
 async function getAmateurTeamLogo(
   supabase: any,
   teamId: string | undefined,
   teamName?: string | null
 ): Promise<string | null> {
-  // 1) Try catalog RPC (if available)
+  // 1) Try catalog RPC (if present)
   try {
     const { data: faceitTeams } = await supabase.rpc('get_all_faceit_teams');
     if (Array.isArray(faceitTeams)) {
@@ -146,7 +151,7 @@ async function getAmateurTeamLogo(
       if (hit?.logo_url && isValidHttpsUrl(hit.logo_url)) return hit.logo_url;
     }
   } catch {
-    // ignore and fallback to matches
+    // ignore; fall through to matches
   }
 
   // 2) Fallback — scan recent matches for faction logos
@@ -164,8 +169,7 @@ async function getAmateurTeamLogo(
     const factions = [m?.teams?.faction1, m?.teams?.faction2].filter(Boolean);
     for (const f of factions as any[]) {
       const fName = normalizeName(f?.name);
-      // match by id-equivalent or normalized name
-      const idMatch = teamId && (String(f?.name) === String(teamId));
+      const idMatch = teamId && (String(f?.name) === String(teamId)); // some store the name as id
       const nameMatch = targetName && fName === targetName;
       if (idMatch || nameMatch) {
         const logo = f?.avatar || f?.image || f?.logo;
@@ -189,6 +193,7 @@ export async function getTeamLogoUrl(opts: ResolveLogoOptions): Promise<string |
     resolved = await getAmateurTeamLogo(supabase, teamId ? String(teamId) : undefined, teamName);
   }
 
+  // Proxy for canvas to avoid cross-origin taint/CORS issues
   if (forCanvas && resolved) {
     resolved = proxifyForCanvas(resolved) ?? resolved;
   }
