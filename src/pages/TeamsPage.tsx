@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { searchTeams } from '@/lib/sportDevsApi';
+import { aggregateTeams, generateSampleTeams, type AggregatedTeam } from '@/lib/teamsAggregation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2, List, Grid2X2, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
@@ -31,16 +31,8 @@ import {
 import { ButtonGroup } from '@/components/ui/button-group';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-interface Team {
-  id: string;
-  name: string;
-  image_url: string | null;
-  hash_image?: string | null;
-  country?: string;
-  acronym?: string;
-  rank?: number;
-  winRate?: number;
-}
+// Use the AggregatedTeam type from teamsAggregation
+type Team = AggregatedTeam;
 
 const TeamsPage: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -55,25 +47,12 @@ const TeamsPage: React.FC = () => {
   useEffect(() => {
     async function loadTeams() {
       try {
-        // In a real app, we'd fetch teams specific to the selected esport
-        // For now, we'll use the search API with common team names
-        const commonTeams = ['Navi', 'Liquid', 'Fnatic', 'Cloud9', 'G2', 'Vitality'];
+        console.log('TeamsPage: Loading teams for esport:', activeEsport);
+        const teamsData = await aggregateTeams(activeEsport === 'all' ? undefined : activeEsport);
+        console.log('TeamsPage: Received aggregated teams:', teamsData);
         
-        // Use a random team name to get some results
-        const searchTerm = commonTeams[Math.floor(Math.random() * commonTeams.length)];
-        console.log('TeamsPage: Searching teams with term:', searchTerm);
-        const teamsData = await searchTeams(searchTerm, 50);
-        console.log('TeamsPage: Received teams data:', teamsData);
-
-        // Add random rankings to the teams
-        const teamsWithRanking = teamsData.map((team, index) => ({
-          ...team,
-          rank: Math.floor(Math.random() * 20) + 1,
-          winRate: Math.floor(Math.random() * 40) + 50
-        }));
-        
-        // Sort teams by rank initially
-        const sortedTeams = sortTeamsByRank(teamsWithRanking, 'asc');
+        // Sort teams by recent match count initially
+        const sortedTeams = sortTeamsByRank(teamsData, 'desc');
         
         setTeams(sortedTeams);
         setFilteredTeams(sortedTeams);
@@ -81,12 +60,14 @@ const TeamsPage: React.FC = () => {
         console.error('Error loading teams:', error);
         toast({
           title: "Error loading teams",
-          description: "Could not fetch team data. Please try again later.",
+          description: "Could not fetch team data from Pandascore/Faceit. Using sample data.",
           variant: "destructive",
         });
         
         // Generate sample teams if API fails
-        generateSampleTeams();
+        const sampleTeams = generateSampleTeams();
+        setTeams(sampleTeams);
+        setFilteredTeams(sampleTeams);
       } finally {
         setLoading(false);
       }
@@ -112,10 +93,19 @@ const TeamsPage: React.FC = () => {
   
   const sortTeamsByRank = (teamsToSort: Team[], direction: 'asc' | 'desc'): Team[] => {
     return [...teamsToSort].sort((a, b) => {
-      const rankA = a.rank || 999;
-      const rankB = b.rank || 999;
-      
-      return direction === 'asc' ? rankA - rankB : rankB - rankA;
+      // Sort by recent matches count first, then by rank
+      if (direction === 'desc') {
+        if (b.recent_matches_count !== a.recent_matches_count) {
+          return b.recent_matches_count - a.recent_matches_count;
+        }
+        const rankA = a.rank || 999;
+        const rankB = b.rank || 999;
+        return rankA - rankB;
+      } else {
+        const rankA = a.rank || 999;
+        const rankB = b.rank || 999;
+        return rankA - rankB;
+      }
     });
   };
 
@@ -125,27 +115,7 @@ const TeamsPage: React.FC = () => {
     setFilteredTeams(sortTeamsByRank(filteredTeams, newDirection));
   };
   
-  const generateSampleTeams = () => {
-    const sampleTeams: Team[] = [
-      { id: '1', name: 'Natus Vincere', image_url: '/placeholder.svg', hash_image: null, acronym: 'NAVI', country: 'Ukraine', rank: 1, winRate: 78 },
-      { id: '2', name: 'Team Liquid', image_url: '/placeholder.svg', hash_image: null, acronym: 'TL', country: 'United States', rank: 2, winRate: 75 },
-      { id: '3', name: 'Fnatic', image_url: '/placeholder.svg', hash_image: null, acronym: 'FNC', country: 'United Kingdom', rank: 3, winRate: 72 },
-      { id: '4', name: 'G2 Esports', image_url: '/placeholder.svg', hash_image: null, acronym: 'G2', country: 'Germany', rank: 4, winRate: 70 },
-      { id: '5', name: 'Vitality', image_url: '/placeholder.svg', hash_image: null, acronym: 'VIT', country: 'France', rank: 5, winRate: 68 },
-      { id: '6', name: 'Cloud9', image_url: '/placeholder.svg', hash_image: null, acronym: 'C9', country: 'United States', rank: 6, winRate: 65 },
-      { id: '7', name: 'Astralis', image_url: '/placeholder.svg', hash_image: null, acronym: 'AST', country: 'Denmark', rank: 7, winRate: 64 },
-      { id: '8', name: 'FaZe Clan', image_url: '/placeholder.svg', hash_image: null, acronym: 'FaZe', country: 'International', rank: 8, winRate: 62 },
-      { id: '9', name: 'Team Secret', image_url: '/placeholder.svg', hash_image: null, acronym: 'Secret', country: 'Europe', rank: 9, winRate: 60 },
-      { id: '10', name: 'Evil Geniuses', image_url: '/placeholder.svg', hash_image: null, acronym: 'EG', country: 'United States', rank: 10, winRate: 59 },
-      { id: '11', name: 'T1', image_url: '/placeholder.svg', hash_image: null, acronym: 'T1', country: 'South Korea', rank: 11, winRate: 57 },
-      { id: '12', name: 'Team Spirit', image_url: '/placeholder.svg', hash_image: null, acronym: 'Spirit', country: 'Russia', rank: 12, winRate: 55 }
-    ];
-    
-    console.log('TeamsPage: Generated sample teams:', sampleTeams);
-    const sortedTeams = sortTeamsByRank(sampleTeams, sortDirection);
-    setTeams(sortedTeams);
-    setFilteredTeams(sortedTeams);
-  };
+  // This function is no longer needed as we use generateSampleTeams from teamsAggregation
   
   const handleEsportChange = (esportId: string) => {
     setActiveEsport(esportId);
@@ -158,7 +128,6 @@ const TeamsPage: React.FC = () => {
     return getEnhancedTeamLogoUrl({
       name: team.name,
       image_url: team.image_url,
-      id: team.id,
       hash_image: team.hash_image
     });
   };
@@ -187,7 +156,7 @@ const TeamsPage: React.FC = () => {
           <TableHead>Country</TableHead>
           <TableHead className="text-center">
             <div className="flex items-center justify-center">
-              <span className="mr-2">Ranking</span>
+              <span className="mr-2">Activity</span>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -202,7 +171,8 @@ const TeamsPage: React.FC = () => {
               </Button>
             </div>
           </TableHead>
-          <TableHead className="text-center">Win Rate</TableHead>
+          <TableHead className="text-center">Source</TableHead>
+          <TableHead className="text-center">Recent Matches</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -248,13 +218,18 @@ const TeamsPage: React.FC = () => {
                 <Badge className="bg-theme-purple">#{team.rank || '-'}</Badge>
               </TableCell>
               <TableCell className="text-center">
-                {`${team.winRate || '-'}%`}
+                <Badge variant={team.source === 'pandascore' ? 'default' : 'secondary'}>
+                  {team.source === 'pandascore' ? 'PandaScore' : 'Faceit'}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-center">
+                <span className="font-medium">{team.recent_matches_count}</span>
               </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-4">
+            <TableCell colSpan={7} className="text-center py-4">
               No teams found matching your search.
             </TableCell>
           </TableRow>
@@ -298,12 +273,17 @@ const TeamsPage: React.FC = () => {
                   )}
                 </div>
                 
-                <div className="mt-2 flex gap-3 items-center justify-center">
-                  <Badge className="bg-theme-purple">
-                    Rank #{team.rank || '-'}
-                  </Badge>
+                <div className="mt-2 flex flex-col gap-2 items-center">
+                  <div className="flex gap-2 items-center">
+                    <Badge className="bg-theme-purple">
+                      Rank #{team.rank || '-'}
+                    </Badge>
+                    <Badge variant={team.source === 'pandascore' ? 'default' : 'secondary'}>
+                      {team.source === 'pandascore' ? 'PandaScore' : 'Faceit'}
+                    </Badge>
+                  </div>
                   <span className="text-sm text-gray-400">
-                    {team.winRate || '-'}% Win Rate
+                    {team.recent_matches_count} recent matches
                   </span>
                 </div>
               </div>
@@ -322,7 +302,7 @@ const TeamsPage: React.FC = () => {
           <span className="highlight-gradient">Esports</span> Teams
         </h1>
         <p className="text-gray-400 mb-6">
-          Browse professional teams across various esports titles
+          Browse teams from recent Pandascore and Faceit matches across various esports titles
         </p>
         
         <div className="mb-8">
@@ -353,7 +333,7 @@ const TeamsPage: React.FC = () => {
                   className="bg-theme-gray-dark border border-theme-gray-medium hover:bg-theme-gray-medium"
                 >
                   <ArrowUpAZ className="h-4 w-4 mr-2" />
-                  Sort by Rank
+                  Sort by Activity
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -361,13 +341,13 @@ const TeamsPage: React.FC = () => {
                   setSortDirection('asc');
                   setFilteredTeams(sortTeamsByRank(filteredTeams, 'asc'));
                 }}>
-                  Lowest to Highest
+                  By Rank (Low to High)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   setSortDirection('desc');
                   setFilteredTeams(sortTeamsByRank(filteredTeams, 'desc'));
                 }}>
-                  Highest to Lowest
+                  By Activity (Most Active)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
