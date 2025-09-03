@@ -30,16 +30,16 @@ function normalizeName(name?: string | null) {
 /** Build a CORS-safe proxy URL (Edge Function must be public, no auth) */
 function proxifyForCanvas(url?: string | null): string | null {
   if (!url) return null;
-  if (!/^https?:\/\//i.test(url)) return url; // relative/data: URLs are fine
+  if (!/^https?:\/\//i.test(url)) return url; // relative/data: OK
   try {
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supaOrigin = new URL(base).origin;
     const u = new URL(url);
-    // If already same-origin (e.g., your Storage bucket or proxy), return as-is
+    // If already same-origin (Storage/proxy), return as-is
     if (u.origin === supaOrigin) return u.href;
     return `${base}/functions/v1/public-image-proxy?url=${encodeURIComponent(u.href)}`;
   } catch {
-    return url ?? null;
+    return url;
   }
 }
 
@@ -52,50 +52,77 @@ async function getProTeamLogo(
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const statuses = ['finished', 'running', 'not_started', 'upcoming'] as const;
-  const idNum = Number(teamId);
-  const hasNumeric = !Number.isNaN(idNum);
+  const numericId = Number(teamId);
+  const hasNumeric = !Number.isNaN(numericId);
 
-  // Helper to run a single contains query
-  const runContains = async (needle: unknown) => {
+  // IMPORTANT: stringify JSON for the 'cs' (JSON contains) operator
+  const containsNumeric = hasNumeric
+    ? JSON.stringify([{ opponent: { id: numericId } }])
+    : null;
+
+  const containsString = JSON.stringify([{ opponent: { id: String(teamId) } }]);
+  const containsSlug   = JSON.stringify([{ opponent: { slug: String(teamId) } }]);
+
+  // Try by numeric id first
+  let matches: any[] | null = null;
+
+  if (containsNumeric) {
     const { data, error } = await supabase
       .from('pandascore_matches')
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
-      .in('status', statuses as any)
-      // IMPORTANT: use .contains and pass REAL JSON (not stringified)
-      .contains('teams', [{ opponent: { id: needle } }])
+      .in('status', ['finished','running','not_started','upcoming'])
+      .filter('teams', 'cs', containsNumeric) // ✅ stringified JSON
       .order('start_time', { ascending: false })
       .limit(80);
-    if (error) {
-      // non-fatal; we'll try the other shape
-      // console.warn('pandascore_matches contains error:', error);
-    }
-    return data as Array<{ teams: any[] }> | null;
-  };
 
-  // Try numeric-id contains first
-  let matches: Array<{ teams: any[] }> | null = null;
-  if (hasNumeric) {
-    matches = await runContains(idNum);
+    if (!error && data?.length) matches = data;
   }
-  // Fallback to string-id contains
+
+  // Fallback: id as string
   if (!matches?.length) {
-    matches = await runContains(String(teamId));
+    const { data, error } = await supabase
+      .from('pandascore_matches')
+      .select('teams,start_time,status')
+      .gte('start_time', sixMonthsAgo.toISOString())
+      .in('status', ['finished','running','not_started','upcoming'])
+      .filter('teams', 'cs', containsString) // ✅ stringified JSON
+      .order('start_time', { ascending: false })
+      .limit(80);
+
+    if (!error && data?.length) matches = data;
   }
+
+  // Fallback: slug match
+  if (!matches?.length) {
+    const { data, error } = await supabase
+      .from('pandascore_matches')
+      .select('teams,start_time,status')
+      .gte('start_time', sixMonthsAgo.toISOString())
+      .in('status', ['finished','running','not_started','upcoming'])
+      .filter('teams', 'cs', containsSlug) // ✅ stringified JSON
+      .order('start_time', { ascending: false })
+      .limit(80);
+
+    if (!error && data?.length) matches = data;
+  }
+
   if (!matches?.length) return null;
 
-  // Walk the teams blobs to extract a logo
+  // Walk the teams blobs to extract logo
   for (const m of matches) {
     if (!Array.isArray(m?.teams)) continue;
     for (const t of m.teams as any[]) {
-      // Your stored shape uses { type: "Team", opponent: { id, slug, image_url, logo, ... } }
       if (t?.type !== 'Team' || !t?.opponent) continue;
       const opp = t.opponent;
       const oppId = String(opp?.id ?? '');
       const oppSlug = String(opp?.slug ?? '');
 
-      if (oppId === String(teamId) || (hasNumeric && oppId === String(idNum)) || oppSlug === String(teamId)) {
+      if (
+        oppId === String(teamId) ||
+        (hasNumeric && oppId === String(numericId)) ||
+        oppSlug === String(teamId)
+      ) {
         const candidate = opp.image_url || opp.logo;
         if (isValidHttpsUrl(candidate)) return candidate;
       }
@@ -122,17 +149,13 @@ async function getAmateurTeamLogo(
     // ignore and fallback to matches
   }
 
-  // 2) Fallback — scan recent matches for faction logos (6 months)
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
+  // 2) Fallback — scan recent matches for faction logos
   const { data: matches } = await supabase
     .from('faceit_matches')
     .select('teams, started_at')
-    .gte('started_at', sixMonthsAgo.toISOString())
     .not('teams', 'is', null)
     .order('started_at', { ascending: false })
-    .limit(120);
+    .limit(60);
 
   if (!matches?.length) return null;
 
@@ -141,7 +164,7 @@ async function getAmateurTeamLogo(
     const factions = [m?.teams?.faction1, m?.teams?.faction2].filter(Boolean);
     for (const f of factions as any[]) {
       const fName = normalizeName(f?.name);
-      // match by id (if picks use name as id) or by normalized name
+      // match by id-equivalent or normalized name
       const idMatch = teamId && (String(f?.name) === String(teamId));
       const nameMatch = targetName && fName === targetName;
       if (idMatch || nameMatch) {
@@ -166,7 +189,6 @@ export async function getTeamLogoUrl(opts: ResolveLogoOptions): Promise<string |
     resolved = await getAmateurTeamLogo(supabase, teamId ? String(teamId) : undefined, teamName);
   }
 
-  // Proxy for canvas to avoid cross-origin taint/CORS issues
   if (forCanvas && resolved) {
     resolved = proxifyForCanvas(resolved) ?? resolved;
   }
