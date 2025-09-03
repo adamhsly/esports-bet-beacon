@@ -47,19 +47,7 @@ export const InProgressRounds: React.FC = () => {
     }
   }, [user]);
 
-  const updateRoundStatus = async () => {
-    try {
-      console.log('🕐 Updating fantasy round status...');
-      const { error } = await supabase.functions.invoke('update-fantasy-round-status');
-      if (error) {
-        console.error('Error updating round status:', error);
-      } else {
-        console.log('✅ Round status updated successfully');
-      }
-    } catch (error) {
-      console.error('Error invoking round status update:', error);
-    }
-  };
+  // Removed automatic round status update - now manual only
 
   const calculateScores = async () => {
     try {
@@ -84,8 +72,7 @@ export const InProgressRounds: React.FC = () => {
     try {
       console.log('Fetching in-progress rounds for user:', user.id);
       
-      // First update round statuses, then trigger score calculation
-      await updateRoundStatus();
+      // Trigger score calculation for active rounds
       await calculateScores();
       
       // Fetch user's picks for open and active rounds (rounds in progress)
