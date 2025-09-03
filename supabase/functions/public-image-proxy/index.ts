@@ -14,12 +14,7 @@ serve(async (req) => {
   if (!target) return new Response("Missing url", { status: 400, headers: cors });
 
   try {
-    const r = await fetch(target, { 
-      redirect: "follow",
-      headers: {
-        "User-Agent": "fragsandfortunes-public-proxy/1.0"
-      }
-    });
+    const r = await fetch(target, { redirect: "follow" });
     if (!r.ok) return new Response(`Upstream ${r.status}`, { status: 502, headers: cors });
 
     return new Response(r.body, {
