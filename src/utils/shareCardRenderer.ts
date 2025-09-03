@@ -1,6 +1,6 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
-import { getTeamLogoUrl, getPlaceholderLogo, preloadImage, proxifyIfNeeded } from '@/lib/resolveLogoUrl';
+import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
 
 interface ShareCardData {
   user: {
@@ -72,8 +72,8 @@ export async function renderShareCard(
       scale: 1,
       useCORS: true,
       allowTaint: false,
-      logging: false, // Disable excessive logging
-      foreignObjectRendering: false, // Disable to avoid React conflicts
+      logging: false,
+      foreignObjectRendering: false,
     });
 
     console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
@@ -158,7 +158,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 
   if (progressError) {
     console.error('Progress fetch error:', progressError);
-    // Don't throw, just use defaults
+    // use defaults below
   }
 
   // Fetch user's lineup for the round
@@ -178,22 +178,21 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     throw new Error('No lineup found for this round');
   }
 
-  // Enhance team picks with logos using direct DB lookup
+  // Enhance team picks with logos (resolver now proxies for canvas)
   const enhancedTeamPicks = await Promise.all(
     (picks.team_picks as any[]).map(async (team) => {
       console.log(`Resolving logo for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
       
-      const rawLogo = await getTeamLogoUrl({
+      const safeLogo = await getTeamLogoUrl({
         supabase: supabase as any,
         teamType: team.type,
         teamId: team.id,
-        teamName: team.name
+        teamName: team.name,
+        forCanvas: true, // 👈 important for CORS-safe canvas
       });
-      
-      const safeLogo = proxifyIfNeeded(rawLogo);
-      
+
       if (safeLogo) {
-        console.log(`Found logo for ${team.name}:`, rawLogo, '-> proxied:', safeLogo);
+        console.log(`Found logo for ${team.name}: ${safeLogo}`);
         try {
           await preloadImage(safeLogo);
         } catch (e) {
@@ -205,12 +204,13 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
           image_url: safeLogo
         };
       }
-      
+
       console.log(`No logo found for ${team.name}, will use placeholder`);
+      const ph = getPlaceholderLogo(team.name);
       return {
         ...team,
-        logo_url: getPlaceholderLogo(team.name),
-        image_url: getPlaceholderLogo(team.name)
+        logo_url: ph,
+        image_url: ph
       };
     })
   );
@@ -236,7 +236,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 
   if (roundError) {
     console.error('Round fetch error:', roundError);
-    // Don't throw, use default
+    // default below
   }
 
   // Fetch user badges (recent 4)
@@ -249,7 +249,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .limit(4);
 
   // Calculate next XP threshold (simple calculation)
-  const nextXpThreshold = Math.pow(progress?.level + 1 || 2, 2) * 100;
+  const nextXpThreshold = Math.pow((progress?.level ?? 1) + 1, 2) * 100;
 
   const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
 
@@ -265,28 +265,26 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges: badges?.map(b => ({ asset_url: `/public/assets/rewards/${b.season_rewards?.reward_value}.png` })) || [],
+    // Use root /assets (not /public/assets)
+    badges: badges?.map(b => ({ asset_url: `/assets/rewards/${b.season_rewards?.reward_value}.png` })) || [],
   };
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  // Preload background images first - using public folder paths
+  // Preload background image from /assets
   const shareFrameUrl = '/assets/share-frame.png';
-  
   try {
     await preloadImage(shareFrameUrl);
   } catch (error) {
     console.warn('Background image preloading failed:', error);
   }
   
-  // Team logos are already preloaded during data enhancement
-  
   container.innerHTML = `
     <div style="
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
-      background-image: url('/assets/share-frame.png');
+      background-image: url('${shareFrameUrl}');
       background-size: cover;
       background-position: center;
       color: #EAF2FF;
@@ -332,7 +330,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
           <div style="
             width: 56px;
             height: 56px;
-            background: url('${badge.asset_url.startsWith('/public/') ? badge.asset_url.replace('/public/', '/') : badge.asset_url}');
+            background: url('${badge.asset_url}');
             background-size: cover;
             background-position: center;
             border-radius: 8px;
@@ -344,14 +342,14 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       <div style="position: absolute; left: 72px; top: 540px;">
         <!-- First Row (3 teams) -->
         <div style="display: flex; gap: 72px; margin-bottom: 64px; justify-content: center;">
-          ${data.lineup.slice(0, 3).map((team, index) => 
+          ${data.lineup.slice(0, 3).map((team) => 
             renderTeamSlot(team, data.starTeamId === team.id)
           ).join('')}
         </div>
         
         <!-- Second Row (2 teams) -->
         <div style="display: flex; gap: 168px; justify-content: center;">
-          ${data.lineup.slice(3, 5).map((team, index) => 
+          ${data.lineup.slice(3, 5).map((team) => 
             renderTeamSlot(team, data.starTeamId === team.id)
           ).join('')}
         </div>
@@ -392,7 +390,6 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       justify-content: center;
       gap: 16px;
     ">
-      <!-- Amateur Bonus Badge -->
       ${team.type === 'amateur' ? `
         <div style="
           position: absolute;
@@ -408,8 +405,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
           +25% BONUS
         </div>
       ` : ''}
-      
-      <!-- Star Badge -->
+
       ${isStarred ? `
         <div style="
           position: absolute;
@@ -421,8 +417,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
           ⭐
         </div>
       ` : ''}
-      
-      <!-- Team Logo -->
+
       <div style="
         width: 120px;
         height: 120px;
@@ -432,8 +427,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
         background-position: center;
         border-radius: 12px;
       "></div>
-      
-      <!-- Team Name -->
+
       <div style="
         font-size: 16px;
         font-weight: 600;
