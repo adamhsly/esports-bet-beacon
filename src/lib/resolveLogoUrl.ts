@@ -62,7 +62,7 @@ async function getProTeamLogo(
     .select('teams,start_time,status')
     .gte('start_time', sixMonthsAgo.toISOString())
     .in('status', ['finished','running','not_started','upcoming'])
-    .filter('teams', 'cs', containsNumeric) // IMPORTANT: stringified JSON
+    .filter('teams', [{ opponent: { id: Number(teamID) } }]) // IMPORTANT: stringified JSON
     .order('start_time', { ascending: false })
     .limit(60);
 
@@ -77,7 +77,7 @@ async function getProTeamLogo(
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
       .in('status', ['finished','running','not_started','upcoming'])
-      .filter('teams', 'cs', containsString)
+      .filter('teams', [{ opponent: { id: String(teamID) } }])
       .order('start_time', { ascending: false })
       .limit(80);
     matches = resp.data;
