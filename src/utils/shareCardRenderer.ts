@@ -1,23 +1,6 @@
-// src/utils/shareCardRenderer.ts
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
-
-// ✅ Import the frame (Vite will emit a hashed, correct URL)
-import shareFrame from '@/assets/share-frame.png';
-
-// ✅ Resolve reward badge assets via Vite glob (no /public 404s)
-const rewardGlobs = import.meta.glob('@/assets/rewards/*', { as: 'url', eager: true }) as Record<string, string>;
-function resolveRewardAsset(name?: string | null): string | null {
-  if (!name) return null;
-  const candidates = [`${name}.png`, `${name}.webp`, `${name}.jpg`, `${name}.jpeg`];
-  for (const c of candidates) {
-    const hit = Object.entries(rewardGlobs).find(([p]) => p.endsWith(`/rewards/${c}`));
-    if (hit) return hit[1];
-  }
-  // Fallback to old static path if you still have it in /public/assets
-  return `/assets/rewards/${name}.png`;
-}
 
 interface ShareCardData {
   user: {
@@ -70,6 +53,7 @@ export async function renderShareCard(
     // Fetch data
     console.log('Step 1: Fetching share card data...');
     const shareData = await fetchShareCardData(roundId, userId);
+
     console.log('Step 2: Share data fetched successfully:', shareData);
 
     // Render share card
@@ -78,7 +62,7 @@ export async function renderShareCard(
 
     console.log('Step 4: HTML rendered, generating canvas...');
 
-    // Generate image
+    // Generate image with error handling
     const canvas = await html2canvas(container, {
       width: FRAME_WIDTH,
       height: FRAME_HEIGHT,
@@ -113,7 +97,7 @@ export async function renderShareCard(
       .from('shares')
       .upload(fileName, blob, {
         upsert: true,
-        contentType: 'image/png',
+        contentType: 'image/png'
       });
 
     if (uploadError) {
@@ -124,14 +108,15 @@ export async function renderShareCard(
     console.log('Step 9: File uploaded successfully');
 
     // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('shares').getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage
+      .from('shares')
+      .getPublicUrl(fileName);
 
     console.log('Step 10: Public URL generated:', publicUrl);
     console.log('=== Share Card Generation Completed Successfully ===');
 
     return { publicUrl, blob };
+
   } catch (error) {
     console.error('=== Share Card Generation FAILED ===');
     console.error('Error details:', error);
@@ -151,7 +136,7 @@ export async function renderShareCard(
 async function fetchShareCardData(roundId: string, userId: string): Promise<ShareCardData> {
   console.log('Fetching share card data for roundId:', roundId, 'userId:', userId);
 
-  // Profile
+  // Fetch user profile and progress
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('username')
@@ -163,7 +148,6 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     throw new Error(`Failed to fetch user profile: ${profileError.message}`);
   }
 
-  // Progress
   const { data: progress, error: progressError } = await supabase
     .from('user_progress')
     .select('level, xp')
@@ -175,7 +159,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     // use defaults below
   }
 
-  // Lineup picks
+  // Fetch user's lineup for the round
   const { data: picks, error: picksError } = await supabase
     .from('fantasy_round_picks')
     .select('team_picks')
@@ -192,7 +176,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     throw new Error('No lineup found for this round');
   }
 
-  // Enhance team picks with CORS-safe logos (proxied by edge function)
+  // Enhance team picks with logos (resolver now proxies for canvas)
   const enhancedTeamPicks = await Promise.all(
     (picks.team_picks as any[]).map(async (team) => {
       console.log(`Resolving logo for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
@@ -202,7 +186,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
         teamType: team.type,
         teamId: team.id,
         teamName: team.name,
-        forCanvas: true, // crucial for CORS-safe canvas
+        forCanvas: true, // 👈 important for CORS-safe canvas
       });
 
       if (safeLogo) {
@@ -215,7 +199,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
         return {
           ...team,
           logo_url: safeLogo,
-          image_url: safeLogo,
+          image_url: safeLogo
         };
       }
 
@@ -224,12 +208,12 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
       return {
         ...team,
         logo_url: ph,
-        image_url: ph,
+        image_url: ph
       };
     })
   );
 
-  // Star team
+  // Fetch star team
   const { data: starTeam, error: starTeamError } = await supabase
     .from('fantasy_round_star_teams')
     .select('star_team_id')
@@ -241,7 +225,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     console.error('Star team fetch error:', starTeamError);
   }
 
-  // Round info
+  // Fetch round info
   const { data: round, error: roundError } = await supabase
     .from('fantasy_rounds')
     .select('type')
@@ -250,10 +234,11 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 
   if (roundError) {
     console.error('Round fetch error:', roundError);
+    // default below
   }
 
-  // Badges (resolve to emitted asset URLs)
-  const { data: rewards } = await supabase
+  // Fetch user badges (recent 4)
+  const { data: badges } = await supabase
     .from('user_rewards')
     .select('season_rewards(reward_value)')
     .eq('user_id', userId)
@@ -261,15 +246,9 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .order('unlocked_at', { ascending: false })
     .limit(4);
 
-  const badges =
-    (rewards ?? [])
-      .map((b) => b.season_rewards?.reward_value)
-      .map((v) => resolveRewardAsset(v))
-      .filter((u): u is string => Boolean(u))
-      .map((url) => ({ asset_url: url }));
-
-  // XP threshold
+  // Calculate next XP threshold (simple calculation)
   const nextXpThreshold = Math.pow((progress?.level ?? 1) + 1, 2) * 100;
+
   const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
 
   return {
@@ -284,22 +263,18 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges,
+    // ✅ Use root /assets (not /public/assets)
+    badges: badges?.map(b => ({ asset_url: `/assets/rewards/${b.season_rewards?.reward_value}.png` })) || [],
   };
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  // Preload frame
-  const shareFrameUrl = shareFrame;
+  // ✅ Preload background image from /assets
+  const shareFrameUrl = '/assets/share-frame.png';
   try {
     await preloadImage(shareFrameUrl);
   } catch (error) {
     console.warn('Background image preloading failed:', error);
-  }
-
-  // (Optional) Preload badges to avoid flashes
-  for (const b of data.badges) {
-    try { await preloadImage(b.asset_url); } catch {}
   }
 
   container.innerHTML = `
@@ -328,7 +303,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         <!-- User Info -->
         <div>
           <div style="font-size: 32px; font-weight: bold; color: #EAF2FF; margin-bottom: 8px;">
-            ${escapeHtml(data.user.username)}
+            ${data.user.username}
           </div>
           <div style="font-size: 20px; color: #CFE3FF; margin-bottom: 12px;">
             Level ${data.user.level}
@@ -389,7 +364,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         color: #EAF2FF;
         font-weight: 600;
       ">
-        Think you can beat me? Join the ${escapeHtml(data.roundName)} at fragsandfortunes.com
+        Think you can beat me? Join the ${data.roundName} at fragsandfortunes.com
       </div>
     </div>
   `;
@@ -444,7 +419,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       <div style="
         width: 120px;
         height: 120px;
-        background: url('${safeCssUrl(safeLogoUrl)}');
+        background: url('${safeLogoUrl}');
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
@@ -465,22 +440,8 @@ function renderTeamSlot(team: any, isStarred: boolean) {
         padding: 0 8px;
         word-break: break-word;
       ">
-        ${escapeHtml(team.name)}
+        ${team.name}
       </div>
     </div>
   `;
-}
-
-/* ---------- tiny helpers to avoid HTML/CSS pitfalls ---------- */
-function escapeHtml(s: string) {
-  return String(s)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-function safeCssUrl(u: string) {
-  // Avoid unescaped quotes inside inline style url('...')
-  return String(u).replaceAll("'", '%27').replaceAll('"', '%22');
 }
