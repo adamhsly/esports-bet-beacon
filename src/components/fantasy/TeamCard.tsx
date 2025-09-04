@@ -54,7 +54,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     if (!showStarToggle) return null;
     const isDisabled = !!disabledReason;
     const StarIcon = isDisabled ? Lock : Star;
-    const button = <Button variant="ghost" size="sm" className={`absolute top-2 right-2 h-8 w-8 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
+    const starPosition = isSelected ? 'absolute bottom-2 right-2' : 'absolute top-2 right-2';
+    const button = <Button variant="ghost" size="sm" className={`${starPosition} h-8 w-8 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
       e.stopPropagation();
       if (!isDisabled && onToggleStar) {
         onToggleStar();
