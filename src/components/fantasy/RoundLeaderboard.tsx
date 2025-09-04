@@ -37,6 +37,9 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
       if (scoresError) throw scoresError;
 
+      console.log('Leaderboard debug - Round ID:', roundId);
+      console.log('Leaderboard debug - Scores returned:', scores);
+
       if (!scores || scores.length === 0) {
         setLeaderboard([]);
         return;
