@@ -35,7 +35,7 @@ export const StarTeamConfirmModal: React.FC<StarTeamConfirmModalProps> = ({
       <DialogContent className="bg-[#0F1420] border-border">
         <DialogHeader>
           <DialogTitle className="text-white">{title}</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogDescription className="text-white">
             {description}
           </DialogDescription>
         </DialogHeader>
