@@ -159,9 +159,6 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           {/* Status Icons */}
           <div className="flex items-center gap-2">
             {team.type === 'amateur' && <div className="text-right">
-                <div className="text-sm font-medium text-white">
-                  {team.matches_prev_window ?? 0}
-                </div>
                 <div className="text-xs text-gray-400">
                   matches
                 </div>
