@@ -570,7 +570,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         </div>}
 
       {/* Submit Button */}
-      <div className="flex justify-end">
+      <div className="flex justify-center">
         <Button onClick={async () => {
         if (!user) {
           setShowAuthModal(true);
