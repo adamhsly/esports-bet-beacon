@@ -50,7 +50,7 @@ export const StarTeamConfirmModal: React.FC<StarTeamConfirmModalProps> = ({
           </Button>
           <Button
             onClick={onConfirm}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 border border-white"
           >
             {confirmText}
           </Button>
