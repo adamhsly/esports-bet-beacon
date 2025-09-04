@@ -44,6 +44,7 @@ export const StarTeamConfirmModal: React.FC<StarTeamConfirmModalProps> = ({
             variant="outline"
             onClick={onCancel}
             className="border-border text-white hover:bg-background/20"
+            style={{ backgroundColor: '#8B5CF6' }}
           >
             {cancelText}
           </Button>
