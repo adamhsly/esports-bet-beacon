@@ -149,9 +149,6 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-white truncate">{team.name}</h4>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
-                {isAmateur ? 'Amateur' : 'Pro'}
-              </Badge>
               {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
                   +25% Bonus
                 </Badge>}
