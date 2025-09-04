@@ -234,9 +234,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const amateurTeamData: Team[] = (allTeamsRes.data || []).map((t: any) => {
         const s = statsMap.get(t.team_id);
         const p = amPriceMap.get(t.team_id);
-        
+
         // Debug logging for first few teams
-        if (Math.random() < 0.01) { // Log ~1% of teams to avoid spam
+        if (Math.random() < 0.01) {
+          // Log ~1% of teams to avoid spam
           console.log('[TeamPicker] Amateur team debug:', {
             teamId: t.team_id,
             teamName: t.team_name,
@@ -245,7 +246,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             finalMatchVolume: typeof p?.match_volume === 'number' ? p.match_volume : undefined
           });
         }
-        
         return {
           id: t.team_id,
           name: t.team_name,
@@ -538,14 +538,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       </Card>
 
       {/* Selected Teams Display */}
-      {selectedTeams.length > 0 && <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Your Selected Teams ({selectedTeams.length}/5)</h3>
-            <div className="grid gap-3">
-              {selectedTeams.map(team => <TeamCard key={team.id} team={team} isSelected={true} onClick={() => handleRemoveTeam(team.id)} variant="selection" showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleToggleStar(team.id)} showPrice={true} budgetRemaining={budgetRemaining} />)}
-            </div>
-          </CardContent>
-        </Card>}
+      {selectedTeams.length > 0}
 
       {/* Star Team Summary */}
       {selectedTeams.length > 0 && <div className="bg-muted/30 rounded-lg p-4 border border-border">
