@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -152,54 +151,42 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-8 text-white">Rank</TableHead>
-          <TableHead className="w-8"></TableHead>
-          <TableHead className="text-white">Player</TableHead>
-          <TableHead className="text-right text-white">Points</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {leaderboard.map((entry) => (
-          <TableRow
-            key={entry.user_id}
-            className={`transition-colors ${getRowHighlight(entry.position, entry.is_current_user)}`}
-          >
-            {/* Rank */}
-            <TableCell className="w-8">
-              <span className="text-sm font-medium text-white">
-                {getRankDisplay(entry.position)}
-              </span>
-            </TableCell>
+    <div className="space-y-1">
+      {leaderboard.map((entry) => (
+        <div
+          key={entry.user_id}
+          className={`flex items-center gap-3 py-2 px-1 rounded transition-colors h-11 ${getRowHighlight(entry.position, entry.is_current_user)}`}
+        >
+          {/* Rank */}
+          <div className="w-6 flex items-center justify-center">
+            <span className="text-sm font-medium text-white">
+              {getRankDisplay(entry.position)}
+            </span>
+          </div>
 
-            {/* Avatar */}
-            <TableCell className="w-8">
-              <Avatar className="h-5 w-5">
-                <AvatarImage src={entry.avatar_url} alt={entry.username} />
-                <AvatarFallback className="text-xs text-white" style={{ backgroundColor: '#8B5CF6' }}>
-                  {entry.username.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </TableCell>
+          {/* Avatar */}
+          <Avatar className="h-5 w-5">
+            <AvatarImage src={entry.avatar_url} alt={entry.username} />
+            <AvatarFallback className="text-xs text-white" style={{ backgroundColor: '#8B5CF6' }}>
+              {entry.username.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
 
-            {/* Username */}
-            <TableCell>
-              <p className="text-sm font-medium truncate text-white">
-                {entry.username}
-              </p>
-            </TableCell>
+          {/* Username */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate text-white">
+              {entry.username}
+            </p>
+          </div>
 
-            {/* Points */}
-            <TableCell className="text-right">
-              <span className="text-sm font-bold text-white">
-                {entry.total_score}
-              </span>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+          {/* Points */}
+          <div className="text-right">
+            <span className="text-sm font-bold text-white">
+              {entry.total_score}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };
