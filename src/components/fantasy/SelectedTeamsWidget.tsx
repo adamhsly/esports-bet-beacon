@@ -32,12 +32,35 @@ const TeamCard: React.FC<{
   team: Team;
   index: number;
   onRemove?: () => void;
+  starTeamId?: string | null;
+  onToggleStar?: (teamId: string) => void;
 }> = ({
   team,
   index,
-  onRemove
+  onRemove,
+  starTeamId,
+  onToggleStar
 }) => {
   const isAmateur = team.type === 'amateur';
+  const isStarred = starTeamId === team.id;
+
+  const StarButton = () => (
+    <button 
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleStar?.(team.id);
+      }}
+      className="absolute bottom-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 border border-yellow-400/50 shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+    >
+      <Star 
+        className={`w-3 h-3 ${
+          isStarred 
+            ? 'fill-yellow-300 text-yellow-300' 
+            : 'text-yellow-200'
+        }`} 
+      />
+    </button>
+  );
 
   // Neon Top Trumps styling
   const neonBorder = isAmateur ? 'border-transparent bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 p-[2px]' : 'border-transparent bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 p-[2px]';
@@ -68,6 +91,11 @@ const TeamCard: React.FC<{
         {/* Team Name - Larger than other data */}
         <h3 className={`font-bold text-sm text-center mb-2 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
           {team.name.toUpperCase()}
+          {isStarred && (
+            <span className="block text-[10px] text-yellow-300 font-bold tracking-wider mt-1">
+              DOUBLE POINTS
+            </span>
+          )}
         </h3>
 
         {/* Compact Stats Grid */}
@@ -101,6 +129,9 @@ const TeamCard: React.FC<{
             <X className="w-3 h-3 text-white" />
           </button>
         </div>
+
+        {/* Star Button - Bottom Right */}
+        {onToggleStar && <StarButton />}
       </div>
     </div>;
 };
@@ -215,21 +246,21 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
         {/* Mobile: First row - 2 cards */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square">
-              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
+              {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
             </div>)}
         </div>
         
         {/* Mobile: Second row - 2 cards */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square">
-              {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
+              {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
             </div>)}
         </div>
         
         {/* Mobile: Third row - 1 card centered */}
         <div className="flex justify-center md:hidden">
           <div className="w-1/2 aspect-square">
-            {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
+            {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
           </div>
         </div>
 
@@ -238,14 +269,14 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           {/* First row - 3 cards */}
           <div className="grid grid-cols-3 gap-4 justify-center">
             {slots.slice(0, 3).map((team, index) => <div key={index} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
-                {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
+                {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
               </div>)}
           </div>
           
           {/* Second row - 2 cards centered */}
           <div className="grid grid-cols-2 gap-4 justify-center max-w-xl mx-auto">
             {slots.slice(3, 5).map((team, index) => <div key={index + 3} className="aspect-square scale-130 mx-auto" style={{ width: '160px' }}>
-                {team ? <TeamCard team={team} index={index + 3} onRemove={() => onRemoveTeam?.(index + 3)} /> : <PlaceholderCard index={index + 3} onClick={() => handleSlotClick(index + 3)} />}
+                {team ? <TeamCard team={team} index={index + 3} onRemove={() => onRemoveTeam?.(index + 3)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index + 3} onClick={() => handleSlotClick(index + 3)} />}
               </div>)}
           </div>
         </div>
@@ -258,7 +289,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
             Bench Team
           </h3>
           <div className="scale-75 origin-center">
-            <TeamCard team={benchTeam} index={5} onRemove={() => onRemoveTeam?.(5)} />
+            <TeamCard team={benchTeam} index={5} onRemove={() => onRemoveTeam?.(5)} starTeamId={starTeamId} onToggleStar={onToggleStar} />
           </div>
         </div>}
 
