@@ -2923,6 +2923,23 @@ export type Database = {
         }
         Relationships: []
       }
+      public_fantasy_leaderboard: {
+        Row: {
+          position: number | null
+          round_id: string | null
+          total_score: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_round_picks_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_credit_balances: {
         Row: {
           balance: number | null
