@@ -28,17 +28,14 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
   const fetchLeaderboard = async () => {
     try {
-      // Get all scores for this round
+      // Use RPC function to get public leaderboard data that bypasses RLS
       const { data: scores, error: scoresError } = await supabase
-        .from('fantasy_round_picks')
-        .select('user_id, total_score')
-        .eq('round_id', roundId)
-        .order('total_score', { ascending: false });
+        .rpc('get_public_fantasy_leaderboard', {
+          p_round_id: roundId,
+          p_limit: null
+        });
 
       if (scoresError) throw scoresError;
-
-      console.log('Leaderboard debug - Round ID:', roundId);
-      console.log('Leaderboard debug - Scores returned:', scores);
 
       if (!scores || scores.length === 0) {
         setLeaderboard([]);
@@ -46,8 +43,8 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
       }
 
       // Create leaderboard entries
-      const entries: LeaderboardEntry[] = scores.map((score, index) => ({
-        position: index + 1,
+      const entries: LeaderboardEntry[] = scores.map((score) => ({
+        position: score.user_position,
         user_id: score.user_id,
         username: '', // Will be filled from profiles
         total_score: score.total_score,

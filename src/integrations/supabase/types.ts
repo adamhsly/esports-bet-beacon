@@ -3104,6 +3104,14 @@ export type Database = {
         Args: { p_player_id: number }
         Returns: Json
       }
+      get_public_fantasy_leaderboard: {
+        Args: { p_limit?: number; p_round_id: string }
+        Returns: {
+          total_score: number
+          user_id: string
+          user_position: number
+        }[]
+      }
       get_star_team_state: {
         Args: { p_round_id: string }
         Returns: Json
