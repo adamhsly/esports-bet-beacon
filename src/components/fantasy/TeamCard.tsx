@@ -56,13 +56,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     if (!showStarToggle) return null;
     const isDisabled = !!disabledReason;
     const StarIcon = isDisabled ? Lock : Star;
-    const button = <Button variant="ghost" size="sm" className={`absolute top-2 right-2 h-8 w-8 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
+    const button = <Button variant="ghost" size="sm" className={`absolute top-1 right-1 h-6 w-6 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
       e.stopPropagation();
       if (!isDisabled && onToggleStar) {
         onToggleStar();
       }
     }} disabled={isDisabled} aria-pressed={isStarred} aria-label={isStarred ? "Remove star from team" : "Star this team"}>
-        <StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current drop-shadow-[0_0_12px_rgba(245,192,66,0.55)] motion-reduce:drop-shadow-none' : ''}`} />
+        <StarIcon className={`h-3 w-3 ${isStarred ? 'fill-current drop-shadow-[0_0_12px_rgba(245,192,66,0.55)] motion-reduce:drop-shadow-none' : ''}`} />
       </Button>;
     if (isDisabled) {
       return <TooltipProvider>
@@ -83,6 +83,14 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   if (variant === 'selection') {
     return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : `hover:shadow-md ${canAfford ? 'hover:ring-1 hover:ring-gray-400/30' : 'opacity-50 cursor-not-allowed'}`} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={canAfford ? onClick : undefined}>
         <CardContent className="p-4">
+          {/* Fantasy Points - Top Left */}
+          <div className="absolute top-2 left-2">
+            <div className="font-bold text-sm text-blue-400">
+              {fantasyPoints}
+            </div>
+            <div className="text-xs text-gray-400">pts</div>
+          </div>
+          
           <div className="flex items-center gap-3">
             {/* Team Logo */}
             <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
@@ -100,16 +108,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               </div>
             </div>
             
-            {/* Fantasy Points */}
-            <div className="text-right">
-              <div className="font-bold text-lg text-blue-400">
-                {fantasyPoints}
-              </div>
-              <div className="text-xs text-gray-400">points</div>
-            </div>
-            
             {/* Price */}
-            {showPrice && <div className="text-right ml-4">
+            {showPrice && <div className="text-right">
                 <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
                   {team.price ?? 0}
                 </div>
@@ -148,6 +148,14 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   // Progress variant (enhanced with selection styling)
   return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={onClick}>
       <CardContent className="p-4">
+        {/* Fantasy Points - Top Left */}
+        <div className="absolute top-2 left-2">
+          <div className="font-bold text-sm text-blue-400">
+            {fantasyPoints}
+          </div>
+          <div className="text-xs text-gray-400">pts</div>
+        </div>
+        
         <div className="flex items-center gap-3">
           {/* Team Logo */}
           <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
@@ -167,15 +175,6 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
             </div>
           </div>
-          
-          {/* Fantasy Points */}
-          <div className="text-right">
-            <div className="font-bold text-lg text-blue-400">
-              {fantasyPoints}
-            </div>
-            <div className="text-xs text-gray-400">points</div>
-          </div>
-          
         </div>
         
         {/* Star Team Double Points Label */}
