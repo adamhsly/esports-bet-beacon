@@ -159,7 +159,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
         >
           {/* Rank */}
           <div className="w-6 flex items-center justify-center">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-sm font-medium text-white">
               {getRankDisplay(entry.position)}
             </span>
           </div>
@@ -174,14 +174,14 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
           {/* Username */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-foreground">
+            <p className="text-sm font-medium truncate text-white">
               {entry.username}
             </p>
           </div>
 
           {/* Points */}
           <div className="text-right">
-            <span className="text-sm font-bold text-foreground">
+            <span className="text-sm font-bold text-white">
               {entry.total_score}
             </span>
           </div>
