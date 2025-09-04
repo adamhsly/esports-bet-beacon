@@ -33,6 +33,7 @@ interface TeamCardProps {
   showPrice?: boolean;
   budgetRemaining?: number;
   variant?: 'selection' | 'progress';
+  fantasyPoints?: number;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -46,7 +47,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   disabledReason = null,
   showPrice = false,
   budgetRemaining = 0,
-  variant = 'progress'
+  variant = 'progress',
+  fantasyPoints = 0
 }) => {
   const isAmateur = team.type === 'amateur';
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
@@ -98,8 +100,16 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               </div>
             </div>
             
+            {/* Fantasy Points */}
+            <div className="text-right">
+              <div className="font-bold text-lg text-blue-400">
+                {fantasyPoints}
+              </div>
+              <div className="text-xs text-gray-400">points</div>
+            </div>
+            
             {/* Price */}
-            {showPrice && <div className="text-right">
+            {showPrice && <div className="text-right ml-4">
                 <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
                   {team.price ?? 0}
                 </div>
@@ -158,7 +168,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             </div>
           </div>
           
-          {/* Status Icons */}
+          {/* Fantasy Points */}
+          <div className="text-right">
+            <div className="font-bold text-lg text-blue-400">
+              {fantasyPoints}
+            </div>
+            <div className="text-xs text-gray-400">points</div>
+          </div>
           
         </div>
         
