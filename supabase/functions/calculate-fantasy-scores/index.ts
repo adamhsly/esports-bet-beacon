@@ -31,39 +31,66 @@ serve(async (req) => {
 
     console.log('🎯 Starting fantasy score calculation...');
 
-    // Get all active fantasy rounds (open or active status)
-    const { data: activeRounds, error: roundsError } = await supabase
+    // Optional scoping via request body
+    let roundFilter: string | undefined;
+    let userFilter: string | undefined;
+    try {
+      const body = await req.json().catch(() => null);
+      if (body && typeof body === 'object') {
+        roundFilter = body.round_id ?? body.roundId ?? undefined;
+        userFilter = body.user_id ?? body.userId ?? undefined;
+      }
+    } catch (_) {
+      // Ignore bad JSON
+    }
+
+    // Get active fantasy rounds (optionally scoped)
+    let roundsQuery = supabase
       .from('fantasy_rounds')
       .select('*')
       .in('status', ['open', 'active']);
+    if (roundFilter) roundsQuery = roundsQuery.eq('id', roundFilter);
+
+    const { data: activeRounds, error: roundsError } = await roundsQuery;
 
     if (roundsError) throw roundsError;
 
-    console.log(`📊 Found ${activeRounds?.length || 0} active rounds`);
+    console.log(`📊 Found ${activeRounds?.length || 0} active rounds${roundFilter ? ` (filtered by ${roundFilter})` : ''}`);
 
     for (const round of activeRounds || []) {
       console.log(`🔄 Processing round ${round.id} (${round.type})`);
 
-      // Get all picks for this round
-      const { data: picks, error: picksError } = await supabase
+      // Get picks for this round (optionally filtered by user)
+      let picksQuery = supabase
         .from('fantasy_round_picks')
         .select('*')
         .eq('round_id', round.id);
+      if (userFilter) picksQuery = picksQuery.eq('user_id', userFilter);
+      const { data: picks, error: picksError } = await picksQuery;
 
       if (picksError) throw picksError;
 
-      console.log(`👥 Found ${picks?.length || 0} picks for round ${round.id}`);
+      console.log(`👥 Found ${picks?.length || 0} picks for round ${round.id}${userFilter ? ` (filtered by ${userFilter})` : ''}`);
 
       for (const pick of picks || []) {
         const teamPicks = Array.isArray(pick.team_picks) ? pick.team_picks : [];
         console.log(`🎮 Processing picks for user ${pick.user_id} with ${teamPicks.length} teams`);
 
-        for (const team of teamPicks) {
-          const teamId = String(team.id);
-          console.log(`⚡ Calculating scores for team ${team.name} (${teamId})`);
+        for (const rawTeam of teamPicks) {
+          const teamId = String(rawTeam?.id ?? rawTeam?.team_id ?? '').trim();
+          const teamName = String(rawTeam?.name ?? rawTeam?.team_name ?? '').trim();
+          let teamType = String(rawTeam?.type ?? rawTeam?.team_type ?? 'pro').toLowerCase();
+          teamType = teamType === 'amateur' ? 'amateur' : 'pro';
+
+          if (!teamId || !teamName) {
+            console.warn('⏭️ Skipping invalid team pick (missing id/name)', { roundId: round.id, userId: pick.user_id, rawTeam });
+            continue;
+          }
+
+          console.log(`⚡ Calculating scores for team ${teamName} (${teamId})`);
 
           // Calculate scores for this team
-          const teamScore = await calculateTeamScore(supabase, teamId, team.name, team.type, round.start_date, round.end_date);
+          const teamScore = await calculateTeamScore(supabase, teamId, teamName, teamType, round.start_date, round.end_date);
 
           // Upsert the score record
           const { error: upsertError } = await supabase
@@ -72,8 +99,8 @@ serve(async (req) => {
               round_id: round.id,
               user_id: pick.user_id,
               team_id: teamId,
-              team_name: team.name,
-              team_type: team.type,
+              team_name: teamName,
+              team_type: teamType,
               current_score: calculateTotalScore(teamScore),
               match_wins: teamScore.match_wins,
               map_wins: teamScore.map_wins,
@@ -88,7 +115,7 @@ serve(async (req) => {
           if (upsertError) {
             console.error(`❌ Error upserting score for team ${teamId}:`, upsertError);
           } else {
-            console.log(`✅ Updated scores for team ${team.name}: ${teamScore.match_wins} wins, ${teamScore.matches_played} matches`);
+            console.log(`✅ Updated scores for team ${teamName}: ${teamScore.match_wins} wins, ${teamScore.matches_played} matches`);
           }
         }
 
@@ -158,7 +185,7 @@ async function calculateTeamScore(
   // Query PandaScore matches
   const { data: pandaMatches, error: pandaError } = await supabase
     .from('pandascore_matches')
-    .select('*')
+    .select('match_id, teams, winner_id, raw_data, number_of_games, status, start_time')
     .gte('start_time', startDate)
     .lte('start_time', endDate)
     .eq('status', 'finished');
@@ -206,7 +233,7 @@ async function calculateTeamScore(
   // Query Faceit matches
   const { data: faceitMatches, error: faceitError } = await supabase
     .from('faceit_matches')
-    .select('*')
+    .select('match_id, teams, status, started_at, faceit_data')
     .gte('started_at', startDate)
     .lte('started_at', endDate)
     .eq('status', 'FINISHED');

@@ -52,7 +52,9 @@ export const InProgressRounds: React.FC = () => {
   const calculateScores = async () => {
     try {
       console.log('🎯 Triggering fantasy score calculation...');
-      const { error } = await supabase.functions.invoke('calculate-fantasy-scores');
+      const { error } = await supabase.functions.invoke('calculate-fantasy-scores', {
+        body: { user_id: user?.id }
+      });
       if (error) {
         console.error('Error calculating scores:', error);
         toast.error('Failed to calculate scores');
