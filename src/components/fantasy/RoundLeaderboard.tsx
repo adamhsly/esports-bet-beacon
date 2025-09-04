@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Crown, Trophy, Medal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,7 +8,6 @@ interface LeaderboardEntry {
   user_id: string;
   username: string;
   avatar_url?: string;
-  level: number;
   total_score: number;
   is_current_user: boolean;
 }
@@ -47,66 +44,51 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
         return;
       }
 
-      // Get profile info for all users
-      const userIds = scores.map(s => s.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, full_name')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Get user progress for all users
-      const { data: userProgress, error: progressError } = await supabase
-        .from('user_progress')
-        .select('user_id, level')
-        .in('user_id', userIds);
-
-      if (progressError) throw progressError;
-
       // Create leaderboard entries
-      const entries: LeaderboardEntry[] = scores.map((score, index) => {
-        const profile = profiles?.find(p => p.id === score.user_id);
-        const progress = userProgress?.find(p => p.user_id === score.user_id);
-        
-        return {
-          position: index + 1,
-          user_id: score.user_id,
-          username: profile?.username || profile?.full_name || 'Anonymous',
-          level: progress?.level || 1,
-          total_score: score.total_score,
-          is_current_user: score.user_id === user.id
-        };
-      });
+      const entries: LeaderboardEntry[] = scores.map((score, index) => ({
+        position: index + 1,
+        user_id: score.user_id,
+        username: '', // Will be filled from profiles
+        total_score: score.total_score,
+        is_current_user: score.user_id === user.id
+      }));
 
       // Find current user's position
       const currentUserEntry = entries.find(entry => entry.is_current_user);
       const currentUserPos = currentUserEntry?.position || null;
       setUserPosition(currentUserPos);
 
-      // Filter leaderboard based on user position
+      // Apply 6-row logic
       let displayEntries: LeaderboardEntry[] = [];
-
-      if (!currentUserPos || currentUserPos <= 5) {
-        // Show top 5 if user is in top 5 or not found
-        displayEntries = entries.slice(0, 5);
+      
+      if (!currentUserPos || currentUserPos <= 3) {
+        // User is in top 3 or not found: show positions 1-6
+        displayEntries = entries.slice(0, 6);
       } else {
-        // Show top 5 + user's position context
-        const top5 = entries.slice(0, 5);
-        const userContext = entries.slice(
-          Math.max(0, currentUserPos - 2),
-          Math.min(entries.length, currentUserPos + 1)
-        );
+        // User is outside top 3: show top 3 + user's row + 1 above + 1 below
+        const top3 = entries.slice(0, 3);
+        const userAbove = currentUserPos > 4 ? entries.slice(currentUserPos - 2, currentUserPos - 1) : [];
+        const userRow = entries.slice(currentUserPos - 1, currentUserPos);
+        const userBelow = currentUserPos < entries.length ? entries.slice(currentUserPos, currentUserPos + 1) : [];
         
-        // Combine and deduplicate
-        const combined = [...top5, ...userContext];
-        const seen = new Set();
-        displayEntries = combined.filter(entry => {
-          if (seen.has(entry.user_id)) return false;
-          seen.add(entry.user_id);
-          return true;
-        });
+        displayEntries = [...top3, ...userAbove, ...userRow, ...userBelow];
       }
+
+      // Get profile info only for displayed users
+      const displayUserIds = displayEntries.map(e => e.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', displayUserIds);
+
+      if (profilesError) throw profilesError;
+
+      // Fill in profile data
+      displayEntries.forEach(entry => {
+        const profile = profiles?.find(p => p.id === entry.user_id);
+        entry.username = profile?.username || profile?.full_name || 'Anonymous';
+        entry.avatar_url = profile?.avatar_url;
+      });
 
       setLeaderboard(displayEntries);
     } catch (error) {
@@ -116,54 +98,45 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
     }
   };
 
-  const getPositionIcon = (position: number) => {
+  const getRankDisplay = (position: number) => {
     switch (position) {
       case 1:
-        return <Crown className="h-4 w-4 text-[hsl(var(--neon-gold))]" />;
+        return '🥇';
       case 2:
-        return <Trophy className="h-4 w-4 text-gray-400" />;
+        return '🥈';
       case 3:
-        return <Medal className="h-4 w-4 text-orange-400" />;
+        return '🥉';
       default:
-        return <span className="text-sm font-medium text-muted-foreground">#{position}</span>;
+        return position.toString();
     }
   };
 
-  const getPositionBadgeColor = (position: number) => {
-    switch (position) {
-      case 1:
-        return 'bg-gradient-to-r from-yellow-400 to-amber-500 text-black';
-      case 2:
-        return 'bg-gradient-to-r from-gray-300 to-gray-400 text-black';
-      case 3:
-        return 'bg-gradient-to-r from-orange-400 to-orange-500 text-white';
-      default:
-        return 'bg-muted text-muted-foreground';
+  const getRowHighlight = (position: number, isCurrentUser: boolean) => {
+    if (isCurrentUser && position > 3) {
+      return 'bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-400/20';
     }
-  };
-
-  const getAvatarFrame = (position: number) => {
+    
     switch (position) {
       case 1:
-        return 'ring-2 ring-[hsl(var(--neon-gold))] ring-offset-2 ring-offset-background';
+        return 'bg-gradient-to-r from-yellow-500/5 to-amber-500/5';
       case 2:
-        return 'ring-2 ring-gray-400 ring-offset-2 ring-offset-background';
+        return 'bg-gradient-to-r from-gray-400/5 to-gray-500/5';
       case 3:
-        return 'ring-2 ring-orange-400 ring-offset-2 ring-offset-background';
+        return 'bg-gradient-to-r from-orange-400/5 to-orange-500/5';
       default:
-        return '';
+        return 'hover:bg-muted/30';
     }
   };
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3 p-2">
-            <div className="w-8 h-8 bg-muted rounded-full" />
-            <div className="w-4 h-4 bg-muted rounded" />
-            <div className="w-20 h-4 bg-muted rounded flex-1" />
-            <div className="w-12 h-4 bg-muted rounded" />
+      <div className="animate-pulse space-y-1">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 py-2 px-1">
+            <div className="w-6 h-4 bg-muted rounded" />
+            <div className="w-5 h-5 bg-muted rounded-full" />
+            <div className="w-20 h-3 bg-muted rounded flex-1" />
+            <div className="w-12 h-3 bg-muted rounded" />
           </div>
         ))}
       </div>
@@ -172,73 +145,50 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
   if (leaderboard.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground">
-        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+      <div className="text-center py-6 text-muted-foreground">
+        <div className="text-2xl mb-2">🏆</div>
         <p className="text-sm">No scores yet</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      {leaderboard.map((entry, index) => (
+    <div className="space-y-1">
+      {leaderboard.map((entry) => (
         <div
           key={entry.user_id}
-          className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-            entry.is_current_user
-              ? 'bg-primary/10 border border-primary/30'
-              : 'bg-muted/30 hover:bg-muted/50'
-          }`}
+          className={`flex items-center gap-3 py-2 px-1 rounded transition-colors h-11 ${getRowHighlight(entry.position, entry.is_current_user)}`}
         >
-          {/* Position */}
-          <div className="flex items-center justify-center w-8">
-            {entry.position <= 3 ? (
-              <Badge className={`w-6 h-6 rounded-full p-0 flex items-center justify-center ${getPositionBadgeColor(entry.position)}`}>
-                {entry.position}
-              </Badge>
-            ) : (
-              getPositionIcon(entry.position)
-            )}
+          {/* Rank */}
+          <div className="w-6 flex items-center justify-center">
+            <span className="text-sm font-medium text-foreground">
+              {getRankDisplay(entry.position)}
+            </span>
           </div>
 
           {/* Avatar */}
-          <Avatar className={`h-8 w-8 ${getAvatarFrame(entry.position)}`}>
+          <Avatar className="h-5 w-5">
             <AvatarImage src={entry.avatar_url} alt={entry.username} />
             <AvatarFallback className="text-xs">
               {entry.username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
-          {/* Username and Level */}
+          {/* Username */}
           <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium truncate ${
-              entry.is_current_user ? 'text-primary' : 'text-foreground'
-            }`}>
+            <p className="text-sm font-medium truncate text-foreground">
               {entry.username}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Level {entry.level}
             </p>
           </div>
 
-          {/* Score */}
+          {/* Points */}
           <div className="text-right">
-            <p className="text-sm font-bold text-[hsl(var(--neon-green))]">
+            <span className="text-sm font-bold text-foreground">
               {entry.total_score}
-            </p>
-            <p className="text-xs text-muted-foreground">pts</p>
+            </span>
           </div>
         </div>
       ))}
-
-      {/* Show gap indicator if user is not in top 5 */}
-      {userPosition && userPosition > 5 && leaderboard.some(e => e.position <= 5) && leaderboard.some(e => e.position > 5) && (
-        <div className="flex items-center justify-center py-2">
-          <div className="h-px bg-muted flex-1" />
-          <span className="px-3 text-xs text-muted-foreground">...</span>
-          <div className="h-px bg-muted flex-1" />
-        </div>
-      )}
     </div>
   );
 };
