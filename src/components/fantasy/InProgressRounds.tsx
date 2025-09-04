@@ -223,7 +223,7 @@ export const InProgressRounds: React.FC = () => {
               />
             </CardHeader>
 
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6 overflow-hidden">
               <div className="space-y-6">
                 {/* Team Performance */}
                 <div>
@@ -253,30 +253,30 @@ export const InProgressRounds: React.FC = () => {
                       Scoring Breakdown
                     </h4>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
-                        <div className="text-xl font-bold text-green-400">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-center">
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-green-400">
                           {round.scores.reduce((sum, s) => sum + s.match_wins, 0)}
                         </div>
-                        <div className="text-xs text-gray-400">Match Wins</div>
+                        <div className="text-xs text-gray-400 leading-tight">Match Wins</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
-                        <div className="text-xl font-bold text-blue-400">
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-blue-400">
                           {round.scores.reduce((sum, s) => sum + s.map_wins, 0)}
                         </div>
-                        <div className="text-xs text-gray-400">Map Wins</div>
+                        <div className="text-xs text-gray-400 leading-tight">Map Wins</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
-                        <div className="text-xl font-bold text-purple-400">
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-purple-400">
                           {round.scores.reduce((sum, s) => sum + s.clean_sweeps, 0)}
                         </div>
-                        <div className="text-xs text-gray-400">Clean Sweeps</div>
+                        <div className="text-xs text-gray-400 leading-tight">Clean Sweeps</div>
                       </div>
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30">
-                        <div className="text-xl font-bold text-orange-400">
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-orange-400">
                           {round.scores.reduce((sum, s) => sum + s.tournaments_won, 0)}
                         </div>
-                        <div className="text-xs text-gray-400">Tournaments</div>
+                        <div className="text-xs text-gray-400 leading-tight">Tournaments</div>
                       </div>
                     </div>
                   </div>
