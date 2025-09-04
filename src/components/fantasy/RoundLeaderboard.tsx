@@ -111,16 +111,16 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
   const getRowHighlight = (position: number, isCurrentUser: boolean) => {
     if (isCurrentUser && position > 3) {
-      return 'bg-gradient-to-r from-yellow-500/30 to-amber-500/30 border border-yellow-400/40';
+      return 'bg-gradient-to-r from-yellow-500/70 to-amber-500/30 border border-yellow-400/70';
     }
     
     switch (position) {
       case 1:
-        return 'bg-gradient-to-r from-yellow-500/5 to-amber-500/5';
+        return 'bg-gradient-to-r from-yellow-500/40 to-amber-500/40';
       case 2:
-        return 'bg-gradient-to-r from-gray-400/5 to-gray-500/5';
+        return 'bg-gradient-to-r from-gray-400/40 to-gray-500/40';
       case 3:
-        return 'bg-gradient-to-r from-orange-400/5 to-orange-500/5';
+        return 'bg-gradient-to-r from-orange-400/40 to-orange-500/40';
       default:
         return 'hover:bg-muted/30';
     }
