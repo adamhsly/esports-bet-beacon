@@ -54,8 +54,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     if (!showStarToggle) return null;
     const isDisabled = !!disabledReason;
     const StarIcon = isDisabled ? Lock : Star;
-    const starPosition = isSelected ? 'absolute bottom-2 right-2' : 'absolute top-2 right-2';
-    const button = <Button variant="ghost" size="sm" className={`${starPosition} h-8 w-8 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
+    const button = <Button variant="ghost" size="sm" className={`absolute top-2 right-2 h-8 w-8 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
       e.stopPropagation();
       if (!isDisabled && onToggleStar) {
         onToggleStar();
@@ -93,9 +92,9 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               <h4 className="font-semibold text-white truncate">{team.name}</h4>
               <div className="flex items-center gap-2 mt-1">
                 
-                 {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
-                     +25%
-                   </Badge>}
+                {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+                    +25% Bonus
+                  </Badge>}
               </div>
             </div>
             
@@ -149,22 +148,18 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-white truncate">{team.name}</h4>
             <div className="flex items-center gap-2 mt-1">
-               {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
-                   +25%
-                 </Badge>}
+              <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
+                {isAmateur ? 'Amateur' : 'Pro'}
+              </Badge>
+              {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+                  +25% Bonus
+                </Badge>}
               {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
             </div>
           </div>
           
           {/* Status Icons */}
-          <div className="flex items-center gap-2">
-            {team.type === 'amateur' && <div className="text-right">
-                <div className="text-xs text-gray-400">
-                  matches
-                </div>
-              </div>}
-            {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
-          </div>
+          
         </div>
         
         {/* Star Team Double Points Label */}
