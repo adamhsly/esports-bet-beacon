@@ -167,7 +167,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
           {/* Avatar */}
           <Avatar className="h-5 w-5">
             <AvatarImage src={entry.avatar_url} alt={entry.username} />
-            <AvatarFallback className="text-xs">
+            <AvatarFallback className="text-xs text-white" style={{ backgroundColor: '#8B5CF6' }}>
               {entry.username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
