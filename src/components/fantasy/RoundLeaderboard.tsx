@@ -27,8 +27,6 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
   }, [roundId, user]);
 
   const fetchLeaderboard = async () => {
-    if (!user) return;
-
     try {
       // Get all scores for this round
       const { data: scores, error: scoresError } = await supabase
@@ -50,7 +48,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
         user_id: score.user_id,
         username: '', // Will be filled from profiles
         total_score: score.total_score,
-        is_current_user: score.user_id === user.id
+        is_current_user: user ? score.user_id === user.id : false
       }));
 
       // Find current user's position
