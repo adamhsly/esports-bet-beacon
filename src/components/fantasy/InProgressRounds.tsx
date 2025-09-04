@@ -227,16 +227,6 @@ export const InProgressRounds: React.FC = () => {
 
             <CardContent className="p-4 sm:p-6 overflow-hidden">
               <div className="space-y-6">
-                {/* Team Performance */}
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
-                    <Users className="h-4 w-4" />
-                    Team Performance
-                  </h4>
-                  
-                  <InProgressTeamsList round={round} />
-                </div>
-
                 {/* Leaderboard */}
                 <div>
                   <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
@@ -245,6 +235,16 @@ export const InProgressRounds: React.FC = () => {
                   </h4>
                   
                   <RoundLeaderboard roundId={round.id} />
+                </div>
+
+                {/* Team Performance */}
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                    <Users className="h-4 w-4" />
+                    Team Performance
+                  </h4>
+                  
+                  <InProgressTeamsList round={round} />
                 </div>
 
                 {/* Scoring Breakdown */}
