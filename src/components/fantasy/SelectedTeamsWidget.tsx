@@ -50,7 +50,7 @@ const TeamCard: React.FC<{
         e.stopPropagation();
         onToggleStar?.(team.id);
       }}
-      className={`absolute bottom-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border ${
+      className={`absolute bottom-1 right-1 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border ${
         isStarred 
           ? 'bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 border-yellow-400/50 shadow-[0_0_10px_rgba(251,191,36,0.5)]'
           : 'bg-transparent hover:bg-yellow-500/20 border-gray-500/30 hover:border-yellow-400/50'
