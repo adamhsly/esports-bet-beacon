@@ -122,7 +122,7 @@ const TeamCard: React.FC<{
 
         {/* Amateur Bonus Badge - Top Left */}
         {isAmateur && <div className="absolute top-1 left-1 z-20">
-            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1 border border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] animate-pulse">
+            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[8px] px-1.5 py-0.5 border border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] animate-pulse">
               +25%
             </Badge>
           </div>}
