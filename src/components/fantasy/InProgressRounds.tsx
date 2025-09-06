@@ -12,6 +12,7 @@ import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { RoundLeaderboard } from './RoundLeaderboard';
 import { renderShareCard } from '@/utils/shareCardRenderer';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 interface InProgressRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
@@ -340,7 +341,7 @@ const InProgressTeamsList: React.FC<{
         id: score.team_id,
         name: score.team_name,
         type: score.team_type,
-        logo_url: undefined // TODO: Add logo_url to scores table
+        logo_url: getEnhancedTeamLogoUrl({ name: score.team_name, logo: null, image_url: null, hash_image: null })
       }} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === score.team_id} onToggleStar={() => handleStarToggle(score.team_id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" />) :
       // Show picked teams without scores
       round.team_picks.map((team, index) => <TeamCard key={team.id || index} team={team} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleStarToggle(team.id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" />)}

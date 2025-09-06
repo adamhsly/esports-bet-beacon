@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { TeamCard } from './TeamCard';
+import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 
 interface FinishedRound {
   id: string;
@@ -365,7 +366,7 @@ const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
               id: score.team_id,
               name: score.team_name,
               type: score.team_type,
-              logo_url: undefined
+              logo_url: getEnhancedTeamLogoUrl({ name: score.team_name, logo: null, image_url: null, hash_image: null })
             }}
             isSelected={true}
             onClick={() => {}}
