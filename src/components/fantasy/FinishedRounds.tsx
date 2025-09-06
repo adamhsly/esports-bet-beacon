@@ -6,6 +6,7 @@ import { Trophy, Medal, Users, TrendingUp, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { TeamCard } from './TeamCard';
 
 interface FinishedRound {
   id: string;
@@ -55,7 +56,7 @@ export const FinishedRounds: React.FC = () => {
     if (!user) return;
 
     try {
-      // Fetch user's picks for finished rounds
+      // Fetch user's picks for finished rounds (both 'finished' and 'closed' status)
       const { data: picks, error: picksError } = await supabase
         .from('fantasy_round_picks')
         .select(`
@@ -63,7 +64,7 @@ export const FinishedRounds: React.FC = () => {
           fantasy_rounds!inner(*)
         `)
         .eq('user_id', user.id)
-        .eq('fantasy_rounds.status', 'finished')
+        .in('fantasy_rounds.status', ['finished', 'closed'])
         .order('created_at', { ascending: false });
 
       if (picksError) throw picksError;
@@ -211,120 +212,38 @@ export const FinishedRounds: React.FC = () => {
 
       <div className="space-y-6">
         {rounds.map((round) => (
-          <Card key={round.id} className="bg-card border-border hover:shadow-lg transition-shadow">
-            <CardHeader>
+          <Card key={round.id} className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250">
+            <CardHeader className="border-b border-gray-700/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CardTitle className="text-xl capitalize">{round.type} Round</CardTitle>
-                  <Badge className={getRoundTypeColor(round.type)}>
-                    {round.type}
-                  </Badge>
+                  <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    {round.type} Round
+                  </CardTitle>
                   {round.user_rank && round.user_rank <= 3 && (
-                    <Badge variant="outline" className="flex items-center gap-1">
+                    <Badge variant="outline" className="flex items-center gap-1 bg-yellow-500/10 border-yellow-400/30 text-yellow-400">
                       {getRankIcon(round.user_rank)}
                       #{round.user_rank}
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {formatDate(round.end_date)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Trophy className="h-4 w-4" />
-                    {round.total_score} pts
+                    <span className="text-green-400 font-medium">{round.total_score} pts</span>
                   </span>
                 </div>
               </div>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 overflow-hidden">
               <div className="space-y-6">
-                {/* Team Performance */}
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Final Team Performance
-                  </h4>
-                  
-                  {round.scores.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No scoring data available</p>
-                  ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {round.scores.map((score) => (
-                        <div 
-                          key={score.team_id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                        >
-                          <div>
-                            <div className="font-medium">{score.team_name}</div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant={score.team_type === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                                {score.team_type}
-                              </Badge>
-                              {score.team_type === 'amateur' && (
-                                <Badge variant="outline" className="text-xs text-green-600">
-                                  +25% bonus
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-primary">
-                              {score.current_score} pts
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {score.matches_played} matches
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Scoring Breakdown */}
-                {round.scores.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      Final Scoring Breakdown
-                    </h4>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-green-600">
-                          {round.scores.reduce((sum, s) => sum + s.match_wins, 0)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">Match Wins</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-blue-600">
-                          {round.scores.reduce((sum, s) => sum + s.map_wins, 0)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">Map Wins</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-purple-600">
-                          {round.scores.reduce((sum, s) => sum + s.clean_sweeps, 0)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">Clean Sweeps</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-xl font-bold text-orange-600">
-                          {round.scores.reduce((sum, s) => sum + s.tournaments_won, 0)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">Tournaments</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Leaderboard */}
                 <div className="flex items-center justify-between">
-                  <h4 className="font-semibold flex items-center gap-2">
+                  <h4 className="font-semibold flex items-center gap-2 text-white">
                     <Trophy className="h-4 w-4" />
                     Leaderboard
                   </h4>
@@ -332,42 +251,142 @@ export const FinishedRounds: React.FC = () => {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleViewLeaderboard(round.id)}
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
                   >
                     {selectedRound === round.id ? 'Hide Leaderboard' : 'View Leaderboard'}
                   </Button>
                 </div>
 
                 {selectedRound === round.id && round.leaderboard && (
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-muted/50 px-4 py-2 text-sm font-medium border-b">
-                      Top Players
+                  <div className="border border-gray-700/50 rounded-lg overflow-hidden bg-gray-900/30">
+                    <div className="bg-gray-800/50 px-4 py-3 text-sm font-medium border-b border-gray-700/50 flex items-center justify-between">
+                      <span className="text-white">Rank</span>
+                      <span className="text-white">Player</span>
+                      <span className="text-white">Points</span>
                     </div>
-                    <div className="divide-y max-h-60 overflow-y-auto">
+                    <div className="divide-y divide-gray-700/50 max-h-60 overflow-y-auto">
                       {round.leaderboard.slice(0, 10).map((entry) => (
                         <div 
                           key={entry.user_id}
-                           className={`flex items-center justify-between px-4 py-3 ${
-                             entry.user_id === user?.id ? 'bg-primary/10' : ''
+                          className={`flex items-center justify-between px-4 py-3 ${
+                            entry.user_id === user?.id ? 'bg-primary/30' : ''
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             {getRankIcon(entry.rank)}
-                            <span className="font-medium">{entry.username}</span>
+                            <span className="font-medium text-white">{entry.username}</span>
                             {entry.user_id === user?.id && (
-                              <Badge variant="secondary" className="text-xs">You</Badge>
+                              <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-400">You</Badge>
                             )}
                           </div>
-                          <span className="font-semibold">{entry.total_score} pts</span>
+                          <span className="font-semibold text-green-400">{entry.total_score} pts</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Team Performance */}
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                    <Users className="h-4 w-4" />
+                    Final Team Performance
+                  </h4>
+                  
+                  <FinishedTeamsList round={round} />
+                </div>
+
+                {/* Scoring Breakdown */}
+                {round.scores.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                      <TrendingUp className="h-4 w-4" />
+                      Final Scoring Breakdown
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-center">
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-green-400">
+                          {round.scores.reduce((sum, s) => sum + s.match_wins, 0)}
+                        </div>
+                        <div className="text-xs text-gray-400 leading-tight">Match Wins</div>
+                      </div>
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-blue-400">
+                          {round.scores.reduce((sum, s) => sum + s.map_wins, 0)}
+                        </div>
+                        <div className="text-xs text-gray-400 leading-tight">Map Wins</div>
+                      </div>
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-purple-400">
+                          {round.scores.reduce((sum, s) => sum + s.clean_sweeps, 0)}
+                        </div>
+                        <div className="text-xs text-gray-400 leading-tight">Clean Sweeps</div>
+                      </div>
+                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30">
+                        <div className="text-lg sm:text-xl font-bold text-orange-400">
+                          {round.scores.reduce((sum, s) => sum + s.tournaments_won, 0)}
+                        </div>
+                        <div className="text-xs text-gray-400 leading-tight">Tournaments</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bench Team */}
+                {round.bench_team && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-sm text-white">Bench Team</h4>
+                    <Badge variant="outline" className="text-sm bg-orange-500/10 border-orange-400/30 text-orange-400">
+                      {round.bench_team.name} (Amateur)
+                    </Badge>
+                  </div>
+                )}
+
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+    </div>
+  );
+};
+
+// Helper component for rendering teams in finished rounds (no star functionality)
+const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {round.scores.length > 0 ? (
+        // Show scored teams
+        round.scores.map((score) => (
+          <TeamCard 
+            key={score.team_id}
+            team={{
+              id: score.team_id,
+              name: score.team_name,
+              type: score.team_type,
+              logo_url: undefined
+            }}
+            isSelected={true}
+            onClick={() => {}}
+            showStarToggle={false} // No star functionality for finished rounds
+            variant="progress"
+            fantasyPoints={score.current_score}
+          />
+        ))
+      ) : (
+        // Show picked teams without scores
+        round.team_picks.map((team, index) => (
+          <TeamCard 
+            key={team.id || index}
+            team={team}
+            isSelected={true}
+            onClick={() => {}}
+            showStarToggle={false} // No star functionality for finished rounds
+            variant="progress"
+          />
+        ))
+      )}
     </div>
   );
 };
