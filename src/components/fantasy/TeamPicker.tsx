@@ -434,15 +434,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     try {
       setSubmitting(true);
 
-      // Set star team if one is selected
-      if (starTeamId) {
-        const starResult = await setStarTeam(starTeamId);
-        if (!starResult.success) {
-          toast.error(starResult.error || 'Failed to set star team');
-          return;
-        }
-      }
-
       // Need to convert team objects to plain objects for Supabase
       const teamPicksData = selectedTeams.map(team => ({
         id: team.id,
@@ -455,6 +446,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         name: benchTeam.name,
         type: benchTeam.type
       } : null;
+      
+      // First insert the team picks
       const {
         error
       } = await supabase.from('fantasy_round_picks').insert({
@@ -464,6 +457,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         bench_team: benchTeamData
       });
       if (error) throw error;
+
+      // Then set star team if one is selected (after picks exist)
+      if (starTeamId) {
+        const starResult = await setStarTeam(starTeamId);
+        if (!starResult.success) {
+          toast.error(starResult.error || 'Failed to set star team');
+          // Don't return here - picks are already submitted, just warn about star team
+        }
+      }
 
       // Progress missions using MissionBus (non-blocking)
       try {

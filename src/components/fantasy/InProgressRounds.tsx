@@ -286,7 +286,7 @@ const InProgressTeamsList: React.FC<{
   const [showStarModal, setShowStarModal] = useState(false);
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
   const handleStarToggle = (teamId: string) => {
-    if (!canChange || changeUsed) return;
+    if (!canChange) return;
     if (starTeamId === teamId) {
       // Already starred, do nothing
       return;
@@ -341,9 +341,9 @@ const InProgressTeamsList: React.FC<{
         name: score.team_name,
         type: score.team_type,
         logo_url: undefined // TODO: Add logo_url to scores table
-      }} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === score.team_id} onToggleStar={() => handleStarToggle(score.team_id)} disabledReason={!canChange || changeUsed ? "Star change used" : null} variant="progress" />) :
+      }} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === score.team_id} onToggleStar={() => handleStarToggle(score.team_id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" />) :
       // Show picked teams without scores
-      round.team_picks.map((team, index) => <TeamCard key={team.id || index} team={team} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleStarToggle(team.id)} disabledReason={!canChange || changeUsed ? "Star change used" : null} variant="progress" />)}
+      round.team_picks.map((team, index) => <TeamCard key={team.id || index} team={team} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleStarToggle(team.id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" />)}
       </div>
 
       {/* Star Change Modal */}
