@@ -11,6 +11,7 @@ interface Profile {
   avatar_frame_id?: string;
   country?: string;
   bio?: string;
+  premium_pass?: boolean;
 }
 
 export const useProfile = () => {

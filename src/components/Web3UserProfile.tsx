@@ -25,6 +25,8 @@ import {
   Users,
   Award
 } from 'lucide-react';
+import PremiumConnector from './PremiumConnector';
+import { useProfile } from '@/hooks/useProfile';
 
 interface UserStats {
   totalCards: number;
@@ -59,6 +61,7 @@ interface CollectionItem {
 
 const Web3UserProfile: React.FC = () => {
   const { isConnected, currentWallet, userWallets } = useWeb3();
+  const { profile } = useProfile();
   const [userStats, setUserStats] = useState<UserStats>({
     totalCards: 0,
     fantasyTeams: 0,
@@ -202,16 +205,13 @@ const Web3UserProfile: React.FC = () => {
                   <Flame className="w-4 h-4 mr-2" />
                   {userStats.currentStreak} Day Streak
                 </Badge>
-                {userStats.hasPremiumPass ? (
+                {profile?.premium_pass ? (
                   <Badge className="bg-neon-gold/20 text-neon-gold border-neon-gold/30 animate-premium-glow font-gaming">
                     <Crown className="w-4 h-4 mr-2" />
                     Premium Active
                   </Badge>
                 ) : (
-                  <Button size="sm" className="bg-gradient-to-r from-neon-gold to-neon-orange hover:from-neon-gold/80 hover:to-neon-orange/80 text-white font-gaming animate-premium-glow">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Unlock Premium
-                  </Button>
+                  <PremiumConnector size="sm" />
                 )}
               </div>
             </div>
@@ -363,28 +363,28 @@ const Web3UserProfile: React.FC = () => {
                   </div>
 
                   {/* Premium Track */}
-                  <div className={`p-4 rounded-lg border ${userStats.hasPremiumPass ? 'bg-neon-gold/10 border-neon-gold/20 animate-premium-glow' : 'bg-muted/10 border-muted/20'}`}>
+                  <div className={`p-4 rounded-lg border ${profile?.premium_pass ? 'bg-neon-gold/10 border-neon-gold/20 animate-premium-glow' : 'bg-muted/10 border-muted/20'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        {userStats.hasPremiumPass ? (
+                        {profile?.premium_pass ? (
                           <Crown className="w-4 h-4 text-neon-gold" />
                         ) : (
                           <Lock className="w-4 h-4 text-muted-foreground" />
                         )}
-                        <span className={`font-gaming ${userStats.hasPremiumPass ? 'text-neon-gold' : 'text-muted-foreground'}`}>
+                        <span className={`font-gaming ${profile?.premium_pass ? 'text-neon-gold' : 'text-muted-foreground'}`}>
                           Premium Rewards
                         </span>
                       </div>
-                      <Badge className={`${userStats.hasPremiumPass ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
+                      <Badge className={`${profile?.premium_pass ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>
                         Tier 5
                       </Badge>
                     </div>
-                    <p className={`text-sm font-gaming ${userStats.hasPremiumPass ? 'text-neon-gold/80' : 'text-muted-foreground'}`}>
+                    <p className={`text-sm font-gaming ${profile?.premium_pass ? 'text-neon-gold/80' : 'text-muted-foreground'}`}>
                       Next: Legendary Card Pack
                     </p>
                     <Progress 
                       value={45} 
-                      className={`h-2 mt-2 bg-engagement-bg-start ${userStats.hasPremiumPass ? '[&>div]:bg-neon-gold' : '[&>div]:bg-muted'}`} 
+                      className={`h-2 mt-2 bg-engagement-bg-start ${profile?.premium_pass ? '[&>div]:bg-neon-gold' : '[&>div]:bg-muted'}`} 
                     />
                   </div>
                 </div>
@@ -462,29 +462,27 @@ const Web3UserProfile: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Web3 Integration */}
-            {!isConnected && (
+            {/* Premium Upgrade */}
+            {!profile?.premium_pass && (
               <Card className="bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white font-gaming">
-                    <User className="w-5 h-5 text-neon-purple" />
-                    Web3 Integration
+                    <Crown className="w-5 h-5 text-neon-gold" />
+                    Premium Upgrade
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-neon-purple/20 rounded-full flex items-center justify-center mx-auto">
-                      <User className="w-8 h-8 text-neon-purple" />
+                    <div className="w-16 h-16 bg-neon-gold/20 rounded-full flex items-center justify-center mx-auto animate-premium-glow">
+                      <Crown className="w-8 h-8 text-neon-gold" />
                     </div>
                     <div>
-                      <p className="text-white font-gaming mb-2">Connect Wallet</p>
+                      <p className="text-white font-gaming mb-2">Unlock Premium</p>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Connect your wallet to unlock NFT trading and blockchain features
+                        Get access to exclusive rewards, advanced features, and premium support
                       </p>
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/80 hover:to-neon-blue/80 text-white font-gaming">
-                      Connect Wallet
-                    </Button>
+                    <PremiumConnector className="w-full" />
                   </div>
                 </CardContent>
               </Card>

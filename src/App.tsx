@@ -24,6 +24,8 @@ import AdvancedCardsPage from '@/pages/AdvancedCardsPage';
 import FantasyPage from '@/pages/FantasyPage';
 import AuthPage from '@/pages/AuthPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
+import PremiumSuccessPage from '@/pages/PremiumSuccessPage';
+import PremiumCancelPage from '@/pages/PremiumCancelPage';
 import NotFound from '@/pages/NotFound';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
@@ -84,6 +86,8 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/profile" element={<Web3ProfilePage />} />
           <Route path="/web3-profile" element={<Web3ProfilePage />} />
+          <Route path="/premium/success" element={<PremiumSuccessPage />} />
+          <Route path="/premium/cancel" element={<PremiumCancelPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>

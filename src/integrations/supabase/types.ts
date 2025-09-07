@@ -2023,6 +2023,33 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_receipts: {
+        Row: {
+          amount_total: number
+          created_at: string
+          currency: string
+          id: string
+          stripe_session_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_total: number
+          created_at?: string
+          currency?: string
+          id?: string
+          stripe_session_id: string
+          user_id: string
+        }
+        Update: {
+          amount_total?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          stripe_session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_frame_id: string | null
