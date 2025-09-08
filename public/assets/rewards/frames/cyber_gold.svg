@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="hole">
+      <rect width="100%" height="100%" fill="white"/>
+      <circle cx="256" cy="256" r="176" fill="black"/>
+    </mask>
+
+    <linearGradient id="cyberGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD166"/>
+      <stop offset="50%" stop-color="#FCA311"/>
+      <stop offset="100%" stop-color="#FF7A00"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <style>
+      @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .rotor { transform-origin: 256px 256px; animation: rotate 10s linear infinite; }
+    </style>
+  </defs>
+
+  <!-- Outer halo -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#FCA311" stroke-opacity="0.25" stroke-width="10" filter="url(#softGlow)"/>
+
+  <g mask="url(#hole)">
+    <!-- Core ring -->
+    <circle cx="256" cy="256" r="206" fill="none" stroke="url(#cyberGold)" stroke-width="52" filter="url(#softGlow)"/>
+
+    <!-- Tech segments rotating -->
+    <g class="rotor" fill="none" stroke="#FFE8B3" stroke-width="6" stroke-linecap="round" opacity="0.9">
+      <path d="M256 62 A194 194 0 0 1 370 100"/>
+      <path d="M410 142 A194 194 0 0 1 450 256"/>
+      <path d="M410 370 A194 194 0 0 1 370 410"/>
+      <path d="M256 450 A194 194 0 0 1 142 410"/>
+      <path d="M100 370 A194 194 0 0 1 62 256"/>
+      <path d="M100 142 A194 194 0 0 1 142 100"/>
+    </g>
+
+    <!-- Inner circuit-like ticks -->
+    <g stroke="#FFDFA3" stroke-width="3" opacity="0.8">
+      <circle cx="256" cy="256" r="188" fill="none"/>
+      <!-- ticks -->
+      <g>
+        <path d="M256 68 v20"/>
+        <path d="M256 424 v20"/>
+        <path d="M68 256 h20"/>
+        <path d="M424 256 h20"/>
+        <path d="M120 120 l14 14"/>
+        <path d="M392 392 l14 14"/>
+        <path d="M392 120 l-14 14"/>
+        <path d="M120 392 l14 -14"/>
+      </g>
+    </g>
+  </g>
+</svg>

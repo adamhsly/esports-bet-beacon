@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Transparent center mask -->
+    <mask id="hole">
+      <rect width="100%" height="100%" fill="white"/>
+      <!-- Punch a hole -->
+      <circle cx="256" cy="256" r="176" fill="black"/>
+    </mask>
+
+    <!-- Neon gradient -->
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4FACFE"/>
+      <stop offset="100%" stop-color="#736EFE"/>
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Animated dash pattern -->
+    <style>
+      @keyframes dash {
+        to { stroke-dashoffset: -1000; }
+      }
+    </style>
+  </defs>
+
+  <!-- Outer subtle halo -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#neonGrad)" stroke-opacity="0.25" stroke-width="8" filter="url(#glow)"/>
+
+  <!-- Main ring with transparent center via mask -->
+  <g mask="url(#hole)">
+    <!-- Solid gradient rim -->
+    <circle cx="256" cy="256" r="206" fill="none" stroke="url(#neonGrad)" stroke-width="48" filter="url(#glow)"/>
+
+    <!-- Animated neon arc overlay -->
+    <circle cx="256" cy="256" r="206" fill="none" stroke="#A0B4FF" stroke-opacity="0.9" stroke-width="6" stroke-linecap="round"
+            stroke-dasharray="28 24" stroke-dashoffset="0">
+      <animate attributeName="stroke-dashoffset" values="0;-1000" dur="6s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Inner highlight -->
+    <circle cx="256" cy="256" r="188" fill="none" stroke="#E3F2FF" stroke-opacity="0.5" stroke-width="2"/>
+  </g>
+</svg>

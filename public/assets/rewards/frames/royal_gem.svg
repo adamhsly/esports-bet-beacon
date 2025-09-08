@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="hole">
+      <rect width="100%" height="100%" fill="white"/>
+      <circle cx="256" cy="256" r="176" fill="black"/>
+    </mask>
+
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6E27A"/>
+      <stop offset="50%" stop-color="#F9C74F"/>
+      <stop offset="100%" stop-color="#EE9B00"/>
+    </linearGradient>
+
+    <radialGradient id="gemLight" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    </radialGradient>
+
+    <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer glow -->
+  <circle cx="256" cy="256" r="212" fill="none" stroke="#FFD166" stroke-opacity="0.25" stroke-width="10" filter="url(#goldGlow)"/>
+
+  <!-- Ornate ring with facets -->
+  <g mask="url(#hole)">
+    <!-- Base gold rim -->
+    <circle cx="256" cy="256" r="205" fill="none" stroke="url(#goldGrad)" stroke-width="54" filter="url(#goldGlow)"/>
+
+    <!-- Faceted accents -->
+    <g fill="none" stroke="#FFF2B2" stroke-width="6" stroke-linecap="round" opacity="0.9">
+      <path d="M256 62 A194 194 0 0 1 334 82"/>
+      <path d="M430 178 A194 194 0 0 1 450 256"/>
+      <path d="M430 334 A194 194 0 0 1 334 430"/>
+      <path d="M256 450 A194 194 0 0 1 178 430"/>
+      <path d="M82 334 A194 194 0 0 1 62 256"/>
+      <path d="M82 178 A194 194 0 0 1 178 82"/>
+    </g>
+
+    <!-- Inner light sheen -->
+    <circle cx="256" cy="256" r="187" fill="none" stroke="#FFF7D6" stroke-width="3"/>
+
+    <!-- Gem sparkle highlight -->
+    <circle cx="198" cy="140" r="80" fill="url(#gemLight)" opacity="0.5"/>
+  </g>
+</svg>
