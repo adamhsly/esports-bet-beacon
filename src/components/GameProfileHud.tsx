@@ -37,14 +37,9 @@ interface ProfilePageProps {
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPremium }) => {
-  const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
-  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
-  const [showFrameSelector, setShowFrameSelector] = useState(false);
   const { user, isAuthenticated } = useAuthUser();
-  const { profile, loading: profileLoading } = useProfile();
-  const { xp, level, streak_count, loading: progressLoading } = useProgress();
-  const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
 
+  // Early return before calling other hooks to prevent "fewer hooks" error
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] flex items-center justify-center p-4">
@@ -56,6 +51,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
       </div>
     );
   }
+
+  const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [showFrameSelector, setShowFrameSelector] = useState(false);
+  const { profile, loading: profileLoading } = useProfile();
+  const { xp, level, streak_count, loading: progressLoading } = useProgress();
+  const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
 
   const loading = progressLoading || profileLoading;
 
