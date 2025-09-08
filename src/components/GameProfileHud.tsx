@@ -66,7 +66,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
       item => item.id === profile.avatar_frame_id && item.type === 'frame'
     );
     return frameReward?.assetUrl || null;
-  }, [profile?.avatar_frame_id, free, premium]);
+  }, [profile?.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
 
   // Calculate XP progress
   const baseXPForLevel = 1000 + (level - 1) * 100;
