@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { TeamCard } from './TeamCard';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import { RoundLeaderboard } from './RoundLeaderboard';
 
 interface FinishedRound {
   id: string;
@@ -18,8 +19,6 @@ interface FinishedRound {
   team_picks: any[];
   bench_team: any;
   scores: FantasyScore[];
-  leaderboard?: LeaderboardEntry[];
-  user_rank?: number;
 }
 
 interface FantasyScore {
@@ -34,17 +33,10 @@ interface FantasyScore {
   matches_played: number;
 }
 
-interface LeaderboardEntry {
-  user_id: string;
-  username: string;
-  total_score: number;
-  rank: number;
-}
 
 export const FinishedRounds: React.FC = () => {
   const { user } = useAuth();
   const [rounds, setRounds] = useState<FinishedRound[]>([]);
-  const [selectedRound, setSelectedRound] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -106,70 +98,6 @@ export const FinishedRounds: React.FC = () => {
     }
   };
 
-  const fetchLeaderboard = async (roundId: string) => {
-    try {
-      // Use RPC function to get public leaderboard data that bypasses RLS
-      const { data: scores, error: scoresError } = await supabase
-        .rpc('get_public_fantasy_leaderboard', {
-          p_round_id: roundId,
-          p_limit: null
-        });
-
-      if (scoresError) throw scoresError;
-
-      if (!scores || scores.length === 0) {
-        return { leaderboard: [], userRank: undefined };
-      }
-
-      // Create leaderboard entries with RPC response format
-      const leaderboardEntries = scores.map((score: any) => ({
-        user_id: score.user_id,
-        username: '', // Will be filled from profiles
-        total_score: score.total_score,
-        rank: score.user_position
-      }));
-
-      // Get profile info for all users
-      const userIds = leaderboardEntries.map(e => e.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, full_name')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Fill in profile data
-      leaderboardEntries.forEach(entry => {
-        const profile = profiles?.find(p => p.id === entry.user_id);
-        entry.username = profile?.username || profile?.full_name || 'Anonymous';
-      });
-
-      const userRank = leaderboardEntries.find(entry => entry.user_id === user?.id)?.rank;
-
-      return { leaderboard: leaderboardEntries, userRank };
-    } catch (error) {
-      console.error('Error fetching leaderboard:', error);
-      toast.error('Failed to load leaderboard');
-      return { leaderboard: [], userRank: undefined };
-    }
-  };
-
-  const handleViewLeaderboard = async (roundId: string) => {
-    if (selectedRound === roundId) {
-      setSelectedRound(null);
-      return;
-    }
-
-    const { leaderboard, userRank } = await fetchLeaderboard(roundId);
-    
-    setRounds(rounds.map(round => 
-      round.id === roundId 
-        ? { ...round, leaderboard, user_rank: userRank }
-        : round
-    ));
-    
-    setSelectedRound(roundId);
-  };
 
   const getRoundTypeColor = (type: string) => {
     switch (type) {
@@ -236,12 +164,6 @@ export const FinishedRounds: React.FC = () => {
                   <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     {round.type} Round
                   </CardTitle>
-                  {round.user_rank && round.user_rank <= 3 && (
-                    <Badge variant="outline" className="flex items-center gap-1 bg-yellow-500/10 border-yellow-400/30 text-yellow-400">
-                      {getRankIcon(round.user_rank)}
-                      #{round.user_rank}
-                    </Badge>
-                  )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
@@ -259,49 +181,14 @@ export const FinishedRounds: React.FC = () => {
             <CardContent className="p-4 sm:p-6 overflow-hidden">
               <div className="space-y-6">
                 {/* Leaderboard */}
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold flex items-center gap-2 text-white">
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
                     <Trophy className="h-4 w-4" />
-                    Leaderboard
+                    Round Leaderboard
                   </h4>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewLeaderboard(round.id)}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
-                  >
-                    {selectedRound === round.id ? 'Hide Leaderboard' : 'View Leaderboard'}
-                  </Button>
+                  
+                  <RoundLeaderboard roundId={round.id} />
                 </div>
-
-                {selectedRound === round.id && round.leaderboard && (
-                  <div className="border border-gray-700/50 rounded-lg overflow-hidden bg-gray-900/30">
-                    <div className="bg-gray-800/50 px-4 py-3 text-sm font-medium border-b border-gray-700/50 flex items-center justify-between">
-                      <span className="text-white">Rank</span>
-                      <span className="text-white">Player</span>
-                      <span className="text-white">Points</span>
-                    </div>
-                    <div className="divide-y divide-gray-700/50 max-h-60 overflow-y-auto">
-                      {round.leaderboard.slice(0, 10).map((entry) => (
-                        <div 
-                          key={entry.user_id}
-                          className={`flex items-center justify-between px-4 py-3 ${
-                            entry.user_id === user?.id ? 'bg-primary/30' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            {getRankIcon(entry.rank)}
-                            <span className="font-medium text-white">{entry.username}</span>
-                            {entry.user_id === user?.id && (
-                              <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-400">You</Badge>
-                            )}
-                          </div>
-                          <span className="font-semibold text-green-400">{entry.total_score} pts</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Team Performance */}
                 <div>
