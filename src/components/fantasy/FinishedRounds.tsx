@@ -108,29 +108,45 @@ export const FinishedRounds: React.FC = () => {
 
   const fetchLeaderboard = async (roundId: string) => {
     try {
-      // Get all participants for this round with their scores
-      const { data: leaderboard, error } = await supabase
-        .from('fantasy_round_picks')
-        .select(`
-          user_id,
-          total_score,
-          profiles:profiles(username)
-        `)
-        .eq('round_id', roundId)
-        .order('total_score', { ascending: false });
+      // Use RPC function to get public leaderboard data that bypasses RLS
+      const { data: scores, error: scoresError } = await supabase
+        .rpc('get_public_fantasy_leaderboard', {
+          p_round_id: roundId,
+          p_limit: null
+        });
 
-      if (error) throw error;
+      if (scoresError) throw scoresError;
 
-      const leaderboardWithRanks = (leaderboard || []).map((entry: any, index) => ({
-        user_id: entry.user_id,
-        username: entry.profiles?.[0]?.username || 'Anonymous',
-        total_score: entry.total_score,
-        rank: index + 1
+      if (!scores || scores.length === 0) {
+        return { leaderboard: [], userRank: undefined };
+      }
+
+      // Create leaderboard entries with RPC response format
+      const leaderboardEntries = scores.map((score: any) => ({
+        user_id: score.user_id,
+        username: '', // Will be filled from profiles
+        total_score: score.total_score,
+        rank: score.user_position
       }));
 
-      const userRank = leaderboardWithRanks.find(entry => entry.user_id === user?.id)?.rank;
+      // Get profile info for all users
+      const userIds = leaderboardEntries.map(e => e.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name')
+        .in('id', userIds);
 
-      return { leaderboard: leaderboardWithRanks, userRank };
+      if (profilesError) throw profilesError;
+
+      // Fill in profile data
+      leaderboardEntries.forEach(entry => {
+        const profile = profiles?.find(p => p.id === entry.user_id);
+        entry.username = profile?.username || profile?.full_name || 'Anonymous';
+      });
+
+      const userRank = leaderboardEntries.find(entry => entry.user_id === user?.id)?.rank;
+
+      return { leaderboard: leaderboardEntries, userRank };
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       toast.error('Failed to load leaderboard');
