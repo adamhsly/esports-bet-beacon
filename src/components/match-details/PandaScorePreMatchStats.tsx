@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Trophy, Target, Loader2 } from 'lucide-react';
 import { calculateMatchSpecificTeamStats, getMatchSpecificHeadToHeadRecord } from '@/lib/teamStatsCalculator';
 import { getTeamStats } from '@/lib/stats';
+
 interface PandaScorePreMatchStatsProps {
   teams: Array<{
     name: string;
@@ -14,35 +16,32 @@ interface PandaScorePreMatchStatsProps {
   esportType?: string;
   matchId: string;
 }
+
 interface TeamStatsData {
   winRate: number;
   recentForm: string;
   tournamentWins: number;
   totalMatches: number;
 }
-export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = ({
-  teams,
-  tournament,
+
+export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = ({ 
+  teams, 
+  tournament, 
   esportType = 'csgo',
-  matchId
+  matchId 
 }) => {
   const [team1Stats, setTeam1Stats] = useState<TeamStatsData | null>(null);
   const [team2Stats, setTeam2Stats] = useState<TeamStatsData | null>(null);
-  const [headToHead, setHeadToHead] = useState<{
-    team1Wins: number;
-    team2Wins: number;
-    totalMatches: number;
-  } | null>(null);
+  const [headToHead, setHeadToHead] = useState<{ team1Wins: number; team2Wins: number; totalMatches: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const team1 = teams[0] || {
-    name: 'Team 1'
-  };
-  const team2 = teams[1] || {
-    name: 'Team 2'
-  };
+
+  const team1 = teams[0] || { name: 'Team 1' };
+  const team2 = teams[1] || { name: 'Team 2' };
+
   useEffect(() => {
     const fetchTeamStats = async () => {
       if (!matchId) return;
+      
       setLoading(true);
       try {
         const promises = [];
@@ -53,7 +52,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
         } else {
           promises.push(Promise.resolve(null));
         }
-
+        
         // Fetch team2 overall stats via Supabase SQL
         if (team2.id) {
           promises.push(getTeamStats(team2.id));
@@ -61,13 +60,16 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
           promises.push(Promise.resolve(null));
         }
 
+
         // Fetch head-to-head record if we have both IDs
         if (team1.id && team2.id) {
           promises.push(getMatchSpecificHeadToHeadRecord(team1.id, team2.id, esportType, matchId));
         } else {
           promises.push(Promise.resolve(null));
         }
+
         const [stats1, stats2, h2h] = await Promise.all(promises);
+        
         setTeam1Stats(stats1);
         setTeam2Stats(stats2);
         setHeadToHead(h2h);
@@ -77,27 +79,30 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
         setLoading(false);
       }
     };
+
     fetchTeamStats();
   }, [team1.id, team2.id, esportType, matchId]);
-  const TeamStatsCard = ({
-    team,
-    stats,
-    side
-  }: {
-    team: any;
-    stats: TeamStatsData | null;
-    side: string;
-  }) => <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
+
+  const TeamStatsCard = ({ team, stats, side }: { team: any; stats: TeamStatsData | null; side: string }) => (
+    <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
       <div className="flex items-center space-x-3 mb-4">
-        <img src={team.logo || '/placeholder.svg'} alt={team.name} className="w-8 h-8 object-contain rounded" onError={e => {
-        (e.target as HTMLImageElement).src = '/placeholder.svg';
-      }} />
+        <img 
+          src={team.logo || '/placeholder.svg'} 
+          alt={team.name} 
+          className="w-8 h-8 object-contain rounded"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
+        />
         <h4 className="text-white font-semibold">{team.name}</h4>
       </div>
 
-      {loading ? <div className="flex justify-center py-4">
+      {loading ? (
+        <div className="flex justify-center py-4">
           <Loader2 className="h-6 w-6 animate-spin text-theme-purple" />
-        </div> : stats ? <div className="space-y-3">
+        </div>
+      ) : stats ? (
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Target className="h-4 w-4 text-blue-400" />
@@ -129,7 +134,9 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
           <div className="text-xs text-gray-400 mt-2">
             Based on {stats.totalMatches} matches (last 6 months)
           </div>
-        </div> : <div className="space-y-3">
+        </div>
+      ) : (
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Target className="h-4 w-4 text-gray-500" />
@@ -161,10 +168,19 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
           <div className="text-xs text-gray-400 mt-2">
             No historical data found
           </div>
-        </div>}
-    </Card>;
-  return <div className="space-y-6">
-      
+        </div>
+      )}
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-xl font-bold text-white mb-2">Pre-Match Analysis</h3>
+        {tournament && (
+          <p className="text-gray-400">Tournament: {tournament}</p>
+        )}
+      </div>
 
       {/* Overall Team Performance Section */}
       <div className="space-y-4">
@@ -172,7 +188,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
           <TrendingUp className="h-5 w-5 text-theme-purple" />
           <h4 className="text-lg font-bold text-white">Overall Team Performance</h4>
         </div>
-        <p className="text-gray-400 text-sm">Individual team statistics from all historical matches</p>
+        <p className="text-gray-400 text-sm">Individual team statistics Last 6 Months</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TeamStatsCard team={team1} stats={team1Stats} side="left" />
           <TeamStatsCard team={team2} stats={team2Stats} side="right" />
@@ -187,9 +203,12 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
         </div>
         <p className="text-gray-400 text-sm mb-4">Direct matchup record between these teams</p>
         <div className="text-center">
-          {loading ? <div className="flex justify-center py-4">
+          {loading ? (
+            <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-theme-purple" />
-            </div> : headToHead && headToHead.totalMatches > 0 ? <div>
+            </div>
+          ) : headToHead && headToHead.totalMatches > 0 ? (
+            <div>
               <p className="text-gray-400 mb-2">Previous meetings: {headToHead.totalMatches} matches</p>
               <div className="flex items-center justify-center space-x-4">
                 <div className="text-center">
@@ -206,10 +225,14 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
                   </Badge>
                 </div>
               </div>
-              {headToHead.team1Wins !== headToHead.team2Wins && <p className="text-gray-400 text-sm mt-3">
+              {headToHead.team1Wins !== headToHead.team2Wins && (
+                <p className="text-gray-400 text-sm mt-3">
                   {headToHead.team1Wins > headToHead.team2Wins ? team1.name : team2.name} leads the series
-                </p>}
-            </div> : <div>
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
               <p className="text-gray-400 mb-2">No previous matchups found</p>
               <div className="flex items-center justify-center space-x-4">
                 <div className="text-center">
@@ -223,8 +246,10 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
                 </div>
               </div>
               <p className="text-gray-400 text-sm mt-3">This will be their first recorded meeting</p>
-            </div>}
+            </div>
+          )}
         </div>
       </Card>
-    </div>;
+    </div>
+  );
 };
