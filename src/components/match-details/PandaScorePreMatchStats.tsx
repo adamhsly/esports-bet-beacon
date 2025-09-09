@@ -188,7 +188,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
           <TrendingUp className="h-5 w-5 text-theme-purple" />
           <h4 className="text-lg font-bold text-white">Overall Team Performance</h4>
         </div>
-        <p className="text-gray-400 text-sm">Individual team statistics from all historical matches</p>
+        <p className="text-gray-400 text-sm">Individual team statistics Last 6 Months</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TeamStatsCard team={team1} stats={team1Stats} side="left" />
           <TeamStatsCard team={team2} stats={team2Stats} side="right" />
