@@ -100,14 +100,6 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               </div>
             </div>
             
-            {/* Fantasy Points */}
-            <div className="text-right">
-              <div className="font-bold text-sm text-blue-400">
-                {fantasyPoints}
-              </div>
-              <div className="text-xs text-gray-400">pts</div>
-            </div>
-            
             {/* Price */}
             {showPrice && <div className="text-right ml-4">
                 <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
