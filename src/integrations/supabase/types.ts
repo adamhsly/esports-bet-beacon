@@ -14,116 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      card_minting_requests: {
-        Row: {
-          card_ids: string[]
-          completed_at: string | null
-          error_message: string | null
-          id: string
-          request_status: string | null
-          requested_at: string | null
-          transaction_hashes: string[] | null
-          user_id: string
-          wallet_address: string
-        }
-        Insert: {
-          card_ids: string[]
-          completed_at?: string | null
-          error_message?: string | null
-          id?: string
-          request_status?: string | null
-          requested_at?: string | null
-          transaction_hashes?: string[] | null
-          user_id: string
-          wallet_address: string
-        }
-        Update: {
-          card_ids?: string[]
-          completed_at?: string | null
-          error_message?: string | null
-          id?: string
-          request_status?: string | null
-          requested_at?: string | null
-          transaction_hashes?: string[] | null
-          user_id?: string
-          wallet_address?: string
-        }
-        Relationships: []
-      }
-      card_templates: {
-        Row: {
-          created_at: string
-          game: string
-          id: string
-          min_performance_threshold: Json
-          rarity: string
-          stat_multipliers: Json
-          template_name: string
-          visual_properties: Json
-        }
-        Insert: {
-          created_at?: string
-          game?: string
-          id?: string
-          min_performance_threshold?: Json
-          rarity: string
-          stat_multipliers?: Json
-          template_name: string
-          visual_properties?: Json
-        }
-        Update: {
-          created_at?: string
-          game?: string
-          id?: string
-          min_performance_threshold?: Json
-          rarity?: string
-          stat_multipliers?: Json
-          template_name?: string
-          visual_properties?: Json
-        }
-        Relationships: []
-      }
-      card_transactions: {
-        Row: {
-          card_id: string
-          created_at: string
-          from_user_id: string | null
-          id: string
-          price: number | null
-          to_user_id: string | null
-          transaction_hash: string | null
-          transaction_type: string
-        }
-        Insert: {
-          card_id: string
-          created_at?: string
-          from_user_id?: string | null
-          id?: string
-          price?: number | null
-          to_user_id?: string | null
-          transaction_hash?: string | null
-          transaction_type: string
-        }
-        Update: {
-          card_id?: string
-          created_at?: string
-          from_user_id?: string | null
-          id?: string
-          price?: number | null
-          to_user_id?: string | null
-          transaction_hash?: string | null
-          transaction_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "card_transactions_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "nft_cards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       credit_transactions: {
         Row: {
           created_at: string
@@ -174,33 +64,6 @@ export type Database = {
         }
         Update: {
           kind?: string
-        }
-        Relationships: []
-      }
-      esports_news: {
-        Row: {
-          created_at: string | null
-          id: string
-          published_at: string | null
-          source: string
-          title: string
-          url: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          published_at?: string | null
-          source: string
-          title: string
-          url: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          published_at?: string | null
-          source?: string
-          title?: string
-          url?: string
         }
         Relationships: []
       }
@@ -344,6 +207,39 @@ export type Database = {
           victim_team?: string | null
           wallbang?: boolean | null
           weapon?: string | null
+        }
+        Relationships: []
+      }
+      faceit_match_participants: {
+        Row: {
+          game: string | null
+          match_id: string
+          started_at: string | null
+          status: string | null
+          team_id: string
+          tournament: string | null
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          game?: string | null
+          match_id: string
+          started_at?: string | null
+          status?: string | null
+          team_id: string
+          tournament?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          game?: string | null
+          match_id?: string
+          started_at?: string | null
+          status?: string | null
+          team_id?: string
+          tournament?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
         }
         Relationships: []
       }
@@ -1393,48 +1289,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pack_purchases: {
-        Row: {
-          cards_received: Json
-          created_at: string
-          id: string
-          is_opened: boolean | null
-          opened_at: string | null
-          pack_contents: Json | null
-          pack_price: number
-          pack_type: string
-          payment_method: string
-          transaction_hash: string | null
-          user_id: string
-        }
-        Insert: {
-          cards_received?: Json
-          created_at?: string
-          id?: string
-          is_opened?: boolean | null
-          opened_at?: string | null
-          pack_contents?: Json | null
-          pack_price: number
-          pack_type: string
-          payment_method: string
-          transaction_hash?: string | null
-          user_id: string
-        }
-        Update: {
-          cards_received?: Json
-          created_at?: string
-          id?: string
-          is_opened?: boolean | null
-          opened_at?: string | null
-          pack_contents?: Json | null
-          pack_price?: number
-          pack_type?: string
-          payment_method?: string
-          transaction_hash?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       panda_team_head_to_head: {
         Row: {
           created_at: string | null
@@ -2101,6 +1955,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ps_match_participants: {
+        Row: {
+          esport_type: string | null
+          league_name: string | null
+          match_id: string
+          start_time: string | null
+          status: string | null
+          team_id: string
+          tournament_name: string | null
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          esport_type?: string | null
+          league_name?: string | null
+          match_id: string
+          start_time?: string | null
+          status?: string | null
+          team_id: string
+          tournament_name?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          esport_type?: string | null
+          league_name?: string | null
+          match_id?: string
+          start_time?: string | null
+          status?: string | null
+          team_id?: string
+          tournament_name?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           created_at: string
@@ -2249,276 +2139,6 @@ export type Database = {
           name?: string
           premium_price_cents?: number
           starts_at?: string
-        }
-        Relationships: []
-      }
-      sportdevs_matches: {
-        Row: {
-          best_of: number | null
-          created_at: string
-          esport_type: string
-          id: string
-          last_synced_at: string
-          match_id: string
-          raw_data: Json | null
-          start_time: string
-          status: string
-          teams: Json
-          tournament_id: string | null
-          tournament_name: string | null
-          updated_at: string
-        }
-        Insert: {
-          best_of?: number | null
-          created_at?: string
-          esport_type: string
-          id?: string
-          last_synced_at?: string
-          match_id: string
-          raw_data?: Json | null
-          start_time: string
-          status?: string
-          teams: Json
-          tournament_id?: string | null
-          tournament_name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          best_of?: number | null
-          created_at?: string
-          esport_type?: string
-          id?: string
-          last_synced_at?: string
-          match_id?: string
-          raw_data?: Json | null
-          start_time?: string
-          status?: string
-          teams?: Json
-          tournament_id?: string | null
-          tournament_name?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      sportdevs_players: {
-        Row: {
-          created_at: string
-          esport_type: string
-          hash_image: string | null
-          id: string
-          image_url: string | null
-          last_synced_at: string
-          name: string
-          player_id: string
-          position: string | null
-          raw_data: Json | null
-          stats: Json | null
-          team_id: string | null
-          team_name: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          esport_type: string
-          hash_image?: string | null
-          id?: string
-          image_url?: string | null
-          last_synced_at?: string
-          name: string
-          player_id: string
-          position?: string | null
-          raw_data?: Json | null
-          stats?: Json | null
-          team_id?: string | null
-          team_name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          esport_type?: string
-          hash_image?: string | null
-          id?: string
-          image_url?: string | null
-          last_synced_at?: string
-          name?: string
-          player_id?: string
-          position?: string | null
-          raw_data?: Json | null
-          stats?: Json | null
-          team_id?: string | null
-          team_name?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      sportdevs_sync_logs: {
-        Row: {
-          completed_at: string | null
-          duration_ms: number | null
-          error_details: Json | null
-          error_message: string | null
-          esport_type: string | null
-          id: string
-          metadata: Json | null
-          records_added: number | null
-          records_processed: number | null
-          records_updated: number | null
-          started_at: string
-          status: string
-          sync_type: string
-        }
-        Insert: {
-          completed_at?: string | null
-          duration_ms?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          esport_type?: string | null
-          id?: string
-          metadata?: Json | null
-          records_added?: number | null
-          records_processed?: number | null
-          records_updated?: number | null
-          started_at?: string
-          status: string
-          sync_type: string
-        }
-        Update: {
-          completed_at?: string | null
-          duration_ms?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          esport_type?: string | null
-          id?: string
-          metadata?: Json | null
-          records_added?: number | null
-          records_processed?: number | null
-          records_updated?: number | null
-          started_at?: string
-          status?: string
-          sync_type?: string
-        }
-        Relationships: []
-      }
-      sportdevs_teams: {
-        Row: {
-          created_at: string
-          esport_type: string
-          hash_image: string | null
-          id: string
-          last_synced_at: string
-          logo_url: string | null
-          name: string
-          players_data: Json | null
-          raw_data: Json | null
-          team_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          esport_type: string
-          hash_image?: string | null
-          id?: string
-          last_synced_at?: string
-          logo_url?: string | null
-          name: string
-          players_data?: Json | null
-          raw_data?: Json | null
-          team_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          esport_type?: string
-          hash_image?: string | null
-          id?: string
-          last_synced_at?: string
-          logo_url?: string | null
-          name?: string
-          players_data?: Json | null
-          raw_data?: Json | null
-          team_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      sportdevs_tournaments: {
-        Row: {
-          created_at: string
-          end_date: string | null
-          esport_type: string
-          hash_image: string | null
-          id: string
-          image_url: string | null
-          last_synced_at: string
-          name: string
-          raw_data: Json | null
-          start_date: string | null
-          status: string | null
-          tournament_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          end_date?: string | null
-          esport_type: string
-          hash_image?: string | null
-          id?: string
-          image_url?: string | null
-          last_synced_at?: string
-          name: string
-          raw_data?: Json | null
-          start_date?: string | null
-          status?: string | null
-          tournament_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          end_date?: string | null
-          esport_type?: string
-          hash_image?: string | null
-          id?: string
-          image_url?: string | null
-          last_synced_at?: string
-          name?: string
-          raw_data?: Json | null
-          start_date?: string | null
-          status?: string | null
-          tournament_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      starter_pack_config: {
-        Row: {
-          card_count: number
-          created_at: string
-          game: string
-          id: string
-          is_active: boolean | null
-          pack_name: string
-          player_list: Json
-          updated_at: string
-        }
-        Insert: {
-          card_count?: number
-          created_at?: string
-          game?: string
-          id?: string
-          is_active?: boolean | null
-          pack_name: string
-          player_list?: Json
-          updated_at?: string
-        }
-        Update: {
-          card_count?: number
-          created_at?: string
-          game?: string
-          id?: string
-          is_active?: boolean | null
-          pack_name?: string
-          player_list?: Json
-          updated_at?: string
         }
         Relationships: []
       }
@@ -3082,6 +2702,15 @@ export type Database = {
           team_name: string
         }[]
       }
+      get_head_to_head_optimized: {
+        Args: {
+          p_match_id: string
+          p_months?: number
+          p_team1: string
+          p_team2: string
+        }
+        Returns: Json
+      }
       get_head_to_head_stats: {
         Args: { team1_id: string; team2_id: string }
         Returns: Json
@@ -3148,7 +2777,7 @@ export type Database = {
         Returns: Json
       }
       get_team_stats_optimized: {
-        Args: { team_id: string }
+        Args: { p_team_id: string }
         Returns: Json
       }
       grant_credits: {
