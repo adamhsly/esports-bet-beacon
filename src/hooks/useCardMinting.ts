@@ -85,18 +85,9 @@ export const useCardMinting = () => {
     if (!user) return [];
 
     try {
-      const { data: requests, error } = await supabase
-        .from('card_minting_requests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('requested_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching minting status:', error);
-        return [];
-      }
-
-      return requests || [];
+      // TODO: Implement card_minting_requests table
+      console.log('Minting status check - table not implemented yet');
+      return [];
     } catch (error) {
       console.error('Error in getMintingStatus:', error);
       return [];

@@ -114,12 +114,8 @@ const Web3UserProfile: React.FC = () => {
         .eq('user_id', user.id);
 
       // Get pack purchases total
-      const { data: purchases } = await supabase
-        .from('pack_purchases')
-        .select('pack_price')
-        .eq('user_id', user.id);
-
-      const totalSpent = purchases?.reduce((sum, purchase) => sum + purchase.pack_price, 0) || 0;
+      // TODO: Implement pack_purchases table
+      const totalSpent = 0;
 
       setUserStats(prev => ({
         ...prev,

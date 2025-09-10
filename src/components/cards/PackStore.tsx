@@ -148,24 +148,13 @@ export const PackStore: React.FC = () => {
         updated_at: card.updated_at,
       }));
 
-      // Create pack purchase record
-      const { data, error } = await supabase
-        .from('pack_purchases')
-        .insert({
-          user_id: user.id,
-          pack_type: packType,
-          pack_price: pack.price,
-          payment_method: 'credits',
-          cards_received: cardsJson,
-          is_opened: false,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      // TODO: Implement pack_purchases table
+      // For now, return a mock pack object
       return {
-        ...data,
+        id: crypto.randomUUID(),
+        pack_type: packType,
+        pack_price: pack.price,
+        is_opened: false,
         cards_received: cards,
       } as Pack;
     },

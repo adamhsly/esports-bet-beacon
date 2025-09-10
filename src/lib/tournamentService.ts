@@ -85,45 +85,8 @@ export async function fetchUnifiedTournaments(): Promise<UnifiedTournament[]> {
       console.log(`Added ${processedPandaScore.length} PandaScore tournaments`);
     }
 
-    // Fetch SportDevs tournaments
-    console.log('Fetching SportDevs tournaments...');
-    const { data: sportdevsTournaments, error: sportdevsError } = await supabase
-      .from('sportdevs_tournaments')
-      .select('*')
-      .order('start_date', { ascending: false });
-
-    if (sportdevsError) {
-      console.error('Error fetching SportDevs tournaments:', sportdevsError);
-      throw sportdevsError;
-    }
-
-    console.log(`Found ${sportdevsTournaments?.length || 0} SportDevs tournaments`);
-
-    if (sportdevsTournaments) {
-      const processedSportDevs = sportdevsTournaments
-        .filter(t => {
-          if (!t.name || !t.tournament_id) {
-            console.warn('Skipping invalid SportDevs tournament:', t);
-            return false;
-          }
-          return true;
-        })
-        .map(t => ({
-          id: `sportdevs_${t.tournament_id}`,
-          name: t.name,
-          type: 'tournament' as const,
-          source: 'sportdevs' as const,
-          esportType: t.esport_type,
-          status: determineStatus(t.start_date, t.end_date, t.status),
-          startDate: t.start_date,
-          endDate: t.end_date,
-          imageUrl: t.image_url,
-          rawData: t.raw_data
-        }));
-
-      tournaments.push(...processedSportDevs);
-      console.log(`Added ${processedSportDevs.length} SportDevs tournaments`);
-    }
+    // TODO: Implement SportDevs tournaments table
+    console.log('SportDevs tournaments not implemented - database table missing');
 
     // Fetch unique FACEIT competitions
     console.log('Fetching FACEIT competitions...');
@@ -218,35 +181,8 @@ export async function fetchTournamentById(tournamentId: string): Promise<Unified
         };
 
       case 'sportdevs':
-        console.log(`Looking for SportDevs tournament with ID: ${id}`);
-        const { data: sportData, error: sportError } = await supabase
-          .from('sportdevs_tournaments')
-          .select('*')
-          .eq('tournament_id', id)
-          .maybeSingle();
-
-        if (sportError) {
-          console.error('Error fetching SportDevs tournament:', sportError);
-          throw sportError;
-        }
-
-        if (!sportData) {
-          console.warn(`SportDevs tournament with ID ${id} not found`);
-          return null;
-        }
-
-        return {
-          id: tournamentId,
-          name: sportData.name,
-          type: 'tournament',
-          source: 'sportdevs',
-          esportType: sportData.esport_type,
-          status: determineStatus(sportData.start_date, sportData.end_date, sportData.status),
-          startDate: sportData.start_date,
-          endDate: sportData.end_date,
-          imageUrl: sportData.image_url,
-          rawData: sportData.raw_data
-        };
+        console.log(`SportDevs tournament lookup not implemented - database table missing`);
+        return null;
 
       case 'faceit':
         console.log(`Looking for FACEIT competition with ID: ${id}`);

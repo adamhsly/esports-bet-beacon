@@ -98,33 +98,9 @@ const TournamentDetailPage: React.FC = () => {
           break;
 
         case 'sportdevs':
-          const { data: sportMatches } = await supabase
-            .from('sportdevs_matches')
-            .select('*')
-            .eq('tournament_id', id)
-            .order('start_time', { ascending: true });
-
-          if (sportMatches) {
-            matches = sportMatches.map(match => ({
-              id: `sportdevs_${match.match_id}`,
-              teams: [
-                {
-                  name: (match.teams as any).team1?.name || 'TBD',
-                  logo: (match.teams as any).team1?.logo || '/placeholder.svg'
-                },
-                {
-                  name: (match.teams as any).team2?.name || 'TBD',
-                  logo: (match.teams as any).team2?.logo || '/placeholder.svg'
-                }
-              ] as [any, any],
-              startTime: match.start_time,
-              tournament: match.tournament_name || tournament.name,
-              esportType: match.esport_type,
-              bestOf: match.best_of || 3,
-              status: match.status,
-              source: 'professional' as const
-            }));
-          }
+          // TODO: Implement sportdevs_matches table
+          console.log('SportDevs matches not implemented - database table missing');
+          matches = [];
           break;
 
         case 'faceit':
