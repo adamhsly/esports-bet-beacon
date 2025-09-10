@@ -1914,8 +1914,11 @@ export type Database = {
           full_name: string | null
           id: string
           last_login_at: string | null
+          marketing_preferences: Json | null
           premium_pass: boolean
           streak_count: number
+          terms_accepted: boolean
+          terms_accepted_at: string | null
           test: boolean
           updated_at: string
           username: string | null
@@ -1930,8 +1933,11 @@ export type Database = {
           full_name?: string | null
           id: string
           last_login_at?: string | null
+          marketing_preferences?: Json | null
           premium_pass?: boolean
           streak_count?: number
+          terms_accepted?: boolean
+          terms_accepted_at?: string | null
           test?: boolean
           updated_at?: string
           username?: string | null
@@ -1946,8 +1952,11 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_login_at?: string | null
+          marketing_preferences?: Json | null
           premium_pass?: boolean
           streak_count?: number
+          terms_accepted?: boolean
+          terms_accepted_at?: string | null
           test?: boolean
           updated_at?: string
           username?: string | null
@@ -2635,6 +2644,10 @@ export type Database = {
           | { team_id: string }
         Returns: Json
       }
+      check_registration_duplicates: {
+        Args: { p_email: string; p_full_name: string; p_username: string }
+        Returns: Json
+      }
       faceit_get_match_counts_around_date: {
         Args: { target_date: string }
         Returns: {
@@ -2877,8 +2890,11 @@ export type Database = {
           full_name: string | null
           id: string
           last_login_at: string | null
+          marketing_preferences: Json | null
           premium_pass: boolean
           streak_count: number
+          terms_accepted: boolean
+          terms_accepted_at: string | null
           test: boolean
           updated_at: string
           username: string | null
