@@ -80,7 +80,6 @@ export async function getHeadToHeadRecord(
     .limit(1);
 
   if (esportType) {
-    // @ts-expect-error: typed client may not know this column; safe at runtime if column exists
     query = (query as any).eq('esport_type', esportType);
   }
 

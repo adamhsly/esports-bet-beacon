@@ -60,7 +60,7 @@ const formatMatchDate = (dateString: string): string => {
   });
 };
 
-export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
+export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
   player,
   teamName,
   isOpen,

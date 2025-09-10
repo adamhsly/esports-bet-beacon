@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User } from 'lucide-react';
-import { PlayerDetailsModal } from './PlayerDetailsModal';
+import { FaceitPlayerDetailsModal } from './FaceitPlayerDetailsModal';
 
 interface Player {
   nickname: string;
@@ -148,7 +148,7 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
         </div>
       </Card>
 
-      <PlayerDetailsModal
+      <FaceitPlayerDetailsModal
         player={selectedPlayer}
         teamName={selectedTeamName}
         isOpen={isModalOpen}

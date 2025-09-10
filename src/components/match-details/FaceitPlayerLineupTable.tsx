@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User, Trophy, Target, TrendingUp, Loader2 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
-import { PlayerDetailsModal } from './PlayerDetailsModal';
+import { FaceitPlayerDetailsModal } from './FaceitPlayerDetailsModal';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Player {
@@ -337,7 +337,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
         </div>
       </Card>
 
-      <PlayerDetailsModal
+      <FaceitPlayerDetailsModal
         player={selectedPlayer}
         teamName={selectedTeamName}
         isOpen={isModalOpen}
