@@ -118,21 +118,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-gray-300 text-sm">Recent Form</span>
             </div>
-            <div className="flex items-center gap-0.5 sm:gap-1">
-              {(stats.recentForm || 'N/A').split('').map((char, index) => (
-                <span
-                  key={index}
-                  className={`
-                    text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center
-                    ${char === 'W' ? 'bg-green-500 text-white' : 
-                      char === 'L' ? 'bg-red-500 text-white' : 
-                      'bg-gray-500 text-white'}
-                  `}
-                >
-                  {char}
-                </span>
-              ))}
-            </div>
+            <span className="text-white text-sm font-mono">{stats.recentForm || 'N/A'}</span>
           </div>
 
           <div className="flex items-center justify-between">
@@ -202,7 +188,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
           <TrendingUp className="h-5 w-5 text-theme-purple" />
           <h4 className="text-lg font-bold text-white">Overall Team Performance</h4>
         </div>
-        <p className="text-gray-400 text-sm">Individual team statistics Last 6 Months</p>
+        <p className="text-gray-400 text-sm">Individual team statistics</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TeamStatsCard team={team1} stats={team1Stats} side="left" />
           <TeamStatsCard team={team2} stats={team2Stats} side="right" />
