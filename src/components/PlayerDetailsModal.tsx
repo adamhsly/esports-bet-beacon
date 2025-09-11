@@ -213,7 +213,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="bg-gradient-to-br from-blue-950/80 via-slate-800/90 to-gray-900/90 border-theme-gray-medium max-w-4xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
@@ -223,7 +223,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
               </AvatarFallback>
             </Avatar>
             <div>
-              <DialogTitle className="text-2xl">{playerData.name}</DialogTitle>
+              <DialogTitle className="text-2xl text-white">{playerData.name}</DialogTitle>
                <div className="flex items-center space-x-2 mt-1">
                  {playerData.team_name && (
                    <Badge variant="outline">Team {playerData.team_name}</Badge>
@@ -248,25 +248,35 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="statistics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
-            <TabsTrigger value="matches">Recent Matches</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
+            <TabsTrigger 
+              value="statistics" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 transition-all duration-250 text-white"
+            >
+              Statistics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="matches" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/25 transition-all duration-250 text-white"
+            >
+              Recent Matches
+            </TabsTrigger>
           </TabsList>
 
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
+              <Card className="bg-theme-gray-dark border border-theme-gray-medium">
                 <CardHeader>
-                  <CardTitle>Career Statistics</CardTitle>
+                  <CardTitle className="text-white">Career Statistics</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {Object.entries(playerData.career_stats || {}).map(([key, value]) => (
                     <div key={key} className="flex justify-between">
-                      <span className="capitalize text-muted-foreground">
+                      <span className="capitalize text-gray-400">
                         {key.replace(/_/g, ' ')}
                       </span>
-                      <span className="font-medium">
+                      <span className="font-medium text-white">
                         {typeof value === 'number' ? value.toFixed(2) : String(value)}
                       </span>
                     </div>
@@ -274,17 +284,17 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-theme-gray-dark border border-theme-gray-medium">
                 <CardHeader>
-                  <CardTitle>Recent Form</CardTitle>
+                  <CardTitle className="text-white">Recent Form</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {Object.entries(playerData.recent_stats || {}).map(([key, value]) => (
                     <div key={key} className="flex justify-between">
-                      <span className="capitalize text-muted-foreground">
+                      <span className="capitalize text-gray-400">
                         {key.replace(/_/g, ' ')}
                       </span>
-                      <span className="font-medium">
+                      <span className="font-medium text-white">
                         {typeof value === 'number' ? value.toFixed(2) : String(value)}
                       </span>
                     </div>
@@ -295,22 +305,22 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <Card>
+            <Card className="bg-theme-gray-dark border border-theme-gray-medium">
               <CardHeader>
-                <CardTitle>Recent Match History</CardTitle>
+                <CardTitle className="text-white">Recent Match History</CardTitle>
               </CardHeader>
               <CardContent>
                 {recentMatches.length > 0 ? (
                   <div className="space-y-3">
                     {recentMatches.map((match, index) => (
-                      <div key={index} className="flex items-center p-3 border rounded-lg">
+                      <div key={index} className="flex items-center p-3 border border-theme-gray-medium rounded-lg bg-theme-gray-dark/50">
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 rounded-full ${
                             match.result === 'win' ? 'bg-green-500' : 'bg-red-500'
                           }`} />
                           <div>
-                            <div className="font-medium">{match.tournament_name}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="font-medium text-white">{match.tournament_name}</div>
+                            <div className="text-sm text-gray-400">
                               vs {match.opponent_team}
                             </div>
                           </div>
@@ -319,7 +329,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-gray-400">
                     No recent match data available
                   </div>
                 )}
