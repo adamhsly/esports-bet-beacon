@@ -25,6 +25,9 @@ interface PandaScoreFinishedMatchHeaderProps {
     tournament_name?: string;
     league_name?: string;
     serie_name?: string;
+    videogameName?: string;
+    videogame_name?: string;
+    esport_type?: string;
     results?: Array<{
       score: number;
       team_id: number;
@@ -235,6 +238,13 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
           </div>
           
           <div className="flex items-center gap-3 text-xs text-gray-400">
+            {(match.videogameName || match.videogame_name || match.esport_type) && (
+              <div className="flex items-center">
+                <span className="text-orange-400 font-semibold uppercase">
+                  {match.videogameName || match.videogame_name || match.esport_type}
+                </span>
+              </div>
+            )}
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
               <span>{finishedTime ? new Date(finishedTime).toLocaleDateString() : new Date(match.startTime).toLocaleDateString()}</span>
