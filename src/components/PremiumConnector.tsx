@@ -40,7 +40,7 @@ const PremiumConnector: React.FC<PremiumConnectorProps> = ({
         <Button 
           variant={variant} 
           size={size} 
-          className={`bg-gradient-to-r from-neon-gold to-neon-orange hover:from-neon-gold/80 hover:to-neon-orange/80 text-white font-gaming animate-premium-glow ${className}`}
+          className={`bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)] ${className}`}
           disabled={isLoading}
         >
           {isLoading ? (
