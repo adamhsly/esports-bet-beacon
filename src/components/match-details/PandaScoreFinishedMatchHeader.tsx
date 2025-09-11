@@ -240,7 +240,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
           <div className="flex items-center gap-3 text-xs text-gray-400">
             {(match.videogameName || match.videogame_name || match.esport_type) && (
               <div className="flex items-center">
-                <span className="text-orange-400 font-semibold uppercase">
+                <span className="text-gray-400 font-semibold uppercase">
                   {match.videogameName || match.videogame_name || match.esport_type}
                 </span>
               </div>
