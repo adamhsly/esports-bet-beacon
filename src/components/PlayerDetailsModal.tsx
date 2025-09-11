@@ -239,124 +239,12 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+        <Tabs defaultValue="statistics" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="statistics">Statistics</TabsTrigger>
             <TabsTrigger value="matches">Recent Matches</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* KDA Card */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">K/D/A Ratio</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    <span className={getKDAColor(playerData.kda_ratio || 0)}>
-                      {playerData.kda_ratio?.toFixed(2) || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {playerData.avg_kills?.toFixed(1)}/{playerData.avg_deaths?.toFixed(1)}/{playerData.avg_assists?.toFixed(1)}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Performance Rating */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Performance Rating</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {playerData.recent_stats?.rating && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Recent Form</span>
-                          <span className="text-lg font-bold">{playerData.recent_stats.rating.toFixed(2)}</span>
-                        </div>
-                        <Progress 
-                          value={Math.min(playerData.recent_stats.rating * 50, 100)} 
-                          className="h-2" 
-                        />
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Headshot Accuracy */}
-              {playerData.headshot_percentage && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center">
-                      <Target className="h-4 w-4 mr-1" />
-                      Headshot %
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-primary">
-                      {(playerData.headshot_percentage * 100).toFixed(1)}%
-                    </div>
-                    <Progress 
-                      value={playerData.headshot_percentage * 100} 
-                      className="h-2 mt-2" 
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Performance Metrics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {playerData.clutch_success_rate && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">
-                        {(playerData.clutch_success_rate * 100).toFixed(0)}%
-                      </div>
-                      <div className="text-sm text-muted-foreground">Clutch Success</div>
-                    </div>
-                  )}
-                  
-                  {playerData.recent_stats?.adr && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {playerData.recent_stats.adr.toFixed(1)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Average Damage</div>
-                    </div>
-                  )}
-
-                  {playerData.recent_stats?.matches_played && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {playerData.recent_stats.matches_played}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Recent Matches</div>
-                    </div>
-                  )}
-
-                  {playerData.earnings && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-500">
-                        ${playerData.earnings.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Career Earnings</div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -439,35 +327,6 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="achievements" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Award className="h-5 w-5 mr-2" />
-                  Achievements & Awards
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {playerData.achievements && playerData.achievements.length > 0 ? (
-                  <div className="space-y-3">
-                    {playerData.achievements.map((achievement, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Award className="h-8 w-8 text-yellow-500" />
-                        <div>
-                          <div className="font-medium">{achievement.title}</div>
-                          <div className="text-sm text-muted-foreground">{achievement.description}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No achievements data available
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
