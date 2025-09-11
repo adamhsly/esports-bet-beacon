@@ -76,7 +76,15 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
       playerCount: team2Players.length
     }
   });
-  const renderPlayerRow = (player: any, index: number) => {
+  // Check if all positions are "player" to determine if we should show position column
+  const shouldShowPositionColumn = (players: any[]) => {
+    return players.some(player => {
+      const position = (player.position || player.role || '').toLowerCase();
+      return position && position !== 'player';
+    });
+  };
+
+  const renderPlayerRow = (player: any, index: number, showPosition: boolean) => {
     const playerName = player.nickname || 'Unknown Player';
     const playerCountry = player.nationality || 'Unknown';
     const playerImage = player.image_url || '/placeholder.svg';
@@ -93,11 +101,13 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
             </div>
           </div>
         </TableCell>
-        <TableCell>
-          {player.position || player.role ? <Badge variant="outline" className="text-xs">
-              {player.position || player.role}
-            </Badge> : 'N/A'}
-        </TableCell>
+        {showPosition && (
+          <TableCell>
+            {player.position || player.role ? <Badge variant="outline" className="text-xs text-white">
+                {player.position || player.role}
+              </Badge> : 'N/A'}
+          </TableCell>
+        )}
         <TableCell>
           <div className="flex items-center gap-2">
             {flagUrl && <img src={flagUrl} alt={`Flag of ${player.nationality}`} className="h-4 w-6 rounded-sm border border-theme-gray-light" loading="lazy" onError={e => {
@@ -105,11 +115,6 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
           }} />}
             <span>{playerCountry}</span>
           </div>
-        </TableCell>
-        <TableCell>
-          <Badge variant="outline" className="text-xs">
-            {esportType.toUpperCase()}
-          </Badge>
         </TableCell>
       </TableRow>;
   };
@@ -130,6 +135,10 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
   const hasTeam1Data = (team1Players?.length || 0) > 0;
   const hasTeam2Data = (team2Players?.length || 0) > 0;
   const hasAnyData = hasTeam1Data || hasTeam2Data;
+
+  // Check if we should show position columns for each team
+  const showTeam1Position = shouldShowPositionColumn(team1Players);
+  const showTeam2Position = shouldShowPositionColumn(team2Players);
   return <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden mb-8">
       <div className="p-4 border-b border-theme-gray-medium">
         <div className="flex items-center justify-between">
@@ -160,13 +169,12 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-gray-400">Player</TableHead>
-                  <TableHead className="text-gray-400">Position/Role</TableHead>
+                  {showTeam1Position && <TableHead className="text-gray-400">Position/Role</TableHead>}
                   <TableHead className="text-gray-400">Country</TableHead>
-                  
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {team1Players.map(renderPlayerRow)}
+                {team1Players.map((player, index) => renderPlayerRow(player, index, showTeam1Position))}
               </TableBody>
             </Table> : renderNoDataMessage(team1.name, hasTeam2Data)}
         </div>
@@ -186,13 +194,12 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-gray-400">Player</TableHead>
-                  <TableHead className="text-gray-400">Position/Role</TableHead>
+                  {showTeam2Position && <TableHead className="text-gray-400">Position/Role</TableHead>}
                   <TableHead className="text-gray-400">Country</TableHead>
-                  
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {team2Players.map(renderPlayerRow)}
+                {team2Players.map((player, index) => renderPlayerRow(player, index, showTeam2Position))}
               </TableBody>
             </Table> : renderNoDataMessage(team2.name, hasTeam1Data)}
         </div>
