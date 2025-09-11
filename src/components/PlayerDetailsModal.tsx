@@ -7,14 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, Award, Target, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
 interface PlayerDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   playerId: string;
   esportType: string;
 }
-
 interface EnhancedPlayerData {
   player_id: string;
   name: string;
@@ -35,7 +33,6 @@ interface EnhancedPlayerData {
   earnings?: number;
   achievements: Record<string, any>[];
 }
-
 export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
   isOpen,
   onClose,
@@ -45,38 +42,33 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
   const [playerData, setPlayerData] = useState<EnhancedPlayerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentMatches, setRecentMatches] = useState<any[]>([]);
-
   useEffect(() => {
     if (isOpen && playerId) {
       fetchPlayerData();
       fetchRecentMatches();
     }
   }, [isOpen, playerId, esportType]);
-
   const fetchPlayerData = async () => {
     try {
       // Check if this is a PandaScore player (numeric ID for games like Valorant, CS2, etc.)
       const isPandaScorePlayer = /^\d+$/.test(playerId);
-      
       if (isPandaScorePlayer) {
         // Use new RPC function for PandaScore players
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
-          'get_pandascore_player_details',
-          { p_player_id: parseInt(playerId) }
-        );
-
+        const {
+          data: rpcData,
+          error: rpcError
+        } = await supabase.rpc('get_pandascore_player_details', {
+          p_player_id: parseInt(playerId)
+        });
         if (rpcError) {
           console.error('Error calling RPC:', rpcError);
           return;
         }
-
         if (rpcData && typeof rpcData === 'object' && rpcData !== null) {
           const response = rpcData as any;
-          
           if (response.found) {
             const profile = response.profile;
             const stats = response.stats;
-            
             setPlayerData({
               player_id: profile.id.toString(),
               name: profile.name || 'Unknown Player',
@@ -98,7 +90,8 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 win_rate: stats.win_rate,
                 matches_played: stats.total_matches
               },
-              kda_ratio: undefined, // PandaScore doesn't have individual KDA in this aggregation
+              kda_ratio: undefined,
+              // PandaScore doesn't have individual KDA in this aggregation
               avg_kills: undefined,
               avg_deaths: undefined,
               avg_assists: undefined,
@@ -113,8 +106,10 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 result: match.result === 'W' ? 'win' : 'loss',
                 date: match.date,
                 match_id: match.matchId,
-                map_name: 'N/A', // PandaScore doesn't provide map info in this context
-                kills: 0, // Individual stats not available
+                map_name: 'N/A',
+                // PandaScore doesn't provide map info in this context
+                kills: 0,
+                // Individual stats not available
                 deaths: 0,
                 assists: 0,
                 kda_ratio: 0
@@ -126,17 +121,14 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
       }
 
       // Fallback to original method for other types of players
-      const { data, error } = await supabase
-        .from('pandascore_players_master')
-        .select('*')
-        .eq('id', parseInt(playerId))
-        .maybeSingle();
-
+      const {
+        data,
+        error
+      } = await supabase.from('pandascore_players_master').select('*').eq('id', parseInt(playerId)).maybeSingle();
       if (error) {
         console.error('Error fetching player data:', error);
         return;
       }
-
       if (data) {
         setPlayerData({
           player_id: data.id.toString(),
@@ -158,7 +150,6 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
       setLoading(false);
     }
   };
-
   const fetchRecentMatches = async () => {
     try {
       // Since pandascore_player_matches doesn't exist, 
@@ -168,37 +159,41 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
       console.error('Error fetching recent matches:', error);
     }
   };
-
   const getKDAColor = (kda: number) => {
     if (kda >= 1.5) return 'text-green-500';
     if (kda >= 1.0) return 'text-yellow-500';
     return 'text-red-500';
   };
-
   const getPerformanceLevel = (value: number, thresholds: number[]) => {
-    if (value >= thresholds[2]) return { level: 'Excellent', color: 'bg-green-500' };
-    if (value >= thresholds[1]) return { level: 'Good', color: 'bg-yellow-500' };
-    if (value >= thresholds[0]) return { level: 'Average', color: 'bg-orange-500' };
-    return { level: 'Below Average', color: 'bg-red-500' };
+    if (value >= thresholds[2]) return {
+      level: 'Excellent',
+      color: 'bg-green-500'
+    };
+    if (value >= thresholds[1]) return {
+      level: 'Good',
+      color: 'bg-yellow-500'
+    };
+    if (value >= thresholds[0]) return {
+      level: 'Average',
+      color: 'bg-orange-500'
+    };
+    return {
+      level: 'Below Average',
+      color: 'bg-red-500'
+    };
   };
-
   if (!isOpen) return null;
-
   if (loading) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+    return <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         </DialogContent>
-      </Dialog>
-    );
+      </Dialog>;
   }
-
   if (!playerData) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+    return <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Player Not Found</DialogTitle>
@@ -207,12 +202,9 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             <p className="text-muted-foreground">Player statistics are not available at this time.</p>
           </div>
         </DialogContent>
-      </Dialog>
-    );
+      </Dialog>;
   }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center space-x-4">
@@ -224,38 +216,115 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             </Avatar>
             <div>
               <DialogTitle className="text-2xl">{playerData.name}</DialogTitle>
-               <div className="flex items-center space-x-2 mt-1">
-                 {playerData.team_name && (
-                   <Badge variant="outline">Team {playerData.team_name}</Badge>
-                 )}
-                 {playerData.role && (
-                   <Badge variant="secondary">Pos/Role {playerData.role}</Badge>
-                 )}
-                 {playerData.nationality && (
-                   <div className="flex items-center gap-2">
-                     <img 
-                       src={`https://flagcdn.com/24x18/${playerData.nationality.toLowerCase()}.png`} 
-                       alt={`Flag of ${playerData.nationality}`} 
-                       className="h-4 w-6 rounded-sm border border-theme-gray-light" 
-                       loading="lazy" 
-                       onError={(e) => {
-                         (e.target as HTMLImageElement).style.display = 'none';
-                       }} 
-                     />
-                     <Badge variant="outline">{playerData.nationality}</Badge>
-                   </div>
-                 )}
-               </div>
+              <div className="flex items-center space-x-2 mt-1">
+                {playerData.team_name && <Badge variant="outline">{playerData.team_name}</Badge>}
+                {playerData.role && <Badge variant="secondary">{playerData.role}</Badge>}
+                {playerData.nationality && <Badge variant="outline">{playerData.nationality}</Badge>}
+              </div>
             </div>
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="statistics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            
             <TabsTrigger value="matches">Recent Matches</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* KDA Card */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">K/D/A Ratio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    <span className={getKDAColor(playerData.kda_ratio || 0)}>
+                      {playerData.kda_ratio?.toFixed(2) || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {playerData.avg_kills?.toFixed(1)}/{playerData.avg_deaths?.toFixed(1)}/{playerData.avg_assists?.toFixed(1)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Rating */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Performance Rating</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {playerData.recent_stats?.rating && <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Recent Form</span>
+                          <span className="text-lg font-bold">{playerData.recent_stats.rating.toFixed(2)}</span>
+                        </div>
+                        <Progress value={Math.min(playerData.recent_stats.rating * 50, 100)} className="h-2" />
+                      </>}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Headshot Accuracy */}
+              {playerData.headshot_percentage && <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <Target className="h-4 w-4 mr-1" />
+                      Headshot %
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-primary">
+                      {(playerData.headshot_percentage * 100).toFixed(1)}%
+                    </div>
+                    <Progress value={playerData.headshot_percentage * 100} className="h-2 mt-2" />
+                  </CardContent>
+                </Card>}
+            </div>
+
+            {/* Performance Metrics */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {playerData.clutch_success_rate && <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">
+                        {(playerData.clutch_success_rate * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">Clutch Success</div>
+                    </div>}
+                  
+                  {playerData.recent_stats?.adr && <div className="text-center">
+                      <div className="text-2xl font-bold">
+                        {playerData.recent_stats.adr.toFixed(1)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Average Damage</div>
+                    </div>}
+
+                  {playerData.recent_stats?.matches_played && <div className="text-center">
+                      <div className="text-2xl font-bold">
+                        {playerData.recent_stats.matches_played}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Recent Matches</div>
+                    </div>}
+
+                  {playerData.earnings && <div className="text-center">
+                      <div className="text-2xl font-bold text-green-500">
+                        ${playerData.earnings.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Career Earnings</div>
+                    </div>}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,16 +333,14 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                   <CardTitle>Career Statistics</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {Object.entries(playerData.career_stats || {}).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
+                  {Object.entries(playerData.career_stats || {}).map(([key, value]) => <div key={key} className="flex justify-between">
                       <span className="capitalize text-muted-foreground">
                         {key.replace(/_/g, ' ')}
                       </span>
                       <span className="font-medium">
                         {typeof value === 'number' ? value.toFixed(2) : String(value)}
                       </span>
-                    </div>
-                  ))}
+                    </div>)}
                 </CardContent>
               </Card>
 
@@ -282,16 +349,14 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                   <CardTitle>Recent Form</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {Object.entries(playerData.recent_stats || {}).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
+                  {Object.entries(playerData.recent_stats || {}).map(([key, value]) => <div key={key} className="flex justify-between">
                       <span className="capitalize text-muted-foreground">
                         {key.replace(/_/g, ' ')}
                       </span>
                       <span className="font-medium">
                         {typeof value === 'number' ? value.toFixed(2) : String(value)}
                       </span>
-                    </div>
-                  ))}
+                    </div>)}
                 </CardContent>
               </Card>
             </div>
@@ -303,14 +368,10 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 <CardTitle>Recent Match History</CardTitle>
               </CardHeader>
               <CardContent>
-                {recentMatches.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentMatches.map((match, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                {recentMatches.length > 0 ? <div className="space-y-3">
+                    {recentMatches.map((match, index) => <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            match.result === 'win' ? 'bg-green-500' : 'bg-red-500'
-                          }`} />
+                          <div className={`w-3 h-3 rounded-full ${match.result === 'win' ? 'bg-green-500' : 'bg-red-500'}`} />
                           <div>
                             <div className="font-medium">{match.tournament_name}</div>
                             <div className="text-sm text-muted-foreground">
@@ -326,20 +387,38 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                             {match.kda_ratio?.toFixed(2)} KDA
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                      </div>)}
+                  </div> : <div className="text-center py-8 text-muted-foreground">
                     No recent match data available
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
 
+          <TabsContent value="achievements" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Award className="h-5 w-5 mr-2" />
+                  Achievements & Awards
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {playerData.achievements && playerData.achievements.length > 0 ? <div className="space-y-3">
+                    {playerData.achievements.map((achievement, index) => <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Award className="h-8 w-8 text-yellow-500" />
+                        <div>
+                          <div className="font-medium">{achievement.title}</div>
+                          <div className="text-sm text-muted-foreground">{achievement.description}</div>
+                        </div>
+                      </div>)}
+                  </div> : <div className="text-center py-8 text-muted-foreground">
+                    No achievements data available
+                  </div>}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
