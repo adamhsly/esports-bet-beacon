@@ -2,19 +2,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import SearchBar from './SearchBar';
 import UserMenu from './UserMenu';
-import { Menu, X, Search as SearchIcon } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import WalletConnector from './WalletConnector';
 
-interface SearchableNavbarProps {
-  showSearch?: boolean;
-}
-
-const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }) => {
+const SearchableNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { user, loading } = useAuth();
   
   return (
@@ -46,11 +40,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
           
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {showSearch && (
-              <div className="relative">
-                <SearchBar />
-              </div>
-            )}
             
             {!loading && (
               user ? (
@@ -76,17 +65,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
           
           {/* Mobile menu button */}
           <div className="flex md:hidden items-center space-x-3">
-            {showSearch && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-white"
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-              >
-                {isSearchOpen ? <X size={24} /> : <SearchIcon size={24} />}
-              </Button>
-            )}
-            
             <Button 
               variant="ghost" 
               size="icon"
@@ -97,13 +75,6 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
             </Button>
           </div>
         </div>
-        
-        {/* Mobile search */}
-        {isSearchOpen && showSearch && (
-          <div className="md:hidden mt-4 pb-2">
-            <SearchBar />
-          </div>
-        )}
         
         {/* Mobile menu */}
         {isMenuOpen && (
