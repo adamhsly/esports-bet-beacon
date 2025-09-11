@@ -70,7 +70,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
       {rounds.map((round) => (
         <Card 
           key={round.id} 
-          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50 overflow-hidden"
+          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
           onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
         >
           <CardContent className="p-4">
