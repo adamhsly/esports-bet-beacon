@@ -232,18 +232,15 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                    <Badge variant="secondary">Pos/Role {playerData.role}</Badge>
                  )}
                  {playerData.nationality && (
-                   <div className="flex items-center gap-2">
-                     <img 
-                       src={`https://flagcdn.com/24x18/${playerData.nationality.toLowerCase()}.png`} 
-                       alt={`Flag of ${playerData.nationality}`} 
-                       className="h-4 w-6 rounded-sm border border-theme-gray-light" 
-                       loading="lazy" 
-                       onError={(e) => {
-                         (e.target as HTMLImageElement).style.display = 'none';
-                       }} 
-                     />
-                     <Badge variant="outline">{playerData.nationality}</Badge>
-                   </div>
+                    <img 
+                      src={`https://flagcdn.com/24x18/${playerData.nationality.toLowerCase()}.png`} 
+                      alt={`Flag of ${playerData.nationality}`} 
+                      className="h-4 w-6 rounded-sm border border-theme-gray-light" 
+                      loading="lazy" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }} 
+                    />
                  )}
                </div>
             </div>
