@@ -167,14 +167,6 @@ export const InProgressRounds: React.FC = () => {
       </Card>;
   }
   return <div className="space-y-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-          Your Active Rounds
-        </h2>
-        <p className="text-muted-foreground">
-          Track your team performance in real-time across all active fantasy rounds.
-        </p>
-      </div>
 
       <div className="space-y-6">
         {rounds.map(round => <Card key={round.id} className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250">
