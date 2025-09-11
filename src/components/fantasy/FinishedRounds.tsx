@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Trophy, Medal, Users, TrendingUp, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -89,7 +90,11 @@ export const FinishedRounds: React.FC = () => {
         })
       );
 
-      setRounds(roundsWithScores);
+      // Sort rounds by most recent end_date first
+      const sortedRounds = roundsWithScores.sort((a, b) => 
+        new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
+      );
+      setRounds(sortedRounds);
     } catch (error) {
       console.error('Error fetching finished rounds:', error);
       toast.error('Failed to load finished rounds');
@@ -148,16 +153,15 @@ export const FinishedRounds: React.FC = () => {
 
   return (
     <div className="space-y-6">
-
-      <div className="space-y-6">
+      <Accordion type="multiple" defaultValue={rounds.length > 0 ? [rounds[0].id] : []} className="space-y-4">
         {rounds.map((round) => (
-          <Card key={round.id} className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250">
-            <CardHeader className="border-b border-gray-700/50">
-              <div className="flex items-center justify-between">
+          <AccordionItem key={round.id} value={round.id} className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250 rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-4 sm:px-6 py-4 border-b border-gray-700/50 hover:no-underline">
+              <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
-                  <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  <h3 className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold">
                     {round.type} Round
-                  </CardTitle>
+                  </h3>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
@@ -170,9 +174,9 @@ export const FinishedRounds: React.FC = () => {
                   </span>
                 </div>
               </div>
-            </CardHeader>
+            </AccordionTrigger>
 
-            <CardContent className="p-4 sm:p-6 overflow-hidden">
+            <AccordionContent className="p-4 sm:p-6 overflow-hidden">
               <div className="space-y-6">
                 {/* Leaderboard */}
                 <div>
@@ -242,10 +246,10 @@ export const FinishedRounds: React.FC = () => {
                 )}
 
               </div>
-            </CardContent>
-          </Card>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 };
