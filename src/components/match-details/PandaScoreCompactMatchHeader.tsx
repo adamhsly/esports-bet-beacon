@@ -295,16 +295,16 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
               <Button 
                 variant={isSubscribed ? "default" : "outline"}
                 size="icon"
-                className={isSubscribed ? 'bg-blue-500 hover:bg-blue-600' : ''}
+                className={isSubscribed ? 'bg-theme-purple hover:bg-theme-purple/80' : ''}
                 onClick={toggleNotification}
                 disabled={isLoading || isMatchInPast()}
               >
                 {isLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin text-white" />
                 ) : isSubscribed ? (
-                  <BellRing className="h-3 w-3" />
+                  <BellRing className="h-3 w-3 text-white" />
                 ) : (
-                  <Bell className="h-3 w-3" />
+                  <Bell className="h-3 w-3 text-white" />
                 )}
               </Button>
             )
