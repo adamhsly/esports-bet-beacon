@@ -224,17 +224,28 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
             </Avatar>
             <div>
               <DialogTitle className="text-2xl">{playerData.name}</DialogTitle>
-              <div className="flex items-center space-x-2 mt-1">
-                {playerData.team_name && (
-                  <Badge variant="outline">{playerData.team_name}</Badge>
-                )}
-                {playerData.role && (
-                  <Badge variant="secondary">{playerData.role}</Badge>
-                )}
-                {playerData.nationality && (
-                  <Badge variant="outline">{playerData.nationality}</Badge>
-                )}
-              </div>
+               <div className="flex items-center space-x-2 mt-1">
+                 {playerData.team_name && (
+                   <Badge variant="outline">Team {playerData.team_name}</Badge>
+                 )}
+                 {playerData.role && (
+                   <Badge variant="secondary">Pos/Role {playerData.role}</Badge>
+                 )}
+                 {playerData.nationality && (
+                   <div className="flex items-center gap-2">
+                     <img 
+                       src={`https://flagcdn.com/24x18/${playerData.nationality.toLowerCase()}.png`} 
+                       alt={`Flag of ${playerData.nationality}`} 
+                       className="h-4 w-6 rounded-sm border border-theme-gray-light" 
+                       loading="lazy" 
+                       onError={(e) => {
+                         (e.target as HTMLImageElement).style.display = 'none';
+                       }} 
+                     />
+                     <Badge variant="outline">{playerData.nationality}</Badge>
+                   </div>
+                 )}
+               </div>
             </div>
           </div>
         </DialogHeader>
