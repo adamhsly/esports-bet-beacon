@@ -38,13 +38,9 @@ const SearchableNavbar: React.FC<SearchableNavbarProps> = ({ showSearch = true }
               <Link to="/teams" className="text-gray-300 hover:text-white">
                 Teams
               </Link>
-              {user && (
-                <>
-                  <Link to="/fantasy" className="text-gray-300 hover:text-white">
-                    Fantasy
-                  </Link>
-                </>
-              )}
+              <Link to="/fantasy" className="text-gray-300 hover:text-white">
+                Fantasy
+              </Link>
             </div>
           </div>
           
