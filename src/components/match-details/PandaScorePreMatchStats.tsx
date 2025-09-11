@@ -118,7 +118,21 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-gray-300 text-sm">Recent Form</span>
             </div>
-            <span className="text-white text-sm font-mono">{stats.recentForm || 'N/A'}</span>
+            <div className="flex items-center gap-1">
+              {(stats.recentForm || 'N/A').split('').map((char, index) => (
+                <span
+                  key={index}
+                  className={`
+                    text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center
+                    ${char === 'W' ? 'bg-green-500 text-white' : 
+                      char === 'L' ? 'bg-red-500 text-white' : 
+                      'bg-gray-500 text-white'}
+                  `}
+                >
+                  {char}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
