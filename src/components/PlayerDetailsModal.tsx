@@ -295,7 +295,25 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                         {key.replace(/_/g, ' ')}
                       </span>
                       <span className="font-medium text-white">
-                        {typeof value === 'number' ? value.toFixed(2) : String(value)}
+                        {key.toLowerCase().includes('form') && typeof value === 'string' ? (
+                          <div className="flex items-center gap-1">
+                            {value.split('').map((char, index) => (
+                              <span
+                                key={index}
+                                className={`
+                                  text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center
+                                  ${char === 'W' ? 'bg-green-500 text-white' : 
+                                    char === 'L' ? 'bg-red-500 text-white' : 
+                                    'bg-gray-500 text-white'}
+                                `}
+                              >
+                                {char}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          typeof value === 'number' ? value.toFixed(2) : String(value)
+                        )}
                       </span>
                     </div>
                   ))}
