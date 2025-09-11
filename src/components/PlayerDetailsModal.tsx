@@ -303,7 +303,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 {recentMatches.length > 0 ? (
                   <div className="space-y-3">
                     {recentMatches.map((match, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={index} className="flex items-center p-3 border rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 rounded-full ${
                             match.result === 'win' ? 'bg-green-500' : 'bg-red-500'
@@ -311,16 +311,8 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                           <div>
                             <div className="font-medium">{match.tournament_name}</div>
                             <div className="text-sm text-muted-foreground">
-                              vs {match.opponent_team} • {match.map_name}
+                              vs {match.opponent_team}
                             </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {match.kills}/{match.deaths}/{match.assists}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {match.kda_ratio?.toFixed(2)} KDA
                           </div>
                         </div>
                       </div>
