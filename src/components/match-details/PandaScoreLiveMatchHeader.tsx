@@ -2,7 +2,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Radio, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useMatchNotifications } from '@/hooks/useMatchNotifications';
+import { Trophy, Radio, MapPin, Bell, BellRing, Loader2 } from 'lucide-react';
 
 interface PandaScoreLiveMatchHeaderProps {
   match: {
@@ -22,6 +24,11 @@ interface PandaScoreLiveMatchHeaderProps {
 }
 
 export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps> = ({ match }) => {
+  const { isSubscribed, isLoading, isChecking, toggleNotification } = useMatchNotifications({
+    matchId: match.id,
+    matchStartTime: match.startTime
+  });
+
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
 
@@ -150,10 +157,34 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
             </div>
           </div>
           
-          <Badge className="bg-red-500 text-white animate-pulse">
-            <Radio className="h-3 w-3 mr-1" />
-            LIVE
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge className="bg-red-500 text-white animate-pulse">
+              <Radio className="h-3 w-3 mr-1" />
+              LIVE
+            </Badge>
+            
+            {isChecking ? (
+              <Button disabled variant="outline" size="icon">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </Button>
+            ) : (
+              <Button 
+                variant={isSubscribed ? "default" : "outline"}
+                size="icon"
+                className={isSubscribed ? 'bg-theme-purple hover:bg-theme-purple/80' : ''}
+                onClick={toggleNotification}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                ) : isSubscribed ? (
+                  <BellRing className="h-4 w-4 text-white" />
+                ) : (
+                  <Bell className="h-4 w-4 text-white" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-8 items-center">

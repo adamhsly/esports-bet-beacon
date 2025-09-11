@@ -2,7 +2,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Radio, Clock, Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useMatchNotifications } from '@/hooks/useMatchNotifications';
+import { Radio, Clock, Trophy, Bell, BellRing, Loader2 } from 'lucide-react';
 
 interface FaceitLiveMatchHeaderProps {
   match: {
@@ -29,6 +31,11 @@ interface FaceitLiveMatchHeaderProps {
 }
 
 export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ match }) => {
+  const { isSubscribed, isLoading, isChecking, toggleNotification } = useMatchNotifications({
+    matchId: match.id,
+    matchStartTime: match.startTime
+  });
+
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
 
@@ -66,10 +73,34 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
               </div>
             </div>
           </div>
-          <Badge className="bg-red-500 text-white text-lg px-4 py-2">
-            <Radio className="h-4 w-4 mr-2 animate-pulse" />
-            LIVE
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge className="bg-red-500 text-white text-lg px-4 py-2">
+              <Radio className="h-4 w-4 mr-2 animate-pulse" />
+              LIVE
+            </Badge>
+            
+            {isChecking ? (
+              <Button disabled variant="outline" size="icon">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </Button>
+            ) : (
+              <Button 
+                variant={isSubscribed ? "default" : "outline"}
+                size="icon"
+                className={isSubscribed ? 'bg-theme-purple hover:bg-theme-purple/80' : ''}
+                onClick={toggleNotification}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                ) : isSubscribed ? (
+                  <BellRing className="h-4 w-4 text-white" />
+                ) : (
+                  <Bell className="h-4 w-4 text-white" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Teams Display */}
