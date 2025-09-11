@@ -157,7 +157,7 @@ const liveScore = live ? getPandaScoreLiveScore(match.rawData, match.teams) : nu
 console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className="bg-theme-gray-dark border border-theme-gray-medium overflow-hidden relative">
+    <Card className="overflow-hidden relative">
       <div className="p-3">
         {/* Tournament and Platform Badge */}
         <div className="flex items-center justify-between mb-3">
