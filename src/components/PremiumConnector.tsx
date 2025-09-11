@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Crown, CheckCircle, Loader2 } from 'lucide-react';
 import { usePremiumCheckout } from '@/hooks/usePremiumCheckout';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { useEntitlement } from '@/hooks/useSupabaseData';
 
 interface PremiumConnectorProps {
   variant?: 'default' | 'outline' | 'ghost';
@@ -19,11 +21,18 @@ const PremiumConnector: React.FC<PremiumConnectorProps> = ({
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { startPremiumCheckout, isLoading } = usePremiumCheckout();
+  const { isAuthenticated } = useAuthUser();
+  const { premiumActive } = useEntitlement();
 
   const handleUpgrade = async () => {
     setIsDialogOpen(false);
     await startPremiumCheckout();
   };
+
+  // Only show for logged-in users who are not premium yet
+  if (!isAuthenticated || premiumActive) {
+    return null;
+  }
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
