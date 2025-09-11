@@ -76,7 +76,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
   };
 
   return (
-    <Card className="bg-orange-950/70 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none">
+    <Card className="bg-slate-700 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none">
       <div className="flex flex-col gap-2 px-3 py-3">
         {/* Tournament info and finished status row */}
         <div className="flex justify-between items-center">
