@@ -32,10 +32,8 @@ const AuthPage: React.FC = () => {
   
   // Marketing preferences and T&Cs
   const [marketingPreferences, setMarketingPreferences] = useState({
-    email_newsletters: false,
     product_updates: false,
-    event_notifications: false,
-    partner_offers: false
+    event_notifications: false
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
   
@@ -219,10 +217,8 @@ const AuthPage: React.FC = () => {
       setSignUpUsername('');
       setSignUpFullName('');
       setMarketingPreferences({
-        email_newsletters: false,
         product_updates: false,
-        event_notifications: false,
-        partner_offers: false
+        event_notifications: false
       });
       setTermsAccepted(false);
       setFieldErrors({ email: '', username: '', full_name: '' });
@@ -549,22 +545,6 @@ const AuthPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          id="email-newsletters"
-                          checked={marketingPreferences.email_newsletters}
-                          onCheckedChange={(checked) => 
-                            setMarketingPreferences(prev => ({
-                              ...prev,
-                              email_newsletters: checked as boolean
-                            }))
-                          }
-                          className="border-theme-gray-light data-[state=checked]:bg-theme-purple"
-                        />
-                        <Label htmlFor="email-newsletters" className="text-sm text-gray-300">
-                          Email newsletters about esports events and updates
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
                           id="product-updates"
                           checked={marketingPreferences.product_updates}
                           onCheckedChange={(checked) => 
@@ -593,22 +573,6 @@ const AuthPage: React.FC = () => {
                         />
                         <Label htmlFor="event-notifications" className="text-sm text-gray-300">
                           Tournament and event notifications
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="partner-offers"
-                          checked={marketingPreferences.partner_offers}
-                          onCheckedChange={(checked) => 
-                            setMarketingPreferences(prev => ({
-                              ...prev,
-                              partner_offers: checked as boolean
-                            }))
-                          }
-                          className="border-theme-gray-light data-[state=checked]:bg-theme-purple"
-                        />
-                        <Label htmlFor="partner-offers" className="text-sm text-gray-300">
-                          Special offers from our partners
                         </Label>
                       </div>
                     </div>
