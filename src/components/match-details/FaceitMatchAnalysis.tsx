@@ -114,7 +114,7 @@ export const FaceitMatchAnalysis: React.FC<FaceitMatchAnalysisProps> = ({
         const teamPlayers = getPlayersByTeam(team.faction);
         
         return (
-          <Card key={team.faction} className="bg-theme-gray-dark border-theme-gray-medium">
+          <Card key={team.faction} className="bg-slate-700 border-theme-gray-medium">
             <div className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <img 
@@ -233,7 +233,7 @@ export const FaceitMatchAnalysis: React.FC<FaceitMatchAnalysisProps> = ({
   );
 
   const renderRoundHistory = () => (
-    <Card className="bg-theme-gray-dark border-theme-gray-medium">
+    <Card className="bg-slate-700 border-theme-gray-medium">
       <div className="p-6">
         <h3 className="text-lg font-bold text-white mb-4">Round-by-Round Results</h3>
         
@@ -293,7 +293,7 @@ export const FaceitMatchAnalysis: React.FC<FaceitMatchAnalysisProps> = ({
   );
 
   const renderMatchOverview = () => (
-    <Card className="bg-theme-gray-dark border-theme-gray-medium">
+    <Card className="bg-slate-700 border-theme-gray-medium">
       <div className="p-6">
         <h3 className="text-lg font-bold text-white mb-4">Match Overview</h3>
         

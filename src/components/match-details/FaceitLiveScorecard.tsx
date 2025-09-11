@@ -50,9 +50,9 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
       </h2>
 
       {/* Main Scorecard */}
-      <Card className="bg-theme-gray-dark border border-red-500/30 overflow-hidden">
+      <Card className="bg-slate-700 border border-red-500/30 overflow-hidden">
         <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 p-1">
-          <div className="bg-theme-gray-dark p-6">
+          <div className="bg-slate-700 p-6">
             {/* Map and Round Info */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
@@ -156,7 +156,7 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
       </Card>
 
       {/* Round Timeline */}
-      <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4">
+      <Card className="bg-slate-700 border border-theme-gray-medium p-4">
         <h3 className="text-lg font-bold text-white mb-4">Round Timeline</h3>
         <div className="flex items-center space-x-2 overflow-x-auto pb-2">
           {Array.from({ length: Math.min(roundStatus.round, 30) }, (_, i) => (

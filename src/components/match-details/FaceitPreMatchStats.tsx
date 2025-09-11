@@ -94,7 +94,7 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
     team1Stats.avgSkillLevel && team2Stats.avgSkillLevel;
 
   const StatCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
-    <Card className="bg-theme-gray-dark border border-theme-gray-medium p-4">
+    <Card className="bg-slate-700 border border-theme-gray-medium p-4">
       <div className="flex items-center mb-3">
         {icon}
         <h4 className="text-sm font-semibold text-gray-300 ml-2">{title}</h4>
@@ -130,7 +130,7 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
       </h3>
 
       {/* Team Comparison - only show if we have real data */}
-      <Card className="bg-theme-gray-dark border border-theme-gray-medium p-6">
+      <Card className="bg-slate-700 border border-theme-gray-medium p-6">
         <h4 className="text-lg font-semibold text-white mb-4 text-center">Team Comparison</h4>
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
