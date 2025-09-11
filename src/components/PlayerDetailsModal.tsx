@@ -213,7 +213,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gradient-to-br from-blue-950/80 via-slate-800/90 to-gray-900/90 border-theme-gray-medium max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-4xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
