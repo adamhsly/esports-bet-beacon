@@ -2,6 +2,7 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
+import { getShareCardUrl } from './shareUrlHelper';
 
 interface ShareCardData {
   user: {
@@ -102,15 +103,13 @@ export async function renderShareCard(
 
     console.log('Step 9: File uploaded successfully');
 
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('shares').getPublicUrl(fileName);
+    // Generate custom domain URL instead of direct Supabase URL
+    const customUrl = getShareCardUrl(roundId, userId, true);
 
-    console.log('Step 10: Public URL generated:', publicUrl);
+    console.log('Step 10: Custom URL generated:', customUrl);
     console.log('=== Share Card Generation Completed Successfully ===');
 
-    return { publicUrl, blob };
+    return { publicUrl: customUrl, blob };
   } finally {
     // Cleanup
     try {

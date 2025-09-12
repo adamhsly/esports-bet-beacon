@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.public-image-proxy]
 verify_jwt = false
+
+[functions.share-proxy]
+verify_jwt = false

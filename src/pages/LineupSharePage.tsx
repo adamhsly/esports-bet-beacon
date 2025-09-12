@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Play, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getShareCardUrl } from '@/utils/shareUrlHelper';
 import { toast } from 'sonner';
 
 interface LineupData {
@@ -80,9 +81,7 @@ export const LineupSharePage: React.FC = () => {
       }
 
       const roundName = `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
-      const shareImageUrl = supabase.storage
-        .from('shares')
-        .getPublicUrl(`${roundId}/${userId}.png`).data.publicUrl;
+      const shareImageUrl = getShareCardUrl(roundId!, userId!, true);
 
       setLineupData({
         user: {
