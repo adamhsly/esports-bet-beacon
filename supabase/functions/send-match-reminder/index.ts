@@ -36,7 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
     const competition = matchDetails.competition_name || 'FACEIT Match';
 
     const emailResponse = await resend.emails.send({
-      from: "EsportsBeacon <notifications@resend.dev>",
+      from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
       to: [userEmail],
       subject: `Match Starting Soon: ${team1} vs ${team2}`,
       html: `
