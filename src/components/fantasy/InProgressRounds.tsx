@@ -333,7 +333,7 @@ const InProgressTeamsList: React.FC<{
         id: score.team_id,
         name: score.team_name,
         type: score.team_type,
-        logo_url: getEnhancedTeamLogoUrl({ name: score.team_name, logo: null, image_url: null, hash_image: null })
+        logo_url: getEnhancedTeamLogoUrl({ name: score.team_name })
       }} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === score.team_id} onToggleStar={() => handleStarToggle(score.team_id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" fantasyPoints={score.current_score} />) :
       // Show picked teams without scores
       round.team_picks.map((team, index) => <TeamCard key={team.id || index} team={team} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleStarToggle(team.id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" />)}

@@ -267,7 +267,7 @@ const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
               id: score.team_id,
               name: score.team_name,
               type: score.team_type,
-              logo_url: getEnhancedTeamLogoUrl({ name: score.team_name, logo: null, image_url: null, hash_image: null })
+              logo_url: getEnhancedTeamLogoUrl({ name: score.team_name })
             }}
             isSelected={true}
             onClick={() => {}}
