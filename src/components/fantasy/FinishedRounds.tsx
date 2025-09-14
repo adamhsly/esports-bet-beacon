@@ -260,22 +260,26 @@ const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
     <div className="grid gap-3 md:grid-cols-2">
       {round.scores.length > 0 ? (
         // Show scored teams
-        round.scores.map((score) => (
-          <TeamCard 
-            key={score.team_id}
-            team={{
-              id: score.team_id,
-              name: score.team_name,
-              type: score.team_type,
-              logo_url: getEnhancedTeamLogoUrl({ name: score.team_name })
-            }}
+        round.scores.map((score) => {
+          // Find original team data to get logo_url
+          const originalTeam = round.team_picks.find(team => team.id === score.team_id);
+          return (
+            <TeamCard 
+              key={score.team_id}
+              team={{
+                id: score.team_id,
+                name: score.team_name,
+                type: score.team_type,
+                logo_url: originalTeam?.logo_url || ''
+              }}
             isSelected={true}
             onClick={() => {}}
             showStarToggle={false} // No star functionality for finished rounds
             variant="progress"
             fantasyPoints={score.current_score}
           />
-        ))
+           );
+        })
       ) : (
         // Show picked teams without scores
         round.team_picks.map((team, index) => (
