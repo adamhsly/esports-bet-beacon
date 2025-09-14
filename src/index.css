@@ -83,6 +83,19 @@
     --engagement-bg-end: 217 19% 11%;
     --engagement-card: 217 32.6% 17.5%;
     --engagement-border: 217 32.6% 25%;
+
+    /* Glass UI Variables */
+    --glass-bg: rgba(20, 20, 30, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-button: rgba(255, 255, 255, 0.2);
+    --glass-text-primary: rgba(255, 255, 255, 0.9);
+    --glass-text-secondary: rgba(255, 255, 255, 0.6);
+    
+    /* Neon Colors */
+    --neon-blue: #00D4FF;
+    --neon-purple: #6C63FF;
+    --neon-pink: #FF4ECD;
+    --neon-green: #4DFF91;
   }
 }
 
@@ -587,5 +600,64 @@ nav a:hover {
     transform: translateX(-100%);
     opacity: 0;
   }
+}
+
+/* Glass UI Utilities */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.glass-button {
+  background: var(--glass-button);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--glass-text-primary);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.glass-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(108, 99, 255, 0.4);
+  border-color: rgba(108, 99, 255, 0.6);
+}
+
+.glass-text-primary {
+  color: var(--glass-text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.glass-text-secondary {
+  color: var(--glass-text-secondary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.neon-border {
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)) border-box;
+  background-clip: border-box;
+  position: relative;
+}
+
+.neon-border::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: var(--glass-bg);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+}
+
+.neon-glow {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 0 40px rgba(108, 99, 255, 0.2);
+}
+
+.hover\:scale-102:hover {
+  transform: scale(1.02);
 }
 

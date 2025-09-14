@@ -29,60 +29,60 @@ export const PandaScoreLiveScorecard: React.FC<PandaScoreLiveScorecardProps> = (
   };
 
   return (
-    <Card className="bg-theme-gray-dark border-theme-gray-medium">
+    <Card className="glass-card transition-all duration-300 hover:scale-102 neon-glow">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-white">Live Scorecard</h3>
-          <Badge className="bg-red-500/20 text-red-400 border-red-400/30">
+          <h3 className="text-lg font-bold glass-text-primary">Live Scorecard</h3>
+          <Badge className="glass-button bg-red-500/20 text-red-400 border-red-400/30">
             {mockScores.currentMap}
           </Badge>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-theme-gray-medium/30 rounded-lg">
+          <div className="flex items-center justify-between p-4 glass-card bg-glass-bg/50 hover:scale-102 transition-all duration-250">
             <div className="flex items-center space-x-3">
               <img 
                 src={team1.logo || '/placeholder.svg'} 
                 alt={team1.name} 
-                className="w-8 h-8 object-contain rounded"
+                className="w-8 h-8 object-contain rounded-lg shadow-lg"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
-              <span className="text-white font-semibold">{team1.name}</span>
+              <span className="glass-text-primary font-semibold">{team1.name}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-white">{mockScores.team1}</span>
+              <span className="text-2xl font-bold glass-text-primary">{mockScores.team1}</span>
               {mockScores.team1 > mockScores.team2 && (
-                <Trophy className="h-5 w-5 text-yellow-500" />
+                <Trophy className="h-5 w-5 text-neon-green" />
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-theme-gray-medium/30 rounded-lg">
+          <div className="flex items-center justify-between p-4 glass-card bg-glass-bg/50 hover:scale-102 transition-all duration-250">
             <div className="flex items-center space-x-3">
               <img 
                 src={team2.logo || '/placeholder.svg'} 
                 alt={team2.name} 
-                className="w-8 h-8 object-contain rounded"
+                className="w-8 h-8 object-contain rounded-lg shadow-lg"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
-              <span className="text-white font-semibold">{team2.name}</span>
+              <span className="glass-text-primary font-semibold">{team2.name}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-white">{mockScores.team2}</span>
+              <span className="text-2xl font-bold glass-text-primary">{mockScores.team2}</span>
               {mockScores.team2 > mockScores.team1 && (
-                <Trophy className="h-5 w-5 text-yellow-500" />
+                <Trophy className="h-5 w-5 text-neon-green" />
               )}
             </div>
           </div>
         </div>
 
         <div className="mt-4 text-center">
-          <span className="text-gray-400">Current Round: </span>
-          <span className="text-white font-semibold">{mockScores.round}</span>
+          <span className="glass-text-secondary">Current Round: </span>
+          <span className="glass-text-primary font-semibold">{mockScores.round}</span>
         </div>
       </div>
     </Card>

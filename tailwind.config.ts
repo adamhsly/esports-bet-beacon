@@ -22,11 +22,26 @@ export default {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
-				background: 'hsl(var(--background))',
+				background: '#0E0E12',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
+				},
+				glass: {
+					bg: 'var(--glass-bg)',
+					border: 'var(--glass-border)',
+					button: 'var(--glass-button)',
+					text: {
+						primary: 'var(--glass-text-primary)',
+						secondary: 'var(--glass-text-secondary)',
+					},
+				},
+				neon: {
+					blue: 'var(--neon-blue)',
+					purple: 'var(--neon-purple)',
+					pink: 'var(--neon-pink)',
+					green: 'var(--neon-green)',
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',

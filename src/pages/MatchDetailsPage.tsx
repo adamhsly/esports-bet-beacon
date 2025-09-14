@@ -219,7 +219,7 @@ const MatchDetailsPage = () => {
 
   // Remove the amateur/FACEIT specific logic since those matches are now redirected
   return (
-    <div className="min-h-screen flex flex-col bg-theme-gray-dark theme-alt-card">
+    <div className="min-h-screen flex flex-col" style={{ background: '#0E0E12' }}>
       <SearchableNavbar />
       
       {/* Main content area with responsive padding */}
@@ -234,17 +234,17 @@ const MatchDetailsPage = () => {
               <>
                 <div className="px-2 md:px-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <h1 className="text-3xl font-bold font-gaming">
+                    <h1 className="text-3xl font-bold font-gaming glass-text-primary">
                       {matchDetails.teams && matchDetails.teams.length > 0
                         ? `${matchDetails.teams[0].name} vs ${matchDetails.teams[1].name}`
                         : 'Match Details'}
                     </h1>
-                    <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+                    <Badge variant="outline" className="glass-card bg-neon-blue/20 text-neon-blue border-neon-blue/30">
                       <Trophy size={16} className="mr-1" />
                       Professional
                     </Badge>
                   </div>
-                  <div className="flex items-center text-gray-400 flex-wrap gap-4">
+                  <div className="flex items-center glass-text-secondary flex-wrap gap-4">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>{new Date(matchDetails.startTime).toLocaleDateString()}</span>
@@ -258,34 +258,34 @@ const MatchDetailsPage = () => {
               
               {/* Scoreboard Section */}
               <div className="px-2 md:px-8">
-                <Card className="bg-card border border-border overflow-hidden">
+                <Card className="glass-card neon-glow transition-all duration-300 hover:scale-102 overflow-hidden">
                   <div className="flex flex-col md:flex-row items-center justify-between">
                     {/* Team 1 */}
                     <div className="flex-1 p-4 text-center">
                       <img 
                         src={getEnhancedTeamLogoUrl(matchDetails.teams[0])} 
                         alt={matchDetails.teams[0]?.name || "Team 1"} 
-                        className="w-20 h-20 object-contain mx-auto mb-2"
+                        className="w-20 h-20 object-contain mx-auto mb-2 rounded-lg shadow-lg"
                         onError={(e) => {
                           console.log(`Match Page - Image load error for team ${matchDetails.teams[0]?.name}`);
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
                         }}
                       />
-                      <h3 className="text-lg font-bold">{matchDetails.teams[0]?.name || "Team 1"}</h3>
+                      <h3 className="text-lg font-bold glass-text-primary">{matchDetails.teams[0]?.name || "Team 1"}</h3>
                     </div>
                     
                     {/* Score */}
                     <div className="flex flex-col items-center justify-center p-4">
                       <div className="flex items-center space-x-4">
-                        <span className="text-3xl font-bold">0</span>
-                        <span className="text-xl font-bold text-gray-400">vs</span>
-                        <span className="text-3xl font-bold">0</span>
+                        <span className="text-3xl font-bold glass-text-primary">0</span>
+                        <span className="text-xl font-bold glass-text-secondary">vs</span>
+                        <span className="text-3xl font-bold glass-text-primary">0</span>
                       </div>
-                      <div className="flex items-center mt-2 text-sm text-gray-400">
+                      <div className="flex items-center mt-2 text-sm glass-text-secondary">
                         <Clock className="h-4 w-4 mr-1" />
                         <span>{new Date(matchDetails.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                      <Badge className="mt-2 bg-theme-purple">
+                      <Badge className="mt-2 glass-button bg-neon-purple/30 text-neon-purple border-neon-purple/50">
                         {new Date(matchDetails.startTime) > new Date() ? 'UPCOMING' : 'LIVE'}
                       </Badge>
                     </div>
@@ -295,13 +295,13 @@ const MatchDetailsPage = () => {
                       <img 
                         src={getEnhancedTeamLogoUrl(matchDetails.teams[1])} 
                         alt={matchDetails.teams[1]?.name || "Team 2"} 
-                        className="w-20 h-20 object-contain mx-auto mb-2"
+                        className="w-20 h-20 object-contain mx-auto mb-2 rounded-lg shadow-lg"
                         onError={(e) => {
                           console.log(`Match Page - Image load error for team ${matchDetails.teams[1]?.name}`);
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
                         }}
                       />
-                      <h3 className="text-lg font-bold">{matchDetails.teams[1]?.name || "Team 2"}</h3>
+                      <h3 className="text-lg font-bold glass-text-primary">{matchDetails.teams[1]?.name || "Team 2"}</h3>
                     </div>
                   </div>
                 </Card>
