@@ -601,7 +601,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       <LineupSuccessModal open={showSuccessModal} onOpenChange={setShowSuccessModal} roundId={round.id} roundName={`${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`} userId={user?.id || ''} starTeamName={getStarredTeamName()} onCheckProgress={() => {
       setShowSuccessModal(false);
-      onBack();
+      if (onNavigateToInProgress) {
+        onNavigateToInProgress();
+      } else {
+        onBack();
+      }
     }} />
 
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
