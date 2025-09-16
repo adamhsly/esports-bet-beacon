@@ -79,14 +79,18 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showNoStarModal, setShowNoStarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
+  const [useBonusCreditsState, setUseBonusCreditsState] = useState(false);
+  const [bonusCreditsAmount, setBonusCreditsAmount] = useState(0);
   const {
     setStarTeam
   } = useRoundStar(round.id);
+  const { availableCredits: availableBonusCredits, spendBonusCredits } = useBonusCredits();
 
-  // Salary cap
+  // Salary cap and budget calculations
   const SALARY_CAP = 50;
+  const totalBudget = SALARY_CAP + (useBonusCreditsState ? bonusCreditsAmount : 0);
   const budgetSpent = useMemo(() => selectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [selectedTeams]);
-  const budgetRemaining = Math.max(0, SALARY_CAP - budgetSpent);
+  const budgetRemaining = Math.max(0, totalBudget - budgetSpent);
 
   // Helper to format price as dollars in millions
   const formatMillions = (price?: number) => {

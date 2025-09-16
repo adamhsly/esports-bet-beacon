@@ -2068,6 +2068,7 @@ export type Database = {
       round_credit_spend: {
         Row: {
           amount: number
+          bonus_credits_used: number | null
           created_at: string | null
           id: string
           round_id: string
@@ -2075,6 +2076,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          bonus_credits_used?: number | null
           created_at?: string | null
           id?: string
           round_id: string
@@ -2082,6 +2084,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bonus_credits_used?: number | null
           created_at?: string | null
           id?: string
           round_id?: string
@@ -2226,6 +2229,36 @@ export type Database = {
           tournament_rules?: Json
           tournament_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_bonus_credits: {
+        Row: {
+          amount: number
+          available_amount: number
+          created_at: string | null
+          earned_at: string | null
+          earned_from: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          available_amount: number
+          created_at?: string | null
+          earned_at?: string | null
+          earned_from: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          available_amount?: number
+          created_at?: string | null
+          earned_at?: string | null
+          earned_from?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2642,7 +2675,7 @@ export type Database = {
               scoring_config: Json
             }
           | { team_id: string }
-        Returns: Json
+        Returns: number
       }
       check_registration_duplicates: {
         Args: { p_email: string; p_full_name: string; p_username: string }
@@ -2664,6 +2697,10 @@ export type Database = {
           team_id: string
           team_name: string
         }[]
+      }
+      get_available_bonus_credits: {
+        Args: { p_user: string }
+        Returns: number
       }
       get_faceit_matches_around_date: {
         Args: { target_date: string }
@@ -2793,6 +2830,10 @@ export type Database = {
         Args: { p_team_id: string }
         Returns: Json
       }
+      grant_bonus_credits: {
+        Args: { p_amount: number; p_source: string; p_user: string }
+        Returns: undefined
+      }
       grant_credits: {
         Args: {
           p_amount: number
@@ -2858,6 +2899,10 @@ export type Database = {
       set_star_team: {
         Args: { p_round_id: string; p_team_id: string }
         Returns: Json
+      }
+      spend_bonus_credits: {
+        Args: { p_amount: number; p_round: string; p_user: string }
+        Returns: boolean
       }
       spend_credits: {
         Args: {
