@@ -78,7 +78,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
 
   // Bonus Credits State
-  const [useBonusCredits, setUseBonusCredits] = useState(false);
+  const [useBonusCreditsState, setUseBonusCreditsState] = useState(false);
   const [bonusCreditsAmount, setBonusCreditsAmount] = useState(0);
 
   // Star Team functionality
@@ -90,7 +90,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   // Salary cap and budget calculations
   const SALARY_CAP = 50;
-  const totalBudget = SALARY_CAP + (useBonusCredits ? bonusCreditsAmount : 0);
+  const totalBudget = SALARY_CAP + (useBonusCreditsState ? bonusCreditsAmount : 0);
   const budgetSpent = useMemo(() => selectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [selectedTeams]);
   const budgetRemaining = Math.max(0, totalBudget - budgetSpent);
 
@@ -167,27 +167,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     try {
       setLoading(true);
       const { data: proData, error: proError } = await supabase
-        .from('teams')
+        .from('fantasy_team_prices')
         .select('*')
-        .eq('type', 'pro')
-        .eq('esport_type', 'CS:GO')
-        .gte('matches_in_period', minMatchesPro)
-        .like('name', `%${debouncedProSearch}%`)
-        .order(proSortBy, { ascending: proSortDir === 'asc' })
+        .eq('team_type', 'pro')
+        .eq('round_id', round.id)
+        .like('team_name', `%${debouncedProSearch}%`)
+        .order('price', { ascending: proSortDir === 'asc' })
         .then(res => {
           if (res.error) throw res.error;
           return res;
         });
 
       const { data: amateurData, error: amateurError } = await supabase
-        .from('teams')
+        .from('fantasy_team_prices')
         .select('*')
-        .eq('type', 'amateur')
-        .eq('esport_type', 'CS:GO')
-        .gte('matches_prev_window', minMatchesPrev)
-        .lte('missed_pct', maxMissedPct)
-        .like('name', `%${debouncedAmSearch}%`)
-        .order(amSortBy, { ascending: amSortDir === 'asc' })
+        .eq('team_type', 'amateur')
+        .eq('round_id', round.id)
+        .like('team_name', `%${debouncedAmSearch}%`)
+        .order('price', { ascending: amSortDir === 'asc' })
         .then(res => {
           if (res.error) throw res.error;
           return res;
@@ -196,11 +193,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       if (proError) throw proError;
       if (amateurError) throw amateurError;
 
-      const filteredProTeams = proData
-        .filter((team: Team) => !hasLogoOnlyPro || (team.logo_url != null && team.logo_url !== ''));
-      const filteredAmateurTeams = amateurData
-        .filter((team: Team) => !hasLogoOnlyAm || (team.logo_url != null && team.logo_url !== ''))
-        .filter((team: Team) => !hasPrevMatchesOnlyAm || (team.matches_prev_window != null && team.matches_prev_window > 0));
+      // Map fantasy_team_prices data to Team interface
+      const filteredProTeams = proData?.map((priceData: any) => ({
+        id: priceData.team_id,
+        name: priceData.team_name,
+        type: 'pro' as const,
+        price: priceData.price,
+        recent_win_rate: priceData.recent_win_rate,
+        match_volume: priceData.match_volume
+      })) || [];
+
+      const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
+        id: priceData.team_id,
+        name: priceData.team_name,
+        type: 'amateur' as const,
+        price: priceData.price,
+        recent_win_rate: priceData.recent_win_rate,
+        abandon_rate: priceData.abandon_rate
+      })) || [];
 
       setProTeams(filteredProTeams);
       setAmateurTeams(filteredAmateurTeams);
@@ -273,7 +283,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       setSubmitting(true);
 
       // Spend bonus credits if being used
-      if (useBonusCredits && bonusCreditsAmount > 0) {
+      if (useBonusCreditsState && bonusCreditsAmount > 0) {
         const bonusSpent = await spendBonusCredits(round.id, bonusCreditsAmount);
         if (!bonusSpent) {
           throw new Error('Failed to spend bonus credits');
@@ -337,7 +347,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       // Show success message
       toast.success(
-        useBonusCredits 
+        useBonusCreditsState 
           ? `Lineup saved with ${(bonusCreditsAmount).toFixed(1)} bonus credits used!`
           : 'Teams submitted successfully!'
       );
@@ -393,7 +403,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         budgetSpent={budgetSpent} 
         budgetRemaining={budgetRemaining} 
         salaryCapacity={SALARY_CAP}
-        bonusCreditsUsed={useBonusCredits ? bonusCreditsAmount : 0}
+        bonusCreditsUsed={useBonusCreditsState ? bonusCreditsAmount : 0}
         totalBudget={totalBudget}
         roundType={round.type} 
         onRemoveTeam={handleRemoveTeam} 
@@ -423,9 +433,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             <div className="flex items-center space-x-3">
               <Checkbox
                 id="useBonusCredits"
-                checked={useBonusCredits}
+                checked={useBonusCreditsState}
                 onCheckedChange={(checked) => {
-                  setUseBonusCredits(!!checked);
+                  setUseBonusCreditsState(!!checked);
                   if (!checked) {
                     setBonusCreditsAmount(0);
                   } else {
@@ -437,7 +447,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
                 Use bonus credits for this round
               </Label>
             </div>
-            {useBonusCredits && (
+            {useBonusCreditsState && (
               <div>
                 <Label className="block text-sm font-medium text-glass-text mb-2">
                   Amount to use (max {availableCredits.toFixed(1)}):

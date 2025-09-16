@@ -195,7 +195,7 @@ const PlaceholderCard: React.FC<{
   );
 };
 
-export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
+export const SelectedTeamsWidgetNew: React.FC<SelectedTeamsWidgetProps> = ({
   selectedTeams,
   benchTeam,
   budgetSpent,

@@ -23,6 +23,7 @@ import { LineupSuccessModal } from './LineupSuccessModal';
 import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
+import { useBonusCredits } from '@/hooks/useBonusCredits';
 interface FantasyRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
@@ -84,7 +85,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const {
     setStarTeam
   } = useRoundStar(round.id);
-  const { availableCredits: availableBonusCredits, spendBonusCredits } = useBonusCredits();
+  const bonusCreditsHook = useBonusCredits();
+  const { availableCredits: availableBonusCredits, spendBonusCredits } = bonusCreditsHook;
 
   // Salary cap and budget calculations
   const SALARY_CAP = 50;
