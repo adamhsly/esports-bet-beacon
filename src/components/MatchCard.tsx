@@ -256,15 +256,15 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
     >
       <Card
         className={`
-          glass-card ${ringClass} border-0 rounded-xl shadow-none px-0 py-0 transition-all duration-300
-          group-hover:scale-102 group-hover:shadow-md group-hover:ring-2 group-hover:ring-glass-neon-blue/70 cursor-pointer neon-glow
+          ${bgClass} ${ringClass} border-0 rounded-xl shadow-none px-0 py-0 transition-colors duration-200
+          group-hover:scale-[1.015] group-hover:shadow-md group-hover:ring-2 group-hover:ring-theme-purple/70 cursor-pointer
         `}
         style={{ pointerEvents: "auto" }}
       >
         <div className="flex flex-col gap-1 px-3 py-2">
           {/* Tournament info and time/result row */}
           <div className="flex justify-between items-center mb-0.5">
-            <span className="text-xs glass-text-secondary truncate max-w-[65%] font-medium">
+            <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
               {tournament_name || tournament}
             </span>
             {isFinished && finalScore ? (
@@ -298,14 +298,14 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
                 className="w-7 h-7 object-contain rounded-md bg-gray-800"
                 onError={e => (e.currentTarget.src = '/placeholder.svg')}
               />
-              <span className="truncate font-semibold text-sm glass-text-primary max-w-[90px]">{teams[0].name}</span>
+              <span className="truncate font-semibold text-sm text-white max-w-[90px]">{teams[0].name}</span>
             </div>
             
             <span className="text-md font-bold text-gray-400 mx-2">vs</span>
             
             {/* Team 2 */}
             <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-1 transition-all ${getWinnerStyling(1)}`}>
-              <span className="truncate font-semibold text-sm glass-text-primary max-w-[90px] text-right">{teams[1].name}</span>
+              <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{teams[1].name}</span>
               <img
                 src={getEnhancedTeamLogoUrl(teams[1])}
                 alt={`${teams[1].name} logo`}

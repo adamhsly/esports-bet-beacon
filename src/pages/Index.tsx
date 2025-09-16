@@ -573,14 +573,9 @@ const Index = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
                 <span className="text-primary-foreground">Loading matches for selected date...</span>
               </div> : <>
-                 {/* Live Matches for Selected Date - Grouped by League */}
+                {/* Live Matches for Selected Date - Grouped by League */}
                 {isSelectedDateToday && dateFilteredLiveMatches.length > 0 && <div className="mb-8">
-                    <div className="glass-card p-6 rounded-xl neon-border mx-2 md:mx-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Zap className="h-5 w-5 text-red-400 neon-glow" />
-                        <h2 className="text-xl font-bold glass-text-primary">Live Matches</h2>
-                      </div>
-                      {(() => {
+                    {(() => {
                 const groups = Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(([league, {
                   matches,
                   tournamentId
@@ -611,11 +606,11 @@ const Index = () => {
                   metadata
                 }) => <div key={league} className="mb-6">
                           <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-glass-neon-purple transition-all hover:scale-102">
-                                <div className="font-semibold text-sm glass-text-secondary uppercase tracking-wide hover:underline cursor-pointer">
+                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-theme-purple transition-colors">
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
                                   {league}
                                 </div>
-                              </Link> : <div className="font-semibold text-sm glass-text-secondary uppercase tracking-wide">
+                              </Link> : <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
                                 {league}
                               </div>}
                             {renderTournamentMetadata(metadata)}
@@ -627,18 +622,12 @@ const Index = () => {
                           </div>
                         </div>);
               })()}
-                    </div>
 
                   </div>}
 
                 {/* Upcoming Matches for Selected Date - Grouped by League */}
                 {dateFilteredUpcomingMatches.length > 0 && <div className="mb-8">
-                    <div className="glass-card p-6 rounded-xl mx-2 md:mx-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Clock className="h-5 w-5 text-glass-neon-blue neon-glow" />
-                        <h2 className="text-xl font-bold glass-text-primary">Upcoming Matches</h2>
-                      </div>
-                      {(() => {
+                    {(() => {
                 const groups = Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(([league, {
                   matches,
                   tournamentId
@@ -669,11 +658,11 @@ const Index = () => {
                   metadata
                 }) => <div key={league} className="mb-6">
                           <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-glass-neon-purple transition-all hover:scale-102">
-                                <div className="font-semibold text-sm glass-text-secondary uppercase tracking-wide hover:underline cursor-pointer">
+                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-theme-purple transition-colors">
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
                                   {league}
                                 </div>
-                              </Link> : <div className="font-semibold text-sm glass-text-secondary uppercase tracking-wide">
+                              </Link> : <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
                                 {league}
                               </div>}
                             {renderTournamentMetadata(metadata)}
@@ -685,18 +674,12 @@ const Index = () => {
                           </div>
                         </div>);
               })()}
-                    </div>
 
                   </div>}
 
                 {/* Finished Matches for Selected Date - Grouped by League */}
                 {dateFilteredFinishedMatches.length > 0 && <div className="mb-8">
-                    <div className="glass-card p-6 rounded-xl mx-2 md:mx-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <CheckCircle className="h-5 w-5 text-glass-neon-green neon-glow" />
-                        <h2 className="text-xl font-bold glass-text-primary">Recent Results</h2>
-                      </div>
-                      {(() => {
+                    {(() => {
                 const groups = Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(([league, {
                   matches,
                   tournamentId
@@ -727,11 +710,11 @@ const Index = () => {
                   metadata
                 }) => <div key={league} className="mb-6">
                           <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-glass-neon-green transition-all hover:scale-102">
-                                <div className="font-semibold text-sm glass-text-secondary uppercase tracking-wide hover:underline cursor-pointer">
+                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-theme-purple transition-colors">
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
                                   {league}
                                 </div>
-                              </Link> : <div className="font-semibold text-sm glass-text-secondary uppercase tracking-wide">
+                              </Link> : <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
                                 {league}
                               </div>}
                             {renderTournamentMetadata(metadata)}
@@ -743,19 +726,15 @@ const Index = () => {
                           </div>
                         </div>);
               })()}
-                    </div>
 
                   </div>}
 
                 {/* Enhanced No Matches State with better feedback */}
-                {(!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && dateFilteredUpcomingMatches.length === 0 && dateFilteredFinishedMatches.length === 0 && <div className="text-center py-8 mx-2 md:mx-4">
-                    <div className="glass-card p-8 rounded-xl neon-border">
-                      <Filter className="h-12 w-12 text-glass-neon-blue mx-auto mb-4 neon-glow" />
-                      <p className="glass-text-primary mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
-                      <p className="text-sm glass-text-secondary mb-4">
-                        Try selecting a different date or use the sync buttons below to refresh match data.
-                      </p>
-                    </div>
+                {(!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && dateFilteredUpcomingMatches.length === 0 && dateFilteredFinishedMatches.length === 0 && <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
+                    <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Try selecting a different date or use the sync buttons below to refresh match data.
+                    </p>
                   </div>}
               </>}
           </div>
