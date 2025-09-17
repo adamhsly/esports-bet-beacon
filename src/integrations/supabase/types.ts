@@ -1289,6 +1289,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pages: {
+        Row: {
+          content_markdown: string
+          created_at: string
+          id: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_markdown: string
+          created_at?: string
+          id?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_markdown?: string
+          created_at?: string
+          id?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       panda_team_head_to_head: {
         Row: {
           created_at: string | null
