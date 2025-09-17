@@ -27,6 +27,9 @@ import Web3ProfilePage from '@/pages/Web3ProfilePage';
 import PremiumSuccessPage from '@/pages/PremiumSuccessPage';
 import PremiumCancelPage from '@/pages/PremiumCancelPage';
 import NotFound from '@/pages/NotFound';
+import LegalPage from '@/pages/LegalPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import TermsPage from '@/pages/TermsPage';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
 import './App.css';
@@ -88,6 +91,12 @@ function App() {
           <Route path="/web3-profile" element={<Web3ProfilePage />} />
           <Route path="/premium/success" element={<PremiumSuccessPage />} />
           <Route path="/premium/cancel" element={<PremiumCancelPage />} />
+          {/* Legal pages */}
+          <Route path="/legal/:slug" element={<LegalPage />} />
+          <Route path="/legal/privacy" element={<PrivacyPage />} />
+          <Route path="/legal/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
