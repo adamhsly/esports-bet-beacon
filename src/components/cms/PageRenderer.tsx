@@ -15,15 +15,20 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('🎯 PageRenderer: Component rendered with slug:', slug);
+
   useEffect(() => {
+    console.log('🎯 PageRenderer: useEffect triggered for slug:', slug);
+    
     const fetchPage = async () => {
+      console.log('🎯 PageRenderer: fetchPage function called');
       setLoading(true);
       setError(null);
       
       try {
-        console.log('PageRenderer: Fetching page with slug:', slug);
+        console.log('🎯 PageRenderer: About to call getPageBySlug with:', slug);
         const pageData = await getPageBySlug(slug);
-        console.log('PageRenderer: Received page data:', pageData);
+        console.log('🎯 PageRenderer: getPageBySlug returned:', pageData);
         
         if (pageData) {
           setPage(pageData);

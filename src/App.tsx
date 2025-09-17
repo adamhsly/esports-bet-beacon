@@ -93,10 +93,9 @@ function App() {
           <Route path="/web3-profile" element={<Web3ProfilePage />} />
           <Route path="/premium/success" element={<PremiumSuccessPage />} />
           <Route path="/premium/cancel" element={<PremiumCancelPage />} />
-          {/* Legal pages - specific routes must come before generic ones */}
+          {/* Legal pages - specific routes only for debugging */}
           <Route path="/legal/privacy" element={<PrivacyPage />} />
           <Route path="/legal/terms" element={<TermsPage />} />
-          <Route path="/legal/:slug" element={<LegalPage />} />
           {/* Legacy redirects for SEO preservation */}
           <Route path="/privacy" element={<LegacyPrivacyRedirect />} />
           <Route path="/terms" element={<LegacyTermsRedirect />} />
