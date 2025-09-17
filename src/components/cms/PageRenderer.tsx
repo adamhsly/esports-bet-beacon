@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { Page } from '@/types/cms';
 import { getPageBySlug } from '@/lib/cms';
 import { Skeleton } from '@/components/ui/skeleton';
-import Navbar from '@/components/Navbar';
+import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 
 interface PageRendererProps {
@@ -21,7 +21,10 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
       setError(null);
       
       try {
+        console.log('PageRenderer: Fetching page with slug:', slug);
         const pageData = await getPageBySlug(slug);
+        console.log('PageRenderer: Received page data:', pageData);
+        
         if (pageData) {
           setPage(pageData);
           
@@ -50,11 +53,12 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
             document.head.appendChild(link);
           }
         } else {
+          console.warn('PageRenderer: No page data found for slug:', slug);
           setError('Page not found');
         }
       } catch (err) {
+        console.error('PageRenderer: Error loading page:', err);
         setError('Failed to load page');
-        console.error('Error loading page:', err);
       } finally {
         setLoading(false);
       }
@@ -66,7 +70,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <SearchableNavbar />
         <main className="container mx-auto px-4 py-12 max-w-4xl">
           <Skeleton className="h-12 w-3/4 mb-8" />
           <div className="space-y-4">
@@ -85,7 +89,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
   if (error || !page) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <SearchableNavbar />
         <main className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground mb-4">
@@ -111,7 +115,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SearchableNavbar />
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <article className="prose prose-lg prose-invert max-w-none">
           <h1 className="text-4xl font-bold text-foreground mb-8">{page.title}</h1>
