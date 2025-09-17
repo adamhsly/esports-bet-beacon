@@ -590,11 +590,11 @@ const AuthPage: React.FC = () => {
                       />
                       <Label htmlFor="terms-accepted" className="text-sm text-gray-300 leading-relaxed">
                         I agree to the{' '}
-                        <a href="/terms" target="_blank" className="text-theme-purple hover:text-theme-purple/80 underline">
+                        <a href="/legal/terms" target="_blank" className="text-theme-purple hover:text-theme-purple/80 underline">
                           Terms & Conditions
                         </a>
                         {' '}and{' '}
-                        <a href="/privacy" target="_blank" className="text-theme-purple hover:text-theme-purple/80 underline">
+                        <a href="/legal/privacy" target="_blank" className="text-theme-purple hover:text-theme-purple/80 underline">
                           Privacy Policy
                         </a>
                         <span className="text-red-400 ml-1">*</span>

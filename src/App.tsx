@@ -30,6 +30,8 @@ import NotFound from '@/pages/NotFound';
 import LegalPage from '@/pages/LegalPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+import LegacyPrivacyRedirect from '@/components/redirects/LegacyPrivacyRedirect';
+import LegacyTermsRedirect from '@/components/redirects/LegacyTermsRedirect';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
 import './App.css';
@@ -95,8 +97,14 @@ function App() {
           <Route path="/legal/:slug" element={<LegalPage />} />
           <Route path="/legal/privacy" element={<PrivacyPage />} />
           <Route path="/legal/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
+          {/* Legacy redirects for SEO preservation */}
+          <Route path="/privacy" element={<LegacyPrivacyRedirect />} />
+          <Route path="/terms" element={<LegacyTermsRedirect />} />
+          <Route path="/privacy-policy" element={<LegacyPrivacyRedirect />} />
+          <Route path="/terms-of-service" element={<LegacyTermsRedirect />} />
+          <Route path="/tos" element={<LegacyTermsRedirect />} />
+          <Route path="/legal/privacy-policy" element={<LegacyPrivacyRedirect />} />
+          <Route path="/legal/tos" element={<LegacyTermsRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
