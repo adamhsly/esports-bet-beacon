@@ -103,23 +103,12 @@ const LiveDataTestPanel = () => {
   };
   useEffect(() => {
     fetchLiveData();
+    
+    // Use polling instead of realtime for test panel to reduce connections
+    const interval = setInterval(fetchLiveData, 30000); // 30 seconds
 
-    // Set up real-time subscription
-    const channel = supabase.channel('live-data-updates').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'faceit_live_match_stats'
-    }, () => {
-      fetchLiveData();
-    }).on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'faceit_matches'
-    }, () => {
-      fetchLiveData();
-    }).subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, []);
   return <div className="space-y-4">

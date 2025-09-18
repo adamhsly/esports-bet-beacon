@@ -118,7 +118,7 @@ export const useProgress = () => {
     fetchProgress();
   }, [fetchProgress]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription with optimized dependency
   useEffect(() => {
     if (!user) return;
 
@@ -141,7 +141,7 @@ export const useProgress = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchProgress]);
+  }, [user?.id, fetchProgress]);
 
   return { 
     progress, 
@@ -163,21 +163,13 @@ export const useMissions = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const seedMissions = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      await supabase.rpc('seed_user_missions');
-    } catch (err: any) {
-      // Ignore errors as missions might already be seeded
-      console.log('Missions already seeded or error:', err.message);
-    }
-  }, [user]);
-
   const fetchMissions = useCallback(async () => {
     if (!user) return;
 
     try {
+      // First, seed missions if needed
+      await supabase.rpc('seed_user_missions');
+
       const { data, error } = await supabase
         .from('missions')
         .select(`
@@ -209,25 +201,19 @@ export const useMissions = () => {
 
       setMissions(formattedMissions);
     } catch (err: any) {
+      console.error('Error loading missions:', err.message);
       setError(err.message);
-      toast({
-        title: "Error loading missions",
-        description: err.message,
-        variant: "destructive"
-      });
+      // Don't show toast on every error to prevent spam
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   useEffect(() => {
-    const initMissions = async () => {
-      await seedMissions();
-      await fetchMissions();
-    };
-
-    initMissions();
-  }, [seedMissions, fetchMissions]);
+    if (user) {
+      fetchMissions();
+    }
+  }, [user, fetchMissions]);
 
   return { 
     missions, 
@@ -279,7 +265,7 @@ export const useRewards = () => {
     fetchRewards();
   }, [fetchRewards]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription with optimized dependency
   useEffect(() => {
     if (!user) return;
 
@@ -302,7 +288,7 @@ export const useRewards = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchRewards]);
+  }, [user?.id, fetchRewards]);
 
   return { 
     rewards, 
@@ -350,7 +336,7 @@ export const useEntitlement = () => {
     fetchEntitlement();
   }, [fetchEntitlement]);
 
-  // Set up realtime subscription for profile changes
+  // Set up realtime subscription for profile changes with optimized dependency
   useEffect(() => {
     if (!user) return;
 
@@ -373,7 +359,7 @@ export const useEntitlement = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchEntitlement]);
+  }, [user?.id, fetchEntitlement]);
 
   return { 
     premiumActive, 
