@@ -3,7 +3,8 @@
   <defs>
     <mask id="hole">
       <rect width="100%" height="100%" fill="white"/>
-      <circle cx="256" cy="256" r="176" fill="black"/>
+      <!-- Larger transparent center for profile image visibility -->
+      <circle cx="256" cy="256" r="220" fill="black"/>
     </mask>
 
     <linearGradient id="cyberGold" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -13,7 +14,7 @@
     </linearGradient>
 
     <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -31,35 +32,35 @@
   </defs>
 
   <!-- Outer halo -->
-  <circle cx="256" cy="256" r="210" fill="none" stroke="#FCA311" stroke-opacity="0.25" stroke-width="10" filter="url(#softGlow)"/>
+  <circle cx="256" cy="256" r="245" fill="none" stroke="#FCA311" stroke-opacity="0.2" stroke-width="8" filter="url(#softGlow)"/>
 
   <g mask="url(#hole)">
-    <!-- Core ring -->
-    <circle cx="256" cy="256" r="206" fill="none" stroke="url(#cyberGold)" stroke-width="52" filter="url(#softGlow)"/>
+    <!-- Thinner core ring -->
+    <circle cx="256" cy="256" r="240" fill="none" stroke="url(#cyberGold)" stroke-width="34" filter="url(#softGlow)"/>
 
-    <!-- Tech segments rotating -->
-    <g class="rotor" fill="none" stroke="#FFE8B3" stroke-width="6" stroke-linecap="round" opacity="0.9">
-      <path d="M256 62 A194 194 0 0 1 370 100"/>
-      <path d="M410 142 A194 194 0 0 1 450 256"/>
-      <path d="M410 370 A194 194 0 0 1 370 410"/>
-      <path d="M256 450 A194 194 0 0 1 142 410"/>
-      <path d="M100 370 A194 194 0 0 1 62 256"/>
-      <path d="M100 142 A194 194 0 0 1 142 100"/>
+    <!-- Tech segments rotating with adjusted paths -->
+    <g class="rotor" fill="none" stroke="#FFE8B3" stroke-width="4" stroke-linecap="round" opacity="0.8">
+      <path d="M256 50 A206 206 0 0 1 380 88"/>
+      <path d="M424 132 A206 206 0 0 1 462 256"/>
+      <path d="M424 380 A206 206 0 0 1 380 424"/>
+      <path d="M256 462 A206 206 0 0 1 132 424"/>
+      <path d="M88 380 A206 206 0 0 1 50 256"/>
+      <path d="M88 132 A206 206 0 0 1 132 88"/>
     </g>
 
-    <!-- Inner circuit-like ticks -->
-    <g stroke="#FFDFA3" stroke-width="3" opacity="0.8">
-      <circle cx="256" cy="256" r="188" fill="none"/>
-      <!-- ticks -->
+    <!-- Inner circuit-like ticks positioned outside the center -->
+    <g stroke="#FFDFA3" stroke-width="2" opacity="0.7">
+      <circle cx="256" cy="256" r="228" fill="none"/>
+      <!-- ticks positioned at the frame edge -->
       <g>
-        <path d="M256 68 v20"/>
-        <path d="M256 424 v20"/>
-        <path d="M68 256 h20"/>
-        <path d="M424 256 h20"/>
-        <path d="M120 120 l14 14"/>
-        <path d="M392 392 l14 14"/>
-        <path d="M392 120 l-14 14"/>
-        <path d="M120 392 l14 -14"/>
+        <path d="M256 56 v16"/>
+        <path d="M256 440 v16"/>
+        <path d="M56 256 h16"/>
+        <path d="M440 256 h16"/>
+        <path d="M112 112 l12 12"/>
+        <path d="M400 400 l12 12"/>
+        <path d="M400 112 l-12 12"/>
+        <path d="M112 400 l12 -12"/>
       </g>
     </g>
   </g>

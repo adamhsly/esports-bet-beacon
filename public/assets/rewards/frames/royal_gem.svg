@@ -3,7 +3,8 @@
   <defs>
     <mask id="hole">
       <rect width="100%" height="100%" fill="white"/>
-      <circle cx="256" cy="256" r="176" fill="black"/>
+      <!-- Larger transparent center for profile image visibility -->
+      <circle cx="256" cy="256" r="220" fill="black"/>
     </mask>
 
     <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -13,12 +14,12 @@
     </linearGradient>
 
     <radialGradient id="gemLight" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7"/>
       <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.0"/>
     </radialGradient>
 
     <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feGaussianBlur stdDeviation="4" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -27,27 +28,27 @@
   </defs>
 
   <!-- Outer glow -->
-  <circle cx="256" cy="256" r="212" fill="none" stroke="#FFD166" stroke-opacity="0.25" stroke-width="10" filter="url(#goldGlow)"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#FFD166" stroke-opacity="0.2" stroke-width="8" filter="url(#goldGlow)"/>
 
   <!-- Ornate ring with facets -->
   <g mask="url(#hole)">
-    <!-- Base gold rim -->
-    <circle cx="256" cy="256" r="205" fill="none" stroke="url(#goldGrad)" stroke-width="54" filter="url(#goldGlow)"/>
+    <!-- Thinner base gold rim -->
+    <circle cx="256" cy="256" r="242" fill="none" stroke="url(#goldGrad)" stroke-width="36" filter="url(#goldGlow)"/>
 
-    <!-- Faceted accents -->
-    <g fill="none" stroke="#FFF2B2" stroke-width="6" stroke-linecap="round" opacity="0.9">
-      <path d="M256 62 A194 194 0 0 1 334 82"/>
-      <path d="M430 178 A194 194 0 0 1 450 256"/>
-      <path d="M430 334 A194 194 0 0 1 334 430"/>
-      <path d="M256 450 A194 194 0 0 1 178 430"/>
-      <path d="M82 334 A194 194 0 0 1 62 256"/>
-      <path d="M82 178 A194 194 0 0 1 178 82"/>
+    <!-- Faceted accents with adjusted paths for larger center -->
+    <g fill="none" stroke="#FFF2B2" stroke-width="4" stroke-linecap="round" opacity="0.8">
+      <path d="M256 50 A206 206 0 0 1 346 75"/>
+      <path d="M437 166 A206 206 0 0 1 462 256"/>
+      <path d="M437 346 A206 206 0 0 1 346 437"/>
+      <path d="M256 462 A206 206 0 0 1 166 437"/>
+      <path d="M75 346 A206 206 0 0 1 50 256"/>
+      <path d="M75 166 A206 206 0 0 1 166 75"/>
     </g>
 
     <!-- Inner light sheen -->
-    <circle cx="256" cy="256" r="187" fill="none" stroke="#FFF7D6" stroke-width="3"/>
+    <circle cx="256" cy="256" r="230" fill="none" stroke="#FFF7D6" stroke-width="2"/>
 
-    <!-- Gem sparkle highlight -->
-    <circle cx="198" cy="140" r="80" fill="url(#gemLight)" opacity="0.5"/>
+    <!-- Gem sparkle highlight positioned outside the center -->
+    <circle cx="190" cy="130" r="60" fill="url(#gemLight)" opacity="0.4"/>
   </g>
 </svg>
