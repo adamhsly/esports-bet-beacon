@@ -135,7 +135,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 onClick={() => setShowAvatarUpload(true)}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-neon-blue/50 hover:border-neon-blue"
               >
-                <Upload className="w-3 h-3" />
+                <Upload className="w-3 h-3 text-white" />
               </Button>
               
               {/* Frame Settings Button */}
@@ -145,7 +145,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 onClick={() => setShowFrameSelector(true)}
                 className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-purple/50 hover:border-purple"
               >
-                <Settings className="w-3 h-3" />
+                <Settings className="w-3 h-3 text-white" />
               </Button>
             </div>
 

@@ -105,7 +105,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
                 </>
               ) : (
                 <>
-                  <Camera className="w-4 h-4 mr-2" />
+                  <Camera className="w-4 h-4 mr-2 text-white" />
                   Choose Image
                 </>
               )}
