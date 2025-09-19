@@ -47,9 +47,9 @@ const FantasyPage: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setSelectedRound(null)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-white border-white/20 hover:bg-white/10 hover:text-white"
                 >
-                  <Home className="h-4 w-4" />
+                  <Home className="h-4 w-4 text-white" />
                   Fantasy
                 </Button>
               </div>
