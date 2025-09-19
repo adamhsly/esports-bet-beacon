@@ -9,6 +9,9 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack, type RewardItem } from '@/hooks/useRewardsTrack';
 import { AvatarConfiguration } from '@/components/AvatarConfiguration';
+import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
+import { resolveAvatarFrameAsset } from '@/utils/avatarFrames';
+import { resolveAvatarBorderAsset } from '@/utils/avatarBorders';
 import { 
   User, 
   Crown,
@@ -66,6 +69,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     const frameReward = [...free, ...premium].find(
       item => item.id === profile.avatar_frame_id && item.type === 'frame'
     );
+    
+    // If we have a frame reward, resolve its asset or use the reward's assetUrl
+    if (frameReward?.value) {
+      return resolveAvatarFrameAsset(frameReward.value) || frameReward.assetUrl || null;
+    }
     return frameReward?.assetUrl || null;
   }, [profile?.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
 
@@ -73,10 +81,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const currentBorderAsset = useMemo(() => {
     if (!profile?.avatar_border_id) return null;
     const borderReward = [...free, ...premium].find(
-      item => item.id === profile.avatar_border_id && 
-      item.value && 
-      (item.value.toLowerCase().includes('border') || item.value.toLowerCase().includes('pulse'))
+      item => item.id === profile.avatar_border_id && item.type === 'border'
     );
+    
+    // If we have a border reward, resolve its asset or use the reward's assetUrl
+    if (borderReward?.value) {
+      return resolveAvatarBorderAsset(borderReward.value) || borderReward.assetUrl || null;
+    }
     return borderReward?.assetUrl || null;
   }, [profile?.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
 
@@ -117,41 +128,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           <CardContent className="relative z-10 p-6 text-center">
             {/* Avatar */}
             <div className="relative mx-auto w-20 h-20 mb-4">
-              {/* Border (background layer) */}
-              {currentBorderAsset && (
-                <img 
-                  src={currentBorderAsset}
-                  alt="Avatar border"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                  style={{ zIndex: 1 }}
-                />
-              )}
-              
-              {/* Avatar (middle layer) */}
-              <div 
-                className="relative w-20 h-20 bg-gradient-to-br from-neon-blue to-neon-purple rounded-full flex items-center justify-center text-2xl font-gaming text-white shadow-[0_0_30px_rgba(79,172,254,0.3)] overflow-hidden"
-                style={{ zIndex: 2 }}
-              >
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt="Avatar" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  user?.email?.slice(0, 2).toUpperCase() || <User className="w-8 h-8" />
-                )}
-              </div>
-              
-              {/* Avatar Frame Overlay (top layer) */}
-              {currentFrameAsset && (
-                <img 
-                  src={currentFrameAsset}
-                  alt="Avatar frame"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                  style={{ zIndex: 3 }}
-                />
-              )}
+              <EnhancedAvatar
+                src={profile?.avatar_url}
+                alt="User Avatar"
+                fallback={user?.email?.slice(0, 2).toUpperCase() || <User className="w-8 h-8" />}
+                frameUrl={currentFrameAsset}
+                borderUrl={currentBorderAsset}
+                size="xl"
+                className="shadow-[0_0_30px_rgba(79,172,254,0.3)]"
+              />
               
               {/* Configure Avatar Button */}
               <Button 

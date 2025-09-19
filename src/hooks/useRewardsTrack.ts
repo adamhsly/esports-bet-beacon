@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSeason, useProgress, useRewards, useEntitlement } from "@/hooks/useSupabaseData";
 import { resolveAvatarFrameAsset } from "@/utils/avatarFrames";
+import { resolveAvatarBorderAsset } from "@/utils/avatarBorders";
 export type RewardItem = {
   id: string;
   level: number; // level_required
@@ -39,10 +40,11 @@ export function useRewardsTrack() {
     // If premium not active, premium rewards stay locked regardless of level
     if (tier === "premium" && !premiumActive) state = "locked";
 
-    // Compute asset URL with special handling for frames
+    // Compute asset URL with special handling for frames and borders
     const rawAsset: string | undefined = (r.asset_url as string) || undefined;
     const value: string = String(r.reward_value ?? r.item_code ?? "");
     const frameAsset = type === "frame" ? resolveAvatarFrameAsset(value) : undefined;
+    const borderAsset = type === "border" ? resolveAvatarBorderAsset(value) : undefined;
 
     return {
       id: String(r.id),
@@ -50,7 +52,7 @@ export function useRewardsTrack() {
       tier,
       type,
       value,
-      assetUrl: rawAsset || frameAsset || FALLBACKS[type],
+      assetUrl: rawAsset || frameAsset || borderAsset || FALLBACKS[type],
       state,
     };
   };
