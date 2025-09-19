@@ -190,7 +190,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
   const ModalContent = () => (
     <>
       <DialogHeader>
-        <DialogTitle className="text-2xl font-bold text-center">Good luck! 🎉</DialogTitle>
+        <DialogTitle className="text-2xl font-bold text-center text-white">Good luck! 🚀</DialogTitle>
       </DialogHeader>
       
       <div className="space-y-6 pt-4">
@@ -211,7 +211,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           <Button 
             onClick={onCheckProgress} 
             variant="outline" 
-            className="w-full h-12"
+            className="w-full h-12 text-white border-white/20 hover:bg-white/10"
           >
             <TrendingUp className="w-4 h-4 mr-2" />
             Check your progress
