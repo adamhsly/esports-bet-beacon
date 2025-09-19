@@ -7,8 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack, type RewardItem } from '@/hooks/useRewardsTrack';
-import { AvatarUpload } from '@/components/AvatarUpload';
-import { AvatarFrameSelector } from '@/components/AvatarFrameSelector';
+import { AvatarConfiguration } from '@/components/AvatarConfiguration';
 import { 
   User, 
   Crown,
@@ -53,8 +52,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   }
 
   const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
-  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
-  const [showFrameSelector, setShowFrameSelector] = useState(false);
+  const [showAvatarConfig, setShowAvatarConfig] = useState(false);
   const { profile, loading: profileLoading } = useProfile();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
@@ -128,22 +126,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 />
               )}
               
-              {/* Upload Avatar Button */}
+              {/* Configure Avatar Button */}
               <Button 
                 size="sm" 
                 variant="outline" 
-                onClick={() => setShowAvatarUpload(true)}
+                onClick={() => setShowAvatarConfig(true)}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-neon-blue/50 hover:border-neon-blue"
-              >
-                <Upload className="w-3 h-3 text-white" />
-              </Button>
-              
-              {/* Frame Settings Button */}
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => setShowFrameSelector(true)}
-                className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-purple/50 hover:border-purple"
               >
                 <Settings className="w-3 h-3 text-white" />
               </Button>
@@ -270,20 +258,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
         {/* Missions Section */}
         <MissionsView />
 
-        {/* Avatar Upload Modal */}
-        <AvatarUpload
-          isOpen={showAvatarUpload}
-          onOpenChange={setShowAvatarUpload}
-          currentAvatarUrl={profile?.avatar_url}
-          avatarFrameUrl={currentFrameAsset}
-        />
-
-        {/* Avatar Frame Selector Modal */}
-        <AvatarFrameSelector
-          isOpen={showFrameSelector}
-          onOpenChange={setShowFrameSelector}
+        {/* Avatar Configuration Modal */}
+        <AvatarConfiguration 
+          isOpen={showAvatarConfig}
+          onOpenChange={setShowAvatarConfig}
           currentAvatarUrl={profile?.avatar_url}
           currentFrameId={profile?.avatar_frame_id}
+          avatarFrameUrl={currentFrameAsset}
         />
 
         {/* Reward Detail Modal */}
