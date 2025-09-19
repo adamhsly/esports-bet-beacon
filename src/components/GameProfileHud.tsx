@@ -69,6 +69,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     return frameReward?.assetUrl || null;
   }, [profile?.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
 
+  // Get current avatar border asset URL
+  const currentBorderAsset = useMemo(() => {
+    if (!profile?.avatar_border_id) return null;
+    const borderReward = [...free, ...premium].find(
+      item => item.id === profile.avatar_border_id && 
+      item.value && 
+      (item.value.toLowerCase().includes('border') || item.value.toLowerCase().includes('pulse'))
+    );
+    return borderReward?.assetUrl || null;
+  }, [profile?.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
+
   // Calculate XP progress
   const baseXPForLevel = 1000 + (level - 1) * 100;
   const currentLevelStart = level === 1 ? 0 : (level - 1) * 1000 + ((level - 1) * (level - 2) / 2) * 100;
@@ -265,7 +276,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           onOpenChange={setShowAvatarConfig}
           currentAvatarUrl={profile?.avatar_url}
           currentFrameId={profile?.avatar_frame_id}
+          currentBorderId={profile?.avatar_border_id}
           avatarFrameUrl={currentFrameAsset}
+          avatarBorderUrl={currentBorderAsset}
         />
 
         {/* Reward Detail Modal */}

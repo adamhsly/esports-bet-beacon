@@ -9,6 +9,7 @@ interface Profile {
   full_name?: string;
   avatar_url?: string;
   avatar_frame_id?: string;
+  avatar_border_id?: string;
   country?: string;
   bio?: string;
   premium_pass?: boolean;
@@ -135,12 +136,37 @@ export const useProfile = () => {
     }
   };
 
+  const updateAvatarBorder = async (borderId: string) => {
+    if (!user || !isAuthenticated) {
+      toast.error('You must be logged in to update your avatar border');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_border_id: borderId })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, avatar_border_id: borderId } : null);
+      toast.success('Avatar border updated!');
+      return true;
+    } catch (error: any) {
+      console.error('Error updating avatar border:', error);
+      toast.error(error.message || 'Failed to update avatar border');
+      return false;
+    }
+  };
+
   return {
     profile,
     loading,
     uploading,
     uploadAvatar,
     updateAvatarFrame,
+    updateAvatarBorder,
     refetch: fetchProfile
   };
 };

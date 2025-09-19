@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Camera, User, Loader2, CheckCircle, Palette } from 'lucide-react';
+import { Upload, Camera, User, Loader2, CheckCircle, Palette, Hexagon } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+import { resolveAvatarFrameAsset } from "@/utils/avatarFrames";
+import { resolveAvatarBorderAsset } from "@/utils/avatarBorders";
 import { cn } from '@/lib/utils';
 
 interface AvatarConfigurationProps {
@@ -14,7 +16,9 @@ interface AvatarConfigurationProps {
   onOpenChange: (open: boolean) => void;
   currentAvatarUrl?: string;
   currentFrameId?: string;
+  currentBorderId?: string;
   avatarFrameUrl?: string;
+  avatarBorderUrl?: string;
 }
 
 export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
@@ -22,18 +26,31 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
   onOpenChange,
   currentAvatarUrl,
   currentFrameId,
-  avatarFrameUrl
+  currentBorderId,
+  avatarFrameUrl,
+  avatarBorderUrl
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadAvatar, uploading, updateAvatarFrame } = useProfile();
+  const { uploadAvatar, uploading, updateAvatarFrame, updateAvatarBorder } = useProfile();
   const { free, premium, currentLevel } = useRewardsTrack();
   const [previewFrameId, setPreviewFrameId] = useState(currentFrameId || '');
+  const [previewBorderId, setPreviewBorderId] = useState(currentBorderId || '');
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState(currentAvatarUrl);
 
   // Get all frame rewards (both unlocked and locked for preview)
   const frameRewards = useMemo(() => {
     const allFrames = [...free, ...premium].filter(item => item.type === 'frame');
     return allFrames.sort((a, b) => a.level - b.level);
+  }, [free, premium]);
+
+  // Get all border rewards (both unlocked and locked for preview)
+  const borderRewards = useMemo(() => {
+    const allBorders = [...free, ...premium].filter(item => 
+      item.value && 
+      (item.value.toLowerCase().includes('border') || 
+       item.value.toLowerCase().includes('pulse'))
+    );
+    return allBorders.sort((a, b) => a.level - b.level);
   }, [free, premium]);
 
   // Get unlocked frame rewards only
@@ -55,11 +72,35 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
     ];
   }, [frameRewards]);
 
+  // Get unlocked border rewards only
+  const availableBorders = useMemo(() => {
+    const unlockedBorders = borderRewards.filter(item => item.state === 'unlocked');
+    
+    // Add "no border" option
+    return [
+      {
+        id: 'none',
+        level: 0,
+        tier: 'free' as const,
+        type: 'item' as const,
+        value: 'No Border',
+        assetUrl: '',
+        state: 'unlocked' as const
+      },
+      ...unlockedBorders
+    ];
+  }, [borderRewards]);
+
   // Get frame asset URL for preview
   const getFrameAssetUrl = (frameId: string) => {
     if (!frameId || frameId === 'none') return '';
-    const frame = availableFrames.find(f => f.id === frameId);
-    return frame?.assetUrl || '';
+    return resolveAvatarFrameAsset(frameId) || '';
+  };
+
+  // Get border asset URL for preview
+  const getBorderAssetUrl = (borderId: string) => {
+    if (!borderId || borderId === 'none') return '';
+    return resolveAvatarBorderAsset(borderId) || '';
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,14 +142,25 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
     }
   };
 
+  const handleBorderSelect = async (borderId: string) => {
+    setPreviewBorderId(borderId);
+    const success = await updateAvatarBorder(borderId === 'none' ? '' : borderId);
+    if (!success) {
+      // Reset preview on failure
+      setPreviewBorderId(currentBorderId || '');
+    }
+  };
+
   const handleClose = () => {
     // Reset previews when closing
     setPreviewFrameId(currentFrameId || '');
+    setPreviewBorderId(currentBorderId || '');
     setPreviewAvatarUrl(currentAvatarUrl);
     onOpenChange(false);
   };
 
   const currentPreviewFrameUrl = getFrameAssetUrl(previewFrameId);
+  const currentPreviewBorderUrl = getBorderAssetUrl(previewBorderId);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -123,11 +175,20 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
           {/* Live Preview */}
           <div className="flex justify-center">
             <div className="relative">
+              {/* Border container */}
+              {currentPreviewBorderUrl && (
+                <div 
+                  className="absolute inset-0 w-28 h-28 -m-2 bg-center bg-contain bg-no-repeat"
+                  style={{ backgroundImage: `url(${currentPreviewBorderUrl})`, zIndex: 0 }}
+                />
+              )}
+              
               <div 
                 className={cn(
-                  "w-24 h-24 rounded-full flex items-center justify-center overflow-hidden",
+                  "w-24 h-24 rounded-full flex items-center justify-center overflow-hidden relative",
                   "bg-gradient-to-br from-neon-blue to-neon-purple shadow-[0_0_30px_rgba(79,172,254,0.3)]"
                 )}
+                style={{ zIndex: 1 }}
               >
                 {previewAvatarUrl ? (
                   <img 
@@ -145,7 +206,8 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                 <img 
                   src={currentPreviewFrameUrl}
                   alt="Frame preview"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  className="absolute inset-0 w-24 h-24 object-cover pointer-events-none"
+                  style={{ zIndex: 2 }}
                 />
               )}
             </div>
@@ -153,7 +215,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
           {/* Configuration Tabs */}
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted">
+            <TabsList className="grid w-full grid-cols-3 bg-muted">
               <TabsTrigger value="upload" className="flex items-center gap-2">
                 <Camera className="w-4 h-4" />
                 Avatar Photo
@@ -161,6 +223,10 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
               <TabsTrigger value="frame" className="flex items-center gap-2">
                 <Palette className="w-4 h-4" />
                 Earned Frames
+              </TabsTrigger>
+              <TabsTrigger value="border" className="flex items-center gap-2">
+                <Hexagon className="w-4 h-4" />
+                Avatar Borders
               </TabsTrigger>
             </TabsList>
 
@@ -218,7 +284,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     Earned Avatar Frames
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    These decorative frames are unlocked by leveling up. Equip them to show off your progress!
+                    These decorative frames overlay on your avatar. Unlock more by leveling up!
                   </p>
                 </div>
 
@@ -359,6 +425,160 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                       <div className="text-center text-muted-foreground">
                         <p>No avatar frames available yet.</p>
                         <p className="text-sm mt-1">Keep leveling up to unlock decorative frames!</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Border Tab */}
+            <TabsContent value="border" className="space-y-4 mt-6">
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-medium text-foreground">
+                    Avatar Borders
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    These decorative borders appear around your avatar. Unlock more by leveling up!
+                  </p>
+                </div>
+
+                {/* Debug info - temporarily show what's unlocked */}
+                <div className="text-xs text-muted-foreground text-center p-2 bg-muted/50 rounded">
+                  Level {currentLevel} • {borderRewards.filter(b => b.state === 'unlocked').length} borders unlocked
+                </div>
+                
+                {borderRewards.length === 0 ? (
+                  <div className="text-center text-muted-foreground">
+                    <p>No border rewards available.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Unlocked Borders */}
+                    {availableBorders.length > 1 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-foreground mb-3">Available to Use:</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {availableBorders.map((border) => (
+                            <div
+                              key={border.id}
+                              className={cn(
+                                "relative p-3 rounded-xl border cursor-pointer transition-all duration-300",
+                                "bg-surface border-border hover:border-primary/50",
+                                previewBorderId === border.id && "border-primary shadow-[0_0_12px_rgba(79,172,254,0.3)]"
+                              )}
+                              onClick={() => handleBorderSelect(border.id)}
+                            >
+                              {/* Border Preview */}
+                              <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center">
+                                {border.id !== 'none' && getBorderAssetUrl(border.value || '') && (
+                                  <div 
+                                    className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat"
+                                    style={{ backgroundImage: `url(${getBorderAssetUrl(border.value || '')})` }}
+                                  />
+                                )}
+                                
+                                <div 
+                                  className={cn(
+                                    "w-10 h-10 rounded-full flex items-center justify-center overflow-hidden",
+                                    "bg-gradient-to-br from-neon-blue to-neon-purple relative"
+                                  )}
+                                  style={{ zIndex: 1 }}
+                                >
+                                  {previewAvatarUrl ? (
+                                    <img 
+                                      src={previewAvatarUrl} 
+                                      alt="Avatar preview" 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-4 h-4 text-foreground" />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Border Info */}
+                              <div className="text-center">
+                                <p className="text-xs font-medium text-foreground mb-1">
+                                  {border.value}
+                                </p>
+                                {border.level > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    L{border.level}
+                                  </Badge>
+                                )}
+                                {border.tier === 'premium' && (
+                                  <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
+                                    Premium
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {/* Selected Indicator */}
+                              {previewBorderId === border.id && (
+                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-primary" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Locked Borders Preview */}
+                    {borderRewards.filter(b => b.state === 'locked').length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Coming Soon:</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {borderRewards.filter(b => b.state === 'locked').slice(0, 6).map((border) => (
+                            <div
+                              key={border.id}
+                              className="relative p-3 rounded-xl border border-border bg-muted/30 opacity-60"
+                            >
+                              {/* Border Preview */}
+                              <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center">
+                                {getBorderAssetUrl(border.value || '') && (
+                                  <div 
+                                    className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat opacity-40 grayscale"
+                                    style={{ backgroundImage: `url(${getBorderAssetUrl(border.value || '')})` }}
+                                  />
+                                )}
+                                
+                                <div 
+                                  className={cn(
+                                    "w-10 h-10 rounded-full flex items-center justify-center overflow-hidden",
+                                    "bg-gradient-to-br from-muted to-muted-foreground/20 relative"
+                                  )}
+                                  style={{ zIndex: 1 }}
+                                >
+                                  <User className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                              </div>
+
+                              {/* Border Info */}
+                              <div className="text-center">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  {border.value}
+                                </p>
+                                <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground">
+                                  Level {border.level}
+                                </Badge>
+                                {border.tier === 'premium' && (
+                                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs ml-1">
+                                    Premium
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {availableBorders.length === 1 && borderRewards.filter(b => b.state === 'locked').length === 0 && (
+                      <div className="text-center text-muted-foreground">
+                        <p>No avatar borders available yet.</p>
+                        <p className="text-sm mt-1">Keep leveling up to unlock decorative borders!</p>
                       </div>
                     )}
                   </div>

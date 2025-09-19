@@ -1939,6 +1939,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_border_id: string | null
           avatar_frame_id: string | null
           avatar_url: string | null
           bio: string | null
@@ -1958,6 +1959,7 @@ export type Database = {
           welcome_pack_claimed: boolean | null
         }
         Insert: {
+          avatar_border_id?: string | null
           avatar_frame_id?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -1977,6 +1979,7 @@ export type Database = {
           welcome_pack_claimed?: boolean | null
         }
         Update: {
+          avatar_border_id?: string | null
           avatar_frame_id?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -2960,6 +2963,7 @@ export type Database = {
           p_username?: string
         }
         Returns: {
+          avatar_border_id: string | null
           avatar_frame_id: string | null
           avatar_url: string | null
           bio: string | null
