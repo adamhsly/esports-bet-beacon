@@ -3,11 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CheckCircle, 
   Clock, 
-  ChevronDown, 
   Target,
   Calendar,
   CalendarDays,
@@ -19,7 +18,6 @@ import { monthWindow } from '@/lib/season';
 
 const MissionsView: React.FC = () => {
   const [showCompleted, setShowCompleted] = useState(false);
-  const [seasonalExpanded, setSeasonalExpanded] = useState(false);
   const { daily, weekly, monthly, seasonal, loading } = useMissionsFiltered(showCompleted);
 
   if (loading) {
@@ -55,108 +53,111 @@ const MissionsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Today's Missions */}
-      <MissionSection
-        title="Today's Missions"
-        icon={<Target className="w-5 h-5" />}
-        missions={daily}
-        maxDisplay={4}
-        emptyMessage="All daily missions completed! Check back tomorrow."
-      />
+      {/* Missions Tabs */}
+      <Tabs defaultValue="daily" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 bg-[#1A1F26] border border-white/[0.08]">
+          <TabsTrigger 
+            value="daily" 
+            className="flex items-center gap-2 data-[state=active]:bg-neon-blue/20 data-[state=active]:text-neon-blue"
+          >
+            <Target className="w-4 h-4" />
+            <span className="hidden sm:inline">Daily</span>
+            {daily.length > 0 && (
+              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs ml-1">
+                {daily.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="weekly"
+            className="flex items-center gap-2 data-[state=active]:bg-neon-blue/20 data-[state=active]:text-neon-blue"
+          >
+            <Calendar className="w-4 h-4" />
+            <span className="hidden sm:inline">Weekly</span>
+            {weekly.length > 0 && (
+              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs ml-1">
+                {weekly.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="monthly"
+            className="flex items-center gap-2 data-[state=active]:bg-neon-blue/20 data-[state=active]:text-neon-blue"
+          >
+            <CalendarDays className="w-4 h-4" />
+            <span className="hidden sm:inline">Monthly</span>
+            {monthly.length > 0 && (
+              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs ml-1">
+                {monthly.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="seasonal"
+            className="flex items-center gap-2 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple"
+          >
+            <Infinity className="w-4 h-4" />
+            <span className="hidden sm:inline">Seasonal</span>
+            {seasonal.length > 0 && (
+              <Badge className="bg-neon-purple/20 text-neon-purple border-neon-purple/30 text-xs ml-1">
+                {seasonal.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* This Week */}
-      <MissionSection
-        title="This Week"
-        icon={<Calendar className="w-5 h-5" />}
-        missions={weekly}
-        emptyMessage="All weekly missions completed! Great work this week."
-      />
+        <TabsContent value="daily" className="mt-4">
+          <MissionTabContent 
+            missions={daily}
+            emptyMessage="All daily missions completed! Check back tomorrow."
+          />
+        </TabsContent>
 
-      {/* This Month */}
-      <MissionSection
-        title={`This Month (${currentWindow.toUpperCase()})`}
-        icon={<CalendarDays className="w-5 h-5" />}
-        missions={monthly}
-        emptyMessage="All monthly missions completed! Check again next window."
-      />
+        <TabsContent value="weekly" className="mt-4">
+          <MissionTabContent 
+            missions={weekly}
+            emptyMessage="All weekly missions completed! Great work this week."
+          />
+        </TabsContent>
 
-      {/* Seasonal - Collapsed by default */}
-      <Collapsible open={seasonalExpanded} onOpenChange={setSeasonalExpanded}>
-        <Card className="bg-gradient-to-r from-[#1A1F26] to-[#252A32] border border-white/[0.08]">
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Infinity className="w-5 h-5 text-neon-purple" />
-                  <CardTitle className="text-lg font-gaming text-white">Seasonal</CardTitle>
-                  <Badge className="bg-neon-purple/20 text-neon-purple border-neon-purple/30 text-xs">
-                    {seasonal.length} available
-                  </Badge>
-                </div>
-                <ChevronDown className={cn(
-                  "w-5 h-5 text-white/60 transition-transform duration-200",
-                  seasonalExpanded && "rotate-180"
-                )} />
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              {seasonal.length === 0 ? (
-                <p className="text-white/60 text-center py-4">
-                  All seasonal missions completed! Incredible dedication.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {seasonal.map((mission) => (
-                    <MissionCard key={mission.id} mission={mission} />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+        <TabsContent value="monthly" className="mt-4">
+          <MissionTabContent 
+            missions={monthly}
+            emptyMessage="All monthly missions completed! Check again next window."
+          />
+        </TabsContent>
+
+        <TabsContent value="seasonal" className="mt-4">
+          <MissionTabContent 
+            missions={seasonal}
+            emptyMessage="All seasonal missions completed! Incredible dedication."
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
-interface MissionSectionProps {
-  title: string;
-  icon: React.ReactNode;
+interface MissionTabContentProps {
   missions: any[];
-  maxDisplay?: number;
   emptyMessage: string;
 }
 
-const MissionSection: React.FC<MissionSectionProps> = ({ 
-  title, 
-  icon, 
+const MissionTabContent: React.FC<MissionTabContentProps> = ({ 
   missions, 
-  maxDisplay,
   emptyMessage 
 }) => {
-  const displayMissions = maxDisplay ? missions.slice(0, maxDisplay) : missions;
-
   return (
     <Card className="bg-gradient-to-r from-[#1A1F26] to-[#252A32] border border-white/[0.08]">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <div className="text-neon-blue">{icon}</div>
-          <CardTitle className="text-lg font-gaming text-white">{title}</CardTitle>
-          {missions.length > 0 && (
-            <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs">
-              {missions.length}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {displayMissions.length === 0 ? (
-          <p className="text-white/60 text-center py-4">{emptyMessage}</p>
+      <CardContent className="p-6">
+        {missions.length === 0 ? (
+          <p className="text-white/60 text-center py-8">{emptyMessage}</p>
         ) : (
           <div className="space-y-3">
-            {displayMissions.map((mission) => (
+            {missions.map((mission) => (
               <MissionCard key={mission.id} mission={mission} />
             ))}
           </div>
