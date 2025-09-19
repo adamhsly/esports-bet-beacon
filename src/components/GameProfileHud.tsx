@@ -117,7 +117,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           <CardContent className="relative z-10 p-6 text-center">
             {/* Avatar */}
             <div className="relative mx-auto w-20 h-20 mb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-neon-blue to-neon-purple rounded-full flex items-center justify-center text-2xl font-gaming text-white shadow-[0_0_30px_rgba(79,172,254,0.3)] overflow-hidden">
+              {/* Border (background layer) */}
+              {currentBorderAsset && (
+                <img 
+                  src={currentBorderAsset}
+                  alt="Avatar border"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{ zIndex: 1 }}
+                />
+              )}
+              
+              {/* Avatar (middle layer) */}
+              <div 
+                className="relative w-20 h-20 bg-gradient-to-br from-neon-blue to-neon-purple rounded-full flex items-center justify-center text-2xl font-gaming text-white shadow-[0_0_30px_rgba(79,172,254,0.3)] overflow-hidden"
+                style={{ zIndex: 2 }}
+              >
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
@@ -129,12 +143,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 )}
               </div>
               
-              {/* Avatar Frame Overlay */}
+              {/* Avatar Frame Overlay (top layer) */}
               {currentFrameAsset && (
                 <img 
                   src={currentFrameAsset}
                   alt="Avatar frame"
                   className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{ zIndex: 3 }}
                 />
               )}
               
@@ -144,6 +159,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 variant="outline" 
                 onClick={() => setShowAvatarConfig(true)}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-neon-blue/50 hover:border-neon-blue"
+                style={{ zIndex: 4 }}
               >
                 <Settings className="w-3 h-3 text-white" />
               </Button>

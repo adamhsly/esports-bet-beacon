@@ -167,17 +167,17 @@ export const LineupSharePage: React.FC = () => {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-orange-500 flex items-center justify-center">
-                    {lineupData.user.avatar_url ? (
-                      <img 
-                        src={lineupData.user.avatar_url} 
-                        alt={lineupData.user.username}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-xl font-bold text-white">
-                        {lineupData.user.username.charAt(0).toUpperCase()}
-                      </span>
+                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-orange-500 flex items-center justify-center overflow-hidden">
+                     {lineupData.user.avatar_url ? (
+                       <img 
+                         src={lineupData.user.avatar_url} 
+                         alt={lineupData.user.username}
+                         className="w-full h-full object-cover"
+                       />
+                     ) : (
+                       <span className="text-xl font-bold text-white">
+                         {lineupData.user.username.charAt(0).toUpperCase()}
+                       </span>
                     )}
                   </div>
                   <div>

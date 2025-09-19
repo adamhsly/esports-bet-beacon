@@ -8,13 +8,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { LogOut, User, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
+  const { free, premium } = useRewardsTrack();
+
+  // Get current avatar frame and border assets
+  const currentFrameAsset = useMemo(() => {
+    if (!profile?.avatar_frame_id) return null;
+    const frameReward = [...free, ...premium].find(
+      item => item.id === profile.avatar_frame_id && item.type === 'frame'
+    );
+    return frameReward?.assetUrl || null;
+  }, [profile?.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
+
+  const currentBorderAsset = useMemo(() => {
+    if (!profile?.avatar_border_id) return null;
+    const borderReward = [...free, ...premium].find(
+      item => item.id === profile.avatar_border_id && 
+      item.value && 
+      (item.value.toLowerCase().includes('border') || item.value.toLowerCase().includes('pulse'))
+    );
+    return borderReward?.assetUrl || null;
+  }, [profile?.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -28,11 +52,14 @@ const UserMenu: React.FC = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-theme-purple text-white">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <EnhancedAvatar
+            src={profile?.avatar_url}
+            fallback={initials}
+            frameUrl={currentFrameAsset}
+            borderUrl={currentBorderAsset}
+            size="sm"
+            className="h-8 w-8"
+          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-theme-gray-medium border-theme-gray-light" align="end">

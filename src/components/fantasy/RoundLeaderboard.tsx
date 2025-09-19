@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React, { useEffect, useState, useMemo } from 'react';
+import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 
 interface LeaderboardEntry {
   position: number;
   user_id: string;
   username: string;
   avatar_url?: string;
+  avatar_frame_id?: string;
+  avatar_border_id?: string;
   total_score: number;
   is_current_user: boolean;
 }
@@ -18,6 +21,7 @@ interface RoundLeaderboardProps {
 
 export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) => {
   const { user } = useAuth();
+  const { free, premium } = useRewardsTrack();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userPosition, setUserPosition] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
       const displayUserIds = displayEntries.map(e => e.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
+        .select('id, username, full_name, avatar_url, avatar_frame_id, avatar_border_id')
         .in('id', displayUserIds);
 
       if (profilesError) throw profilesError;
@@ -86,6 +90,8 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
         const profile = profiles?.find(p => p.id === entry.user_id);
         entry.username = profile?.username || profile?.full_name || 'Anonymous';
         entry.avatar_url = profile?.avatar_url;
+        entry.avatar_frame_id = profile?.avatar_frame_id;
+        entry.avatar_border_id = profile?.avatar_border_id;
       });
 
       setLeaderboard(displayEntries);
@@ -165,12 +171,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
           </div>
 
           {/* Avatar */}
-          <Avatar className="h-5 w-5">
-            <AvatarImage src={entry.avatar_url} alt={entry.username} />
-            <AvatarFallback className="text-xs text-white" style={{ backgroundColor: '#8B5CF6' }}>
-              {entry.username.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <LeaderboardAvatar entry={entry} free={free} premium={premium} />
 
           {/* Username */}
           <div className="flex-1 min-w-0">
@@ -188,5 +189,41 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
         </div>
       ))}
     </div>
+  );
+};
+
+// Helper component for leaderboard avatar with proper borders and frames
+const LeaderboardAvatar: React.FC<{
+  entry: LeaderboardEntry;
+  free: any[];
+  premium: any[];
+}> = ({ entry, free, premium }) => {
+  const frameAsset = useMemo(() => {
+    if (!entry.avatar_frame_id) return null;
+    const frameReward = [...free, ...premium].find(
+      item => item.id === entry.avatar_frame_id && item.type === 'frame'
+    );
+    return frameReward?.assetUrl || null;
+  }, [entry.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
+
+  const borderAsset = useMemo(() => {
+    if (!entry.avatar_border_id) return null;
+    const borderReward = [...free, ...premium].find(
+      item => item.id === entry.avatar_border_id && 
+      item.value && 
+      (item.value.toLowerCase().includes('border') || item.value.toLowerCase().includes('pulse'))
+    );
+    return borderReward?.assetUrl || null;
+  }, [entry.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
+
+  return (
+    <EnhancedAvatar
+      src={entry.avatar_url}
+      fallback={entry.username.slice(0, 2).toUpperCase()}
+      frameUrl={frameAsset}
+      borderUrl={borderAsset}
+      size="sm"
+      className="h-5 w-5"
+    />
   );
 };
