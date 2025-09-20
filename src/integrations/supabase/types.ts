@@ -2456,6 +2456,39 @@ export type Database = {
           },
         ]
       }
+      user_level_rewards: {
+        Row: {
+          amount: number | null
+          granted_at: string
+          id: string
+          item_code: string | null
+          level: number
+          reward_type: string
+          track: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          granted_at?: string
+          id?: string
+          item_code?: string | null
+          level: number
+          reward_type: string
+          track: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          granted_at?: string
+          id?: string
+          item_code?: string | null
+          level?: number
+          reward_type?: string
+          track?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_missions: {
         Row: {
           completed: boolean
@@ -2910,6 +2943,10 @@ export type Database = {
       }
       progress_mission: {
         Args: { p_code: string; p_inc?: number }
+        Returns: Json
+      }
+      retroactive_grant_level_rewards: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       seed_user_missions: {
