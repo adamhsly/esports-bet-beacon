@@ -19,6 +19,13 @@ const sizeClasses = {
   xl: 'h-20 w-20'
 };
 
+const avatarSizeClasses = {
+  sm: 'h-6 w-6',
+  md: 'h-7 w-7', 
+  lg: 'h-12 w-12',
+  xl: 'h-14 w-14'
+};
+
 export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
   src,
   alt = 'Avatar',
@@ -40,13 +47,15 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
         />
       )}
       
-      {/* Avatar (middle layer) */}
-      <Avatar className={cn('relative', sizeClasses[size])} style={{ zIndex: 2 }}>
-        {src && <AvatarImage src={src} alt={alt} />}
-        <AvatarFallback>
-          {fallback}
-        </AvatarFallback>
-      </Avatar>
+      {/* Avatar (middle layer) - centered and smaller to show border around */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
+        <Avatar className={cn('relative', avatarSizeClasses[size])}>
+          {src && <AvatarImage src={src} alt={alt} />}
+          <AvatarFallback>
+            {fallback}
+          </AvatarFallback>
+        </Avatar>
+      </div>
       
       {/* Frame (top layer) */}
       {frameUrl && (
