@@ -58,12 +58,12 @@ const MissionsView: React.FC = () => {
         <TabsList className="grid w-full grid-cols-4 bg-[#1A1F26] border border-white/[0.08]">
           <TabsTrigger 
             value="daily" 
-            className="flex items-center gap-2 data-[state=active]:bg-neon-blue/20 data-[state=active]:text-neon-blue"
+            className="flex items-center gap-2 text-white data-[state=active]:bg-neon-blue/30 data-[state=active]:text-neon-blue data-[state=active]:border-neon-blue/50 border border-transparent transition-all"
           >
-            <Target className="w-4 h-4" />
+            <Target className="w-4 h-4 text-white" />
             <span className="hidden sm:inline">Daily</span>
             {daily.length > 0 && (
-              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs ml-1">
+              <Badge className="bg-yellow-400/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
                 {daily.length}
               </Badge>
             )}
@@ -71,12 +71,12 @@ const MissionsView: React.FC = () => {
           
           <TabsTrigger 
             value="weekly"
-            className="flex items-center gap-2 data-[state=active]:bg-neon-blue/20 data-[state=active]:text-neon-blue"
+            className="flex items-center gap-2 text-white data-[state=active]:bg-neon-blue/30 data-[state=active]:text-neon-blue data-[state=active]:border-neon-blue/50 border border-transparent transition-all"
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-4 h-4 text-white" />
             <span className="hidden sm:inline">Weekly</span>
             {weekly.length > 0 && (
-              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs ml-1">
+              <Badge className="bg-yellow-400/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
                 {weekly.length}
               </Badge>
             )}
@@ -84,12 +84,12 @@ const MissionsView: React.FC = () => {
           
           <TabsTrigger 
             value="monthly"
-            className="flex items-center gap-2 data-[state=active]:bg-neon-blue/20 data-[state=active]:text-neon-blue"
+            className="flex items-center gap-2 text-white data-[state=active]:bg-neon-blue/30 data-[state=active]:text-neon-blue data-[state=active]:border-neon-blue/50 border border-transparent transition-all"
           >
-            <CalendarDays className="w-4 h-4" />
+            <CalendarDays className="w-4 h-4 text-white" />
             <span className="hidden sm:inline">Monthly</span>
             {monthly.length > 0 && (
-              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 text-xs ml-1">
+              <Badge className="bg-yellow-400/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
                 {monthly.length}
               </Badge>
             )}
@@ -97,12 +97,12 @@ const MissionsView: React.FC = () => {
           
           <TabsTrigger 
             value="seasonal"
-            className="flex items-center gap-2 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple"
+            className="flex items-center gap-2 text-white data-[state=active]:bg-neon-purple/30 data-[state=active]:text-neon-purple data-[state=active]:border-neon-purple/50 border border-transparent transition-all"
           >
-            <Infinity className="w-4 h-4" />
+            <Infinity className="w-4 h-4 text-white" />
             <span className="hidden sm:inline">Seasonal</span>
             {seasonal.length > 0 && (
-              <Badge className="bg-neon-purple/20 text-neon-purple border-neon-purple/30 text-xs ml-1">
+              <Badge className="bg-yellow-400/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
                 {seasonal.length}
               </Badge>
             )}
