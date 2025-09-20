@@ -191,8 +191,8 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center",
               mission.completed
-                ? "bg-green-500/20 text-green-400"
-                : "bg-neon-blue/20 text-neon-blue"
+                ? "bg-green-500/20 text-white"
+                : "bg-white/10 text-white"
             )}>
               {mission.completed ? (
                 <CheckCircle className="w-5 h-5" />
@@ -220,9 +220,9 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               {/* Progress Bar for missions with target > 1 */}
               {mission.target > 1 && (
                 <div className="space-y-1">
-                  <div className="flex justify-between text-xs text-white/40">
-                    <span>{mission.progress}</span>
-                    <span>{mission.target}</span>
+                  <div className="flex justify-between text-xs">
+                    <span className={mission.completed ? "text-white/40" : "text-yellow-400"}>{mission.progress}</span>
+                    <span className="text-white/40">{mission.target}</span>
                   </div>
                   <Progress 
                     value={progressPercent} 
@@ -237,7 +237,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
           <div className="text-right flex-shrink-0 ml-3">
             <div className={cn(
               "text-lg font-gaming font-bold",
-              mission.completed ? "text-green-400" : "text-neon-blue"
+              mission.completed ? "text-green-400" : "text-yellow-400"
             )}>
               +{mission.xp_reward} XP
             </div>
