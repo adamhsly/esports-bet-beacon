@@ -538,7 +538,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
+      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={useBonusCreditsState ? bonusCreditsAmount : 0} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
       {/* Team Selection Button */}
       <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
