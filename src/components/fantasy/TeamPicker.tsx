@@ -80,25 +80,16 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showNoStarModal, setShowNoStarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
-  const [useBonusCreditsState, setUseBonusCreditsState] = useState(false);
-  const [bonusCreditsAmount, setBonusCreditsAmount] = useState(0);
+  // Bonus credits are now automatic - no manual state needed
   const {
     setStarTeam
   } = useRoundStar(round.id);
   const bonusCreditsHook = useBonusCredits();
   const { availableCredits: availableBonusCredits, spendBonusCredits } = bonusCreditsHook;
 
-  // Auto-initialize bonus credits when available
-  useEffect(() => {
-    if (availableBonusCredits > 0) {
-      setBonusCreditsAmount(availableBonusCredits);
-      setUseBonusCreditsState(true);
-    }
-  }, [availableBonusCredits]);
-
-  // Salary cap and budget calculations
+  // Salary cap and budget calculations - automatic bonus credits
   const SALARY_CAP = 50;
-  const totalBudget = SALARY_CAP + (useBonusCreditsState ? bonusCreditsAmount : 0);
+  const totalBudget = SALARY_CAP + availableBonusCredits;
   const budgetSpent = useMemo(() => selectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [selectedTeams]);
   const budgetRemaining = Math.max(0, totalBudget - budgetSpent);
 
@@ -461,16 +452,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         type: benchTeam.type
       } : null;
       
-      // Validate and spend bonus credits if being used
-      if (useBonusCreditsState && bonusCreditsAmount > 0) {
-        // Additional validation check before spending
-        if (bonusCreditsAmount > availableBonusCredits) {
-          throw new Error(`Cannot use ${bonusCreditsAmount} bonus credits. You only have ${availableBonusCredits} available.`);
-        }
-        
-        const spendSuccess = await spendBonusCredits(round.id, bonusCreditsAmount);
+      // Automatically calculate and spend bonus credits if needed
+      const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
+      if (bonusCreditsNeeded > 0) {
+        const spendSuccess = await spendBonusCredits(round.id, bonusCreditsNeeded);
         if (!spendSuccess) {
-          throw new Error(`Failed to spend ${bonusCreditsAmount} bonus credits. Please check your available balance and try again.`);
+          throw new Error(`Failed to auto-spend ${bonusCreditsNeeded} bonus credits. Please check your available balance.`);
         }
       }
 
@@ -562,10 +549,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={useBonusCreditsState ? bonusCreditsAmount : 0} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
+      <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
-      {/* Bonus Credits Control */}
-      {(availableBonusCredits > 0 || useBonusCreditsState) && (
+      {/* Bonus Credits Info - Auto-deducted */}
+      {availableBonusCredits > 0 && (
         <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -583,43 +570,16 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="use-bonus" className="text-sm text-orange-300">Use bonus credits:</Label>
-                  <Checkbox 
-                    id="use-bonus"
-                    checked={useBonusCreditsState} 
-                    disabled={availableBonusCredits === 0}
-                    onCheckedChange={(checked) => {
-                      if (availableBonusCredits === 0 && checked) {
-                        toast.error('No bonus credits available to use');
-                        return;
-                      }
-                      setUseBonusCreditsState(!!checked);
-                      if (!checked) {
-                        setBonusCreditsAmount(0);
-                      } else {
-                        setBonusCreditsAmount(availableBonusCredits);
-                      }
-                    }}
-                  />
+              {budgetSpent > SALARY_CAP && (
+                <div className="text-right">
+                  <p className="text-sm text-orange-300 font-medium">
+                    Auto-deducting: {budgetSpent - SALARY_CAP} credits
+                  </p>
+                  <p className="text-xs text-orange-400">
+                    Required for your current selection
+                  </p>
                 </div>
-                {useBonusCreditsState && (
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-orange-300">Amount:</Label>
-                    <div className="w-20">
-                      <Input
-                        type="number"
-                        min="0"
-                        max={availableBonusCredits}
-                        value={bonusCreditsAmount}
-                        onChange={(e) => setBonusCreditsAmount(Math.min(availableBonusCredits, Math.max(0, parseInt(e.target.value) || 0)))}
-                        className="text-center bg-orange-900/20 border-orange-500/30 text-orange-200"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -674,9 +634,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           toast.error('Please select exactly 5 teams');
           return;
         }
-        // Validate bonus credits before submission
-        if (useBonusCreditsState && bonusCreditsAmount > availableBonusCredits) {
-          toast.error(`Cannot use ${bonusCreditsAmount} bonus credits. You only have ${availableBonusCredits} available.`);
+        // Validate budget with automatic bonus credits
+        const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
+        if (bonusCreditsNeeded > availableBonusCredits) {
+          toast.error(`Need ${bonusCreditsNeeded} bonus credits but you only have ${availableBonusCredits} available.`);
           return;
         }
         if (!starTeamId) {
