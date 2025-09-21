@@ -684,6 +684,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
       
       {/* Multi Team Selection Sheet */}
-      <MultiTeamSelectionSheet isOpen={showTeamSelectionSheet} onClose={() => setShowTeamSelectionSheet(false)} proTeams={proTeams} amateurTeams={amateurTeams} selectedTeams={selectedTeams} onTeamsUpdate={handleTeamsUpdate} budgetRemaining={budgetRemaining} totalBudget={SALARY_CAP} />
+      <MultiTeamSelectionSheet isOpen={showTeamSelectionSheet} onClose={() => setShowTeamSelectionSheet(false)} proTeams={proTeams} amateurTeams={amateurTeams} selectedTeams={selectedTeams} onTeamsUpdate={handleTeamsUpdate} budgetRemaining={budgetRemaining} totalBudget={totalBudget} />
     </div>;
 };

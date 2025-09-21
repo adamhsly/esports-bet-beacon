@@ -220,6 +220,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 {tempBudgetSpent} / {totalBudget} credits
               </span>
             </div>
+            {totalBudget > 50 && (
+              <div className="text-xs text-orange-400">
+                Base: 50 + Bonus: {totalBudget - 50} credits
+              </div>
+            )}
             <Progress value={tempBudgetSpent / totalBudget * 100} className="w-full h-2" />
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Teams Selected:</span>
