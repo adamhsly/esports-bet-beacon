@@ -461,11 +461,16 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         type: benchTeam.type
       } : null;
       
-      // Spend bonus credits if being used
+      // Validate and spend bonus credits if being used
       if (useBonusCreditsState && bonusCreditsAmount > 0) {
+        // Additional validation check before spending
+        if (bonusCreditsAmount > availableBonusCredits) {
+          throw new Error(`Cannot use ${bonusCreditsAmount} bonus credits. You only have ${availableBonusCredits} available.`);
+        }
+        
         const spendSuccess = await spendBonusCredits(round.id, bonusCreditsAmount);
         if (!spendSuccess) {
-          throw new Error('Failed to spend bonus credits');
+          throw new Error(`Failed to spend ${bonusCreditsAmount} bonus credits. Please check your available balance and try again.`);
         }
       }
 
@@ -519,6 +524,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       console.error('Error submitting team:', error);
       if (error.code === '23505') {
         toast.error('You have already submitted a team for this round');
+      } else if (error.message?.includes('bonus credits')) {
+        // Specific error handling for bonus credits issues
+        toast.error(error.message);
       } else {
         toast.error('Failed to submit team');
       }
@@ -557,7 +565,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={useBonusCreditsState ? bonusCreditsAmount : 0} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
       {/* Bonus Credits Control */}
-      {availableBonusCredits > 0 && (
+      {(availableBonusCredits > 0 || useBonusCreditsState) && (
         <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -567,7 +575,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
                 </div>
                 <div>
                   <h3 className="font-semibold text-orange-300">Bonus Credits Available</h3>
-                  <p className="text-sm text-orange-400">{availableBonusCredits} credits earned from XP rewards</p>
+                  <p className="text-sm text-orange-400">
+                    {availableBonusCredits > 0 
+                      ? `${availableBonusCredits} credits earned from XP rewards`
+                      : 'No bonus credits available'
+                    }
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -576,7 +589,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
                   <Checkbox 
                     id="use-bonus"
                     checked={useBonusCreditsState} 
+                    disabled={availableBonusCredits === 0}
                     onCheckedChange={(checked) => {
+                      if (availableBonusCredits === 0 && checked) {
+                        toast.error('No bonus credits available to use');
+                        return;
+                      }
                       setUseBonusCreditsState(!!checked);
                       if (!checked) {
                         setBonusCreditsAmount(0);
@@ -654,6 +672,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         }
         if (selectedTeams.length !== 5) {
           toast.error('Please select exactly 5 teams');
+          return;
+        }
+        // Validate bonus credits before submission
+        if (useBonusCreditsState && bonusCreditsAmount > availableBonusCredits) {
+          toast.error(`Cannot use ${bonusCreditsAmount} bonus credits. You only have ${availableBonusCredits} available.`);
           return;
         }
         if (!starTeamId) {
