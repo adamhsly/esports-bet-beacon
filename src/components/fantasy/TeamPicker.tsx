@@ -88,6 +88,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const bonusCreditsHook = useBonusCredits();
   const { availableCredits: availableBonusCredits, spendBonusCredits } = bonusCreditsHook;
 
+  // Auto-initialize bonus credits when available
+  useEffect(() => {
+    if (availableBonusCredits > 0) {
+      setBonusCreditsAmount(availableBonusCredits);
+      setUseBonusCreditsState(true);
+    }
+  }, [availableBonusCredits]);
+
   // Salary cap and budget calculations
   const SALARY_CAP = 50;
   const totalBudget = SALARY_CAP + (useBonusCreditsState ? bonusCreditsAmount : 0);
@@ -373,8 +381,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
     const teamPrice = team.price ?? 0;
     const newSpent = budgetSpent + teamPrice;
-    if (newSpent > SALARY_CAP) {
-      toast.warning(`Budget exceeded. Adding ${team.name} (+${teamPrice}) goes over ${SALARY_CAP}.`);
+    if (newSpent > totalBudget) {
+      toast.warning(`Budget exceeded. Adding ${team.name} (+${teamPrice}) goes over ${totalBudget}.`);
       return;
     }
     setSelectedTeams([...selectedTeams, team]);
@@ -453,6 +461,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         type: benchTeam.type
       } : null;
       
+      // Spend bonus credits if being used
+      if (useBonusCreditsState && bonusCreditsAmount > 0) {
+        const spendSuccess = await spendBonusCredits(round.id, bonusCreditsAmount);
+        if (!spendSuccess) {
+          throw new Error('Failed to spend bonus credits');
+        }
+      }
+
       // First insert the team picks
       const {
         error
@@ -539,6 +555,57 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       {/* Selected Teams Widget */}
       <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={useBonusCreditsState ? bonusCreditsAmount : 0} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
+
+      {/* Bonus Credits Control */}
+      {availableBonusCredits > 0 && (
+        <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-orange-300">Bonus Credits Available</h3>
+                  <p className="text-sm text-orange-400">{availableBonusCredits} credits earned from XP rewards</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="use-bonus" className="text-sm text-orange-300">Use bonus credits:</Label>
+                  <Checkbox 
+                    id="use-bonus"
+                    checked={useBonusCreditsState} 
+                    onCheckedChange={(checked) => {
+                      setUseBonusCreditsState(!!checked);
+                      if (!checked) {
+                        setBonusCreditsAmount(0);
+                      } else {
+                        setBonusCreditsAmount(availableBonusCredits);
+                      }
+                    }}
+                  />
+                </div>
+                {useBonusCreditsState && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-orange-300">Amount:</Label>
+                    <div className="w-20">
+                      <Input
+                        type="number"
+                        min="0"
+                        max={availableBonusCredits}
+                        value={bonusCreditsAmount}
+                        onChange={(e) => setBonusCreditsAmount(Math.min(availableBonusCredits, Math.max(0, parseInt(e.target.value) || 0)))}
+                        className="text-center bg-orange-900/20 border-orange-500/30 text-orange-200"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Team Selection Button */}
       <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
