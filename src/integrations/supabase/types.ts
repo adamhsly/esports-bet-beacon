@@ -351,6 +351,7 @@ export type Database = {
           live_player_status: Json | null
           live_team_scores: Json | null
           maps_played: Json | null
+          match_date: string | null
           match_id: string
           match_phase: string | null
           objectives_status: Json | null
@@ -388,6 +389,7 @@ export type Database = {
           live_player_status?: Json | null
           live_team_scores?: Json | null
           maps_played?: Json | null
+          match_date?: string | null
           match_id: string
           match_phase?: string | null
           objectives_status?: Json | null
@@ -425,6 +427,7 @@ export type Database = {
           live_player_status?: Json | null
           live_team_scores?: Json | null
           maps_played?: Json | null
+          match_date?: string | null
           match_id?: string
           match_phase?: string | null
           objectives_status?: Json | null
@@ -1433,6 +1436,7 @@ export type Database = {
           last_synced_at: string
           league_id: string | null
           league_name: string | null
+          match_date: string | null
           match_id: string
           match_type: string | null
           modified_at: string | null
@@ -1470,6 +1474,7 @@ export type Database = {
           last_synced_at?: string
           league_id?: string | null
           league_name?: string | null
+          match_date?: string | null
           match_id: string
           match_type?: string | null
           modified_at?: string | null
@@ -1507,6 +1512,7 @@ export type Database = {
           last_synced_at?: string
           league_id?: string | null
           league_name?: string | null
+          match_date?: string | null
           match_id?: string
           match_type?: string | null
           modified_at?: string | null
