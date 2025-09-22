@@ -22,7 +22,7 @@ import { EsportsLogoFilter } from '@/components/EsportsLogoFilter';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import { useMatchCounts, getTotalMatchCountsByDate } from '@/hooks/useMatchCounts';
 import { useMatchCards } from '@/hooks/useMatchCards';
-import { OptimizedMatchCard } from '@/components/OptimizedMatchCard';
+
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -248,10 +248,15 @@ const Index = () => {
       ] as [any, any],
       startTime: card.start_time,
       tournament: card.tournament,
+      tournament_name: card.tournament_name,
+      league_name: card.league_name,
       esportType: card.esport_type,
       bestOf: card.best_of,
       source: card.source,
-      status: card.status
+      status: card.status,
+      // Include heavy data if available for winner/score display
+      rawData: card.raw_data,
+      faceitData: card.faceit_data
     };
   };
 
@@ -506,7 +511,7 @@ const Index = () => {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {matches.map((match) => (
-                              <OptimizedMatchCard key={match.id} card={lightweightCards.find(c => `${c.source}_${c.match_id}` === match.id)!} />
+                              <MatchCard key={match.id} match={match} />
                             ))}
                           </div>
                         </div>
@@ -555,7 +560,7 @@ const Index = () => {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {matches.map((match) => (
-                              <OptimizedMatchCard key={match.id} card={lightweightCards.find(c => `${c.source}_${c.match_id}` === match.id)!} />
+                              <MatchCard key={match.id} match={match} />
                             ))}
                           </div>
                         </div>
@@ -604,7 +609,7 @@ const Index = () => {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {matches.map((match) => (
-                              <OptimizedMatchCard key={match.id} card={lightweightCards.find(c => `${c.source}_${c.match_id}` === match.id)!} />
+                              <MatchCard key={match.id} match={match} />
                             ))}
                           </div>
                         </div>
