@@ -127,13 +127,6 @@ export type Database = {
             foreignKeyName: "faceit_live_match_stats_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
-            referencedRelation: "faceit_cards"
-            referencedColumns: ["match_id"]
-          },
-          {
-            foreignKeyName: "faceit_live_match_stats_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
             referencedRelation: "faceit_matches"
             referencedColumns: ["match_id"]
           },
@@ -358,7 +351,6 @@ export type Database = {
           live_player_status: Json | null
           live_team_scores: Json | null
           maps_played: Json | null
-          match_date: string | null
           match_id: string
           match_phase: string | null
           objectives_status: Json | null
@@ -396,7 +388,6 @@ export type Database = {
           live_player_status?: Json | null
           live_team_scores?: Json | null
           maps_played?: Json | null
-          match_date?: string | null
           match_id: string
           match_phase?: string | null
           objectives_status?: Json | null
@@ -434,7 +425,6 @@ export type Database = {
           live_player_status?: Json | null
           live_team_scores?: Json | null
           maps_played?: Json | null
-          match_date?: string | null
           match_id?: string
           match_phase?: string | null
           objectives_status?: Json | null
@@ -698,13 +688,6 @@ export type Database = {
           team_name?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_faceit_match"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "faceit_cards"
-            referencedColumns: ["match_id"]
-          },
           {
             foreignKeyName: "fk_faceit_match"
             columns: ["match_id"]
@@ -1450,7 +1433,6 @@ export type Database = {
           last_synced_at: string
           league_id: string | null
           league_name: string | null
-          match_date: string | null
           match_id: string
           match_type: string | null
           modified_at: string | null
@@ -1488,7 +1470,6 @@ export type Database = {
           last_synced_at?: string
           league_id?: string | null
           league_name?: string | null
-          match_date?: string | null
           match_id: string
           match_type?: string | null
           modified_at?: string | null
@@ -1526,7 +1507,6 @@ export type Database = {
           last_synced_at?: string
           league_id?: string | null
           league_name?: string | null
-          match_date?: string | null
           match_id?: string
           match_type?: string | null
           modified_at?: string | null
@@ -2656,135 +2636,6 @@ export type Database = {
       }
     }
     Views: {
-      daily_match_counts: {
-        Row: {
-          match_count: number | null
-          match_date: string | null
-          source: string | null
-        }
-        Relationships: []
-      }
-      faceit_cards: {
-        Row: {
-          best_of: number | null
-          esport_type: string | null
-          match_date: string | null
-          match_id: string | null
-          source: string | null
-          start_time: string | null
-          status: string | null
-          team1_id: string | null
-          team1_logo: string | null
-          team1_name: string | null
-          team2_id: string | null
-          team2_logo: string | null
-          team2_name: string | null
-          tournament: string | null
-        }
-        Insert: {
-          best_of?: never
-          esport_type?: string | null
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: never
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: string | null
-        }
-        Update: {
-          best_of?: never
-          esport_type?: string | null
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: never
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: string | null
-        }
-        Relationships: []
-      }
-      match_cards_day: {
-        Row: {
-          best_of: number | null
-          esport_type: string | null
-          match_date: string | null
-          match_id: string | null
-          source: string | null
-          start_time: string | null
-          status: string | null
-          team1_id: string | null
-          team1_logo: string | null
-          team1_name: string | null
-          team2_id: string | null
-          team2_logo: string | null
-          team2_name: string | null
-          tournament: string | null
-        }
-        Relationships: []
-      }
-      pandascore_cards: {
-        Row: {
-          best_of: number | null
-          esport_type: string | null
-          match_date: string | null
-          match_id: string | null
-          source: string | null
-          start_time: string | null
-          status: string | null
-          team1_id: string | null
-          team1_logo: string | null
-          team1_name: string | null
-          team2_id: string | null
-          team2_logo: string | null
-          team2_name: string | null
-          tournament: string | null
-        }
-        Insert: {
-          best_of?: never
-          esport_type?: string | null
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: string | null
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: never
-        }
-        Update: {
-          best_of?: never
-          esport_type?: string | null
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: string | null
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: never
-        }
-        Relationships: []
-      }
       pandascore_view_teams: {
         Row: {
           acronym: string | null
@@ -2920,14 +2771,6 @@ export type Database = {
         Args: { p_user: string }
         Returns: number
       }
-      get_daily_match_counts_fast: {
-        Args: { end_date: string; start_date: string }
-        Returns: {
-          count: number
-          match_date: string
-          source: string
-        }[]
-      }
       get_faceit_matches_around_date: {
         Args: { target_date: string }
         Returns: {
@@ -2989,29 +2832,6 @@ export type Database = {
       }
       get_head_to_head_stats: {
         Args: { team1_id: string; team2_id: string }
-        Returns: Json
-      }
-      get_match_cards_paginated: {
-        Args: { cursor_time?: string; page_size?: number; target_date: string }
-        Returns: {
-          best_of: number
-          esport_type: string
-          match_date: string
-          match_id: string
-          source: string
-          start_time: string
-          status: string
-          team1_id: string
-          team1_logo: string
-          team1_name: string
-          team2_id: string
-          team2_logo: string
-          team2_name: string
-          tournament: string
-        }[]
-      }
-      get_match_details_heavy: {
-        Args: { p_match_id: string; p_source: string }
         Returns: Json
       }
       get_pandascore_matches_around_date: {
@@ -3124,10 +2944,6 @@ export type Database = {
       progress_mission: {
         Args: { p_code: string; p_inc?: number }
         Returns: Json
-      }
-      refresh_daily_match_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       retroactive_grant_level_rewards: {
         Args: Record<PropertyKey, never>
