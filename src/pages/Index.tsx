@@ -432,9 +432,8 @@ const Index = () => {
         <div className="mb-8">
           <DateMatchPicker
             selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
+            onDateSelect={setSelectedDate}
             matchCounts={matchCounts}
-            loading={loadingCalendar}
             detailedMatchCounts={matchCountBreakdown}
           />
         </div>
