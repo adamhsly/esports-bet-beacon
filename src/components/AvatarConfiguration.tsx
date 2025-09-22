@@ -3,6 +3,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Camera, User, Loader2, CheckCircle, Palette, Hexagon } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
@@ -171,7 +172,8 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4 overflow-auto">
+        <ScrollArea className="max-h-[calc(85vh-6rem)]">
+          <div className="space-y-6 py-4 px-1">
           {/* Live Preview */}
           <div className="flex justify-center">
             <div className="relative">
@@ -303,8 +305,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {availableFrames.length > 1 && (
                       <div>
                         <h4 className="text-sm font-medium text-foreground mb-3">Available to Use:</h4>
-                        <div className="grid grid-cols-3 gap-3">
-                          {availableFrames.map((frame) => (
+                        <ScrollArea className="max-h-64">
+                          <div className="grid grid-cols-3 gap-3 pr-3">
+                            {availableFrames.map((frame) => (
                             <div
                               key={frame.id}
                               className={cn(
@@ -365,8 +368,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                 <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-primary" />
                               )}
                             </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
                       </div>
                     )}
 
@@ -374,8 +378,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {frameRewards.filter(f => f.state === 'locked').length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-3">Coming Soon:</h4>
-                        <div className="grid grid-cols-3 gap-3">
-                          {frameRewards.filter(f => f.state === 'locked').slice(0, 6).map((frame) => (
+                        <ScrollArea className="max-h-48">
+                          <div className="grid grid-cols-3 gap-3 pr-3">
+                            {frameRewards.filter(f => f.state === 'locked').slice(0, 6).map((frame) => (
                             <div
                               key={frame.id}
                               className="relative p-3 rounded-xl border border-border bg-muted/30 opacity-60"
@@ -416,8 +421,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                 )}
                               </div>
                             </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
                       </div>
                     )}
 
@@ -459,8 +465,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {availableBorders.length > 1 && (
                       <div>
                         <h4 className="text-sm font-medium text-foreground mb-3">Available to Use:</h4>
-                        <div className="grid grid-cols-3 gap-3">
-                          {availableBorders.map((border) => (
+                        <ScrollArea className="max-h-64">
+                          <div className="grid grid-cols-3 gap-3 pr-3">
+                            {availableBorders.map((border) => (
                             <div
                               key={border.id}
                               className={cn(
@@ -520,8 +527,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                 <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-primary" />
                               )}
                             </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
                       </div>
                     )}
 
@@ -529,8 +537,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {borderRewards.filter(b => b.state === 'locked').length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-3">Coming Soon:</h4>
-                        <div className="grid grid-cols-3 gap-3">
-                          {borderRewards.filter(b => b.state === 'locked').slice(0, 6).map((border) => (
+                        <ScrollArea className="max-h-48">
+                          <div className="grid grid-cols-3 gap-3 pr-3">
+                            {borderRewards.filter(b => b.state === 'locked').slice(0, 6).map((border) => (
                             <div
                               key={border.id}
                               className="relative p-3 rounded-xl border border-border bg-muted/30 opacity-60"
@@ -570,8 +579,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                 )}
                               </div>
                             </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
                       </div>
                     )}
 
@@ -598,6 +608,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
             </Button>
           </div>
         </div>
+      </ScrollArea>
       </DialogContent>
     </Dialog>
   );

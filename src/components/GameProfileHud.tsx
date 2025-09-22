@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack, type RewardItem } from '@/hooks/useRewardsTrack';
@@ -119,84 +120,139 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     : "min-h-screen bg-gradient-to-br from-[#0B0F14] to-[#12161C] text-white";
   const paddingClass = isSheet ? "p-4 sm:p-6" : "p-4";
 
+  const mainContentHeight = isSheet ? "max-h-[calc(85vh-2rem)]" : "min-h-screen";
+
   return (
     <div className={containerClass}>
-      <div className={`${paddingClass} space-y-6`}>
-        {/* Avatar & Level Header */}
-        <Card className="bg-gradient-to-br from-[#1A1F26] via-[#252A32] to-[#12161C] border border-white/[0.08] overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 to-neon-purple/5"></div>
-          <CardContent className="relative z-10 p-6 text-center">
-            {/* Avatar */}
-            <div className="relative mx-auto w-20 h-20 mb-4">
-              <EnhancedAvatar
-                src={profile?.avatar_url}
-                alt="User Avatar"
-                fallback={user?.email?.slice(0, 2).toUpperCase() || <User className="w-8 h-8" />}
-                frameUrl={currentFrameAsset}
-                borderUrl={currentBorderAsset}
-                size="xl"
-                className="shadow-[0_0_30px_rgba(79,172,254,0.3)]"
-              />
-              
-              {/* Configure Avatar Button */}
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => setShowAvatarConfig(true)}
-                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-neon-blue/50 hover:border-neon-blue"
-                style={{ zIndex: 4 }}
-              >
-                <Settings className="w-3 h-3 text-white" />
-              </Button>
-            </div>
-
-            {/* Level */}
-            <h1 className="text-2xl font-gaming text-white mb-2">Level {level}</h1>
-            
-            {/* XP Progress */}
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm text-white/60">
-                <span>{Math.floor(currentLevelXP)}</span>
-                <span>{baseXPForLevel} XP</span>
+      <ScrollArea className={mainContentHeight}>
+        <div className={`${paddingClass} space-y-6`}>
+          {/* Avatar & Level Header */}
+          <Card className="bg-gradient-to-br from-[#1A1F26] via-[#252A32] to-[#12161C] border border-white/[0.08] overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 to-neon-purple/5"></div>
+            <CardContent className="relative z-10 p-6 text-center">
+              {/* Avatar */}
+              <div className="relative mx-auto w-20 h-20 mb-4">
+                <EnhancedAvatar
+                  src={profile?.avatar_url}
+                  alt="User Avatar"
+                  fallback={user?.email?.slice(0, 2).toUpperCase() || <User className="w-8 h-8" />}
+                  frameUrl={currentFrameAsset}
+                  borderUrl={currentBorderAsset}
+                  size="xl"
+                  className="shadow-[0_0_30px_rgba(79,172,254,0.3)]"
+                />
+                
+                {/* Configure Avatar Button */}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setShowAvatarConfig(true)}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-[#1A1F26] border-neon-blue/50 hover:border-neon-blue"
+                  style={{ zIndex: 4 }}
+                >
+                  <Settings className="w-3 h-3 text-white" />
+                </Button>
               </div>
-              <Progress 
-                value={xpProgress} 
-                className="h-2 bg-[#0F1722]"
-              />
+
+              {/* Level */}
+              <h1 className="text-2xl font-gaming text-white mb-2">Level {level}</h1>
+              
+              {/* XP Progress */}
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-sm text-white/60">
+                  <span>{Math.floor(currentLevelXP)}</span>
+                  <span>{baseXPForLevel} XP</span>
+                </div>
+                <Progress 
+                  value={xpProgress} 
+                  className="h-2 bg-[#0F1722]"
+                />
+              </div>
+
+              {/* Streak Badge */}
+              {streak_count > 0 && (
+                <Badge className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 text-orange-300 font-gaming">
+                  <Flame className="w-3 h-3 mr-1" />
+                  {streak_count} day streak
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Rewards Section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-gaming text-[#EAF2FF]">Rewards</h2>
+              {!premiumActive && (
+                <Button 
+                  onClick={onUnlockPremium}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                >
+                  <Flame className="w-4 h-4 mr-2" />
+                  Unlock Premium
+                </Button>
+              )}
             </div>
 
-            {/* Streak Badge */}
-            {streak_count > 0 && (
-              <Badge className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 text-orange-300 font-gaming">
-                <Flame className="w-3 h-3 mr-1" />
-                {streak_count} day streak
+            {/* FREE Track */}
+            <div className="space-y-3">
+              <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 font-gaming text-sm px-3 py-1">
+                FREE
               </Badge>
-            )}
-          </CardContent>
-        </Card>
+              
+              <div className="relative">
+                <div 
+                  className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+                  style={{ 
+                    scrollbarWidth: 'none', 
+                    msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  {free.map((item) => (
+                    <RewardCard 
+                      key={`free-${item.id}`} 
+                      item={item} 
+                      onClick={() => setSelectedReward(item)} 
+                    />
+                  ))}
+                </div>
+                
+                {/* Progress Indicator */}
+                {free.length > 0 && (
+                  <div className="relative mt-2">
+                    <div className="h-0.5 bg-[#223049] rounded-full" />
+                    <div 
+                      className="absolute top-0 w-2 h-2 bg-neon-blue rounded-full transform -translate-y-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(79,172,254,0.6)]"
+                      style={{
+                        left: `${Math.min(100, Math.max(0, 
+                          ((currentLevel - (free[0]?.level || 1)) / 
+                          Math.max(1, (free[free.length - 1]?.level || 1) - (free[0]?.level || 1))) * 100
+                        ))}%`
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
 
-        {/* Rewards Section */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-gaming text-[#EAF2FF]">Rewards</h2>
-            {!premiumActive && (
-              <Button 
-                onClick={onUnlockPremium}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]"
-              >
-                <Flame className="w-4 h-4 mr-2" />
-                Unlock Premium
-              </Button>
-            )}
-          </div>
-
-          {/* FREE Track */}
-          <div className="space-y-3">
-            <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30 font-gaming text-sm px-3 py-1">
-              FREE
-            </Badge>
-            
-            <div className="relative">
+            {/* PREMIUM Track */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 font-gaming text-sm px-3 py-1">
+                  PREMIUM
+                </Badge>
+                {!premiumActive && (
+                  <Button 
+                    onClick={onUnlockPremium}
+                    size="sm"
+                    className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 text-yellow-400 border border-yellow-400/30 font-gaming text-xs px-2 py-1"
+                  >
+                    Unlock Premium
+                  </Button>
+                )}
+              </div>
+              
               <div 
                 className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
                 style={{ 
@@ -205,147 +261,96 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
-                {free.map((item) => (
+                {premium.map((item) => (
                   <RewardCard 
-                    key={`free-${item.id}`} 
+                    key={`premium-${item.id}`} 
                     item={item} 
                     onClick={() => setSelectedReward(item)} 
                   />
                 ))}
               </div>
-              
-              {/* Progress Indicator */}
-              {free.length > 0 && (
-                <div className="relative mt-2">
-                  <div className="h-0.5 bg-[#223049] rounded-full" />
-                  <div 
-                    className="absolute top-0 w-2 h-2 bg-neon-blue rounded-full transform -translate-y-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(79,172,254,0.6)]"
-                    style={{
-                      left: `${Math.min(100, Math.max(0, 
-                        ((currentLevel - (free[0]?.level || 1)) / 
-                        Math.max(1, (free[free.length - 1]?.level || 1) - (free[0]?.level || 1))) * 100
-                      ))}%`
-                    }}
-                  />
-                </div>
-              )}
             </div>
           </div>
 
-          {/* PREMIUM Track */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 font-gaming text-sm px-3 py-1">
-                PREMIUM
-              </Badge>
-              {!premiumActive && (
-                <Button 
-                  onClick={onUnlockPremium}
-                  size="sm"
-                  className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 text-yellow-400 border border-yellow-400/30 font-gaming text-xs px-2 py-1"
-                >
-                  Unlock Premium
-                </Button>
-              )}
-            </div>
-            
-            <div 
-              className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
-              style={{ 
-                scrollbarWidth: 'none', 
-                msOverflowStyle: 'none',
-                WebkitOverflowScrolling: 'touch'
-              }}
-            >
-              {premium.map((item) => (
-                <RewardCard 
-                  key={`premium-${item.id}`} 
-                  item={item} 
-                  onClick={() => setSelectedReward(item)} 
-                />
-              ))}
-            </div>
-          </div>
+          {/* Missions Section */}
+          <MissionsView />
         </div>
+      </ScrollArea>
 
-        {/* Missions Section */}
-        <MissionsView />
+      {/* Avatar Configuration Modal */}
+      <AvatarConfiguration 
+        isOpen={showAvatarConfig}
+        onOpenChange={setShowAvatarConfig}
+        currentAvatarUrl={profile?.avatar_url}
+        currentFrameId={profile?.avatar_frame_id}
+        currentBorderId={profile?.avatar_border_id}
+        avatarFrameUrl={currentFrameAsset}
+        avatarBorderUrl={currentBorderAsset}
+      />
 
-        {/* Avatar Configuration Modal */}
-        <AvatarConfiguration 
-          isOpen={showAvatarConfig}
-          onOpenChange={setShowAvatarConfig}
-          currentAvatarUrl={profile?.avatar_url}
-          currentFrameId={profile?.avatar_frame_id}
-          currentBorderId={profile?.avatar_border_id}
-          avatarFrameUrl={currentFrameAsset}
-          avatarBorderUrl={currentBorderAsset}
-        />
-
-        {/* Reward Detail Modal */}
-        <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>
-          <DialogContent className="bg-[#0B1220] border border-[#223049] text-[#EAF2FF] max-w-sm mx-auto rounded-xl">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-gaming text-[#EAF2FF]">
-                {selectedReward?.value || `${selectedReward?.type?.charAt(0).toUpperCase()}${selectedReward?.type?.slice(1)}`}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {/* Large Icon */}
-              <div className="flex justify-center">
-                <div className="w-24 h-24 flex items-center justify-center">
-                  {selectedReward?.assetUrl ? (
-                    <img 
-                      src={selectedReward.assetUrl} 
-                      alt={`${selectedReward.type} reward`} 
-                      className="w-20 h-20 object-contain" 
-                    />
-                  ) : selectedReward?.type === 'credits' ? (
-                    <Coins className="w-20 h-20 text-yellow-400" />
-                  ) : selectedReward?.type === 'badge' ? (
-                    <Star className="w-20 h-20 text-neon-blue" />
-                  ) : selectedReward?.type === 'frame' ? (
-                    <Trophy className="w-20 h-20 text-purple-400" />
-                  ) : selectedReward?.type === 'border' ? (
-                    <Target className="w-20 h-20 text-neon-purple" />
-                  ) : (
-                    <Crown className="w-20 h-20 text-yellow-400" />
-                  )}
-                </div>
-              </div>
-
-              {/* Unlock Level */}
-              <div className="text-center">
-                <p className="text-[#CFE3FF] text-sm">
-                  Unlocks at Level {selectedReward?.level}
-                </p>
-              </div>
-
-              {/* State Display */}
-              <div className="flex justify-center">
-                {selectedReward?.state === 'unlocked' && (
-                  <Badge className="bg-green-500/20 text-[#79FFD7] border-[#79FFD7]/30">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    Unlocked
-                  </Badge>
-                )}
-                {selectedReward?.state === 'claimable' && (
-                  <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
-                    <Gift className="w-4 h-4 mr-1" />
-                    Ready to Claim
-                  </Badge>
-                )}
-                {selectedReward?.state === 'locked' && (
-                  <Badge className="bg-[#F5C042]/20 text-[#F5C042] border-[#F5C042]/30">
-                    <Lock className="w-4 h-4 mr-1" />
-                    Locked
-                  </Badge>
+      {/* Reward Detail Modal */}
+      <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>
+        <DialogContent className="bg-[#0B1220] border border-[#223049] text-[#EAF2FF] max-w-sm mx-auto rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-gaming text-[#EAF2FF]">
+              {selectedReward?.value || `${selectedReward?.type?.charAt(0).toUpperCase()}${selectedReward?.type?.slice(1)}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Large Icon */}
+            <div className="flex justify-center">
+              <div className="w-24 h-24 flex items-center justify-center">
+                {selectedReward?.assetUrl ? (
+                  <img 
+                    src={selectedReward.assetUrl} 
+                    alt={`${selectedReward.type} reward`} 
+                    className="w-20 h-20 object-contain" 
+                  />
+                ) : selectedReward?.type === 'credits' ? (
+                  <Coins className="w-20 h-20 text-yellow-400" />
+                ) : selectedReward?.type === 'badge' ? (
+                  <Star className="w-20 h-20 text-neon-blue" />
+                ) : selectedReward?.type === 'frame' ? (
+                  <Trophy className="w-20 h-20 text-purple-400" />
+                ) : selectedReward?.type === 'border' ? (
+                  <Target className="w-20 h-20 text-neon-purple" />
+                ) : (
+                  <Crown className="w-20 h-20 text-yellow-400" />
                 )}
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+
+            {/* Unlock Level */}
+            <div className="text-center">
+              <p className="text-[#CFE3FF] text-sm">
+                Unlocks at Level {selectedReward?.level}
+              </p>
+            </div>
+
+            {/* State Display */}
+            <div className="flex justify-center">
+              {selectedReward?.state === 'unlocked' && (
+                <Badge className="bg-green-500/20 text-[#79FFD7] border-[#79FFD7]/30">
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Unlocked
+                </Badge>
+              )}
+              {selectedReward?.state === 'claimable' && (
+                <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
+                  <Gift className="w-4 h-4 mr-1" />
+                  Ready to Claim
+                </Badge>
+              )}
+              {selectedReward?.state === 'locked' && (
+                <Badge className="bg-[#F5C042]/20 text-[#F5C042] border-[#F5C042]/30">
+                  <Lock className="w-4 h-4 mr-1" />
+                  Locked
+                </Badge>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

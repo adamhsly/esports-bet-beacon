@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProfilePage } from '@/components/GameProfileHud';
 import { useMobile } from '@/hooks/useMobile';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -22,14 +23,14 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
     return (
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
         <DrawerContent className="h-[85vh] bg-[#0F1420] border-t-[#223049] rounded-t-2xl">
-          <div className="flex-1 overflow-auto">
+          <ScrollArea className="flex-1 h-full">
             <ProfilePage 
               variant="sheet"
               onUnlockPremium={() => {
                 console.log('Navigate to premium checkout');
               }}
             />
-          </div>
+          </ScrollArea>
         </DrawerContent>
       </Drawer>
     );
@@ -37,18 +38,20 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[820px] max-h-[88vh] overflow-auto bg-[#0F1420] border-[#223049] rounded-xl p-0">
+      <DialogContent className="max-w-[820px] max-h-[88vh] bg-[#0F1420] border-[#223049] rounded-xl p-0 overflow-hidden">
         <VisuallyHidden>
           <DialogHeader>
             <DialogTitle>Profile</DialogTitle>
           </DialogHeader>
         </VisuallyHidden>
-        <ProfilePage 
-          variant="sheet"
-          onUnlockPremium={() => {
-            console.log('Navigate to premium checkout');
-          }}
-        />
+        <ScrollArea className="max-h-[88vh]">
+          <ProfilePage 
+            variant="sheet"
+            onUnlockPremium={() => {
+              console.log('Navigate to premium checkout');
+            }}
+          />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
