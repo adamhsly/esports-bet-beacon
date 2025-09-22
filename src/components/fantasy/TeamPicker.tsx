@@ -455,8 +455,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       // Automatically calculate and spend bonus credits if needed
       const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
       if (bonusCreditsNeeded > 0) {
-        const spendSuccess = await spendBonusCredits(round.id, bonusCreditsNeeded);
-        if (!spendSuccess) {
+        const { data, error } = await supabase.rpc('spend_bonus_credits', {
+          p_user: user.id,
+          p_round: round.id,
+          p_base_amount: Math.min(budgetSpent, SALARY_CAP),
+          p_bonus_amount: bonusCreditsNeeded
+        });
+
+        if (error || !data) {
+          console.error('Failed to spend bonus credits:', error);
           throw new Error(`Failed to auto-spend ${bonusCreditsNeeded} bonus credits. Please check your available balance.`);
         }
       }

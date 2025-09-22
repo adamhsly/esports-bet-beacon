@@ -2974,7 +2974,14 @@ export type Database = {
         Returns: Json
       }
       spend_bonus_credits: {
-        Args: { p_amount: number; p_round: string; p_user: string }
+        Args:
+          | { p_amount: number; p_round: string; p_user: string }
+          | {
+              p_base_amount: number
+              p_bonus_amount: number
+              p_round: string
+              p_user: string
+            }
         Returns: boolean
       }
       spend_credits: {
