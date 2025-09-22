@@ -145,18 +145,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       if (data) {
         setHasExistingSubmission(true);
-        toast.error('You already have an active team for this round. You can only submit one lineup per round.', {
-          action: {
-            label: 'View In Progress',
-            onClick: () => {
-              onBack();
-              if (onNavigateToInProgress) {
-                onNavigateToInProgress();
-              }
-            }
-          },
-          duration: 8000
-        });
+        // Navigate directly to in-progress tab
+        onBack();
+        if (onNavigateToInProgress) {
+          onNavigateToInProgress();
+        }
+        return;
       }
     } catch (error) {
       console.error('Error checking existing submission:', error);
@@ -275,7 +269,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   const submitTeams = async () => {
     if (hasExistingSubmission) {
-      toast.error('You already have an active team for this round.');
+      onBack();
+      if (onNavigateToInProgress) {
+        onNavigateToInProgress();
+      }
       return;
     }
 
