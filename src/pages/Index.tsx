@@ -20,9 +20,7 @@ import { isDateInRange, getMostRecentMatchDate } from '@/utils/timezoneUtils';
 import { FilterPills } from '@/components/FilterPills';
 import { EsportsLogoFilter } from '@/components/EsportsLogoFilter';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
-import { useMatchCounts, getTotalMatchCountsByDate } from '@/hooks/useMatchCounts';
-import { useMatchCards } from '@/hooks/useMatchCards';
-
+import { getMatchesAroundDate } from '@/lib/supabaseMatchFunctions';
 
 // Define the expected structure of SportDevs teams data
 interface SportDevsTeamsData {
@@ -200,89 +198,73 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
   }, {});
 }
 
+// Game type options are now imported from shared lib
+
 const Index = () => {
   // Initialize with today's date (current date, not hardcoded)
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [selectedGameType, setSelectedGameType] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('all');
-  const { toast } = useToast();
+  const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
+  const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
+  const [dateFilteredFinishedMatches, setDateFilteredFinishedMatches] = useState<MatchInfo[]>([]);
+  const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
+  const [matchCounts, setMatchCounts] = useState<Record<string, number>>({});
+  const [detailedMatchCounts, setDetailedMatchCounts] = useState<Record<string, MatchCountBreakdown>>({});
+  const [loadingDateFiltered, setLoadingDateFiltered] = useState(true);
+  const [loadingCalendar, setLoadingCalendar] = useState(true);
+  const {
+    toast
+  } = useToast();
 
   // Check if selected date is today
   const isSelectedDateToday = isToday(selectedDate);
 
-  // Use the new optimized match counts hook
-  const startDate = subMonths(selectedDate, 1);
-  const endDate = addMonths(selectedDate, 1);
-  const { counts: matchCountBreakdown, loading: loadingCalendar } = useMatchCounts(startDate, endDate, selectedGameType);
-  const matchCounts = getTotalMatchCountsByDate(matchCountBreakdown);
+  // 🔧 ENHANCED: Updated filtering function for game type with comprehensive game support
+  const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
+    console.log(`🎮 Filtering ${matches.length} matches by game type: ${gameType}`);
+    if (gameType === 'all') {
+      console.log(`🎮 All games selected, returning all ${matches.length} matches`);
+      return matches;
+    }
+    const filtered = matches.filter(match => {
+      const esportType = match.esportType?.toLowerCase?.() ?? '';
+      const originalEsportType = match.esportType ?? '';
+      console.log(`🎮 Match ${match.id} has esportType: "${originalEsportType}" (lowercase: "${esportType}"), checking against filter: ${gameType}`);
 
-  // Use the new optimized match cards hook  
-  const { 
-    cards: lightweightCards, 
-    loading: loadingDateFiltered, 
-    hasMore, 
-    loadMore 
-  } = useMatchCards({
-    date: selectedDate,
-    gameType: selectedGameType,
-    statusFilter: selectedStatusFilter,
-    sourceFilter: selectedSourceFilter
-  });
+      // Create comprehensive game type mappings
+      const gameMatches = {
+        'counter-strike': () => ['csgo', 'cs2', 'cs', 'counter-strike', 'counterstrike'].includes(esportType) || esportType.includes('counter') || originalEsportType === 'Counter-Strike',
+        'lol': () => ['lol', 'leagueoflegends', 'league-of-legends', 'league of legends'].includes(esportType) || esportType.includes('league') || originalEsportType === 'LoL',
+        'valorant': () => ['valorant', 'val'].includes(esportType) || originalEsportType === 'Valorant',
+        'dota2': () => ['dota2', 'dota', 'dota-2', 'dota 2'].includes(esportType) || esportType.includes('dota') || originalEsportType === 'Dota 2',
+        'ea-sports-fc': () => ['ea sports fc', 'easportsfc', 'fifa', 'football', 'soccer'].includes(esportType) || originalEsportType === 'EA Sports FC',
+        'rainbow-6-siege': () => ['rainbow 6 siege', 'rainbow6siege', 'r6', 'siege'].includes(esportType) || originalEsportType === 'Rainbow 6 Siege',
+        'rocket-league': () => ['rocket league', 'rocketleague', 'rl'].includes(esportType) || originalEsportType === 'Rocket League',
+        'starcraft-2': () => ['starcraft 2', 'starcraft2', 'sc2'].includes(esportType) || originalEsportType === 'StarCraft 2',
+        'overwatch': () => ['overwatch', 'ow'].includes(esportType) || originalEsportType === 'Overwatch',
+        'king-of-glory': () => ['king of glory', 'kingofglory', 'kog'].includes(esportType) || originalEsportType === 'King of Glory',
+        'call-of-duty': () => ['call of duty', 'callofduty', 'cod'].includes(esportType) || originalEsportType === 'Call of Duty',
+        'lol-wild-rift': () => ['lol wild rift', 'lolwildrift', 'wild rift', 'wildrift'].includes(esportType) || originalEsportType === 'LoL Wild Rift',
+        'pubg': () => ['pubg', 'playerunknowns battlegrounds'].includes(esportType) || originalEsportType === 'PUBG',
+        'mobile-legends': () => ['mobile legends: bang bang', 'mobile legends', 'mobilelegends', 'ml', 'mlbb'].includes(esportType) || originalEsportType === 'Mobile Legends: Bang Bang'
+      };
+      const matcher = gameMatches[gameType as keyof typeof gameMatches];
+      if (matcher) {
+        const matches = matcher();
+        console.log(`🎮 ${gameType} filter - Match ${match.id} esportType "${originalEsportType}" matches: ${matches}`);
+        return matches;
+      }
 
-  // Transform lightweight cards to MatchInfo format for compatibility
-  const transformLightweightToMatchInfo = (card: any): MatchInfo => {
-    return {
-      id: `${card.source}_${card.match_id}`,
-      teams: [
-        {
-          name: card.team1_name,
-          logo: card.team1_logo,
-          id: card.team1_id
-        },
-        {
-          name: card.team2_name,
-          logo: card.team2_logo,
-          id: card.team2_id
-        }
-      ] as [any, any],
-      startTime: card.start_time,
-      tournament: card.tournament,
-      tournament_name: card.tournament_name,
-      league_name: card.league_name,
-      esportType: card.esport_type,
-      bestOf: card.best_of,
-      source: card.source,
-      status: card.status,
-      // Include heavy data if available for winner/score display
-      rawData: card.raw_data,
-      faceitData: card.faceit_data
-    };
+      // Fallback for exact match
+      const matches = esportType === gameType || originalEsportType.toLowerCase() === gameType;
+      console.log(`🎮 ${gameType} filter (fallback) - Match ${match.id} esportType "${originalEsportType}" matches: ${matches}`);
+      return matches;
+    });
+    console.log(`🎮 Game type filtering result: ${filtered.length} matches after filtering for ${gameType}`);
+    return filtered;
   };
-
-  const allMatches = lightweightCards.map(transformLightweightToMatchInfo);
-
-  // Categorize matches by status for display
-  const liveMatches = allMatches.filter(match => {
-    const category = match.source === 'amateur' 
-      ? getFaceitStatusCategory(match.status || '', match.id, match.startTime) 
-      : getPandaScoreStatusCategory(match.status || '', match.startTime);
-    return category === 'live';
-  });
-  
-  const upcomingMatches = allMatches.filter(match => {
-    const category = match.source === 'amateur' 
-      ? getFaceitStatusCategory(match.status || '', match.id, match.startTime) 
-      : getPandaScoreStatusCategory(match.status || '', match.startTime);
-    return category === 'upcoming';
-  });
-  
-  const finishedMatches = allMatches.filter(match => {
-    const category = match.source === 'amateur' 
-      ? getFaceitStatusCategory(match.status || '', match.id, match.startTime) 
-      : getPandaScoreStatusCategory(match.status || '', match.startTime);
-    return category === 'finished';
-  });
 
   // Helper function to get tournament metadata from matches
   const getTournamentMetadata = (matches: MatchInfo[]) => {
@@ -384,7 +366,10 @@ const Index = () => {
 
     // Serie info for PandaScore
     if (metadata.serieInfo) {
-      const { year, season } = metadata.serieInfo;
+      const {
+        year,
+        season
+      } = metadata.serieInfo;
       if (year || season) {
         items.push(<span key="serie" className="text-xs text-purple-400 font-medium">
             {year && season ? `${year} ${season}` : year || season}
@@ -408,261 +393,359 @@ const Index = () => {
       </div> : null;
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+  // Load calendar match counts locally from fetched matches
+  useEffect(() => {
+    async function loadCalendarCounts() {
+      setLoadingCalendar(true);
+      try {
+        console.log('📅 Loading calendar counts locally for target date:', selectedDate.toDateString(), 'and game type:', selectedGameType);
+
+        // Fetch matches around the selected date and compute counts locally
+        const matches = await getMatchesAroundDate(selectedDate);
+        console.log(`📅 Retrieved ${matches.length} matches for calendar counts computation`);
+
+        // Apply game type filtering before calculating counts
+        const filteredMatches = filterMatchesByGameType(matches, selectedGameType);
+        console.log(`📅 After game type filtering (${selectedGameType}): ${filteredMatches.length} matches`);
+        const matchCountBreakdown = getDetailedMatchCountsByDate(filteredMatches);
+        const totalCounts = getTotalMatchCountsFromMatches(filteredMatches);
+        setDetailedMatchCounts(matchCountBreakdown);
+        setMatchCounts(totalCounts);
+        console.log(`📅 Calendar counts loaded locally: ${Object.keys(totalCounts).length} days`);
+      } catch (error) {
+        console.error('❌ Error loading calendar counts:', error);
+        setDetailedMatchCounts({});
+        setMatchCounts({});
+      } finally {
+        setLoadingCalendar(false);
+      }
+    }
+    loadCalendarCounts();
+  }, [selectedDate, selectedGameType]);
+
+  // Load matches for the selected date using Supabase functions
+  useEffect(() => {
+    async function loadDateFilteredMatches() {
+      setLoadingDateFiltered(true);
+      try {
+        console.log('🗓️ Loading matches for selected date using Supabase functions:', selectedDate.toDateString());
+
+        // Get matches from Supabase functions
+        const matches = await getMatchesAroundDate(selectedDate);
+        console.log(`📊 Retrieved ${matches.length} total matches from Supabase functions`);
+
+        // Apply filters
+        const filteredMatches = applyAllFilters(matches);
+        console.log(`📊 After all filters: ${filteredMatches.length} matches`);
+
+        // Filter by selected date
+        const dateFilteredMatches = filteredMatches.filter(match => {
+          return isDateInRange(match.startTime, selectedDate);
+        });
+        console.log(`📊 Found ${dateFilteredMatches.length} matches for selected date (${selectedDate.toDateString()})`);
+
+        // Categorize matches by status
+        const liveMatches: MatchInfo[] = [];
+        const upcomingMatches: MatchInfo[] = [];
+        const finishedMatches: MatchInfo[] = [];
+        dateFilteredMatches.forEach(match => {
+          if (match.source === 'amateur') {
+            const statusCategory = getFaceitStatusCategory(match.status || '', match.id, match.startTime);
+            if (statusCategory === 'live') {
+              liveMatches.push(match);
+            } else if (statusCategory === 'finished') {
+              finishedMatches.push(match);
+            } else {
+              upcomingMatches.push(match);
+            }
+          } else if (match.source === 'professional') {
+            const statusCategory = getPandaScoreStatusCategory(match.status || '', match.startTime);
+            if (statusCategory === 'live') {
+              liveMatches.push(match);
+            } else if (statusCategory === 'finished') {
+              finishedMatches.push(match);
+            } else if (statusCategory === 'upcoming') {
+              upcomingMatches.push(match);
+            } else {
+              upcomingMatches.push(match);
+            }
+          }
+        });
+        console.log(`📊 Final categorization for ${selectedDate.toDateString()}:`, {
+          live: liveMatches.length,
+          upcoming: upcomingMatches.length,
+          finished: finishedMatches.length
+        });
+
+        // Sort matches by start time
+        const sortByStartTime = (a: MatchInfo, b: MatchInfo) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        setDateFilteredLiveMatches(liveMatches.sort(sortByStartTime));
+        setDateFilteredUpcomingMatches(upcomingMatches.sort(sortByStartTime));
+        setDateFilteredFinishedMatches(finishedMatches.sort(sortByStartTime));
+      } catch (error) {
+        console.error('❌ Error loading date-filtered matches:', error);
+        setDateFilteredLiveMatches([]);
+        setDateFilteredUpcomingMatches([]);
+        setDateFilteredFinishedMatches([]);
+      } finally {
+        setLoadingDateFiltered(false);
+      }
+    }
+    loadDateFilteredMatches();
+  }, [selectedDate, selectedGameType, selectedStatusFilter, selectedSourceFilter]);
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      console.log('📅 User selected date:', date.toDateString());
+      setSelectedDate(startOfDay(date));
+    }
+  };
+  const handleGameTypeChange = (value: string) => {
+    setSelectedGameType(value);
+  };
+  const handleStatusFilterChange = (value: string) => {
+    setSelectedStatusFilter(value);
+  };
+  const handleSourceFilterChange = (value: string) => {
+    setSelectedSourceFilter(value);
+  };
+
+  // Enhanced filtering function that combines game type, status, and source filters
+  const applyAllFilters = (matches: MatchInfo[]) => {
+    let filtered = filterMatchesByGameType(matches, selectedGameType);
+
+    // Apply status filter
+    if (selectedStatusFilter !== 'all') {
+      filtered = filtered.filter(match => {
+        const statusCategory = match.source === 'amateur' ? getFaceitStatusCategory(match.status || '', match.id, match.startTime) : getPandaScoreStatusCategory(match.status || '', match.startTime);
+        return statusCategory === selectedStatusFilter;
+      });
+    }
+
+    // Apply source filter
+    if (selectedSourceFilter !== 'all') {
+      filtered = filtered.filter(match => match.source === selectedSourceFilter);
+    }
+    return filtered;
+  };
+  const homepageSEOContent = {
+    title: "Your Ultimate Esports Betting & Stats Platform",
+    paragraphs: ["Stay updated with live esports scores from major tournaments and competitions around the world. Our real-time esports match tracker provides second-by-second updates from your favorite games including CS:GO, League of Legends, Dota 2, and Valorant.", "Compare esports odds from leading betting sites in one convenient location. Find the best value for your bets with our comprehensive esports odds comparison tool featuring upcoming esports matches across all major titles.", "Explore in-depth team stats, performance analytics, and historical match results to inform your betting decisions. Our database tracks player performance, team rankings, and head-to-head statistics from all professional esports competitions.", "Whether you're following international championships or regional qualifiers, our platform provides all the information you need to stay ahead of the game with live coverage, match predictions, and expert analysis for the most competitive esports titles."]
+  };
+  return <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark">
       <SearchableNavbar />
+      <div className="flex-grow">
+        <div className="w-full">
+          {/* Live Data Test Panel - Only show in development */}
+          {process.env.NODE_ENV === 'development' && <div className="mb-8 mx-2 md:mx-4">
+              <LiveDataTestPanel />
+            </div>}
+
+          {/* Unified Matches Section with Date Picker */}
+          <div className="mb-12">
+            
+            {/* ESPORTS LOGO FILTER BAR */}
+            <div className="mx-2 md:mx-4">
+              <EsportsLogoFilter selectedGameType={selectedGameType} onGameTypeChange={handleGameTypeChange} />
+            </div>
+
+            {/* FILTER PILLS (Status and Source only) */}
+            <div className="mx-2 md:mx-4">
+              <div className="flex flex-wrap items-center gap-2 mb-6 px-4 py-1">
+                <FilterPills gameType={selectedGameType} statusFilter={selectedStatusFilter} sourceFilter={selectedSourceFilter} onGameTypeChange={handleGameTypeChange} onStatusFilterChange={handleStatusFilterChange} onSourceFilterChange={handleSourceFilterChange} />
+              </div>
+            </div>
+
+            {/* HORIZONTAL DAY SELECTOR */}
+            {!loadingCalendar && <div className="mx-2 md:mx-4">
+                <DateMatchPicker selectedDate={selectedDate} onDateSelect={setSelectedDate} matchCounts={matchCounts} detailedMatchCounts={detailedMatchCounts} />
+              </div>}
+
+            {/* Fantasy Banner */}
+            <div className="mx-2 md:mx-4 mb-8">
+              <div className="max-w-4xl mx-auto">
+                <Link to="/fantasy" className="block hover:opacity-90 transition-opacity">
+                  <img src="/lovable-uploads/863ef2a8-193d-4c0b-a0f7-99b17420fb6a.png" alt="Build Your Dream Team - Fantasy Arena" className="w-full max-w-xl h-auto rounded-lg cursor-pointer mx-auto" />
+                </Link>
+              </div>
+            </div>
+
+            {loadingDateFiltered ? <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-theme-purple mr-2" />
+                <span className="text-primary-foreground">Loading matches for selected date...</span>
+              </div> : <>
+                {/* Live Matches for Selected Date - Grouped by League */}
+                {isSelectedDateToday && dateFilteredLiveMatches.length > 0 && <div className="mb-8">
+                    {(() => {
+                const groups = Object.entries(groupMatchesByLeague(dateFilteredLiveMatches)).map(([league, {
+                  matches,
+                  tournamentId
+                }]) => {
+                  const metadata = getTournamentMetadata(matches);
+                  const prizeValue = getPrizeValueFromMetadata(metadata);
+                  const tierValue = getTierValueFromMetadata(metadata);
+                  return {
+                    league,
+                    matches,
+                    tournamentId,
+                    metadata,
+                    prizeValue,
+                    tierValue
+                  };
+                }).sort((a, b) => {
+                  // Primary sort: tier (a=0, b=1, etc., with smaller numbers first)
+                  if (a.tierValue !== b.tierValue) {
+                    return a.tierValue - b.tierValue;
+                  }
+                  // Secondary sort: prize pool (higher values first)
+                  return (b.prizeValue ?? -1) - (a.prizeValue ?? -1);
+                });
+                return groups.map(({
+                  league,
+                  matches,
+                  tournamentId,
+                  metadata
+                }) => <div key={league} className="mb-6">
+                          <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
+                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-theme-purple transition-colors">
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
+                                  {league}
+                                </div>
+                              </Link> : <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>}
+                            {renderTournamentMetadata(metadata)}
+                          </div>
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                            {matches.map(match => <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>)}
+                          </div>
+                        </div>);
+              })()}
+
+                  </div>}
+
+                {/* Upcoming Matches for Selected Date - Grouped by League */}
+                {dateFilteredUpcomingMatches.length > 0 && <div className="mb-8">
+                    {(() => {
+                const groups = Object.entries(groupMatchesByLeague(dateFilteredUpcomingMatches)).map(([league, {
+                  matches,
+                  tournamentId
+                }]) => {
+                  const metadata = getTournamentMetadata(matches);
+                  const prizeValue = getPrizeValueFromMetadata(metadata);
+                  const tierValue = getTierValueFromMetadata(metadata);
+                  return {
+                    league,
+                    matches,
+                    tournamentId,
+                    metadata,
+                    prizeValue,
+                    tierValue
+                  };
+                }).sort((a, b) => {
+                  // Primary sort: tier (a=0, b=1, etc., with smaller numbers first)
+                  if (a.tierValue !== b.tierValue) {
+                    return a.tierValue - b.tierValue;
+                  }
+                  // Secondary sort: prize pool (higher values first)
+                  return (b.prizeValue ?? -1) - (a.prizeValue ?? -1);
+                });
+                return groups.map(({
+                  league,
+                  matches,
+                  tournamentId,
+                  metadata
+                }) => <div key={league} className="mb-6">
+                          <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
+                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-theme-purple transition-colors">
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
+                                  {league}
+                                </div>
+                              </Link> : <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>}
+                            {renderTournamentMetadata(metadata)}
+                          </div>
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                            {matches.map(match => <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>)}
+                          </div>
+                        </div>);
+              })()}
+
+                  </div>}
+
+                {/* Finished Matches for Selected Date - Grouped by League */}
+                {dateFilteredFinishedMatches.length > 0 && <div className="mb-8">
+                    {(() => {
+                const groups = Object.entries(groupMatchesByLeague(dateFilteredFinishedMatches)).map(([league, {
+                  matches,
+                  tournamentId
+                }]) => {
+                  const metadata = getTournamentMetadata(matches);
+                  const prizeValue = getPrizeValueFromMetadata(metadata);
+                  const tierValue = getTierValueFromMetadata(metadata);
+                  return {
+                    league,
+                    matches,
+                    tournamentId,
+                    metadata,
+                    prizeValue,
+                    tierValue
+                  };
+                }).sort((a, b) => {
+                  // Primary sort: tier (a=0, b=1, etc., with smaller numbers first)
+                  if (a.tierValue !== b.tierValue) {
+                    return a.tierValue - b.tierValue;
+                  }
+                  // Secondary sort: prize pool (higher values first)
+                  return (b.prizeValue ?? -1) - (a.prizeValue ?? -1);
+                });
+                return groups.map(({
+                  league,
+                  matches,
+                  tournamentId,
+                  metadata
+                }) => <div key={league} className="mb-6">
+                          <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
+                            {tournamentId ? <Link to={`/tournament/${tournamentId}`} className="hover:text-theme-purple transition-colors">
+                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
+                                  {league}
+                                </div>
+                              </Link> : <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                                {league}
+                              </div>}
+                            {renderTournamentMetadata(metadata)}
+                          </div>
+                          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+                            {matches.map(match => <div key={match.id} className="px-2 sm:px-4 lg:px-6">
+                                <MatchCard match={match} />
+                              </div>)}
+                          </div>
+                        </div>);
+              })()}
+
+                  </div>}
+
+                {/* Enhanced No Matches State with better feedback */}
+                {(!isSelectedDateToday || dateFilteredLiveMatches.length === 0) && dateFilteredUpcomingMatches.length === 0 && dateFilteredFinishedMatches.length === 0 && <div className="text-center py-8 bg-theme-gray-dark/50 rounded-md">
+                    <p className="text-gray-400 mb-4">No matches scheduled for {formatMatchDate(selectedDate)}.</p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Try selecting a different date or use the sync buttons below to refresh match data.
+                    </p>
+                  </div>}
+              </>}
+          </div>
+          
+          {/* SEO Content Block */}
+          <SEOContentBlock title={homepageSEOContent.title} paragraphs={homepageSEOContent.paragraphs} />
+        </div>
+      </div>
+      {/* Sync Buttons at the very bottom, above Footer */}
       
-      {/* Hero Section */}
-      <Hero />
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Esports Logo Filter */}
-        <EsportsLogoFilter
-          selectedGameType={selectedGameType}
-          onGameTypeChange={setSelectedGameType}
-        />
-
-        {/* Filter Pills */}
-        <FilterPills
-          gameType={selectedGameType}
-          statusFilter={selectedStatusFilter}
-          sourceFilter={selectedSourceFilter}
-          onGameTypeChange={setSelectedGameType}
-          onStatusFilterChange={setSelectedStatusFilter}
-          onSourceFilterChange={setSelectedSourceFilter}
-        />
-
-        {/* Date Picker */}
-        <div className="mb-8">
-          <DateMatchPicker
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            matchCounts={matchCounts}
-            detailedMatchCounts={matchCountBreakdown}
-          />
-        </div>
-
-        {/* Match Results */}
-        <div className="space-y-8">
-          {loadingDateFiltered ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-              <p className="text-muted-foreground">Loading matches for {format(selectedDate, 'MMM d, yyyy')}...</p>
-            </div>
-          ) : lightweightCards.length === 0 ? (
-            <div className="text-center py-12">
-              <Gamepad2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No matches found</h3>
-              <p className="text-muted-foreground mb-6">
-                No matches were found for {format(selectedDate, 'MMM d, yyyy')} with the current filters.
-              </p>
-              <Button
-                onClick={() => {
-                  setSelectedGameType('all');
-                  setSelectedStatusFilter('all');
-                  setSelectedSourceFilter('all');
-                }}
-                variant="outline"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Clear Filters
-              </Button>
-            </div>
-          ) : (
-            <>
-              {/* Live Matches Section */}
-              {liveMatches.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-                      <h2 className="text-2xl font-bold text-foreground">Live Matches</h2>
-                    </div>
-                    <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
-                      {liveMatches.length}
-                    </Badge>
-                  </div>
-                  
-                  {Object.entries(groupMatchesByLeague(liveMatches))
-                    .sort(([, a], [, b]) => {
-                      const metadataA = getTournamentMetadata(a.matches);
-                      const metadataB = getTournamentMetadata(b.matches);
-                      const tierA = getTierValueFromMetadata(metadataA);
-                      const tierB = getTierValueFromMetadata(metadataB);
-                      if (tierA !== tierB) return tierA - tierB;
-                      const prizeA = getPrizeValueFromMetadata(metadataA) || 0;
-                      const prizeB = getPrizeValueFromMetadata(metadataB) || 0;
-                      return prizeB - prizeA;
-                    })
-                    .map(([league, { matches, tournamentId }]) => {
-                      const metadata = getTournamentMetadata(matches);
-                      return (
-                        <div key={league} className="mb-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <Link
-                              to={`/tournament/${tournamentId}`}
-                              className="flex items-center gap-2 hover:text-primary transition-colors"
-                            >
-                              <h3 className="text-lg font-semibold text-foreground">{league}</h3>
-                              <Trophy className="h-4 w-4 text-muted-foreground" />
-                            </Link>
-                            {renderTournamentMetadata(metadata)}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {matches.map((match) => (
-                              <MatchCard key={match.id} match={match} />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </section>
-              )}
-
-              {/* Upcoming Matches Section */}
-              {upcomingMatches.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-blue-500" />
-                      <h2 className="text-2xl font-bold text-foreground">Upcoming Matches</h2>
-                    </div>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                      {upcomingMatches.length}
-                    </Badge>
-                  </div>
-                  
-                  {Object.entries(groupMatchesByLeague(upcomingMatches))
-                    .sort(([, a], [, b]) => {
-                      const metadataA = getTournamentMetadata(a.matches);
-                      const metadataB = getTournamentMetadata(b.matches);
-                      const tierA = getTierValueFromMetadata(metadataA);
-                      const tierB = getTierValueFromMetadata(metadataB);
-                      if (tierA !== tierB) return tierA - tierB;
-                      const prizeA = getPrizeValueFromMetadata(metadataA) || 0;
-                      const prizeB = getPrizeValueFromMetadata(metadataB) || 0;
-                      return prizeB - prizeA;
-                    })
-                    .map(([league, { matches, tournamentId }]) => {
-                      const metadata = getTournamentMetadata(matches);
-                      return (
-                        <div key={league} className="mb-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <Link
-                              to={`/tournament/${tournamentId}`}
-                              className="flex items-center gap-2 hover:text-primary transition-colors"
-                            >
-                              <h3 className="text-lg font-semibold text-foreground">{league}</h3>
-                              <Trophy className="h-4 w-4 text-muted-foreground" />
-                            </Link>
-                            {renderTournamentMetadata(metadata)}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {matches.map((match) => (
-                              <MatchCard key={match.id} match={match} />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </section>
-              )}
-
-              {/* Finished Matches Section */}
-              {finishedMatches.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <h2 className="text-2xl font-bold text-foreground">Finished Matches</h2>
-                    </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                      {finishedMatches.length}
-                    </Badge>
-                  </div>
-                  
-                  {Object.entries(groupMatchesByLeague(finishedMatches))
-                    .sort(([, a], [, b]) => {
-                      const metadataA = getTournamentMetadata(a.matches);
-                      const metadataB = getTournamentMetadata(b.matches);
-                      const tierA = getTierValueFromMetadata(metadataA);
-                      const tierB = getTierValueFromMetadata(metadataB);
-                      if (tierA !== tierB) return tierA - tierB;
-                      const prizeA = getPrizeValueFromMetadata(metadataA) || 0;
-                      const prizeB = getPrizeValueFromMetadata(metadataB) || 0;
-                      return prizeB - prizeA;
-                    })
-                    .map(([league, { matches, tournamentId }]) => {
-                      const metadata = getTournamentMetadata(matches);
-                      return (
-                        <div key={league} className="mb-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <Link
-                              to={`/tournament/${tournamentId}`}
-                              className="flex items-center gap-2 hover:text-primary transition-colors"
-                            >
-                              <h3 className="text-lg font-semibold text-foreground">{league}</h3>
-                              <Trophy className="h-4 w-4 text-muted-foreground" />
-                            </Link>
-                            {renderTournamentMetadata(metadata)}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {matches.map((match) => (
-                              <MatchCard key={match.id} match={match} />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </section>
-              )}
-
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="flex justify-center mt-8">
-                  <Button onClick={loadMore} variant="outline">
-                    Load More Matches
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Live Data Test Panel - Only in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-12">
-            <LiveDataTestPanel />
-          </div>
-        )}
-
-        {/* Sync Buttons - Only in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Development Tools</h3>
-            <div className="flex gap-4">
-              <FaceitSyncButtons />
-              <PandaScoreSyncButtons />
-            </div>
-          </div>
-        )}
-
-        {/* SEO Content Block */}
-        <div className="mt-16">
-          <SEOContentBlock 
-            title="Esports Match Tracking"
-            paragraphs={[
-              "Track live and upcoming esports matches across multiple games and platforms.",
-              "Get real-time updates on professional tournaments and amateur competitions."
-            ]}
-          />
-        </div>
-      </main>
-
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
