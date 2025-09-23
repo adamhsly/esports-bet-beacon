@@ -35,7 +35,7 @@ interface MatchCardsDayRow {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Utilities                                                                   */
+/* Utilities (local-day boundaries in user’s TZ)                               */
 /* -------------------------------------------------------------------------- */
 function dayRangeLocal(date: Date) {
   // Build [local midnight, next local midnight) and return UTC ISO strings
@@ -54,11 +54,26 @@ function ymd(d: Date): string {
 }
 
 /* -------------------------------------------------------------------------- */
-/* ✅ Calendar counts (server-side from daily_match_counts)                    */
+/* ✅ NEW: Calendar counts with ALL filters (source + status + game)           */
+/*     Requires SQL function daily_match_counts_filtered(...) to exist         */
 /* -------------------------------------------------------------------------- */
-export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<MatchCountRow[]> {
-  // Local-day window: [(target - windowDays), (target + windowDays)], inclusive
-  const base = new Date(targetDate);
+export async function getDayCountsFiltered(opts: {
+  date: Date;
+  windowDays?: number;                                  // default 30
+  source?: 'all' | 'amateur' | 'professional';          // UI source filter
+  esportType?: string | 'all';                           // substring or exact
+  status?: 'all' | 'live' | 'upcoming' | 'finished';     // UI status filter
+}): Promise<MatchCountRow[]> {
+  const {
+    date,
+    windowDays = 30,
+    source = 'all',
+    esportType = 'all',
+    status = 'all',
+  } = opts;
+
+  // inclusive window around the selected date
+  const base = new Date(date);
   base.setHours(0, 0, 0, 0);
 
   const startLocal = new Date(base);
@@ -67,26 +82,38 @@ export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<Ma
   const endLocal = new Date(base);
   endLocal.setDate(endLocal.getDate() + windowDays);
 
-  const startYMD = ymd(startLocal);
-  const endYMD = ymd(endLocal);
-
-  // Pull aggregated counts by day/source (already computed server-side)
-  const { data, error } = await supabase
-    .from('daily_match_counts_ui')
-    .select('match_date, source, match_count')
-    .gte('match_date', startYMD)
-    .lte('match_date', endYMD);
+  const { data, error } = await supabase.rpc('daily_match_counts_filtered', {
+    p_from_date: ymd(startLocal),
+    p_to_date: ymd(endLocal),
+    p_source: source,
+    p_esport_type: esportType ?? 'all',
+    p_status: status,
+  });
 
   if (error) {
-    console.error('❌ getDayCounts error:', error, { startYMD, endYMD });
-    throw error;
+    console.error('❌ getDayCountsFiltered error:', error, {
+      from: ymd(startLocal),
+      to: ymd(endLocal),
+      source,
+      esportType,
+      status,
+    });
+    return [];
   }
 
-  // Return rows as-is; FE will tolerate both label styles
-  const rows = (data || []) as MatchCountRow[];
-  return rows.sort((a, b) =>
-    a.match_date === b.match_date ? a.source.localeCompare(b.source) : (a.match_date < b.match_date ? -1 : 1),
-  );
+  const rows = Array.isArray(data) ? (data as MatchCountRow[]) : [];
+  // normalize source labels to 'amateur'/'professional'
+  return rows
+    .map((r) => ({
+      ...r,
+      source:
+        r.source === 'faceit' ? 'amateur' :
+        r.source === 'pandascore' ? 'professional' :
+        (r.source as any),
+    }))
+    .sort((a, b) =>
+      a.match_date === b.match_date ? a.source.localeCompare(b.source) : (a.match_date < b.match_date ? -1 : 1),
+    );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -98,6 +125,7 @@ interface GetMatchesForDateParams {
   cursorStartTime?: string;                 // ISO for keyset pagination
   source?: 'amateur' | 'professional' | 'all';
   esportType?: string | 'all';
+  // (Status is filtered client-side; DB already excludes cancel/abort/TBD/TBC)
 }
 
 export async function getMatchesForDate({
@@ -114,6 +142,7 @@ export async function getMatchesForDate({
     .select('*')
     .gte('start_time', startISO)
     .lt('start_time', endISO)
+    // server-style exclusions mirrored here for safety
     .not('team1_name', 'ilike', '%TBD%')
     .not('team2_name', 'ilike', '%TBD%')
     .not('team1_name', 'ilike', '%TBC%')
@@ -130,7 +159,7 @@ export async function getMatchesForDate({
     .limit(limit);
 
   if (error) {
-    console.error('❌ getMatchesForDate error:', error, { startISO, endISO, date: date.toString() });
+    console.error('❌ getMatchesForDate error:', error, { startISO, endISO, date: date.toString(), source, esportType });
     throw error;
   }
 
@@ -161,6 +190,39 @@ export async function getMatchesForDate({
 /* -------------------------------------------------------------------------- */
 /* (Legacy helpers kept for compatibility; prefer the two above)              */
 /* -------------------------------------------------------------------------- */
+
+// Unfiltered calendar counts (materialized view). Kept for reference.
+export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<MatchCountRow[]> {
+  const base = new Date(targetDate);
+  base.setHours(0, 0, 0, 0);
+
+  const startLocal = new Date(base);
+  startLocal.setDate(startLocal.getDate() - windowDays);
+
+  const endLocal = new Date(base);
+  endLocal.setDate(endLocal.getDate() + windowDays);
+
+  const startYMD = ymd(startLocal);
+  const endYMD = ymd(endLocal);
+
+  const { data, error } = await supabase
+    .from('daily_match_counts_ui')
+    .select('match_date, source, match_count')
+    .gte('match_date', startYMD)
+    .lte('match_date', endYMD);
+
+  if (error) {
+    console.error('❌ getDayCounts error:', error, { startYMD, endYMD });
+    throw error;
+  }
+
+  const rows = (data || []) as MatchCountRow[];
+  return rows.sort((a, b) =>
+    a.match_date === b.match_date ? a.source.localeCompare(b.source) : (a.match_date < b.match_date ? -1 : 1),
+  );
+}
+
+/* ---------- Older aggregate/match loaders (leave as-is if referenced) ------ */
 interface MatchCountResult {
   match_date: string;
   source: string;
