@@ -7,7 +7,7 @@ import { MatchCountBreakdown } from '@/utils/matchCountUtils';
    Types (DB result shapes)
 ────────────────────────────────────────────────────────────────────────────── */
 interface MatchCountRow {
-  match_date: string;                 // 'YYYY-MM-DD'
+  match_date: string;                 // 'YYYY-MM-DD' (LOCAL day bucket)
   source: 'faceit' | 'pandascore';
   match_count: number;
 }
@@ -46,34 +46,76 @@ function dayRangeLocal(date: Date) {
   return { startISO: start.toISOString(), endISO: end.toISOString() };
 }
 
+function formatLocalYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /* ────────────────────────────────────────────────────────────────────────────
    ✅ Optimized helpers
 ────────────────────────────────────────────────────────────────────────────── */
 
-/** Pre-aggregated counts from daily_match_counts for a window around targetDate */
-export async function getDayCounts(targetDate: Date, windowDays: number = 7) {
-  const ymd = targetDate.toISOString().slice(0, 10);
-  const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
+/**
+ * Pre-aggregated-style counts for a LOCAL window around targetDate.
+ * We query match_cards_day with a wide LOCAL window and aggregate client-side
+ * into local-day buckets so counts match what the cards display.
+ *
+ * Returns rows in the same shape as the old MV (match_date, source, match_count).
+ */
+export async function getDayCounts(targetDate: Date, windowDays: number = 7): Promise<MatchCountRow[]> {
+  // Build local window: [ (target - windowDays)@00:00 , (target + windowDays + 1)@00:00 )
+  const base = new Date(targetDate);
+  base.setHours(0, 0, 0, 0);
 
-  const from = new Date(ymd);
-  from.setDate(from.getDate() - windowDays);
+  const startLocal = new Date(base);
+  startLocal.setDate(startLocal.getDate() - windowDays);
 
-  const to = new Date(ymd);
-  to.setDate(to.getDate() + (windowDays + 1)); // half-open
+  const endLocal = new Date(base);
+  endLocal.setDate(endLocal.getDate() + windowDays + 1);
 
+  const startISO = startLocal.toISOString();
+  const endISO = endLocal.toISOString();
+
+  // Fetch ONLY lightweight columns for speed
+  // Apply the same guards you use for cards so totals align
   const { data, error } = await supabase
-    .from('daily_match_counts')
-    .select('match_date, source, match_count')
-    .gte('match_date', toDateStr(from))
-    .lt('match_date', toDateStr(to))
-    .order('match_date', { ascending: true })
-    .order('source', { ascending: true });
+    .from('match_cards_day')
+    .select('start_time, source')
+    .gte('start_time', startISO)
+    .lt('start_time', endISO)
+    .not('team1_name', 'ilike', '%TBD%')
+    .not('team2_name', 'ilike', '%TBD%')
+    .not('team1_name', 'ilike', '%TBC%')
+    .not('team2_name', 'ilike', '%TBC%')
+    .not('status', 'ilike', 'cancel%')
+    .not('status', 'ilike', 'abort%');
 
   if (error) {
-    console.error('❌ getDayCounts error:', error);
+    console.error('❌ getDayCounts error:', error, { startISO, endISO });
     throw error;
   }
-  return (data || []) as MatchCountRow[];
+
+  const counts = new Map<string, number>(); // key = `${ymd}|${source}`
+  for (const row of data || []) {
+    const local = new Date(row.start_time);
+    const ymd = formatLocalYMD(local);
+    const src = (row.source === 'professional' ? 'pandascore' : 'faceit') as 'pandascore' | 'faceit';
+    const k = `${ymd}|${src}`;
+    counts.set(k, (counts.get(k) || 0) + 1);
+  }
+
+  // Flatten to array of rows
+  const result: MatchCountRow[] = [];
+  for (const [k, n] of counts.entries()) {
+    const [match_date, source] = k.split('|') as [string, 'faceit' | 'pandascore'];
+    result.push({ match_date, source, match_count: n });
+  }
+
+  // Sort for deterministic output
+  result.sort((a, b) => (a.match_date < b.match_date ? -1 : a.match_date > b.match_date ? 1 : a.source.localeCompare(b.source)));
+  return result;
 }
 
 interface GetMatchesForDateParams {
@@ -85,8 +127,8 @@ interface GetMatchesForDateParams {
 }
 
 /**
- * Lightweight rows for a single local day from match_cards_day.
- * Uses a **local-day** window to avoid UTC drift; filters TBD/TBC & cancelled.
+ * Lightweight rows for a single LOCAL day from match_cards_day.
+ * Uses a local-day window; filters TBD/TBC & cancelled at the DB layer.
  */
 export async function getMatchesForDate({
   date,
@@ -233,7 +275,7 @@ interface PandaScoreMatchResult {
   row_id: number;
 }
 
-/** Legacy RPC counts; prefer getDayCounts() */
+/** Legacy RPC counts; prefer getDayCounts() above */
 export async function getMatchCountsAroundDate(targetDate: Date): Promise<Record<string, MatchCountBreakdown>> {
   try {
     const [faceitResult, pandascoreResult] = await Promise.all([
