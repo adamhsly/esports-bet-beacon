@@ -266,9 +266,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     <SelectTrigger className="bg-gray-800/50 border-gray-700/50 text-white flex-1">
                       <SelectValue placeholder="All Games" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="all">All Games</SelectItem>
-                      {proGames.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                      <SelectItem value="all" className="text-white">All Games</SelectItem>
+                      {proGames.map(game => <SelectItem key={game} value={game} className="text-white">{game}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   
@@ -318,9 +318,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     <SelectTrigger className="bg-gray-800/50 border-gray-700/50 text-white flex-1">
                       <SelectValue placeholder="All Games" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="all">All Games</SelectItem>
-                      {amateurGames.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                      <SelectItem value="all" className="text-white">All Games</SelectItem>
+                      {amateurGames.map(game => <SelectItem key={game} value={game} className="text-white">{game}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   
