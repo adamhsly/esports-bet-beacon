@@ -34,6 +34,9 @@ import LegacyPrivacyRedirect from '@/components/redirects/LegacyPrivacyRedirect'
 import LegacyTermsRedirect from '@/components/redirects/LegacyTermsRedirect';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
+import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
+import { useMobile } from '@/hooks/useMobile';
+import { useLocation } from 'react-router-dom';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -60,6 +63,11 @@ const queryClient = new QueryClient({
 
 const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
+  const isMobile = useMobile();
+  const location = useLocation();
+  
+  // Don't show ProgressHudSticky on fantasy page since it has its own
+  const isFantasyPage = location.pathname === '/fantasy';
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -67,7 +75,8 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
         <ToastProvider>
           <Web3Provider>
             {children}
-            <StickyProfileHud onClick={openProfile} />
+            {!isMobile && <StickyProfileHud onClick={openProfile} />}
+            {isMobile && !isFantasyPage && <ProgressHudSticky />}
             <ProfileSheet isOpen={isOpen} onOpenChange={(open) => open ? openProfile() : closeProfile()} />
             <Toaster />
           </Web3Provider>

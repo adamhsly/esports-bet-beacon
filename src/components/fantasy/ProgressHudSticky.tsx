@@ -59,7 +59,7 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
   return (
     <>
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-50 h-16 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-white/[0.08] cursor-pointer transition-all duration-200 hover:border-white/[0.12] ${className}`}
+        className={`fixed bottom-0 left-0 right-0 z-50 h-16 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-neon-gold/30 cursor-pointer transition-all duration-200 hover:border-neon-gold/40 animate-premium-glow shadow-[0_0_20px_rgba(255,215,0,0.3)] ${className}`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         onClick={openProfile}
       >
