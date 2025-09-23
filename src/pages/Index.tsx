@@ -220,7 +220,7 @@ const Index = () => {
     return filtered;
   };
 
-  /* --------------------- 📅 Calendar counts (±30d, local-day) --------------------- */
+  /* --------------------- 📅 Calendar counts (±30d, server-agg) --------------------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -235,7 +235,7 @@ const Index = () => {
           const day = r.match_date;
           breakdown[day] ??= { total: 0, professional: 0, amateur: 0, live: 0, upcoming: 0 };
 
-          // ✅ tolerate both label styles
+          // tolerate both label styles from DB
           const src = String(r.source || '').toLowerCase();
           const isPro = src === 'pandascore' || src === 'professional';
           const isAma = src === 'faceit' || src === 'amateur';
@@ -278,7 +278,7 @@ const Index = () => {
           esportType: selectedGameType,
         });
 
-        // Debug: show how many rows and by source
+        // Debug
         const pro = rawMatches.filter(m => m.source === 'professional').length;
         const ama = rawMatches.filter(m => m.source === 'amateur').length;
         console.log(`[getMatchesForDate] ${rawMatches.length} rows (pro=${pro}, amateur=${ama}) for`, selectedDate.toString());
@@ -286,7 +286,7 @@ const Index = () => {
         // normalize IDs (strip any "amateur_/professional_" prefixes)
         const normalized = rawMatches.map((m) => ({ ...m, id: normalizeMatchId(m.id) }));
 
-        // ✅ Do NOT re-filter by date here — DB already returned the correct local-day window
+        // Do NOT refilter by date here — DB already returns the correct local-day window
         const filtered = applyAllFilters(normalized);
 
         // Split into live/upcoming/finished like before
