@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Search, Loader2, List, Grid2X2, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import EsportsNavigation from '@/components/EsportsNavigation';
 import { getTeamImageUrl } from '@/utils/cacheUtils';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import {
@@ -282,13 +281,8 @@ const TeamsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SearchableNavbar />
       <div className="flex-grow container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <EsportsNavigation 
-            activeEsport={activeEsport}
-            onEsportChange={handleEsportChange}
-          />
-        </div>
         
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
           <div className="relative max-w-md w-full">
