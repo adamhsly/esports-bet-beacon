@@ -1,22 +1,21 @@
-// lib/supabaseMatchFunctions.ts
+// src/lib/supabaseMatchFunctions.ts
 import { supabase } from '@/integrations/supabase/client';
 import { MatchInfo } from '@/components/MatchCard';
 import { MatchCountBreakdown } from '@/utils/matchCountUtils';
 
 /* ────────────────────────────────────────────────────────────────────────────
    Types (DB result shapes)
-   ──────────────────────────────────────────────────────────────────────────── */
-
+────────────────────────────────────────────────────────────────────────────── */
 interface MatchCountRow {
-  match_date: string;   // 'YYYY-MM-DD'
+  match_date: string;                 // 'YYYY-MM-DD'
   source: 'faceit' | 'pandascore';
   match_count: number;
 }
 
 interface MatchCardsDayRow {
   source: 'amateur' | 'professional';
-  match_date: string;   // 'YYYY-MM-DD'
-  start_time: string;   // ISO timestamptz
+  match_date: string;                 // 'YYYY-MM-DD'
+  start_time: string;                 // ISO timestamptz
   match_id: string;
 
   esport_type: string | null;
@@ -37,28 +36,23 @@ interface MatchCardsDayRow {
 
 /* ────────────────────────────────────────────────────────────────────────────
    Utilities
-   ──────────────────────────────────────────────────────────────────────────── */
-
-function dayRangeUTC(date: Date) {
-  // Build a UTC day window [00:00, 24:00)
-  const y = date.getUTCFullYear();
-  const m = date.getUTCMonth();
-  const d = date.getUTCDate();
-  const start = new Date(Date.UTC(y, m, d, 0, 0, 0));
-  const end = new Date(Date.UTC(y, m, d + 1, 0, 0, 0));
+────────────────────────────────────────────────────────────────────────────── */
+function dayRangeLocal(date: Date) {
+  // Build [local midnight, next local midnight) and return UTC ISO strings
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0); // local midnight
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1); // next local midnight
   return { startISO: start.toISOString(), endISO: end.toISOString() };
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
    ✅ Optimized helpers
-   ──────────────────────────────────────────────────────────────────────────── */
+────────────────────────────────────────────────────────────────────────────── */
 
-/**
- * Fetch pre-aggregated day counts around a date from `daily_match_counts`.
- * Returns raw rows; the page constructs totals/breakdowns as needed.
- */
+/** Pre-aggregated counts from daily_match_counts for a window around targetDate */
 export async function getDayCounts(targetDate: Date, windowDays: number = 7) {
-  const ymd = targetDate.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  const ymd = targetDate.toISOString().slice(0, 10);
   const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
 
   const from = new Date(ymd);
@@ -79,22 +73,20 @@ export async function getDayCounts(targetDate: Date, windowDays: number = 7) {
     console.error('❌ getDayCounts error:', error);
     throw error;
   }
-
   return (data || []) as MatchCountRow[];
 }
 
 interface GetMatchesForDateParams {
   date: Date;
   limit?: number;
-  cursorStartTime?: string;                 // ISO string from last row for keyset pagination
+  cursorStartTime?: string;                 // ISO for keyset pagination
   source?: 'amateur' | 'professional' | 'all';
-  esportType?: string | 'all';              // e.g. 'cs2', 'lol' or 'all'
+  esportType?: string | 'all';
 }
 
 /**
- * Fetch lightweight card rows for a single day from `match_cards_day`.
- * Uses a canonical **UTC day window** on `start_time` to avoid timezone drift.
- * Excludes TBD/TBC & cancelled/aborted at the DB layer to keep payload clean.
+ * Lightweight rows for a single local day from match_cards_day.
+ * Uses a **local-day** window to avoid UTC drift; filters TBD/TBC & cancelled.
  */
 export async function getMatchesForDate({
   date,
@@ -103,15 +95,13 @@ export async function getMatchesForDate({
   source = 'all',
   esportType = 'all',
 }: GetMatchesForDateParams): Promise<MatchInfo[]> {
-  const { startISO, endISO } = dayRangeUTC(date);
+  const { startISO, endISO } = dayRangeLocal(date);
 
   let query = supabase
     .from('match_cards_day')
     .select('*')
-    // canonical day filter in UTC on the true timestamp column
     .gte('start_time', startISO)
     .lt('start_time', endISO)
-    // server-side guards
     .not('team1_name', 'ilike', '%TBD%')
     .not('team2_name', 'ilike', '%TBD%')
     .not('team1_name', 'ilike', '%TBC%')
@@ -119,32 +109,25 @@ export async function getMatchesForDate({
     .not('status', 'ilike', 'cancel%')
     .not('status', 'ilike', 'abort%');
 
-  if (cursorStartTime) {
-    query = query.lt('start_time', cursorStartTime);
-  }
-  if (source !== 'all') {
-    query = query.eq('source', source);
-  }
-  if (esportType !== 'all') {
-    // loose match so 'cs2' will also match 'Counter-Strike 2' etc.
-    query = query.ilike('esport_type', `%${esportType}%`);
-  }
+  if (cursorStartTime) query = query.lt('start_time', cursorStartTime);
+  if (source !== 'all') query = query.eq('source', source);
+  if (esportType !== 'all') query = query.ilike('esport_type', `%${esportType}%`);
 
   const { data, error } = await query
     .order('start_time', { ascending: false })
     .limit(limit);
 
   if (error) {
-    console.error('❌ getMatchesForDate error:', error);
+    console.error('❌ getMatchesForDate error:', error, { startISO, endISO, date: date.toString() });
     throw error;
   }
 
   const rows = (data || []) as MatchCardsDayRow[];
 
-  // Map rows -> MatchInfo (return **raw** match_id to keep onward journeys intact)
+  // Map rows -> MatchInfo (return **raw** match_id; no prefixes)
   const matches: MatchInfo[] = rows.map((r) => ({
-    id: r.match_id,                     // raw id (no 'amateur_' / 'professional_' prefix)
-    source: r.source,                   // 'amateur' | 'professional'
+    id: r.match_id,
+    source: r.source,
     startTime: r.start_time,
     tournament: r.tournament || undefined,
     tournament_name: r.tournament || undefined,
@@ -152,7 +135,7 @@ export async function getMatchesForDate({
     esportType: r.esport_type || undefined,
     bestOf: r.best_of ?? undefined,
     status: r.status || undefined,
-    rawData: null,                      // heavy blobs are lazy-fetched on expand
+    rawData: null,
     faceitData: null,
     teams: [
       { id: r.team1_id || undefined, name: r.team1_name || 'Team 1', logo: r.team1_logo || '/placeholder.svg' },
@@ -165,8 +148,7 @@ export async function getMatchesForDate({
 
 /* ────────────────────────────────────────────────────────────────────────────
    Legacy helpers (kept for compatibility while you migrate)
-   ──────────────────────────────────────────────────────────────────────────── */
-
+────────────────────────────────────────────────────────────────────────────── */
 interface MatchCountResult {
   match_date: string;
   source: string;
@@ -251,10 +233,7 @@ interface PandaScoreMatchResult {
   row_id: number;
 }
 
-/**
- * Legacy: fetch counts via RPC functions (faceit_get_match_counts_around_date / pandascore_get_match_counts_around_date).
- * Prefer getDayCounts() instead.
- */
+/** Legacy RPC counts; prefer getDayCounts() */
 export async function getMatchCountsAroundDate(targetDate: Date): Promise<Record<string, MatchCountBreakdown>> {
   try {
     const [faceitResult, pandascoreResult] = await Promise.all([
@@ -285,19 +264,18 @@ export async function getMatchCountsAroundDate(targetDate: Date): Promise<Record
   }
 }
 
-/** Legacy convenience: build a simple date->total map from a breakdown object. */
-export function getTotalMatchCountsByDate(matchCountBreakdown: Record<string, MatchCountBreakdown>): Record<string, number> {
+/** Legacy convenience: totals from breakdown */
+export function getTotalMatchCountsByDate(
+  matchCountBreakdown: Record<string, MatchCountBreakdown>
+): Record<string, number> {
   const totals: Record<string, number> = {};
-  for (const k of Object.keys(matchCountBreakdown)) {
-    totals[k] = matchCountBreakdown[k].total;
-  }
+  for (const k of Object.keys(matchCountBreakdown)) totals[k] = matchCountBreakdown[k].total;
   return totals;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
    Legacy: heavy ±7d RPC fetches (prefer getMatchesForDate)
-   ──────────────────────────────────────────────────────────────────────────── */
-
+────────────────────────────────────────────────────────────────────────────── */
 function transformFaceitMatch(match: FaceitMatchResult): MatchInfo {
   const teams = match.teams || {};
   return {
@@ -339,10 +317,7 @@ function transformPandaScoreMatch(match: PandaScoreMatchResult): MatchInfo {
   };
 }
 
-/**
- * Legacy: fetch ±7 days via RPC functions and transform client-side.
- * Prefer the optimized getMatchesForDate() + lazy details fetch instead.
- */
+/** Legacy: ±7 days via RPC; prefer getMatchesForDate */
 export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[]> {
   try {
     const [faceitResult, pandascoreResult] = await Promise.all([
@@ -358,7 +333,7 @@ export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[
 
     const combined = [...transformedFaceit, ...transformedPandaScore];
 
-    // Filter out TBD/TBC and finished FACEIT BYE matches
+    // Strip TBD/TBC and finished FACEIT BYE
     const filtered = combined.filter((match) => {
       const names = match.teams.map((t) => (t.name || '').toLowerCase());
       const hasTbd = names.some((n) => n === 'tbc' || n === 'tbd');
