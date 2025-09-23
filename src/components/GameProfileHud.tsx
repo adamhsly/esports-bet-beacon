@@ -122,10 +122,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
 
   const mainContentHeight = isSheet ? "max-h-[calc(85vh-2rem)]" : "min-h-screen";
 
-  return (
-    <div className={containerClass}>
-      <ScrollArea className={mainContentHeight}>
-        <div className={`${paddingClass} space-y-6`}>
+  const content = (
+    <div className={`${paddingClass} space-y-6`}>
           {/* Avatar & Level Header */}
           <Card className="bg-gradient-to-br from-[#1A1F26] via-[#252A32] to-[#12161C] border border-white/[0.08] overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 to-neon-purple/5"></div>
@@ -275,6 +273,95 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           {/* Missions Section */}
           <MissionsView />
         </div>
+  );
+
+  if (isSheet) {
+    return (
+      <div className={containerClass}>
+        {content}
+
+        {/* Avatar Configuration Modal */}
+        <AvatarConfiguration
+        isOpen={showAvatarConfig}
+        onOpenChange={setShowAvatarConfig}
+        currentAvatarUrl={profile?.avatar_url}
+        currentFrameId={profile?.avatar_frame_id}
+        currentBorderId={profile?.avatar_border_id}
+        avatarFrameUrl={currentFrameAsset}
+        avatarBorderUrl={currentBorderAsset}
+      />
+
+      {/* Reward Detail Modal */}
+      <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>
+        <DialogContent className="bg-[#0B1220] border border-[#223049] text-[#EAF2FF] max-w-sm mx-auto rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-gaming text-[#EAF2FF]">
+              {selectedReward?.value || `${selectedReward?.type?.charAt(0).toUpperCase()}${selectedReward?.type?.slice(1)}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Large Icon */}
+            <div className="flex justify-center">
+              <div className="w-24 h-24 flex items-center justify-center">
+                {selectedReward?.assetUrl ? (
+                  <img 
+                    src={selectedReward.assetUrl} 
+                    alt={`${selectedReward.type} reward`} 
+                    className="w-20 h-20 object-contain" 
+                  />
+                ) : selectedReward?.type === 'credits' ? (
+                  <Coins className="w-20 h-20 text-yellow-400" />
+                ) : selectedReward?.type === 'badge' ? (
+                  <Star className="w-20 h-20 text-neon-blue" />
+                ) : selectedReward?.type === 'frame' ? (
+                  <Trophy className="w-20 h-20 text-purple-400" />
+                ) : selectedReward?.type === 'border' ? (
+                  <Target className="w-20 h-20 text-neon-purple" />
+                ) : (
+                  <Crown className="w-20 h-20 text-yellow-400" />
+                )}
+              </div>
+            </div>
+
+            {/* Unlock Level */}
+            <div className="text-center">
+              <p className="text-[#CFE3FF] text-sm">
+                Unlocks at Level {selectedReward?.level}
+              </p>
+            </div>
+
+            {/* State Display */}
+            <div className="flex justify-center">
+              {selectedReward?.state === 'unlocked' && (
+                <Badge className="bg-green-500/20 text-[#79FFD7] border-[#79FFD7]/30">
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Unlocked
+                </Badge>
+              )}
+              {selectedReward?.state === 'claimable' && (
+                <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
+                  <Gift className="w-4 h-4 mr-1" />
+                  Ready to Claim
+                </Badge>
+              )}
+              {selectedReward?.state === 'locked' && (
+                <Badge className="bg-[#F5C042]/20 text-[#F5C042] border-[#F5C042]/30">
+                  <Lock className="w-4 h-4 mr-1" />
+                  Locked
+                </Badge>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <div className={containerClass}>
+      <ScrollArea className={mainContentHeight}>
+        {content}
       </ScrollArea>
 
       {/* Avatar Configuration Modal */}

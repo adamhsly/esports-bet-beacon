@@ -22,15 +22,13 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
   if (isMobile) {
     return (
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent className="h-[85vh] bg-[#0F1420] border-t-[#223049] rounded-t-2xl">
-          <ScrollArea className="flex-1 h-full">
-            <ProfilePage 
-              variant="sheet"
-              onUnlockPremium={() => {
-                console.log('Navigate to premium checkout');
-              }}
-            />
-          </ScrollArea>
+        <DrawerContent className="h-[85vh] bg-[#0F1420] border-t-[#223049] rounded-t-2xl overflow-y-auto">
+          <ProfilePage 
+            variant="sheet"
+            onUnlockPremium={() => {
+              console.log('Navigate to premium checkout');
+            }}
+          />
         </DrawerContent>
       </Drawer>
     );
@@ -38,20 +36,18 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[820px] max-h-[88vh] bg-[#0F1420] border-[#223049] rounded-xl p-0 overflow-hidden">
+      <DialogContent className="max-w-[820px] max-h-[88vh] bg-[#0F1420] border-[#223049] rounded-xl p-0 overflow-y-auto">
         <VisuallyHidden>
           <DialogHeader>
             <DialogTitle>Profile</DialogTitle>
           </DialogHeader>
         </VisuallyHidden>
-        <ScrollArea className="max-h-[88vh]">
-          <ProfilePage 
-            variant="sheet"
-            onUnlockPremium={() => {
-              console.log('Navigate to premium checkout');
-            }}
-          />
-        </ScrollArea>
+        <ProfilePage 
+          variant="sheet"
+          onUnlockPremium={() => {
+            console.log('Navigate to premium checkout');
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
