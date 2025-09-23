@@ -15,7 +15,6 @@ import LiveDataTestPanel from '@/components/LiveDataTestPanel';
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, isToday } from 'date-fns';
-// ❌ remove this: import { isDateInRange } from '@/utils/timezoneUtils';
 
 import { getDayCounts, getMatchesForDate } from '@/lib/supabaseMatchFunctions';
 
@@ -233,12 +232,17 @@ const Index = () => {
         const totals: Record<string, number> = {};
 
         for (const r of rows as any[]) {
-          if (!breakdown[r.match_date]) {
-            breakdown[r.match_date] = { total: 0, professional: 0, amateur: 0, live: 0, upcoming: 0 };
-          }
-          breakdown[r.match_date].total += Number(r.match_count || 0);
-          if (r.source === 'pandascore') breakdown[r.match_date].professional += Number(r.match_count || 0);
-          if (r.source === 'faceit') breakdown[r.match_date].amateur += Number(r.match_count || 0);
+          const day = r.match_date;
+          breakdown[day] ??= { total: 0, professional: 0, amateur: 0, live: 0, upcoming: 0 };
+
+          // ✅ tolerate both label styles
+          const src = String(r.source || '').toLowerCase();
+          const isPro = src === 'pandascore' || src === 'professional';
+          const isAma = src === 'faceit' || src === 'amateur';
+
+          breakdown[day].total += Number(r.match_count || 0);
+          if (isPro) breakdown[day].professional += Number(r.match_count || 0);
+          if (isAma) breakdown[day].amateur += Number(r.match_count || 0);
         }
         for (const [day, b] of Object.entries(breakdown)) totals[day] = b.total;
 
