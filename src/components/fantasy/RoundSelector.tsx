@@ -21,11 +21,9 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
 
   useEffect(() => {
     fetchOpenRounds();
-  }, [user]);
+  }, []);
 
   const fetchOpenRounds = async () => {
-    if (!user) return;
-
     try {
       const { data, error } = await supabase
         .from('fantasy_rounds')
