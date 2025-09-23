@@ -151,7 +151,6 @@ const TeamsPage: React.FC = () => {
         <TableRow>
           <TableHead className="w-[100px]">Logo</TableHead>
           <TableHead>Name</TableHead>
-          <TableHead>Tag</TableHead>
           <TableHead>Country</TableHead>
           <TableHead className="text-center">
             <div className="flex items-center justify-center">
@@ -195,16 +194,9 @@ const TeamsPage: React.FC = () => {
                 </Link>
               </TableCell>
               <TableCell className="font-medium">
-                <Link to={`/team/${team.id}`} className="hover:text-theme-purple">
+                <Link to={`/team/${team.id}`} className="hover:text-theme-purple text-white">
                   {team.name}
                 </Link>
-              </TableCell>
-              <TableCell>
-                {team.acronym ? (
-                  <Badge variant="outline">{team.acronym}</Badge>
-                ) : (
-                  <span className="text-muted-foreground text-sm">-</span>
-                )}
               </TableCell>
               <TableCell>
                 {team.country ? (
@@ -218,17 +210,17 @@ const TeamsPage: React.FC = () => {
               </TableCell>
               <TableCell className="text-center">
                 <Badge variant={team.source === 'pandascore' ? 'default' : 'secondary'}>
-                  {team.source === 'pandascore' ? 'PandaScore' : 'Faceit'}
+                  {team.source === 'pandascore' ? 'Pro' : 'Amateur'}
                 </Badge>
               </TableCell>
               <TableCell className="text-center">
-                <span className="font-medium">{team.recent_matches_count}</span>
+                <span className="font-medium text-white">{team.recent_matches_count}</span>
               </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-4">
+            <TableCell colSpan={6} className="text-center py-4">
               No teams found matching your search.
             </TableCell>
           </TableRow>
@@ -257,14 +249,9 @@ const TeamsPage: React.FC = () => {
                   />
                 </div>
                 
-                <h3 className="font-bold text-lg mb-1">{team.name}</h3>
+                <h3 className="font-bold text-lg mb-1 text-white">{team.name}</h3>
                 
                 <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-                  {team.acronym && (
-                    <Badge variant="outline" className="font-normal">
-                      {team.acronym}
-                    </Badge>
-                  )}
                   {team.country && (
                     <Badge variant="outline" className="font-normal">
                       {team.country}
@@ -278,10 +265,10 @@ const TeamsPage: React.FC = () => {
                       Rank #{team.rank || '-'}
                     </Badge>
                     <Badge variant={team.source === 'pandascore' ? 'default' : 'secondary'}>
-                      {team.source === 'pandascore' ? 'PandaScore' : 'Faceit'}
+                      {team.source === 'pandascore' ? 'Pro' : 'Amateur'}
                     </Badge>
                   </div>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-white">
                     {team.recent_matches_count} recent matches
                   </span>
                 </div>
