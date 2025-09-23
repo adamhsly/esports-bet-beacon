@@ -16,7 +16,8 @@ import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, isToday } from 'date-fns';
 
-import { getDayCounts, getMatchesForDate } from '@/lib/supabaseMatchFunctions';
+// helpers that call Supabase RPCs
+import { getMatchesForDate, getDayCountsFiltered } from '@/lib/supabaseMatchFunctions';
 
 /* -------------------------------------------
    Helpers (status mapping + ID normalization)
@@ -41,6 +42,32 @@ const getPandaScoreStatusCategory = (
   if (['live', 'running', 'ongoing'].includes(s)) return 'live';
   if (['scheduled', 'upcoming', 'ready', 'not_started'].includes(s)) return 'upcoming';
   return null;
+};
+
+/* -------------------------------------------
+   Game type → server query mapping
+   (use substrings that safely match DB values)
+-------------------------------------------- */
+const mapGameTypeToQuery = (v: string): string => {
+  const key = (v || 'all').toLowerCase();
+  const map: Record<string, string> = {
+    'all': 'all',
+    'counter-strike': 'counter',  // matches "Counter-Strike"
+    'lol': 'lol',                 // matches "LoL"
+    'valorant': 'valorant',
+    'dota2': 'dota',              // matches "Dota 2"
+    'ea-sports-fc': 'ea sports fc',
+    'rainbow-6-siege': 'siege',
+    'rocket-league': 'rocket league',
+    'starcraft-2': 'starcraft',
+    'overwatch': 'overwatch',
+    'king-of-glory': 'king of glory',
+    'call-of-duty': 'call of duty',
+    'lol-wild-rift': 'wild rift',
+    'pubg': 'pubg',
+    'mobile-legends': 'mobile legends',
+  };
+  return map[key] ?? key;
 };
 
 /* -------------------------------------------
@@ -168,7 +195,7 @@ const Index = () => {
 
   const isSelectedDateToday = isToday(selectedDate);
 
-  /* --------------------- Game type filter (unchanged logic) --------------------- */
+  /* --------------------- Game type filter (unchanged client logic) --------------------- */
   const filterMatchesByGameType = (matches: MatchInfo[], gameType: string) => {
     if (gameType === 'all') return matches;
     return matches.filter((match) => {
@@ -220,30 +247,37 @@ const Index = () => {
     return filtered;
   };
 
-  /* --------------------- 📅 Calendar counts (±30d, server-agg) --------------------- */
+  /* --------------------- 📅 Calendar counts (±30d, server-filtered) --------------------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoadingCalendar(true);
       try {
-        const rows = await getDayCounts(selectedDate, 30);
+        const esportQuery = mapGameTypeToQuery(selectedGameType);
+        const rows = await getDayCountsFiltered({
+          date: selectedDate,
+          windowDays: 30,
+          source: selectedSourceFilter as 'all'|'amateur'|'professional',
+          status: selectedStatusFilter as 'all'|'live'|'upcoming'|'finished',
+          esportType: esportQuery, // substring/equal match on server
+        });
 
+        // rows: [{ match_date, source ('amateur'|'professional'), match_count }]
         const breakdown: Record<string, MatchCountBreakdown> = {};
         const totals: Record<string, number> = {};
 
         for (const r of rows as any[]) {
-          const day = r.match_date;
+          const day = String(r.match_date);
+          const cnt = Number(r.match_count || 0);
+          const src = String(r.source || '').toLowerCase();
+
           breakdown[day] ??= { total: 0, professional: 0, amateur: 0, live: 0, upcoming: 0 };
 
-          // tolerate both label styles from DB
-          const src = String(r.source || '').toLowerCase();
-          const isPro = src === 'pandascore' || src === 'professional';
-          const isAma = src === 'faceit' || src === 'amateur';
-
-          breakdown[day].total += Number(r.match_count || 0);
-          if (isPro) breakdown[day].professional += Number(r.match_count || 0);
-          if (isAma) breakdown[day].amateur += Number(r.match_count || 0);
+          if (src === 'professional') breakdown[day].professional += cnt;
+          if (src === 'amateur')      breakdown[day].amateur += cnt;
+          breakdown[day].total += cnt; // server already applied filters, so total = sum returned
         }
+
         for (const [day, b] of Object.entries(breakdown)) totals[day] = b.total;
 
         if (!cancelled) {
@@ -261,7 +295,7 @@ const Index = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [selectedDate]);
+  }, [selectedDate, selectedSourceFilter, selectedStatusFilter, selectedGameType]);
 
   /* --------------------- 🗓️ Load matches for selected day (local-day) --------------------- */
   useEffect(() => {
@@ -270,26 +304,22 @@ const Index = () => {
       setLoadingDateFiltered(true);
       try {
         const sourceParam = selectedSourceFilter === 'all' ? 'all' : (selectedSourceFilter as 'amateur' | 'professional');
+        const esportQuery = mapGameTypeToQuery(selectedGameType);
 
         const rawMatches = await getMatchesForDate({
           date: selectedDate,
           limit: 200,
           source: sourceParam,
-          esportType: selectedGameType,
+          esportType: esportQuery, // keep server & calendar consistent
         });
-
-        // Debug
-        const pro = rawMatches.filter(m => m.source === 'professional').length;
-        const ama = rawMatches.filter(m => m.source === 'amateur').length;
-        console.log(`[getMatchesForDate] ${rawMatches.length} rows (pro=${pro}, amateur=${ama}) for`, selectedDate.toString());
 
         // normalize IDs (strip any "amateur_/professional_" prefixes)
         const normalized = rawMatches.map((m) => ({ ...m, id: normalizeMatchId(m.id) }));
 
-        // Do NOT refilter by date here — DB already returns the correct local-day window
+        // DB already returns the correct local-day window; no extra date filtering needed here
         const filtered = applyAllFilters(normalized);
 
-        // Split into live/upcoming/finished like before
+        // Split into live/upcoming/finished
         const live: MatchInfo[] = [];
         const upcoming: MatchInfo[] = [];
         const finished: MatchInfo[] = [];
