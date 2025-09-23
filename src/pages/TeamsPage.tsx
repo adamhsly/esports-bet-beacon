@@ -135,7 +135,6 @@ const TeamsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <SearchableNavbar />
         <div className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-theme-purple mr-2" />
           <span className="text-xl">Loading teams...</span>
@@ -296,15 +295,7 @@ const TeamsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <SearchableNavbar />
       <div className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold font-gaming mb-2">
-          <span className="highlight-gradient">Esports</span> Teams
-        </h1>
-        <p className="text-gray-400 mb-6">
-          Browse teams from recent Pandascore and Faceit matches across various esports titles
-        </p>
-        
         <div className="mb-8">
           <EsportsNavigation 
             activeEsport={activeEsport}
