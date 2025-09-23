@@ -72,7 +72,7 @@ export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<Ma
 
   // Pull aggregated counts by day/source (already computed server-side)
   const { data, error } = await supabase
-    .from('daily_match_counts')
+    .from('daily_match_counts_ui')
     .select('match_date, source, match_count')
     .gte('match_date', startYMD)
     .lte('match_date', endYMD);
