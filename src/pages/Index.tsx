@@ -15,7 +15,7 @@ import LiveDataTestPanel from '@/components/LiveDataTestPanel';
 import { formatMatchDate } from '@/utils/dateMatchUtils';
 import { MatchCountBreakdown } from '@/utils/matchCountUtils';
 import { startOfDay, isToday } from 'date-fns';
-import { isDateInRange } from '@/utils/timezoneUtils';
+// ❌ remove this: import { isDateInRange } from '@/utils/timezoneUtils';
 
 import { getDayCounts, getMatchesForDate } from '@/lib/supabaseMatchFunctions';
 
@@ -221,15 +221,14 @@ const Index = () => {
     return filtered;
   };
 
-  /* --------------------- 📅 Calendar counts (from MV, ±30d) --------------------- */
+  /* --------------------- 📅 Calendar counts (±30d, local-day) --------------------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoadingCalendar(true);
       try {
-        const rows = await getDayCounts(selectedDate, 30); // wider window to avoid blanks
+        const rows = await getDayCounts(selectedDate, 30);
 
-        // rows: [{ match_date, source, match_count }]
         const breakdown: Record<string, MatchCountBreakdown> = {};
         const totals: Record<string, number> = {};
 
@@ -258,9 +257,9 @@ const Index = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [selectedDate]); // keep this minimal so counts remain stable & fast
+  }, [selectedDate]);
 
-  /* --------------------- 🗓️ Load matches for selected day --------------------- */
+  /* --------------------- 🗓️ Load matches for selected day (local-day) --------------------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -275,9 +274,15 @@ const Index = () => {
           esportType: selectedGameType,
         });
 
+        // Debug: show how many rows and by source
+        const pro = rawMatches.filter(m => m.source === 'professional').length;
+        const ama = rawMatches.filter(m => m.source === 'amateur').length;
+        console.log(`[getMatchesForDate] ${rawMatches.length} rows (pro=${pro}, amateur=${ama}) for`, selectedDate.toString());
+
         // normalize IDs (strip any "amateur_/professional_" prefixes)
         const normalized = rawMatches.map((m) => ({ ...m, id: normalizeMatchId(m.id) }));
 
+        // ✅ Do NOT re-filter by date here — DB already returned the correct local-day window
         const filtered = applyAllFilters(normalized);
 
         // Split into live/upcoming/finished like before
