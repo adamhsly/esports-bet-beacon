@@ -2950,9 +2950,7 @@ export type Database = {
         }[]
       }
       get_all_faceit_teams: {
-        Args:
-          | Record<PropertyKey, never>
-          | { end_date?: string; start_date?: string }
+        Args: { end_date?: string; start_date?: string }
         Returns: {
           game: string
           logo_url: string
@@ -3014,9 +3012,7 @@ export type Database = {
         }[]
       }
       get_faceit_teams_prev_window_stats: {
-        Args:
-          | { end_date: string; start_date: string }
-          | { end_ts: string; start_ts: string }
+        Args: { end_date: string; start_date: string }
         Returns: {
           matches_played: number
           missed_pct: number

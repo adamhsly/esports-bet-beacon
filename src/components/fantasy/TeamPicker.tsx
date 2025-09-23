@@ -196,10 +196,25 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       const currentEnd = new Date(round.end_date);
       const prevEnd = currentStart;
       const prevStart = new Date(currentStart.getTime() - (currentEnd.getTime() - currentStart.getTime()));
-      const [allTeamsRes, prevStatsRes, priceRowsRes] = await Promise.all([(supabase.rpc as any)('get_all_faceit_teams'), (supabase.rpc as any)('get_faceit_teams_prev_window_stats', {
-        start_ts: prevStart.toISOString(),
-        end_ts: prevEnd.toISOString()
-      }), supabase.from('fantasy_team_prices').select('*').eq('round_id', round.id)]);
+      
+      // Convert dates to date strings for optimized database functions
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      const today = new Date();
+      
+      const [allTeamsRes, prevStatsRes, priceRowsRes] = await Promise.all([
+        // Get all faceit teams from past year for comprehensive coverage
+        (supabase.rpc as any)('get_all_faceit_teams', {
+          start_date: oneYearAgo.toISOString().split('T')[0], // Convert to YYYY-MM-DD
+          end_date: today.toISOString().split('T')[0]
+        }), 
+        // Get previous window stats using correct parameter names
+        (supabase.rpc as any)('get_faceit_teams_prev_window_stats', {
+          start_date: prevStart.toISOString().split('T')[0], // Convert to YYYY-MM-DD
+          end_date: prevEnd.toISOString().split('T')[0]
+        }), 
+        supabase.from('fantasy_team_prices').select('*').eq('round_id', round.id)
+      ]);
       if (allTeamsRes.error) throw allTeamsRes.error;
       if (prevStatsRes.error) throw prevStatsRes.error;
       if (priceRowsRes.error) throw priceRowsRes.error;
