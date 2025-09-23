@@ -5,6 +5,7 @@ import { Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import AuthModal from '@/components/AuthModal';
 
 interface Round {
   id: string;
@@ -18,6 +19,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   const { user } = useAuth();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     fetchOpenRounds();
@@ -50,6 +52,14 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
     }
   };
 
+  const handleJoinRound = (round: Round) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.();
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -64,46 +74,54 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-      {rounds.map((round) => (
-        <Card 
-          key={round.id} 
-          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
-          onClick={() => onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.()}
-        >
-          <CardContent className="p-4">
-            {/* Round Logo */}
-            <div className="flex justify-center mb-3">
-              <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
-                <img
-                  src={getRoundImage(round.type)}
-                  alt={`${round.type} round`}
-                  className="w-24 h-24 object-contain"
-                />
-              </div>
-            </div>
-            
-            {/* Round Info */}
-            <div className="text-center mb-3">
-              <div className="space-y-1 text-xs text-gray-400">
-                <div className="flex items-center justify-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        {rounds.map((round) => (
+          <Card 
+            key={round.id} 
+            className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+            onClick={() => handleJoinRound(round)}
+          >
+            <CardContent className="p-4">
+              {/* Round Logo */}
+              <div className="flex justify-center mb-3">
+                <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
+                  <img
+                    src={getRoundImage(round.type)}
+                    alt={`${round.type} round`}
+                    className="w-24 h-24 object-contain"
+                  />
                 </div>
               </div>
-            </div>
+              
+              {/* Round Info */}
+              <div className="text-center mb-3">
+                <div className="space-y-1 text-xs text-gray-400">
+                  <div className="flex items-center justify-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Join Button */}
-            <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2">
-              Join Round
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+              {/* Join Button */}
+              <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2">
+                Join Round
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        onSuccess={() => setShowAuthModal(false)}
+      />
+    </>
   );
 };
