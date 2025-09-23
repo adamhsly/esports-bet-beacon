@@ -275,13 +275,12 @@ const Index = () => {
           esportType: selectedGameType,
         });
 
-        // normalize IDs (strip any "amateur_/professional_" prefixes)
+        // normalize IDs (strip any prefixes)
         const normalized = rawMatches.map((m) => ({ ...m, id: normalizeMatchId(m.id) }));
+        
+        // Already filtered by local-day in SQL, so don't re-filter by day again here.
+        const filtered = applyAllFilters(normalized);
 
-        // defensive: ensure day match (query already limits to day)
-        const dayMatches = normalized.filter((m) => isDateInRange(m.startTime, selectedDate));
-
-        const filtered = applyAllFilters(dayMatches);
 
         // Split into live/upcoming/finished like before
         const live: MatchInfo[] = [];
