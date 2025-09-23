@@ -51,12 +51,15 @@ serve(async (req) => {
     for (const r of rounds) {
       console.log("=== Processing round ===", r);
 
-      // 1) PRO TEAMS
+      // 1) PRO TEAMS - Using match_date for much faster lookups
+      const startDate = new Date(r.start_date).toISOString().split('T')[0];
+      const endDate = new Date(r.end_date).toISOString().split('T')[0];
+      
       const { data: pandaMatches, error: pandaErr } = await supabase
         .from("pandascore_matches")
         .select("teams, esport_type, start_time")
-        .gte("start_time", r.start_date)
-        .lte("start_time", r.end_date)
+        .gte("match_date", startDate)
+        .lte("match_date", endDate)
         .not("teams", "is", null);
       if (pandaErr) throw pandaErr;
       console.log("pandaMatches count:", pandaMatches?.length || 0);
@@ -116,21 +119,27 @@ serve(async (req) => {
         }
       }
 
-      // 2) AMATEUR TEAMS
+      // 2) AMATEUR TEAMS - Using match_date for much faster lookups
       const start = new Date(r.start_date);
       const end = new Date(r.end_date);
       const prevEnd = start;
       const prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
-      console.log("Amateur window", { round_id: r.id, prevStart: prevStart.toISOString(), prevEnd: prevEnd.toISOString() });
+      
+      const prevStartDate = prevStart.toISOString().split('T')[0];
+      const prevEndDate = prevEnd.toISOString().split('T')[0];
+      console.log("Amateur window", { round_id: r.id, prevStartDate, prevEndDate });
 
       const { data: prevStats, error: prevErr } = await (supabase as any).rpc(
         "get_faceit_teams_prev_window_stats",
-        { start_ts: prevStart.toISOString(), end_ts: prevEnd.toISOString() }
+        { start_date: prevStartDate, end_date: prevEndDate }
       );
       if (prevErr) console.error("get_faceit_teams_prev_window_stats error", prevErr);
       else console.log("prevStats count:", prevStats?.length || 0);
 
-      const { data: allFaceitTeams, error: allErr } = await (supabase as any).rpc("get_all_faceit_teams");
+      const { data: allFaceitTeams, error: allErr } = await (supabase as any).rpc(
+        "get_all_faceit_teams", 
+        { start_date: startDate, end_date: endDate }
+      );
       if (allErr) console.error("get_all_faceit_teams error", allErr);
       else console.log("allFaceitTeams count:", allFaceitTeams?.length || 0);
 
