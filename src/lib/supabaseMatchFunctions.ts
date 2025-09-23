@@ -58,14 +58,12 @@ function formatLocalYMD(d: Date): string {
 ────────────────────────────────────────────────────────────────────────────── */
 
 /**
- * Pre-aggregated-style counts for a LOCAL window around targetDate.
- * We query match_cards_day with a wide LOCAL window and aggregate client-side
+ * Local-day counts for a window around targetDate.
+ * We query match_cards_day with a LOCAL window and aggregate client-side
  * into local-day buckets so counts match what the cards display.
- *
- * Returns rows in the same shape as the old MV (match_date, source, match_count).
  */
 export async function getDayCounts(targetDate: Date, windowDays: number = 7): Promise<MatchCountRow[]> {
-  // Build local window: [ (target - windowDays)@00:00 , (target + windowDays + 1)@00:00 )
+  // [ (target - windowDays)@00:00 , (target + windowDays + 1)@00:00 ) in LOCAL time
   const base = new Date(targetDate);
   base.setHours(0, 0, 0, 0);
 
@@ -78,11 +76,10 @@ export async function getDayCounts(targetDate: Date, windowDays: number = 7): Pr
   const startISO = startLocal.toISOString();
   const endISO = endLocal.toISOString();
 
-  // Fetch ONLY lightweight columns for speed
-  // Apply the same guards you use for cards so totals align
+  // Fetch lightweight columns only + same guards as cards
   const { data, error } = await supabase
     .from('match_cards_day')
-    .select('start_time, source')
+    .select('start_time, source, team1_name, team2_name, status')
     .gte('start_time', startISO)
     .lt('start_time', endISO)
     .not('team1_name', 'ilike', '%TBD%')
@@ -97,24 +94,25 @@ export async function getDayCounts(targetDate: Date, windowDays: number = 7): Pr
     throw error;
   }
 
+  // Robust source normalization (handles 'professional'|'pandascore' and 'amateur'|'faceit')
   const counts = new Map<string, number>(); // key = `${ymd}|${source}`
   for (const row of data || []) {
-    const local = new Date(row.start_time);
-    const ymd = formatLocalYMD(local);
-    const src = (row.source === 'professional' ? 'pandascore' : 'faceit') as 'pandascore' | 'faceit';
-    const k = `${ymd}|${src}`;
+    const ymd = formatLocalYMD(new Date(row.start_time));
+    const s = String(row.source || '').toLowerCase();
+    const normalizedSource = (s === 'professional' || s === 'pandascore') ? 'pandascore' : 'faceit';
+    const k = `${ymd}|${normalizedSource}`;
     counts.set(k, (counts.get(k) || 0) + 1);
   }
 
-  // Flatten to array of rows
   const result: MatchCountRow[] = [];
   for (const [k, n] of counts.entries()) {
     const [match_date, source] = k.split('|') as [string, 'faceit' | 'pandascore'];
     result.push({ match_date, source, match_count: n });
   }
 
-  // Sort for deterministic output
-  result.sort((a, b) => (a.match_date < b.match_date ? -1 : a.match_date > b.match_date ? 1 : a.source.localeCompare(b.source)));
+  result.sort((a, b) =>
+    a.match_date === b.match_date ? a.source.localeCompare(b.source) : (a.match_date < b.match_date ? -1 : 1)
+  );
   return result;
 }
 
@@ -132,7 +130,7 @@ interface GetMatchesForDateParams {
  */
 export async function getMatchesForDate({
   date,
-  limit = 100,
+  limit = 200,
   cursorStartTime,
   source = 'all',
   esportType = 'all',
@@ -189,7 +187,7 @@ export async function getMatchesForDate({
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
-   Legacy helpers (kept for compatibility while you migrate)
+   (Optional) Legacy helpers left in for compatibility
 ────────────────────────────────────────────────────────────────────────────── */
 interface MatchCountResult {
   match_date: string;
@@ -315,51 +313,7 @@ export function getTotalMatchCountsByDate(
   return totals;
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Legacy: heavy ±7d RPC fetches (prefer getMatchesForDate)
-────────────────────────────────────────────────────────────────────────────── */
-function transformFaceitMatch(match: FaceitMatchResult): MatchInfo {
-  const teams = match.teams || {};
-  return {
-    id: `faceit_${match.match_id}`,
-    teams: [
-      { name: teams.faction1?.name || 'Team 1', logo: teams.faction1?.avatar || '/placeholder.svg', id: teams.faction1?.faction_id || `faceit_team_${match.match_id}_1` },
-      { name: teams.faction2?.name || 'Team 2', logo: teams.faction2?.avatar || '/placeholder.svg', id: teams.faction2?.faction_id || `faceit_team_${match.match_id}_2` },
-    ] as any,
-    startTime: match.started_at || match.scheduled_at,
-    tournament: match.competition_name || 'FACEIT Match',
-    esportType: match.game,
-    bestOf: match.raw_data?.best_of || 3,
-    source: 'amateur',
-    status: match.status,
-    faceitData: match.faceit_data,
-    rawData: match.raw_data,
-  };
-}
-
-function transformPandaScoreMatch(match: PandaScoreMatchResult): MatchInfo {
-  const teams = match.teams || [];
-  const team1 = Array.isArray(teams) && teams[0]?.opponent ? teams[0].opponent : {};
-  const team2 = Array.isArray(teams) && teams[1]?.opponent ? teams[1].opponent : {};
-  return {
-    id: `pandascore_${match.match_id}`,
-    teams: [
-      { name: team1.name || 'Team 1', logo: team1.image_url || '/placeholder.svg', id: team1.id?.toString() || `pandascore_team_${match.match_id}_1` },
-      { name: team2.name || 'Team 2', logo: team2.image_url || '/placeholder.svg', id: team2.id?.toString() || `pandascore_team_${match.match_id}_2` },
-    ] as any,
-    startTime: match.start_time,
-    tournament: match.tournament_name || match.league_name || 'Professional Tournament',
-    tournament_name: match.tournament_name,
-    league_name: match.league_name,
-    esportType: match.esport_type,
-    bestOf: match.number_of_games || 3,
-    source: 'professional',
-    status: match.status,
-    rawData: match.raw_data,
-  };
-}
-
-/** Legacy: ±7 days via RPC; prefer getMatchesForDate */
+/** Legacy heavy fetch; prefer getMatchesForDate */
 export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[]> {
   try {
     const [faceitResult, pandascoreResult] = await Promise.all([
@@ -370,8 +324,46 @@ export async function getMatchesAroundDate(targetDate: Date): Promise<MatchInfo[
     const faceitMatches = Array.isArray(faceitResult.data) ? (faceitResult.data as FaceitMatchResult[]) : [];
     const pandascoreMatches = Array.isArray(pandascoreResult.data) ? (pandascoreResult.data as PandaScoreMatchResult[]) : [];
 
-    const transformedFaceit = faceitMatches.map(transformFaceitMatch);
-    const transformedPandaScore = pandascoreMatches.map(transformPandaScoreMatch);
+    const transformedFaceit = faceitMatches.map((match) => {
+      const teams = match.teams || {};
+      return {
+        id: `faceit_${match.match_id}`,
+        teams: [
+          { name: teams.faction1?.name || 'Team 1', logo: teams.faction1?.avatar || '/placeholder.svg', id: teams.faction1?.faction_id || `faceit_team_${match.match_id}_1` },
+          { name: teams.faction2?.name || 'Team 2', logo: teams.faction2?.avatar || '/placeholder.svg', id: teams.faction2?.faction_id || `faceit_team_${match.match_id}_2` },
+        ] as any,
+        startTime: match.started_at || match.scheduled_at,
+        tournament: match.competition_name || 'FACEIT Match',
+        esportType: match.game,
+        bestOf: match.raw_data?.best_of || 3,
+        source: 'amateur',
+        status: match.status,
+        faceitData: match.faceit_data,
+        rawData: match.raw_data,
+      } as MatchInfo;
+    });
+
+    const transformedPandaScore = pandascoreMatches.map((match) => {
+      const teams = match.teams || [];
+      const team1 = Array.isArray(teams) && teams[0]?.opponent ? teams[0].opponent : {};
+      const team2 = Array.isArray(teams) && teams[1]?.opponent ? teams[1].opponent : {};
+      return {
+        id: `pandascore_${match.match_id}`,
+        teams: [
+          { name: team1.name || 'Team 1', logo: team1.image_url || '/placeholder.svg', id: team1.id?.toString() || `pandascore_team_${match.match_id}_1` },
+          { name: team2.name || 'Team 2', logo: team2.image_url || '/placeholder.svg', id: team2.id?.toString() || `pandascore_team_${match.match_id}_2` },
+        ] as any,
+        startTime: match.start_time,
+        tournament: match.tournament_name || match.league_name || 'Professional Tournament',
+        tournament_name: match.tournament_name,
+        league_name: match.league_name,
+        esportType: match.esport_type,
+        bestOf: match.number_of_games || 3,
+        source: 'professional',
+        status: match.status,
+        rawData: match.raw_data,
+      } as MatchInfo;
+    });
 
     const combined = [...transformedFaceit, ...transformedPandaScore];
 
