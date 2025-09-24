@@ -74,12 +74,41 @@ const mapGameTypeToQuery = (v: string): string => {
    Tournament helpers (same as your old UI)
 -------------------------------------------- */
 const formatPrizePool = (prizePool: number | string) => {
-  if (!prizePool) return null;
-  const amount = typeof prizePool === 'string' ? parseInt(prizePool) : prizePool;
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-  if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `$${(amount / 1_000).toFixed(0)}K`;
-  return `$${amount}`;
+  console.log('💰 formatPrizePool input:', prizePool, typeof prizePool);
+  
+  if (!prizePool) {
+    console.log('❌ No prize pool provided');
+    return null;
+  }
+  
+  // Handle different string formats like "100000 Brazilian Real"
+  let amount: number;
+  if (typeof prizePool === 'string') {
+    // Extract numeric part from strings like "100000 Brazilian Real"
+    const match = prizePool.match(/[\d,]+/);
+    if (match) {
+      amount = parseInt(match[0].replace(/,/g, ''));
+    } else {
+      amount = parseInt(prizePool);
+    }
+  } else {
+    amount = prizePool;
+  }
+  
+  console.log('💰 Parsed amount:', amount);
+  
+  if (!Number.isFinite(amount) || amount <= 0) {
+    console.log('❌ Invalid amount after parsing');
+    return null;
+  }
+  
+  let result: string;
+  if (amount >= 1_000_000) result = `$${(amount / 1_000_000).toFixed(1)}M`;
+  else if (amount >= 1_000) result = `$${(amount / 1_000).toFixed(0)}K`;
+  else result = `$${amount}`;
+  
+  console.log('✅ Formatted result:', result);
+  return result;
 };
 
 const getPrizeValueFromMetadata = (metadata: any): number | null => {
@@ -101,11 +130,19 @@ const getTierValueFromMetadata = (metadata: any): number => {
 };
 
 const renderTournamentMetadata = (metadata: any) => {
-  if (!metadata) return null;
+  console.log('🎨 renderTournamentMetadata called with:', metadata);
+  
+  if (!metadata) {
+    console.log('❌ No metadata provided, returning null');
+    return null;
+  }
+  
   const items: React.ReactNode[] = [];
 
   if (metadata.prizePool) {
+    console.log('💰 Processing prize pool:', metadata.prizePool);
     const formatted = formatPrizePool(metadata.prizePool);
+    console.log('💰 Formatted prize pool:', formatted);
     if (formatted) {
       items.push(
         <span key="prize" className="flex items-center gap-1 text-xs text-green-400 font-medium">
@@ -116,6 +153,7 @@ const renderTournamentMetadata = (metadata: any) => {
     }
   }
   if (metadata.tier && metadata.tier !== 'unranked') {
+    console.log('🏆 Adding tier:', metadata.tier);
     items.push(<span key="tier" className="text-xs text-blue-400 font-medium uppercase">{metadata.tier}</span>);
   }
   if (metadata.serieInfo) {
@@ -135,6 +173,7 @@ const renderTournamentMetadata = (metadata: any) => {
     items.push(<span key="compType" className="text-xs text-yellow-400 font-medium">{metadata.competitionType}</span>);
   }
 
+  console.log('🎨 Final items to render:', items.length, items);
   return items.length > 0 ? <div className="flex items-center justify-center gap-2 ml-2 mt-1">{items}</div> : null;
 };
 
@@ -356,19 +395,37 @@ const Index = () => {
   }, [selectedDate, selectedGameType, selectedStatusFilter, selectedSourceFilter]);
 
   /* --------------------- Grouping & metadata (same as before) --------------------- */
-  const getTournamentMetadata = (matches: MatchInfo[]) => {
+const getTournamentMetadata = (matches: MatchInfo[]) => {
     if (matches.length === 0) return null;
     const sample = matches[0];
     let meta: any = {};
+    
+    // Debug logging
+    console.log('🔍 getTournamentMetadata DEBUG:', {
+      sampleMatch: sample,
+      source: sample.source,
+      tournament: sample.tournament_name,
+      league: sample.league_name,
+      rawData: sample.rawData
+    });
+    
     if (sample.source === 'professional' && sample.rawData) {
       const raw: any = sample.rawData;
+      console.log('🏆 Professional match raw data:', {
+        tournament: raw.tournament,
+        league: raw.league,
+        serie: raw.serie
+      });
+      
       if (raw.tournament) {
         meta.prizePool = raw.tournament.prizepool;
         meta.tier = raw.tournament.tier;
+        console.log('📊 Tournament metadata extracted:', { prizePool: meta.prizePool, tier: meta.tier });
       }
       if (raw.league) {
         meta.prizePool = meta.prizePool || raw.league.prizepool;
         meta.tier = meta.tier || raw.league.tier;
+        console.log('🏛️ League metadata extracted:', { prizePool: meta.prizePool, tier: meta.tier });
       }
       if (raw.serie) {
         meta.serieInfo = { fullName: raw.serie.full_name, year: raw.serie.year, season: raw.serie.season };
@@ -379,7 +436,10 @@ const Index = () => {
       meta.region = fd.region;
       meta.competitionType = fd.competitionType;
       meta.organizedBy = fd.organizedBy;
+      console.log('🎮 Amateur match metadata:', meta);
     }
+    
+    console.log('✅ Final metadata result:', meta);
     return Object.keys(meta).length > 0 ? meta : null;
   };
 
@@ -491,6 +551,10 @@ const Index = () => {
                               <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">{league}</div>
                             )}
                             {renderTournamentMetadata(metadata)}
+                            {/* DEBUG: Show raw metadata */}
+                            <div className="text-xs text-red-400 mt-1 bg-red-900/20 p-1 rounded">
+                              DEBUG: {JSON.stringify(metadata)}
+                            </div>
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map((match) => (
@@ -528,6 +592,10 @@ const Index = () => {
                               <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">{league}</div>
                             )}
                             {renderTournamentMetadata(metadata)}
+                            {/* DEBUG: Show raw metadata */}
+                            <div className="text-xs text-red-400 mt-1 bg-red-900/20 p-1 rounded">
+                              DEBUG: {JSON.stringify(metadata)}
+                            </div>
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map((match) => (
@@ -565,6 +633,10 @@ const Index = () => {
                               <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">{league}</div>
                             )}
                             {renderTournamentMetadata(metadata)}
+                            {/* DEBUG: Show raw metadata */}
+                            <div className="text-xs text-red-400 mt-1 bg-red-900/20 p-1 rounded">
+                              DEBUG: {JSON.stringify(metadata)}
+                            </div>
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map((match) => (
