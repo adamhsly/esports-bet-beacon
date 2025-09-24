@@ -2698,6 +2698,7 @@ export type Database = {
           league_name: string | null
           match_date: string | null
           match_id: string | null
+          raw_data: Json | null
           source: string | null
           start_time: string | null
           status: string | null

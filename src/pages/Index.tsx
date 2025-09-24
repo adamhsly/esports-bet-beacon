@@ -400,32 +400,16 @@ const getTournamentMetadata = (matches: MatchInfo[]) => {
     const sample = matches[0];
     let meta: any = {};
     
-    // Debug logging
-    console.log('🔍 getTournamentMetadata DEBUG:', {
-      sampleMatch: sample,
-      source: sample.source,
-      tournament: sample.tournament_name,
-      league: sample.league_name,
-      rawData: sample.rawData
-    });
     
     if (sample.source === 'professional' && sample.rawData) {
       const raw: any = sample.rawData;
-      console.log('🏆 Professional match raw data:', {
-        tournament: raw.tournament,
-        league: raw.league,
-        serie: raw.serie
-      });
-      
       if (raw.tournament) {
         meta.prizePool = raw.tournament.prizepool;
         meta.tier = raw.tournament.tier;
-        console.log('📊 Tournament metadata extracted:', { prizePool: meta.prizePool, tier: meta.tier });
       }
       if (raw.league) {
         meta.prizePool = meta.prizePool || raw.league.prizepool;
         meta.tier = meta.tier || raw.league.tier;
-        console.log('🏛️ League metadata extracted:', { prizePool: meta.prizePool, tier: meta.tier });
       }
       if (raw.serie) {
         meta.serieInfo = { fullName: raw.serie.full_name, year: raw.serie.year, season: raw.serie.season };
@@ -436,10 +420,7 @@ const getTournamentMetadata = (matches: MatchInfo[]) => {
       meta.region = fd.region;
       meta.competitionType = fd.competitionType;
       meta.organizedBy = fd.organizedBy;
-      console.log('🎮 Amateur match metadata:', meta);
     }
-    
-    console.log('✅ Final metadata result:', meta);
     return Object.keys(meta).length > 0 ? meta : null;
   };
 
@@ -551,10 +532,6 @@ const getTournamentMetadata = (matches: MatchInfo[]) => {
                               <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">{league}</div>
                             )}
                             {renderTournamentMetadata(metadata)}
-                            {/* DEBUG: Show raw metadata */}
-                            <div className="text-xs text-red-400 mt-1 bg-red-900/20 p-1 rounded">
-                              DEBUG: {JSON.stringify(metadata)}
-                            </div>
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map((match) => (
@@ -592,10 +569,6 @@ const getTournamentMetadata = (matches: MatchInfo[]) => {
                               <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">{league}</div>
                             )}
                             {renderTournamentMetadata(metadata)}
-                            {/* DEBUG: Show raw metadata */}
-                            <div className="text-xs text-red-400 mt-1 bg-red-900/20 p-1 rounded">
-                              DEBUG: {JSON.stringify(metadata)}
-                            </div>
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map((match) => (
@@ -633,10 +606,6 @@ const getTournamentMetadata = (matches: MatchInfo[]) => {
                               <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">{league}</div>
                             )}
                             {renderTournamentMetadata(metadata)}
-                            {/* DEBUG: Show raw metadata */}
-                            <div className="text-xs text-red-400 mt-1 bg-red-900/20 p-1 rounded">
-                              DEBUG: {JSON.stringify(metadata)}
-                            </div>
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                             {matches.map((match) => (

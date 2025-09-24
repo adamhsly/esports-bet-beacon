@@ -182,7 +182,7 @@ export async function getMatchesForDate({
     final_score: (r as any).final_score || null,
     team1_id: r.team1_id || undefined,
     team2_id: r.team2_id || undefined,
-    rawData: null,
+    rawData: (r as any).raw_data,
     faceitData: null,
     teams: [
       { id: r.team1_id || undefined, name: r.team1_name || 'Team 1', logo: r.team1_logo || '/placeholder.svg' },
