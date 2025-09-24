@@ -1,13 +1,17 @@
 // src/utils/shareCardRenderer.ts
 import html2canvas from 'html2canvas';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
 import { getShareCardUrl } from './shareUrlHelper';
+import { resolveAvatarFrameAsset } from './avatarFrames';
+import { resolveAvatarBorderAsset } from './avatarBorders';
 
 interface ShareCardData {
   user: {
     username: string;
     avatar_url?: string;
+    avatar_frame_asset?: string;
+    avatar_border_asset?: string;
     level: number;
     xp: number;
     next_xp_threshold: number;
@@ -126,7 +130,7 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
   // Fetch user profile and progress
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('username')
+    .select('username, avatar_url, avatar_frame_id, avatar_border_id')
     .eq('id', userId)
     .single();
 
@@ -211,6 +215,15 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .order('unlocked_at', { ascending: false })
     .limit(4);
 
+  // Resolve avatar frame and border assets
+  const avatarFrameAsset = profile?.avatar_frame_id ? resolveAvatarFrameAsset(profile.avatar_frame_id) : undefined;
+  const avatarBorderAsset = profile?.avatar_border_id ? resolveAvatarBorderAsset(profile.avatar_border_id) : undefined;
+
+  // Proxy avatar URL for CORS safety if it exists
+  const proxiedAvatarUrl = profile?.avatar_url ? 
+    `${SUPABASE_URL}/functions/v1/public-image-proxy?url=${encodeURIComponent(profile.avatar_url)}` : 
+    undefined;
+
   // Next XP threshold
   const next_xp_threshold = Math.pow((progress?.level ?? 1) + 1, 2) * 100;
 
@@ -219,7 +232,9 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
   return {
     user: {
       username: profile?.username || 'Anonymous',
-      avatar_url: undefined,
+      avatar_url: proxiedAvatarUrl,
+      avatar_frame_asset: avatarFrameAsset,
+      avatar_border_asset: avatarBorderAsset,
       level: progress?.level || 1,
       xp: progress?.xp || 0,
       next_xp_threshold,
@@ -253,11 +268,40 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
     ">
       <!-- User/Profile Header -->
       <div style="position: absolute; left: 72px; top: 160px; display: flex; align-items: center; gap: 24px;">
-        <div style="
-          width: 120px; height: 120px; border-radius: 50%;
-          background: ${data.user.avatar_url ? `url('${data.user.avatar_url}')` : 'linear-gradient(135deg, #8B5CF6, #F97316)'};
-          background-size: cover; background-position: center; border: 4px solid #8B5CF6;
-        "></div>
+        <!-- Enhanced Avatar with Frame and Border -->
+        <div style="position: relative; width: 120px; height: 120px;">
+          <!-- Border (background layer) -->
+          ${data.user.avatar_border_asset ? `
+            <div style="
+              position: absolute; top: 0; left: 0; width: 120px; height: 120px;
+              background: url('${data.user.avatar_border_asset}');
+              background-size: cover; background-position: center;
+              z-index: 1;
+            "></div>
+          ` : ''}
+          
+          <!-- Avatar (middle layer) -->
+          <div style="
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: ${data.user.avatar_border_asset ? '96px' : '120px'}; 
+            height: ${data.user.avatar_border_asset ? '96px' : '120px'}; 
+            border-radius: 50%;
+            background: ${data.user.avatar_url ? `url('${data.user.avatar_url}')` : 'linear-gradient(135deg, #8B5CF6, #F97316)'};
+            background-size: cover; background-position: center;
+            border: ${data.user.avatar_border_asset ? 'none' : '4px solid #8B5CF6'};
+            z-index: 2;
+          "></div>
+          
+          <!-- Frame (top layer) -->
+          ${data.user.avatar_frame_asset ? `
+            <div style="
+              position: absolute; top: 0; left: 0; width: 120px; height: 120px;
+              background: url('${data.user.avatar_frame_asset}');
+              background-size: cover; background-position: center;
+              z-index: 3;
+            "></div>
+          ` : ''}
+        </div>
         <div>
           <div style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">${data.user.username}</div>
           <div style="font-size: 20px; color: #CFE3FF; margin-bottom: 12px;">Level ${data.user.level}</div>
