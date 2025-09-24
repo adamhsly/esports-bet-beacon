@@ -174,7 +174,7 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
     // For FACEIT matches, use faceitData.results
     if (source === 'amateur' && faceitData?.results) {
       const isWinner = faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
-      return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+      return isWinner ? 'ring-2 ring-green-400 bg-green-900/30 border-l-4 border-green-400' : 'opacity-75';
     }
     
     // 🔧 FIXED: For PandaScore matches, use rawData.winner.id instead of rawData.winner_id
@@ -188,7 +188,7 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
       
       if (teamId) {
         const isWinner = rawData.winner.id.toString() === teamId.toString();
-        return isWinner ? 'ring-2 ring-green-400/50 bg-green-900/20' : 'opacity-75';
+        return isWinner ? 'ring-2 ring-green-400 bg-green-900/30 border-l-4 border-green-400' : 'opacity-75';
       }
     }
     
