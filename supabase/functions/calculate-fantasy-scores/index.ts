@@ -236,32 +236,69 @@ async function calculateTeamScore(
     .select('match_id, teams, status, started_at, faceit_data')
     .gte('started_at', startDate)
     .lte('started_at', endDate)
-    .eq('status', 'FINISHED');
+    .in('status', ['finished', 'FINISHED']);
 
   if (!faceitError && faceitMatches) {
     console.log(`🎮 Found ${faceitMatches.length} finished Faceit matches in timeframe`);
     
     for (const match of faceitMatches) {
-      const teams = Array.isArray(match.teams) ? match.teams : [];
-      const teamInMatch = teams.find((t: any) => 
-        String(t.team_id) === teamId || t.name === teamName
-      );
+      const teams = match.teams || {};
+      
+      // FACEIT uses faction1/faction2 structure, normalize team names for matching
+      const faction1Name = teams.faction1?.name ? String(teams.faction1.name).toLowerCase().trim() : '';
+      const faction2Name = teams.faction2?.name ? String(teams.faction2.name).toLowerCase().trim() : '';
+      const normalizedTeamId = teamId.toLowerCase().trim();
+      const normalizedTeamName = teamName.toLowerCase().trim();
+      
+      console.log(`🔍 Checking FACEIT match ${match.match_id}: ${faction1Name} vs ${faction2Name} against ${normalizedTeamName} (${normalizedTeamId})`);
+      
+      let teamFaction = null;
+      if (faction1Name === normalizedTeamId || faction1Name === normalizedTeamName) {
+        teamFaction = 'faction1';
+      } else if (faction2Name === normalizedTeamId || faction2Name === normalizedTeamName) {
+        teamFaction = 'faction2';
+      }
 
-      if (teamInMatch) {
+      if (teamFaction) {
         totalMatchesPlayed++;
-        console.log(`🎯 Team ${teamName} played in Faceit match ${match.match_id}`);
+        console.log(`🎯 Team ${teamName} played as ${teamFaction} in Faceit match ${match.match_id}`);
 
-        // Check results from faceit_data
+        // Check results from faceit_data - handle object structure
         const faceitData = match.faceit_data;
         if (faceitData && faceitData.results) {
-          const teamResult = faceitData.results.find((r: any) => 
-            String(r.team_id) === teamId || r.team_name === teamName
-          );
+          const winner = faceitData.results.winner;
+          console.log(`🏁 Match winner: ${winner}, team faction: ${teamFaction}`);
           
-          if (teamResult && teamResult.result === 'win') {
+          if (winner === teamFaction) {
             totalMatchWins++;
             console.log(`🏆 Team ${teamName} won Faceit match ${match.match_id}`);
+            
+            // Calculate map wins from score
+            const score = faceitData.results.score;
+            if (score && score[teamFaction]) {
+              const teamMapWins = parseInt(score[teamFaction]) || 0;
+              totalMapWins += teamMapWins;
+              console.log(`🗺️ Team ${teamName} won ${teamMapWins} maps in match ${match.match_id}`);
+              
+              // Check for clean sweep (won all maps without opponent winning any)
+              const opponentFaction = teamFaction === 'faction1' ? 'faction2' : 'faction1';
+              const opponentMapWins = parseInt(score[opponentFaction]) || 0;
+              if (opponentMapWins === 0 && teamMapWins > 0) {
+                totalCleanSweeps++;
+                console.log(`🧹 Team ${teamName} achieved clean sweep in match ${match.match_id}`);
+              }
+            }
+          } else {
+            // Count map wins even in losing matches
+            const score = faceitData.results.score;
+            if (score && score[teamFaction]) {
+              const teamMapWins = parseInt(score[teamFaction]) || 0;
+              totalMapWins += teamMapWins;
+              console.log(`🗺️ Team ${teamName} won ${teamMapWins} maps in losing match ${match.match_id}`);
+            }
           }
+        } else {
+          console.warn(`⚠️ No faceit_data.results found for match ${match.match_id}`);
         }
       }
     }
