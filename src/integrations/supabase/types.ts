@@ -2667,18 +2667,11 @@ export type Database = {
         }
         Relationships: []
       }
-      daily_match_counts_ui: {
-        Row: {
-          match_count: number | null
-          match_date: string | null
-          source: string | null
-        }
-        Relationships: []
-      }
       faceit_cards: {
         Row: {
           best_of: number | null
           esport_type: string | null
+          final_score: string | null
           league_name: string | null
           match_date: string | null
           match_id: string | null
@@ -2692,40 +2685,8 @@ export type Database = {
           team2_logo: string | null
           team2_name: string | null
           tournament: string | null
-        }
-        Insert: {
-          best_of?: never
-          esport_type?: string | null
-          league_name?: never
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: string | null
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: string | null
-        }
-        Update: {
-          best_of?: never
-          esport_type?: string | null
-          league_name?: never
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: string | null
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: string | null
+          winner_id: string | null
+          winner_type: string | null
         }
         Relationships: []
       }
@@ -2733,6 +2694,7 @@ export type Database = {
         Row: {
           best_of: number | null
           esport_type: string | null
+          final_score: string | null
           league_name: string | null
           match_date: string | null
           match_id: string | null
@@ -2746,6 +2708,8 @@ export type Database = {
           team2_logo: string | null
           team2_name: string | null
           tournament: string | null
+          winner_id: string | null
+          winner_type: string | null
         }
         Relationships: []
       }
@@ -2753,6 +2717,7 @@ export type Database = {
         Row: {
           best_of: number | null
           esport_type: string | null
+          final_score: string | null
           league_name: string | null
           match_date: string | null
           match_id: string | null
@@ -2766,40 +2731,8 @@ export type Database = {
           team2_logo: string | null
           team2_name: string | null
           tournament: string | null
-        }
-        Insert: {
-          best_of?: number | null
-          esport_type?: string | null
-          league_name?: string | null
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: string | null
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: never
-        }
-        Update: {
-          best_of?: number | null
-          esport_type?: string | null
-          league_name?: string | null
-          match_date?: string | null
-          match_id?: string | null
-          source?: never
-          start_time?: string | null
-          status?: string | null
-          team1_id?: never
-          team1_logo?: never
-          team1_name?: never
-          team2_id?: never
-          team2_logo?: never
-          team2_name?: never
-          tournament?: never
+          winner_id: string | null
+          winner_type: string | null
         }
         Relationships: []
       }

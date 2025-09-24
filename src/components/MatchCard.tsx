@@ -39,6 +39,12 @@ export interface MatchInfo {
   source?: 'professional' | 'amateur';
   status?: string;
   hasValidSchedule?: boolean; // For FACEIT matches to track if they have proper scheduling
+  // Selective winner/score fields from database views
+  winner_id?: string | null;
+  winner_type?: string | null;
+  final_score?: string | null;
+  team1_id?: string;
+  team2_id?: string;
   faceitData?: {
     region?: string;
     competitionType?: string;
@@ -167,27 +173,24 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
     }
   };
 
-  // Determine winner and styling for finished matches
+  // Determine winner and styling for finished matches using selective fields
   const getWinnerStyling = (teamIndex: number) => {
     if (!isFinished) return '';
     
-    // For FACEIT matches, use faceitData.results
-    if (source === 'amateur' && faceitData?.results) {
-      const isWinner = faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
-      return isWinner ? 'ring-2 ring-green-400 bg-green-900/30 border-l-4 border-green-400' : 'opacity-75';
-    }
-    
-    // 🔧 FIXED: For PandaScore matches, use rawData.winner.id instead of rawData.winner_id
-    if (source === 'professional' && rawData?.winner?.id) {
-      const teamId = teams[teamIndex]?.id;
-      console.log(`🏆 Checking winner for team ${teamIndex}:`, {
-        teamId,
-        winnerId: rawData.winner.id,
-        isWinner: teamId && rawData.winner.id?.toString() === teamId?.toString()
-      });
+    // Use the new selective winner_id field from database views
+    if (match.winner_id) {
+      const teamId = teamIndex === 0 ? match.team1_id : match.team2_id;
       
-      if (teamId) {
-        const isWinner = rawData.winner.id.toString() === teamId.toString();
+      // For FACEIT matches, winner_id is 'faction1' or 'faction2'
+      if (source === 'amateur') {
+        const expectedWinner = teamIndex === 0 ? 'faction1' : 'faction2';
+        const isWinner = match.winner_id === expectedWinner;
+        return isWinner ? 'ring-2 ring-green-400 bg-green-900/30 border-l-4 border-green-400' : 'opacity-75';
+      }
+      
+      // For PandaScore matches, winner_id is the team ID
+      if (source === 'professional' && teamId) {
+        const isWinner = match.winner_id.toString() === teamId.toString();
         return isWinner ? 'ring-2 ring-green-400 bg-green-900/30 border-l-4 border-green-400' : 'opacity-75';
       }
     }
@@ -195,45 +198,12 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
     return '';
   };
 
-  // Get final score for finished matches
+  // Get final score for finished matches using selective field
   const getFinalScore = () => {
     if (!isFinished) return null;
     
-    // For FACEIT matches
-    if (source === 'amateur' && faceitData?.results) {
-      return `${faceitData.results.score.faction1} - ${faceitData.results.score.faction2}`;
-    }
-    
-    // For PandaScore matches, extract score from rawData.results
-    if (source === 'professional' && rawData?.results && Array.isArray(rawData.results)) {
-      // rawData.results is an array like: [{score: 0, team_id: 2883}, {score: 3, team_id: 126061}]
-      const team1Id = teams[0]?.id;
-      const team2Id = teams[1]?.id;
-      
-      console.log(`📊 Getting score for PandaScore match:`, {
-        team1Id,
-        team2Id,
-        results: rawData.results,
-        team1Name: teams[0]?.name,
-        team2Name: teams[1]?.name
-      });
-      
-      if (team1Id && team2Id) {
-        const team1Result = rawData.results.find((r: any) => r.team_id?.toString() === team1Id.toString());
-        const team2Result = rawData.results.find((r: any) => r.team_id?.toString() === team2Id.toString());
-        
-        console.log(`📊 Score results found:`, {
-          team1Result,
-          team2Result
-        });
-        
-        if (team1Result && team2Result) {
-          return `${team1Result.score} - ${team2Result.score}`;
-        }
-      }
-    }
-    
-    return null;
+    // Use the new selective final_score field from database views
+    return match.final_score || null;
   };
 
   const finalScore = getFinalScore();

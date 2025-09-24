@@ -176,6 +176,12 @@ export async function getMatchesForDate({
     esportType: r.esport_type || undefined,
     bestOf: r.best_of ?? undefined,
     status: r.status || undefined,
+    // Include selective winner/score fields from database views
+    winner_id: (r as any).winner_id || null,
+    winner_type: (r as any).winner_type || null,
+    final_score: (r as any).final_score || null,
+    team1_id: r.team1_id || undefined,
+    team2_id: r.team2_id || undefined,
     rawData: null,
     faceitData: null,
     teams: [
@@ -206,7 +212,7 @@ export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<Ma
   const endYMD = ymd(endLocal);
 
   const { data, error } = await supabase
-    .from('daily_match_counts_ui')
+    .from('daily_match_counts')
     .select('match_date, source, match_count')
     .gte('match_date', startYMD)
     .lte('match_date', endYMD);
