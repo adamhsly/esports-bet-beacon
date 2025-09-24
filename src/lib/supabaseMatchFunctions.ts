@@ -31,7 +31,10 @@ interface MatchCardsDayRow {
   team2_name: string | null;
   team2_logo: string | null;
 
-  league_name: string | null;
+  winner_id: string | null;
+  winner_type: string | null;
+  final_score: string | null;
+  raw_data: any;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -172,7 +175,7 @@ export async function getMatchesForDate({
     startTime: r.start_time,
     tournament: r.tournament || undefined,
     tournament_name: r.tournament || undefined,
-    league_name: r.league_name || undefined,
+    league_name: r.tournament || undefined, // Use tournament as league_name
     esportType: r.esport_type || undefined,
     bestOf: r.best_of ?? undefined,
     status: r.status || undefined,

@@ -39,6 +39,7 @@ serve(async (req) => {
       if (body && typeof body === 'object') {
         roundFilter = body.round_id ?? body.roundId ?? undefined;
         userFilter = body.user_id ?? body.userId ?? undefined;
+        console.log(`🔍 Filters applied - Round: ${roundFilter || 'ALL'}, User: ${userFilter || 'ALL'}`);
       }
     } catch (_) {
       // Ignore bad JSON
