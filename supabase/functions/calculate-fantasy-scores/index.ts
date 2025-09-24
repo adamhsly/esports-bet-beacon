@@ -253,10 +253,24 @@ async function calculateTeamScore(
       
       console.log(`🔍 Checking FACEIT match ${match.match_id}: ${faction1Name} vs ${faction2Name} against ${normalizedTeamName} (${normalizedTeamId})`);
       
+      // Helper function to check if team names match (exact or partial)
+      const isTeamMatch = (factionName: string, teamId: string, teamName: string) => {
+        if (!factionName) return false;
+        
+        // Exact matches
+        if (factionName === teamId || factionName === teamName) return true;
+        
+        // Partial matches (team name contains faction name or vice versa)
+        if (teamName.includes(factionName) || factionName.includes(teamName)) return true;
+        if (teamId.includes(factionName) || factionName.includes(teamId)) return true;
+        
+        return false;
+      };
+      
       let teamFaction = null;
-      if (faction1Name === normalizedTeamId || faction1Name === normalizedTeamName) {
+      if (isTeamMatch(faction1Name, normalizedTeamId, normalizedTeamName)) {
         teamFaction = 'faction1';
-      } else if (faction2Name === normalizedTeamId || faction2Name === normalizedTeamName) {
+      } else if (isTeamMatch(faction2Name, normalizedTeamId, normalizedTeamName)) {
         teamFaction = 'faction2';
       }
 
