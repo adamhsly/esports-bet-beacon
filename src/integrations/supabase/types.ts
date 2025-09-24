@@ -2695,7 +2695,6 @@ export type Database = {
           best_of: number | null
           esport_type: string | null
           final_score: string | null
-          league_name: string | null
           match_date: string | null
           match_id: string | null
           raw_data: Json | null
