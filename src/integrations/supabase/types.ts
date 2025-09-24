@@ -2734,6 +2734,46 @@ export type Database = {
           winner_id: string | null
           winner_type: string | null
         }
+        Insert: {
+          best_of?: number | null
+          esport_type?: string | null
+          final_score?: never
+          league_name?: string | null
+          match_date?: string | null
+          match_id?: string | null
+          source?: never
+          start_time?: string | null
+          status?: string | null
+          team1_id?: never
+          team1_logo?: never
+          team1_name?: never
+          team2_id?: never
+          team2_logo?: never
+          team2_name?: never
+          tournament?: never
+          winner_id?: string | null
+          winner_type?: string | null
+        }
+        Update: {
+          best_of?: number | null
+          esport_type?: string | null
+          final_score?: never
+          league_name?: string | null
+          match_date?: string | null
+          match_id?: string | null
+          source?: never
+          start_time?: string | null
+          status?: string | null
+          team1_id?: never
+          team1_logo?: never
+          team1_name?: never
+          team2_id?: never
+          team2_logo?: never
+          team2_name?: never
+          tournament?: never
+          winner_id?: string | null
+          winner_type?: string | null
+        }
         Relationships: []
       }
       pandascore_view_teams: {
