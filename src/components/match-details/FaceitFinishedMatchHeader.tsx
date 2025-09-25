@@ -121,7 +121,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
         </div>
         
         {/* Bottom info row */}
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-start">
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
