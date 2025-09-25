@@ -162,12 +162,6 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
         {/* Tournament and Platform Badge */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 flex-1">
-            {isLive() && (
-              <div className="flex items-center gap-1 text-xs text-red-400 font-semibold">
-                <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
-                <span>LIVE</span>
-              </div>
-            )}
             <span className="text-sm font-medium text-white truncate">{match.tournament || 'Pro Match'}</span>
             <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30 text-xs">
               <Trophy size={10} className="mr-1" />
