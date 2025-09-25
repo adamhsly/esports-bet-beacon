@@ -232,31 +232,38 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
         style={{ pointerEvents: "auto" }}
       >
         <div className="flex flex-col gap-1 px-3 py-2">
-          {/* Tournament info and time/result row */}
+          {/* Tournament info row */}
           <div className="flex justify-between items-center mb-0.5">
             <span className="text-xs text-gray-400 truncate max-w-[65%] font-medium">
               {tournament_name || tournament}
             </span>
-            {isFinished && finalScore ? (
-              <div className="flex items-center gap-1 text-xs text-green-400 font-semibold">
-                <CheckCircle size={12} />
-                <span>{finalScore}</span>
-              </div>
-            ) : isLive ? (
-              <div className="flex items-center gap-2 text-xs text-red-400 font-semibold">
-                <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
-                <span>LIVE</span>
-                {liveScore && (
-                  <span className="text-white/90 font-bold">{liveScore.a} - {liveScore.b}</span>
-                )}
-              </div>
-            ) : (
+            {!isFinished && !isLive && (
               <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold min-w-[48px] justify-end">
                 <Clock size={14} className="mr-1" />
                 {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
           </div>
+          
+          {/* Center-aligned prominent score display */}
+          {(isFinished && finalScore) || (isLive && liveScore) ? (
+            <div className="flex justify-center items-center py-2">
+              {isFinished && finalScore ? (
+                <div className="flex items-center gap-2 text-lg text-green-400 font-bold">
+                  <CheckCircle size={16} />
+                  <span className="text-xl">{finalScore}</span>
+                </div>
+              ) : isLive && liveScore ? (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-2 text-sm text-red-400 font-semibold">
+                    <div className="h-2 w-2 bg-red-400 rounded-full animate-pulse" />
+                    <span>LIVE</span>
+                  </div>
+                  <span className="text-xl text-white font-bold">{liveScore.a} - {liveScore.b}</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           
           {/* Teams row */}
           <div className="flex items-center justify-between min-h-10 mt-0.5">
