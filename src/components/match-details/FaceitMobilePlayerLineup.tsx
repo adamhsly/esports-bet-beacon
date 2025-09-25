@@ -108,8 +108,8 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
   );
 
   const TeamColumn = ({ team, side }: { team: Team; side: 'left' | 'right' }) => (
-    <div className={`flex-1 p-2 rounded-lg bg-theme-gray-medium/30`}>
-      <div className="flex items-center space-x-1.5 mb-2 px-1">
+    <div className={`flex-1 rounded-lg bg-theme-gray-medium/30 overflow-hidden`}>
+      <div className="flex items-center space-x-1.5 p-2 bg-theme-gray-dark/50 border-b border-theme-gray-medium/50">
         <img 
           src={team.logo || team.avatar || '/placeholder.svg'} 
           alt={team.name} 
@@ -118,9 +118,9 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }}
         />
-        <h4 className="font-semibold text-white text-xs truncate flex-1">{team.name}</h4>
+        <h4 className="font-bold text-white text-xs truncate flex-1">{team.name}</h4>
       </div>
-      <div className="space-y-1">
+      <div className="p-2 space-y-1">
         {team.roster?.map((player, idx) => (
           <PlayerRow 
             key={`${player.player_id}-${idx}`} 
