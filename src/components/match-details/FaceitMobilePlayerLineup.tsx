@@ -135,7 +135,7 @@ export const FaceitMobilePlayerLineup: React.FC<FaceitMobilePlayerLineupProps> =
   return (
     <>
       <Card className="bg-theme-gray-dark border-theme-gray-medium">
-        <div className="p-2">
+        <div className="p-2 bg-slate-700">
           <h3 className="text-sm font-bold text-white mb-3 flex items-center">
             <User className="h-4 w-4 mr-1.5" />
             Player Lineups
