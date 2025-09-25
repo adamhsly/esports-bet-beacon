@@ -251,13 +251,13 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
             <TabsTrigger 
               value="statistics" 
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
             >
               Statistics
             </TabsTrigger>
             <TabsTrigger 
               value="matches" 
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
             >
               Recent Matches
             </TabsTrigger>
