@@ -89,7 +89,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
           </div>}
         
         {/* Teams row */}
-        <div className="flex items-center justify-between min-h-10">
+        <div className="flex items-center justify-between min-h-10 mb-4">
           {/* Team 1 */}
           <div className={`flex items-center gap-2 flex-1 rounded-lg p-2 transition-all ${getTeamStyling(0)}`}>
             <img src={team1.logo || team1.avatar || '/placeholder.svg'} alt={`${team1.name} logo`} className="w-8 h-8 object-contain rounded-md bg-gray-800" onError={e => {
