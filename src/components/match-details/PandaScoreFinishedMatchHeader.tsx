@@ -157,7 +157,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   return (
     <Card className="bg-slate-700 border border-theme-gray-medium rounded-xl">
       <div className="flex flex-col gap-2 px-3 py-3">
-        {/* Tournament info and finished status row */}
+        {/* Tournament info row */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2 flex-1">
             <span className="text-sm text-gray-400 truncate max-w-[45%] font-medium">
@@ -171,15 +171,24 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
             )}
             {tier && tier !== 'unranked' && (
               <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-400/30 text-xs">
-                {tier.toUpperCase()}
+                Tier: {tier.toUpperCase()}
               </Badge>
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
             <CheckCircle size={14} />
-            <span>{getScoreDisplay()}</span>
+            <span>FINISHED</span>
           </div>
         </div>
+        
+        {/* Center-aligned prominent score display */}
+        {results && results.length > 0 && (
+          <div className="flex justify-center items-center py-3">
+            <div className="text-3xl font-bold text-green-400">
+              {getScore(0)} - {getScore(1)}
+            </div>
+          </div>
+        )}
         
         {/* Teams row */}
         <div className="flex items-center justify-between min-h-10">

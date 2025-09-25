@@ -78,16 +78,25 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
   return (
     <Card className="bg-slate-700 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none">
       <div className="flex flex-col gap-2 px-3 py-3">
-        {/* Tournament info and finished status row */}
+        {/* Tournament info row */}
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-400 truncate max-w-[65%] font-medium">
             {match.competition_name || match.tournament || 'FACEIT Match'}
           </span>
           <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
             <CheckCircle size={14} />
-            <span>{results ? `${getScore(0)} - ${getScore(1)}` : 'FINISHED'}</span>
+            <span>FINISHED</span>
           </div>
         </div>
+        
+        {/* Center-aligned prominent score display */}
+        {results && (
+          <div className="flex justify-center items-center py-3">
+            <div className="text-3xl font-bold text-green-400">
+              {getScore(0)} - {getScore(1)}
+            </div>
+          </div>
+        )}
         
         {/* Teams row */}
         <div className="flex items-center justify-between min-h-10">

@@ -195,7 +195,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
 {/* Countdown Timer, Live Score, or Final Score */}
 {finished && match.results ? (
   <div className="mb-2 mt-[-0.5rem] text-center">
-    <div className="text-lg font-bold text-green-400">
+    <div className="text-2xl font-bold text-green-400">
       {getScore(0)} - {getScore(1)}
     </div>
   </div>
