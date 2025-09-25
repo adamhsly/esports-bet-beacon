@@ -194,14 +194,23 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
           <div className="flex items-center text-gray-400 text-xs gap-3">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
-              <span>{isFinished() && finishedTime ? new Date(finishedTime).toLocaleDateString() : date}</span>
+              <span>
+                {isFinished() && finishedTime 
+                  ? new Date(finishedTime).toLocaleDateString() 
+                  : isLive() 
+                    ? new Date(match.startTime).toLocaleDateString()
+                    : date
+                }
+              </span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 mr-1" />
               <span>
                 {isFinished() && finishedTime 
                   ? new Date(finishedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                  : time
+                  : isLive()
+                    ? new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : time
                 }
               </span>
             </div>

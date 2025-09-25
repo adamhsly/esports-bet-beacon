@@ -93,9 +93,79 @@ export const FaceitLiveMatchDashboard: React.FC<FaceitLiveMatchDashboardProps> =
         return 'bg-gray-500/20 text-gray-400 border-gray-400/30';
     }
   };
-  const renderLiveScoreboard = () => <Card className="bg-theme-gray-dark border-theme-gray-medium">
-      
-    </Card>;
+  const renderMatchOverview = () => (
+    <Card className="bg-theme-gray-dark border-theme-gray-medium">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-white">Live Match Overview</h2>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={getPhaseColor(matchData.matchPhase)}>
+              {matchData.matchPhase.toUpperCase()}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className="text-xs"
+            >
+              {autoRefresh ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <div className="text-2xl font-bold text-theme-purple">
+              {matchData.teamScores.faction1}
+            </div>
+            <div className="text-sm text-gray-400">{teams[0]?.name || 'Team 1'}</div>
+          </div>
+          <div>
+            <div className="text-lg text-gray-400">Round {matchData.currentRound}</div>
+            <div className="text-sm text-gray-400">{formatTime(matchData.roundTimer)}</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-theme-purple">
+              {matchData.teamScores.faction2}
+            </div>
+            <div className="text-sm text-gray-400">{teams[1]?.name || 'Team 2'}</div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
+  const renderPlayerPerformance = () => (
+    <Card className="bg-theme-gray-dark border-theme-gray-medium">
+      <div className="p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Player Performance</h3>
+        <div className="space-y-4">
+          {teams.map(team => (
+            <div key={team.faction} className="space-y-2">
+              <h4 className="font-semibold text-white border-b border-theme-gray-medium pb-2">
+                {team.name}
+              </h4>
+              {team.roster?.map(player => {
+                const status = matchData.playerStatus[player.player_id];
+                if (!status) return null;
+                return (
+                  <div key={player.player_id} className="flex items-center justify-between p-2 bg-theme-gray-medium/30 rounded">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white">{player.nickname}</span>
+                      {status.alive ? <Heart className="h-3 w-3 text-green-400" /> : <Skull className="h-3 w-3 text-red-400" />}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {status.kills}/{status.deaths}/{status.assists}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
   const renderPlayerStatus = () => <Card className="bg-theme-gray-dark border-theme-gray-medium">
       <div className="p-6">
         <h3 className="text-lg font-bold text-white mb-4">Live Player Status</h3>
@@ -162,5 +232,13 @@ export const FaceitLiveMatchDashboard: React.FC<FaceitLiveMatchDashboardProps> =
         </div>
       </div>
     </Card>;
-  return;
+  return (
+    <div className="space-y-6">
+      {renderMatchOverview()}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {renderPlayerPerformance()}
+        {renderKillFeed()}
+      </div>
+    </div>
+  );
 };

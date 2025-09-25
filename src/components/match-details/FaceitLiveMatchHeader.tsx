@@ -25,6 +25,12 @@ interface FaceitLiveMatchHeaderProps {
       region?: string;
       competitionType?: string;
       calculateElo?: boolean;
+      results?: {
+        score: {
+          faction1: number;
+          faction2: number;
+        };
+      };
     };
     status: string;
   };
@@ -124,7 +130,17 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
           {/* VS Section */}
           <div className="text-center">
             <div className="bg-theme-gray-dark rounded-lg p-4 border border-theme-gray-medium">
-              <div className="text-4xl font-bold text-white mb-2">0 : 0</div>
+              <div className="text-4xl font-bold text-white mb-2">
+                {match.faceitData?.results ? (
+                  <>
+                    <span className="text-theme-purple">{match.faceitData.results.score.faction1}</span>
+                    <span className="text-gray-400 mx-2">:</span>
+                    <span className="text-theme-purple">{match.faceitData.results.score.faction2}</span>
+                  </>
+                ) : (
+                  '0 : 0'
+                )}
+              </div>
               <div className="text-sm text-gray-400">Current Score</div>
               <div className="mt-2">
                 <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-400/30">
@@ -155,6 +171,21 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
         <div className="mt-6 pt-6 border-t border-theme-gray-medium">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div>
+              <div className="text-sm text-gray-400">Date</div>
+              <div className="text-white font-semibold">
+                {match.startTime ? new Date(match.startTime).toLocaleDateString() : 'TBC'}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-400">Start Time</div>
+              <div className="text-white font-semibold">
+                {match.startTime ? new Date(match.startTime).toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                }) : 'TBC'}
+              </div>
+            </div>
+            <div>
               <div className="text-sm text-gray-400">Region</div>
               <div className="text-white font-semibold">{match.faceitData?.region || 'EU'}</div>
             </div>
@@ -162,15 +193,6 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
               <div className="text-sm text-gray-400">Type</div>
               <div className="text-white font-semibold">
                 {match.faceitData?.calculateElo ? 'ELO Match' : 'League Match'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Started</div>
-              <div className="text-white font-semibold">
-                {match.startTime ? new Date(match.startTime).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                }) : 'TBC'}
               </div>
             </div>
           </div>
