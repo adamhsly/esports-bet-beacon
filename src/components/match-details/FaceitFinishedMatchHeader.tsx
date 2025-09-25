@@ -73,12 +73,23 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
   };
   return <Card className="bg-slate-700 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none">
       <div className="flex flex-col gap-2 px-3 py-3">
+        {/* Badges row */}
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-orange-500/20 text-orange-400 border-orange-400/30">
+            <Users size={10} className="mr-1" />
+            FACEIT
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-400/30">
+            <CheckCircle size={10} className="mr-1" />
+            FINISHED
+          </Badge>
+        </div>
+        
         {/* Tournament info row */}
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-400 truncate max-w-[65%] font-medium">
             {match.competition_name || match.tournament || 'FACEIT Match'}
           </span>
-          
         </div>
         
         {/* Center-aligned prominent score display */}
@@ -112,18 +123,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
         </div>
         
         {/* Bottom info row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-orange-500/20 text-orange-400 border-orange-400/30">
-              <Users size={10} className="mr-1" />
-              FACEIT
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-400/30 ml-1">
-              <CheckCircle size={10} className="mr-1" />
-              FINISHED
-            </Badge>
-          </div>
-          
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
