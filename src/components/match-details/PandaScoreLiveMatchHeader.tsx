@@ -143,17 +143,24 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30 text-xs">
+                <Trophy size={10} className="mr-1" />
+                PRO
+              </Badge>
               {formattedPrizePool && (
-                <Badge variant="outline" className="glass-button bg-neon-green/20 text-neon-green border-neon-green/30 text-xs">
+                <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30 text-xs">
                   <Trophy size={10} className="mr-1" />
                   {formattedPrizePool}
                 </Badge>
               )}
               {tier && tier !== 'unranked' && (
-                <Badge variant="outline" className="glass-button bg-neon-purple/20 text-neon-purple border-neon-purple/30 text-xs">
+                <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-400/30 text-xs">
                   {tier.toUpperCase()}
                 </Badge>
               )}
+              <Badge className="bg-theme-purple text-xs px-2 py-1">
+                BO{match.bestOf || 3}
+              </Badge>
             </div>
           </div>
           
