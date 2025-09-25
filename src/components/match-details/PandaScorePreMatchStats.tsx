@@ -135,15 +135,6 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Trophy className="h-4 w-4 text-yellow-400" />
-              <span className="text-gray-300 text-sm">Tournament Wins</span>
-            </div>
-            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-400/30">
-              {stats.tournamentWins}
-            </Badge>
-          </div>
 
           <div className="text-xs text-gray-400 mt-2">
             Based on {stats.totalMatches} matches (last 6 months)
@@ -169,15 +160,6 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
             <span className="text-gray-400 text-sm">No data</span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Trophy className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-400 text-sm">Tournament Wins</span>
-            </div>
-            <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30">
-              N/A
-            </Badge>
-          </div>
 
           <div className="text-xs text-gray-400 mt-2">
             No historical data found
