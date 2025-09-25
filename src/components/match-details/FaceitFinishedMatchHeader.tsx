@@ -87,9 +87,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
         
         {/* Tournament info row */}
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-400 truncate max-w-[65%] font-medium">
-            {match.competition_name || match.tournament || 'FACEIT Match'}
-          </span>
+          
         </div>
         
         {/* Center-aligned prominent score display */}
