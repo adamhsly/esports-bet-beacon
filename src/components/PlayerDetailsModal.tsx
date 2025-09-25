@@ -226,7 +226,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
               <DialogTitle className="text-2xl text-white">{playerData.name}</DialogTitle>
                <div className="flex items-center space-x-2 mt-1">
                  {playerData.team_name && (
-                   <Badge variant="outline">Team {playerData.team_name}</Badge>
+                   <Badge variant="outline" className="text-white">Team {playerData.team_name}</Badge>
                  )}
                  {playerData.role && (
                    <Badge variant="secondary">Pos/Role {playerData.role}</Badge>
