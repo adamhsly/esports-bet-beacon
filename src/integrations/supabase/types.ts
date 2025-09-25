@@ -2984,6 +2984,10 @@ export type Database = {
           voting: Json
         }[]
       }
+      get_faceit_player_details: {
+        Args: { p_player_id: string }
+        Returns: Json
+      }
       get_faceit_teams_prev_window_stats: {
         Args: { end_date: string; start_date: string }
         Returns: {
