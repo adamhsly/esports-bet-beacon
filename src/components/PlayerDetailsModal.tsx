@@ -248,16 +248,16 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="statistics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
             <TabsTrigger 
               value="statistics" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 transition-all duration-250 text-white"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
             >
               Statistics
             </TabsTrigger>
             <TabsTrigger 
               value="matches" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/25 transition-all duration-250 text-white"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
             >
               Recent Matches
             </TabsTrigger>
