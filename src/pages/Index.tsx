@@ -154,17 +154,7 @@ const renderTournamentMetadata = (metadata: any) => {
   }
   if (metadata.tier && metadata.tier !== 'unranked') {
     console.log('🏆 Adding tier:', metadata.tier);
-    items.push(<span key="tier" className="text-xs text-blue-400 font-medium uppercase">{metadata.tier}</span>);
-  }
-  if (metadata.serieInfo) {
-    const { year, season } = metadata.serieInfo;
-    if (year || season) {
-      items.push(
-        <span key="serie" className="text-xs text-purple-400 font-medium">
-          {year && season ? `${year} ${season}` : year || season}
-        </span>
-      );
-    }
+    items.push(<span key="tier" className="text-xs text-blue-400 font-medium uppercase">Tier: {metadata.tier}</span>);
   }
   if (metadata.region) {
     items.push(<span key="region" className="text-xs text-orange-400 font-medium uppercase">{metadata.region}</span>);
