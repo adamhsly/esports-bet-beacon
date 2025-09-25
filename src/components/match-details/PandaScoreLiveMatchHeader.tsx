@@ -215,10 +215,6 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
               <div className="text-4xl font-extrabold glass-text-primary tracking-wider">
                 {scoreA} - {scoreB}
               </div>
-              <div className="mt-1 text-sm glass-text-secondary flex items-center justify-center gap-2">
-                <Radio className="h-3 w-3 text-red-400 animate-pulse" />
-                <span>LIVE • Bo{match.bestOf || 3}</span>
-              </div>
             </div>
           </div>
           
