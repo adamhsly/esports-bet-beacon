@@ -26,6 +26,9 @@ interface Player {
   recent_form?: string;
   recent_form_string?: string;
   match_history?: PlayerMatchHistory[];
+  country?: string;
+  membership?: string;
+  faceit_elo?: number;
 }
 
 interface PlayerDetailsModalProps {
@@ -148,7 +151,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         return;
       }
 
-      setEnhancedData(data);
+      setEnhancedData(data as unknown as EnhancedPlayerData);
     } catch (error) {
       console.error('Error fetching enhanced player data:', error);
     } finally {
