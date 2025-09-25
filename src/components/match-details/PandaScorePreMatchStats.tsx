@@ -189,12 +189,6 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-bold text-white mb-2">Pre-Match Analysis</h3>
-        {tournament && (
-          <p className="text-gray-400">Tournament: {tournament}</p>
-        )}
-      </div>
 
       {/* Overall Team Performance Section */}
       <div className="space-y-4">
