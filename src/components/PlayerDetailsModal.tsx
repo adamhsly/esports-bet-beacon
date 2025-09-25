@@ -266,7 +266,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-card border border-border">
+              <Card className="bg-slate-700 border border-theme-gray-medium">
                 <CardHeader>
                   <CardTitle className="text-white">Career Statistics</CardTitle>
                 </CardHeader>
@@ -284,7 +284,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-card border border-border">
+              <Card className="bg-slate-700 border border-theme-gray-medium">
                 <CardHeader>
                   <CardTitle className="text-white">Recent Form</CardTitle>
                 </CardHeader>
@@ -323,7 +323,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <Card className="bg-card border border-border">
+            <Card className="bg-slate-700 border border-theme-gray-medium">
               <CardHeader>
                 <CardTitle className="text-white">Recent Match History</CardTitle>
               </CardHeader>
