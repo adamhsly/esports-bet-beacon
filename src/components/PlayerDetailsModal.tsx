@@ -291,7 +291,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 <CardContent className="space-y-3">
                   {Object.entries(playerData.recent_stats || {}).map(([key, value]) => (
                     <div key={key} className="flex justify-between">
-                      <span className="capitalize text-gray-400">
+                      <span className="capitalize text-white">
                         {key.replace(/_/g, ' ')}
                       </span>
                       <span className="font-medium text-white">
