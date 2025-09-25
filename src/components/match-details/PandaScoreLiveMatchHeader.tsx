@@ -128,7 +128,7 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
   const { scoreA, scoreB } = computeLiveScores();
 
   return (
-    <Card className="mt-6 glass-card overflow-hidden border-l-4 border-l-red-500 neon-glow transition-all duration-300 hover:scale-102">
+    <Card className="overflow-hidden relative">
       <div className="p-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex flex-col gap-2">
