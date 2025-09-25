@@ -213,7 +213,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-700 border-theme-gray-medium max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="bg-theme-gray-dark border-theme-gray-medium max-w-4xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
@@ -266,7 +266,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+              <Card className="bg-card border border-border">
                 <CardHeader>
                   <CardTitle className="text-white">Career Statistics</CardTitle>
                 </CardHeader>
@@ -284,7 +284,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+              <Card className="bg-card border border-border">
                 <CardHeader>
                   <CardTitle className="text-white">Recent Form</CardTitle>
                 </CardHeader>
@@ -323,7 +323,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <Card className="bg-theme-gray-dark border border-theme-gray-medium">
+            <Card className="bg-card border border-border">
               <CardHeader>
                 <CardTitle className="text-white">Recent Match History</CardTitle>
               </CardHeader>
