@@ -194,13 +194,13 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
 
 {/* Countdown Timer, Live Score, or Final Score */}
 {finished && match.results ? (
-  <div className="mb-2 mt-[-0.5rem] text-center">
+  <div className="mb-4 mt-2 py-4 text-center">
     <div className="text-2xl font-bold text-green-400">
       {getScore(0)} - {getScore(1)}
     </div>
   </div>
 ) : live ? (
-  <div className="mb-2 mt-[-0.5rem] text-center">
+  <div className="mb-4 mt-2 py-4 text-center">
     <div className="text-lg font-bold text-white">
       {(liveScore?.a ?? 0)} - {(liveScore?.b ?? 0)}
     </div>
@@ -210,7 +210,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
     </div>
   </div>
 ) : (
-  <CountdownTimer targetTime={match.startTime} className="mb-2 mt-[-0.5rem]" />
+  <CountdownTimer targetTime={match.startTime} className="mb-4 mt-2 py-4" />
 )}
 
         {/* Teams vs Section */}
