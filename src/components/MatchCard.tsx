@@ -249,8 +249,7 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
           {(isFinished && finalScore) || (isLive && liveScore) ? (
             <div className="flex justify-center items-center py-2">
               {isFinished && finalScore ? (
-                <div className="flex items-center gap-2 text-lg text-green-400 font-bold">
-                  <CheckCircle size={16} />
+                <div className="flex items-center justify-center text-lg text-green-400 font-bold">
                   <span className="text-xl">{finalScore}</span>
                 </div>
               ) : isLive && liveScore ? (
