@@ -1,10 +1,17 @@
 // src/utils/shareCardRenderer.ts
 import html2canvas from 'html2canvas';
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveLogoUrl';
 import { getShareCardUrl } from './shareUrlHelper';
 import { resolveAvatarFrameAsset } from './avatarFrames';
 import { resolveAvatarBorderAsset } from './avatarBorders';
+import { 
+  proxifyAvatarUrl, 
+  proxifyFrameAsset, 
+  proxifyBorderAsset, 
+  proxifyBadgeAssets,
+  preloadAssetsSafely 
+} from './assetProxyHelper';
 
 interface ShareCardData {
   user: {
@@ -68,7 +75,7 @@ export async function renderShareCard(
 
     console.log('Step 4: HTML rendered, generating canvas...');
 
-    // Generate image with error handling
+    // Generate image with enhanced error handling
     const canvas = await html2canvas(container, {
       width: FRAME_WIDTH,
       height: FRAME_HEIGHT,
@@ -76,8 +83,11 @@ export async function renderShareCard(
       scale: 1,
       useCORS: true,
       allowTaint: false,
-      logging: false,
+      logging: true, // Enable logging to catch CORS issues
       foreignObjectRendering: false,
+      onclone: (clonedDoc) => {
+        console.log('html2canvas cloned document for rendering');
+      }
     });
 
     console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
@@ -215,19 +225,25 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .order('unlocked_at', { ascending: false })
     .limit(4);
 
-  // Resolve avatar frame and border assets
-  const avatarFrameAsset = profile?.avatar_frame_id ? resolveAvatarFrameAsset(profile.avatar_frame_id) : undefined;
-  const avatarBorderAsset = profile?.avatar_border_id ? resolveAvatarBorderAsset(profile.avatar_border_id) : undefined;
+  // Resolve avatar frame and border assets with CORS-safe proxying
+  const avatarFrameAsset = profile?.avatar_frame_id ? 
+    proxifyFrameAsset(resolveAvatarFrameAsset(profile.avatar_frame_id), true) : undefined;
+  const avatarBorderAsset = profile?.avatar_border_id ? 
+    proxifyBorderAsset(resolveAvatarBorderAsset(profile.avatar_border_id), true) : undefined;
 
   // Proxy avatar URL for CORS safety if it exists
-  const proxiedAvatarUrl = profile?.avatar_url ? 
-    `${SUPABASE_URL}/functions/v1/public-image-proxy?url=${encodeURIComponent(profile.avatar_url)}` : 
-    undefined;
+  const proxiedAvatarUrl = proxifyAvatarUrl(profile?.avatar_url, true);
 
   // Next XP threshold
   const next_xp_threshold = Math.pow((progress?.level ?? 1) + 1, 2) * 100;
 
   const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
+
+  // Process badges with CORS-safe proxying
+  const processedBadges = badges?.map((b) => ({ 
+    asset_url: `/assets/rewards/${b.season_rewards?.reward_value}.png` 
+  })) || [];
+  const proxiedBadges = proxifyBadgeAssets(processedBadges, true);
 
   return {
     user: {
@@ -243,19 +259,26 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges: badges?.map((b) => ({ asset_url: `/assets/rewards/${b.season_rewards?.reward_value}.png` })) || [],
+    badges: proxiedBadges,
   };
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  // Preload background image from /assets
-  const shareFrameUrl = '/assets/share-frame.png';
-  try {
-    await preloadImage(shareFrameUrl);
-  } catch {
-    console.warn('BG preload failed:', shareFrameUrl);
-  }
+  // Collect all asset URLs for preloading
+  const assetsToPreload = [
+    '/assets/share-frame.png', // Background
+    data.user.avatar_url,
+    data.user.avatar_frame_asset,
+    data.user.avatar_border_asset,
+    ...data.badges.map(b => b.asset_url),
+    ...data.lineup.map(team => team.image_url || team.logo_url).filter(Boolean)
+  ].filter(Boolean) as string[];
 
+  // Preload all assets safely
+  console.log('Preloading assets for canvas rendering:', assetsToPreload.length, 'assets');
+  await preloadAssetsSafely(assetsToPreload);
+
+  const shareFrameUrl = '/assets/share-frame.png';
   container.innerHTML = `
     <div style="
       position: relative;
