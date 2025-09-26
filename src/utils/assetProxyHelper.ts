@@ -7,10 +7,16 @@ import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 export function isExternalUrl(url: string): boolean {
   try {
+    // Handle relative URLs and data URLs
+    if (url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
+      return false;
+    }
+    
     const urlObj = new URL(url);
     const currentOrigin = window.location.origin;
-    return urlObj.origin !== currentOrigin && !url.startsWith('/');
+    return urlObj.origin !== currentOrigin;
   } catch {
+    // If URL parsing fails, assume it's a relative path
     return false;
   }
 }

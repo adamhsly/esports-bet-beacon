@@ -73,7 +73,12 @@ export async function renderShareCard(
     console.log('Step 3: Rendering HTML...');
     await renderShareCardHTML(container, shareData);
 
-    console.log('Step 4: HTML rendered, generating canvas...');
+    console.log('Step 4: HTML rendered, waiting for images to load...');
+    
+    // Wait for all images to load
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    console.log('Step 5: Generating canvas with enhanced error handling...');
 
     // Generate image with enhanced error handling
     const canvas = await html2canvas(container, {
@@ -83,23 +88,44 @@ export async function renderShareCard(
       scale: 1,
       useCORS: true,
       allowTaint: false,
-      logging: true, // Enable logging to catch CORS issues
+      logging: false,
       foreignObjectRendering: false,
+      ignoreElements: (element) => {
+        // Skip problematic elements
+        return element.tagName === 'SCRIPT' || element.tagName === 'STYLE';
+      },
       onclone: (clonedDoc) => {
-        console.log('html2canvas cloned document for rendering');
+        console.log('html2canvas cloning document...');
+        // Ensure all images have crossOrigin set
+        const images = clonedDoc.querySelectorAll('img');
+        images.forEach(img => {
+          if (img.src && !img.src.startsWith('data:')) {
+            img.crossOrigin = 'anonymous';
+          }
+        });
       }
     });
 
-    console.log('Step 5: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
+    console.log('Step 6: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
 
-    // Convert to blob
-    console.log('Step 6: Converting canvas to blob...');
+    // Convert to blob with better error handling
+    console.log('Step 7: Converting canvas to blob...');
     const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to generate blob from canvas'))), 'image/png', 1.0);
+      try {
+        canvas.toBlob((b) => {
+          if (b) {
+            resolve(b);
+          } else {
+            reject(new Error('Canvas toBlob returned null - canvas may be tainted by cross-origin content'));
+          }
+        }, 'image/png', 1.0);
+      } catch (error) {
+        reject(new Error(`Canvas toBlob failed: ${error}`));
+      }
     });
-    console.log('Step 7: Blob created successfully, size:', blob.size, 'bytes');
+    console.log('Step 8: Blob created successfully, size:', blob.size, 'bytes');
 
-    console.log('Step 8: Uploading to Supabase storage...');
+    console.log('Step 9: Uploading to Supabase storage...');
 
     // Upload to Supabase Storage
     const fileName = `${roundId}/${userId}.png`;
@@ -111,19 +137,23 @@ export async function renderShareCard(
       });
 
     if (uploadError) {
-      console.error('Step 8 FAILED - Upload error:', uploadError);
+      console.error('Step 9 FAILED - Upload error:', uploadError);
       throw new Error(`Failed to upload share card: ${uploadError.message}`);
     }
 
-    console.log('Step 9: File uploaded successfully');
+    console.log('Step 10: File uploaded successfully');
 
     // Generate custom domain URL instead of direct Supabase URL
     const customUrl = getShareCardUrl(roundId, userId, true);
 
-    console.log('Step 10: Custom URL generated:', customUrl);
+    console.log('Step 11: Custom URL generated:', customUrl);
     console.log('=== Share Card Generation Completed Successfully ===');
 
     return { publicUrl: customUrl, blob };
+  } catch (error) {
+    console.error('=== Share Card Generation Failed ===');
+    console.error('Error details:', error);
+    throw error;
   } finally {
     // Cleanup
     try {
@@ -284,7 +314,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
-      background-image: url('${shareFrameUrl}');
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
       background-size: cover;
       background-position: center;
       color: #EAF2FF;
