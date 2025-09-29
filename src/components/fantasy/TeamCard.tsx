@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Star, Lock, Users, Trophy, BarChart3 } from 'lucide-react';
+import { CheckCircle, Star, Lock, Users, Trophy } from 'lucide-react';
 interface Team {
   id: string;
   name: string;
@@ -34,7 +34,6 @@ interface TeamCardProps {
   budgetRemaining?: number;
   variant?: 'selection' | 'progress';
   fantasyPoints?: number;
-  onStatsClick?: (team: Team) => void;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -49,8 +48,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   showPrice = false,
   budgetRemaining = 0,
   variant = 'progress',
-  fantasyPoints = 0,
-  onStatsClick
+  fantasyPoints = 0
 }) => {
   const isAmateur = team.type === 'amateur';
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
@@ -102,32 +100,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               </div>
             </div>
             
-            {/* Stats Button and Price */}
-            <div className="flex items-center gap-2 ml-4">
-              {/* Stats Button - Only for Pro teams */}
-              {team.type === 'pro' && onStatsClick && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatsClick(team);
-                  }}
-                  className="h-8 px-2 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
-                >
-                  <BarChart3 className="w-3 h-3 mr-1" />
-                  Stats
-                </Button>
-              )}
-              
-              {/* Price */}
-              {showPrice && <div className="text-right">
-                  <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
-                    {team.price ?? 0}
-                  </div>
-                  <div className="text-xs text-gray-400">credits</div>
-                </div>}
-            </div>
+            {/* Price */}
+            {showPrice && <div className="text-right ml-4">
+                <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+                  {team.price ?? 0}
+                </div>
+                <div className="text-xs text-gray-400">credits</div>
+              </div>}
           </div>
           
           {/* Stats */}
@@ -159,45 +138,5 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   }
 
   // Progress variant (enhanced with selection styling)
-  return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={onClick}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          {/* Team Logo */}
-          <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
-            {team.logo_url ? <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain" /> : isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-blue-400" />}
-          </div>
-          
-          {/* Team Info */}
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-white truncate text-left">{team.name}</h4>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
-                {isAmateur ? 'Amateur' : 'Pro'}
-              </Badge>
-              {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
-                  +25% Bonus
-                </Badge>}
-              {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
-            </div>
-          </div>
-          
-          {/* Fantasy Points */}
-          <div className="text-right">
-            <div className="font-bold text-sm text-blue-400">
-              {fantasyPoints}
-            </div>
-            <div className="text-xs text-gray-400">pts</div>
-          </div>
-        </div>
-        
-        {/* Star Team Double Points Label */}
-        {isStarred && isSelected && <div className="mt-2 pt-2 border-t border-gray-600/50">
-            <div className="text-xs text-[#F5C042] font-medium">
-              DOUBLE POINTS
-            </div>
-          </div>}
-      </CardContent>
-      
-      <StarButton />
-    </Card>;
+  return;
 };
