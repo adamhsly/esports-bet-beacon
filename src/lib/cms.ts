@@ -1,23 +1,31 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Page } from '@/types/cms';
-import { memoryCache } from '@/utils/cacheUtils';
+// keep cache import if you’ll re-enable later
+// import { memoryCache } from '@/utils/cacheUtils';
 
 const CACHE_TTL = 5 * 60; // 5 minutes
 
 export async function getPageBySlug(slug: string): Promise<Page | null> {
-  console.log('🔍 CMS: getPageBySlug called with slug:', slug);
-  
-  const cacheKey = `page:${slug}`;
-  
-  // Temporarily disable cache for debugging
+  const normalized = slug.trim().toLowerCase();
+  console.log('🔍 CMS:getPageBySlug slug(raw→norm):', slug, '→', normalized);
+
+  // 🔎 Visibility probe: does the current role see ANY row for this slug?
+  const { count, error: countErr } = await supabase
+    .from('pages')
+    .select('id', { head: true, count: 'exact' })
+    .eq('slug', normalized);
+
+  console.log('🔎 visible row count for', normalized, '→', count, countErr);
+
+  // ⚠️ Skip cache while debugging
   console.log('🔍 CMS: Skipping cache, fetching from database');
-  
+
   try {
-    console.log('🔍 CMS: Making Supabase query for slug:', slug);
+    console.log('🔍 CMS: Making Supabase query for slug:', normalized);
     const { data, error } = await supabase
       .from('pages')
       .select('*')
-      .eq('slug', slug)
+      .eq('slug', normalized)
       .maybeSingle();
 
     console.log('🔍 CMS: Supabase response:', { data, error });
@@ -27,17 +35,16 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       return null;
     }
 
-    if (data) {
-      console.log('🔍 CMS: Found page data:', data);
-      // Cache the result (re-enable after debugging)
-      // memoryCache.set(cacheKey, data, CACHE_TTL);
-      return data;
-    } else {
-      console.warn('🔍 CMS: No data found for slug:', slug);
+    if (!data) {
+      console.warn('🔍 CMS: No data found for slug:', normalized, '(env mismatch or RLS/privileges likely)');
       return null;
     }
-  } catch (error) {
-    console.error('🔍 CMS: Catch block error:', error);
+
+    console.log('✅ CMS: Found page data:', { id: data.id, slug: data.slug, title: (data as any).title });
+    // memoryCache.set(`page:${normalized}`, data, CACHE_TTL); // re-enable after debug
+    return data as Page;
+  } catch (err) {
+    console.error('🔍 CMS: Catch block error:', err);
     return null;
   }
 }
