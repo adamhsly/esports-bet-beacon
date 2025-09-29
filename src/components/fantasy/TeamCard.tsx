@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Star, Lock, Users, Trophy } from 'lucide-react';
+import { CheckCircle, Star, Lock, Users, Trophy, BarChart3 } from 'lucide-react';
 interface Team {
   id: string;
   name: string;
@@ -34,6 +34,7 @@ interface TeamCardProps {
   budgetRemaining?: number;
   variant?: 'selection' | 'progress';
   fantasyPoints?: number;
+  onStatsClick?: (team: Team) => void;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -48,7 +49,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   showPrice = false,
   budgetRemaining = 0,
   variant = 'progress',
-  fantasyPoints = 0
+  fantasyPoints = 0,
+  onStatsClick
 }) => {
   const isAmateur = team.type === 'amateur';
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
@@ -100,13 +102,32 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               </div>
             </div>
             
-            {/* Price */}
-            {showPrice && <div className="text-right ml-4">
-                <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
-                  {team.price ?? 0}
-                </div>
-                <div className="text-xs text-gray-400">credits</div>
-              </div>}
+            {/* Stats Button and Price */}
+            <div className="flex items-center gap-2 ml-4">
+              {/* Stats Button - Only for Pro teams */}
+              {team.type === 'pro' && onStatsClick && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStatsClick(team);
+                  }}
+                  className="h-8 px-2 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                >
+                  <BarChart3 className="w-3 h-3 mr-1" />
+                  Stats
+                </Button>
+              )}
+              
+              {/* Price */}
+              {showPrice && <div className="text-right">
+                  <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+                    {team.price ?? 0}
+                  </div>
+                  <div className="text-xs text-gray-400">credits</div>
+                </div>}
+            </div>
           </div>
           
           {/* Stats */}

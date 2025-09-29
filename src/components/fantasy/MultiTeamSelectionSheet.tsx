@@ -14,6 +14,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { TeamCard } from './TeamCard';
 import { Progress } from '@/components/ui/progress';
 import { TeamFiltersOverlay, FilterState } from './TeamFiltersOverlay';
+import { TeamStatsModal } from './TeamStatsModal';
 interface Team {
   id: string;
   name: string;
@@ -52,6 +53,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [activeTab, setActiveTab] = useState<'pro' | 'amateur'>('pro');
   const [tempSelectedTeams, setTempSelectedTeams] = useState<Team[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  
+  // Stats modal state
+  const [statsModalOpen, setStatsModalOpen] = useState(false);
+  const [selectedStatsTeam, setSelectedStatsTeam] = useState<Team | null>(null);
 
   // Pro team filters
   const [proSearch, setProSearch] = useState('');
@@ -185,6 +190,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     setAdvancedFilters(newFilters);
   };
 
+  const handleStatsClick = (team: Team) => {
+    setSelectedStatsTeam(team);
+    setStatsModalOpen(true);
+  };
+
   // Reset filters when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -292,7 +302,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
                 const wouldExceedLimit = !isSelected && tempSelectedTeams.length >= 5;
                 return <div key={team.id} className={`${!canAfford || wouldExceedLimit ? 'opacity-50' : ''}`}>
-                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" />
+                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} />
                     </div>;
               })}
                 {filteredProTeams.length === 0 && <div className="text-center py-8 text-gray-400">
@@ -383,6 +393,13 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
         {/* Filters Overlay */}
         <TeamFiltersOverlay isOpen={isFiltersOpen} onClose={() => setIsFiltersOpen(false)} activeTab={activeTab} proTeams={proTeams} amateurTeams={amateurTeams} onFiltersApply={handleFiltersApply} currentFilters={advancedFilters} />
+        
+        {/* Team Stats Modal */}
+        <TeamStatsModal 
+          isOpen={statsModalOpen} 
+          onClose={() => setStatsModalOpen(false)} 
+          team={selectedStatsTeam} 
+        />
       </SheetContent>
     </Sheet>;
 };
