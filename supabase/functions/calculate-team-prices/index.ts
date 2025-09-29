@@ -151,6 +151,7 @@ serve(async (req) => {
         const s = statsMap.get(t.team_id);
         if (!s) console.log(`No prev window stats for team ${t.team_id}`);
         const abandon_rate = typeof s?.missed_pct === "number" ? Math.max(0, Math.min(100, Number(s.missed_pct))) / 100 : 0;
+        const match_volume = s?.matches_played || 0; // Use matches_played from stats
         const recent_win_rate = 0.5;
         const base_score = recent_win_rate * 10 - abandon_rate * Number(ABANDON_PENALTY_MULTIPLIER);
         const raw_price = base_score * Number(AMATEUR_MULTIPLIER);
@@ -164,6 +165,7 @@ serve(async (req) => {
           price,
           recent_win_rate,
           abandon_rate,
+          match_volume,
           last_price_update: new Date().toISOString(),
         };
       });
