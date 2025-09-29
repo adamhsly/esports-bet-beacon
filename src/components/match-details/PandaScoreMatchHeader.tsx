@@ -120,7 +120,7 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
   console.log('🎯 Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className="mt-6 bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
+    <Card className="mt-6 overflow-hidden">
       <div className="p-6">
         {/* Top Section - Tournament and Badges */}
         <div className="flex justify-between items-center mb-4">
