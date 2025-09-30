@@ -28,15 +28,11 @@ const gameOptions = [
   { value: 'lol', label: 'League of Legends', logo: leagueOfLegendsLogo },
   { value: 'dota2', label: 'Dota 2', logo: dota2Logo },
   { value: 'valorant', label: 'Valorant', logo: valorantLogo },
-  { value: 'ea-sports-fc', label: 'EA Sports FC', logo: eaSportsFcLogo },
   { value: 'rainbow-6-siege', label: 'Rainbow Six Siege', logo: rainbowSixSiegeLogo },
   { value: 'rocket-league', label: 'Rocket League', logo: rocketLeagueLogo },
   { value: 'starcraft-2', label: 'StarCraft 2', logo: starcraft2Logo },
   { value: 'overwatch', label: 'Overwatch', logo: overwatchLogo },
   { value: 'king-of-glory', label: 'Honor of Kings', logo: honorOfKingsLogo },
-  { value: 'call-of-duty', label: 'Call of Duty', logo: callOfDutyLogo },
-  { value: 'lol-wild-rift', label: 'LoL Wild Rift', logo: lolWildRiftLogo },
-  { value: 'pubg', label: 'PUBG', logo: pubgLogo },
   { value: 'mobile-legends', label: 'Mobile Legends', logo: mobileLegendsLogo },
 ];
 
