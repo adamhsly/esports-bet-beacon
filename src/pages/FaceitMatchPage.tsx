@@ -224,7 +224,7 @@ const FaceitMatchPage = () => {
       const isByeMatch = teams.some(team => team.name?.toLowerCase() === 'bye');
       if (isByeMatch || matchDetails.playerPerformances?.length === 0) {
         return <div className="space-y-4">
-            <Card className="bg-theme-gray-dark border-theme-gray-medium">
+          <Card className="bg-card border border-border">
               
             </Card>
           </div>;
