@@ -41,7 +41,7 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
   onGameTypeChange,
 }) => {
   return (
-    <div className="mb-4">
+    <div className="mb-4 pt-[5px]">
       <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2 px-1">
         {gameOptions.map((game) => (
           <button
