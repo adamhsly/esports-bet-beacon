@@ -15,7 +15,7 @@ const SearchableNavbar: React.FC = () => {
     <nav className="bg-theme-gray-dark border-b border-theme-gray-medium sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3 md:space-x-6">
           <Link to="/" className="flex items-center h-full">
             <img 
               src="/lovable-uploads/frags_and_fortunes_transparent.png"
@@ -25,7 +25,7 @@ const SearchableNavbar: React.FC = () => {
             />
             </Link>
             
-            <div className="hidden md:flex space-x-4">
+            <div className="flex space-x-2 md:space-x-4 text-sm md:text-base">
               <Link to="/tournaments" className="text-gray-300 hover:text-white">
                 Tournaments
               </Link>
@@ -63,74 +63,20 @@ const SearchableNavbar: React.FC = () => {
             )}
           </div>
           
-          {/* Mobile menu button */}
-          <div className="flex md:hidden items-center space-x-3">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-white"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </Button>
+          {/* Mobile auth/wallet - only show if needed */}
+          <div className="flex md:hidden items-center">
+            {!loading && !user && (
+              <WalletConnector />
+            )}
+            {!loading && user && (
+              <div className="flex items-center space-x-2">
+                <UserMenu />
+                <WalletConnector />
+              </div>
+            )}
           </div>
         </div>
         
-        {/* Mobile menu */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-theme-gray-medium">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <div className="flex flex-col space-y-3">
-                <Link 
-                  to="/tournaments" 
-                  className="text-white hover:text-theme-purple py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Tournaments
-                </Link>
-                <Link 
-                  to="/teams" 
-                  className="text-white hover:text-theme-purple py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Teams
-                </Link>
-                {user && (
-                  <>
-                    <Link 
-                      to="/fantasy" 
-                      className="text-white hover:text-theme-purple py-2"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Fantasy
-                    </Link>
-                  </>
-                )}
-                
-                {!loading && !user && (
-                  <div className="pt-2 flex flex-col space-y-2">
-                    <Button asChild variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
-                      <Link to="/auth">Sign In</Link>
-                    </Button>
-                    
-                    <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
-                      <Link to="/auth">Sign Up</Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="px-3 py-2">
-                <WalletConnector />
-                {user && (
-                  <div className="mt-2">
-                    <UserMenu />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </nav>
   );
