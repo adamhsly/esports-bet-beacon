@@ -63,17 +63,9 @@ const SearchableNavbar: React.FC = () => {
             )}
           </div>
           
-          {/* Mobile auth/wallet - only show if needed */}
+          {/* Mobile - only show UserMenu for authenticated users */}
           <div className="flex md:hidden items-center">
-            {!loading && !user && (
-              <WalletConnector />
-            )}
-            {!loading && user && (
-              <div className="flex items-center space-x-2">
-                <UserMenu />
-                <WalletConnector />
-              </div>
-            )}
+            {!loading && user && <UserMenu />}
           </div>
         </div>
         
