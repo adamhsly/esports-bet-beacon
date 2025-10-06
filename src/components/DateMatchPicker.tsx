@@ -159,7 +159,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                   {detailedCount.professional > 0 && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#23180A] text-[#FF9A3E] border-transparent font-medium"
+                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#0A1823] text-[#49A8FF] border-transparent font-medium"
                     >
                       <Trophy size={8} className="mr-0.5" />
                       {detailedCount.professional}
@@ -168,7 +168,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                   {detailedCount.amateur > 0 && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#180F2A] text-[#965AFF] border-transparent font-medium"
+                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#23180A] text-[#FF9A3E] border-transparent font-medium"
                     >
                       <Users size={8} className="mr-0.5" />
                       {detailedCount.amateur}
