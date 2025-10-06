@@ -48,17 +48,30 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
             key={game.value}
             onClick={() => onGameTypeChange(game.value)}
             className={cn(
-              "flex-shrink-0 p-2 rounded-xl border-2 transition-all duration-200",
+              "flex-shrink-0 p-2 rounded-xl transition-all",
               "w-20 h-32 flex items-center justify-center",
-              "hover:scale-105 active:scale-95",
-              "focus:outline-none focus:ring-2 focus:ring-theme-purple focus:ring-offset-2 focus:ring-offset-theme-gray-dark",
+              "focus:outline-none touch-manipulation select-none",
+              // Premium dark gradient card base
+              "bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28]",
+              "shadow-[0_4px_15px_rgba(0,0,0,0.4)]",
+              // Inner border
+              "relative before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none",
+              // Interaction states
+              "transition-all duration-[250ms] ease-in-out",
               selectedGameType === game.value
-                ? "border-theme-purple shadow-lg shadow-theme-purple/30 [background:_#8B5cf633]"
-                : "border-theme-gray-medium hover:border-theme-purple/50 hover:bg-theme-purple/10 [background:_#374151]",
-              // Touch-friendly tap highlight
-              "touch-manipulation select-none",
-              // Mobile tap highlight
-              "[&:active]:bg-theme-purple/20 [&:active]:border-theme-purple"
+                ? [
+                    // Selected: bright purple outline + glow
+                    "border-2 border-[#965AFF]",
+                    "shadow-[0_0_20px_rgba(150,90,255,0.4),0_4px_15px_rgba(0,0,0,0.4)]",
+                    // Subtle lift on selected
+                    "translate-y-[-2px]",
+                  ]
+                : [
+                    // Non-selected
+                    "border-2 border-transparent",
+                    "hover:translate-y-[-3px] hover:scale-[1.02]",
+                    "hover:shadow-[0_0_15px_rgba(150,90,255,0.2),0_4px_15px_rgba(0,0,0,0.4)]",
+                  ]
             )}
             aria-label={`Filter by ${game.label}`}
             title={game.label}
@@ -67,11 +80,15 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
               <img
                 src={game.logo}
                 alt={game.label}
-                className="w-full h-full object-contain"
+                className={cn(
+                  "w-full h-full object-contain",
+                  // Increase contrast + optional glow on selected
+                  selectedGameType === game.value && "drop-shadow-[0_0_8px_rgba(150,90,255,0.5)] brightness-110 contrast-110"
+                )}
                 draggable={false}
               />
             ) : (
-              <span className="text-xs font-medium text-white">All</span>
+              <span className="text-xs font-medium text-[#E8EAF5]">All</span>
             )}
           </button>
         ))}

@@ -129,22 +129,26 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               data-role="date-btn"
               onClick={() => onDateSelect(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[78px] max-w-[90px] w-[82px] h-14 rounded-xl border-2 transition-all relative group
+                flex flex-col items-center justify-center min-w-[78px] max-w-[90px] w-[82px] h-14 rounded-xl relative group
+                p-0 mx-0
+                bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28]
+                shadow-[0_4px_15px_rgba(0,0,0,0.4)]
+                before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none
+                transition-all duration-[250ms] ease-in-out
                 ${isSelected
-                  ? 'border-theme-purple bg-theme-purple/20 text-theme-purple'
-                  : 'border-theme-gray-medium bg-theme-gray hover:border-theme-purple/50 text-white'
+                  ? 'border-2 border-[#965AFF] shadow-[0_0_15px_rgba(150,90,255,0.3),0_4px_15px_rgba(0,0,0,0.4)] translate-y-[-2px]'
+                  : 'border-2 border-transparent hover:shadow-[0_0_10px_rgba(232,234,245,0.15),0_4px_15px_rgba(0,0,0,0.4)]'
                 }
                 ${isCurrentDay ? 'ring-2 ring-blue-400/50' : ''}
-                p-0 mx-0
               `}
               style={{ minWidth: 78, maxWidth: 90, width: 82, height: 56 }}
             >
-              <span className="text-xs text-gray-400 uppercase leading-none mb-1">
+              <span className="text-xs text-[#A8AEBF] uppercase leading-none mb-1">
                 {format(date, 'EEE')}
               </span>
               <span className={`
                 text-[13px] font-semibold leading-none
-                ${isSelected ? 'text-theme-purple' : 'text-white'}
+                ${isSelected ? 'text-[#965AFF]' : 'text-[#E8EAF5]'}
               `}>
                 {format(date, 'MMM d')}
               </span>
@@ -155,14 +159,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                   {detailedCount.professional > 0 && (
                     <Badge
                       variant="outline"
-                      className={`
-                        text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center
-                        ${isSelected
-                        ? 'bg-blue-500/30 text-blue-300 border-blue-400/50'
-                        : 'bg-blue-500/20 text-blue-400 border-blue-400/30'
-                      }
-                        font-medium
-                      `}
+                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#23180A] text-[#FF9A3E] border-transparent font-medium"
                     >
                       <Trophy size={8} className="mr-0.5" />
                       {detailedCount.professional}
@@ -171,14 +168,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                   {detailedCount.amateur > 0 && (
                     <Badge
                       variant="outline"
-                      className={`
-                        text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center
-                        ${isSelected
-                        ? 'bg-orange-500/30 text-orange-300 border-orange-400/50'
-                        : 'bg-orange-500/20 text-orange-400 border-orange-400/30'
-                      }
-                        font-medium
-                      `}
+                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#180F2A] text-[#965AFF] border-transparent font-medium"
                     >
                       <Users size={8} className="mr-0.5" />
                       {detailedCount.amateur}
