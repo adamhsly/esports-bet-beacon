@@ -128,11 +128,11 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
   const { scoreA, scoreB } = computeLiveScores();
 
   return (
-    <Card className="overflow-hidden relative">
+    <Card className="overflow-hidden relative bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
       <div className="p-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3 glass-text-secondary">
+            <div className="flex items-center gap-3 text-[#A8AEBF]">
               <div className="flex items-center">
                 <Trophy className="h-4 w-4 mr-2" />
                 <span>{match.tournament || 'Professional Match'}</span>
@@ -143,7 +143,7 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30 text-xs">
+              <Badge variant="outline" className="bg-[#49A8FF]/20 text-[#49A8FF] border-[#49A8FF]/30 text-xs">
                 <Trophy size={10} className="mr-1" />
                 PRO
               </Badge>
@@ -165,7 +165,7 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
           </div>
           
           <div className="flex items-center gap-3">
-            <Badge className="bg-red-500/80 text-white animate-pulse backdrop-blur-sm border border-red-400/30">
+            <Badge className="bg-red-500/80 text-white animate-pulse backdrop-blur-sm border border-red-400/30 shadow-[0_0_12px_rgba(255,77,62,0.3)]">
               <Radio className="h-3 w-3 mr-1" />
               LIVE
             </Badge>
@@ -207,12 +207,12 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
               }}
             />
-            <h3 className="text-xl font-bold glass-text-primary">{team1.name}</h3>
+            <h3 className="text-xl font-bold text-[#E8EAF5]">{team1.name}</h3>
           </div>
           
           <div className="text-center">
-            <div className="glass-card bg-red-500/20 border-red-500/30 p-4 neon-glow">
-              <div className="text-4xl font-extrabold glass-text-primary tracking-wider">
+            <div className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] bg-red-500/20 border-red-500/30 rounded-lg p-4 shadow-[0_0_12px_rgba(255,77,62,0.3)]">
+              <div className="text-4xl font-extrabold text-[#E8EAF5] tracking-wider">
                 {scoreA} - {scoreB}
               </div>
             </div>
@@ -227,7 +227,7 @@ export const PandaScoreLiveMatchHeader: React.FC<PandaScoreLiveMatchHeaderProps>
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
               }}
             />
-            <h3 className="text-xl font-bold glass-text-primary">{team2.name}</h3>
+            <h3 className="text-xl font-bold text-[#E8EAF5]">{team2.name}</h3>
           </div>
         </div>
       </div>

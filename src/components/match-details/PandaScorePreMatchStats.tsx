@@ -84,7 +84,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
   }, [team1.id, team2.id, esportType, matchId]);
 
   const TeamStatsCard = ({ team, stats, side }: { team: any; stats: TeamStatsData | null; side: string }) => (
-    <Card className="bg-theme-gray-medium/50 border border-theme-gray-light p-4">
+    <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)] p-4">
       <div className="flex items-center space-x-3 mb-4">
         <img 
           src={team.logo || '/placeholder.svg'} 
@@ -94,7 +94,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }}
         />
-        <h4 className="text-white font-semibold">{team.name}</h4>
+        <h4 className="text-[#E8EAF5] font-semibold">{team.name}</h4>
       </div>
 
       {loading ? (

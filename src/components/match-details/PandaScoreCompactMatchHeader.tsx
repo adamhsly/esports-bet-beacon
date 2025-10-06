@@ -157,12 +157,12 @@ const liveScore = live ? getPandaScoreLiveScore(match.rawData, match.teams) : nu
 console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className="overflow-hidden relative">
+    <Card className="overflow-hidden relative bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
       <div className="p-3">
         {/* Tournament and Platform Badge */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 flex-1">
-            <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30 text-xs">
+            <Badge variant="outline" className="bg-[#49A8FF]/20 text-[#49A8FF] border-[#49A8FF]/30 text-xs">
               <Trophy size={10} className="mr-1" />
               PRO
             </Badge>
@@ -231,7 +231,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
                   <Crown className="h-4 w-4 text-green-400 absolute -top-1 -right-1" />
                 )}
               </div>
-              <span className="text-xs font-medium text-white text-center max-w-[60px] truncate">
+              <span className="text-xs font-medium text-[#E8EAF5] text-center max-w-[60px] truncate">
                 {team1.name}
               </span>
             </div>
@@ -254,7 +254,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
                   <Crown className="h-4 w-4 text-green-400 absolute -top-1 -right-1" />
                 )}
               </div>
-              <span className="text-xs font-medium text-white text-center max-w-[60px] truncate">
+              <span className="text-xs font-medium text-[#E8EAF5] text-center max-w-[60px] truncate">
                 {team2.name}
               </span>
             </div>
@@ -263,7 +263,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
 
         {/* Bottom Section - Time and Notification */}
         <div className="flex justify-between items-center">
-          <div className="flex items-center text-gray-400 text-xs gap-3">
+          <div className="flex items-center text-[#A8AEBF] text-xs gap-3">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
               <span>{date}</span>

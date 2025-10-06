@@ -60,15 +60,15 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
   };
 
   return (
-    <Card className="bg-gradient-to-r from-red-900/20 via-orange-900/20 to-red-900/20 border border-red-500/30 overflow-hidden">
+    <Card className="overflow-hidden bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(255,154,62,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(255,154,62,0.4)]">
       <div className="p-6">
         {/* Match Title and Status */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-[#E8EAF5] mb-2">
               {team1.name} vs {team2.name}
             </h1>
-            <div className="flex items-center gap-4 text-gray-400">
+            <div className="flex items-center gap-4 text-[#A8AEBF]">
               <div className="flex items-center">
                 <Trophy className="h-4 w-4 mr-2" />
                 <span>{match.competition_name || 'FACEIT Match'}</span>
@@ -80,7 +80,7 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge className="bg-red-500 text-white text-lg px-4 py-2">
+            <Badge className="bg-red-500 text-white text-lg px-4 py-2 shadow-[0_0_12px_rgba(255,77,62,0.3)] animate-pulse">
               <Radio className="h-4 w-4 mr-2 animate-pulse" />
               LIVE
             </Badge>
@@ -121,16 +121,16 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
               }}
             />
-            <h3 className="text-xl font-bold text-white mb-1">{team1.name}</h3>
-            <p className="text-sm text-gray-400">
+            <h3 className="text-xl font-bold text-[#E8EAF5] mb-1">{team1.name}</h3>
+            <p className="text-sm text-[#A8AEBF]">
               {team1.roster?.length || 0} players
             </p>
           </div>
           
           {/* VS Section */}
           <div className="text-center">
-            <div className="bg-theme-gray-dark rounded-lg p-4 border border-theme-gray-medium">
-              <div className="text-4xl font-bold text-white mb-2">
+            <div className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] rounded-lg p-4 border border-white/5">
+              <div className="text-4xl font-bold text-[#E8EAF5] mb-2">
                 {match.faceitData?.results ? (
                   <>
                     <span className="text-theme-purple">{match.faceitData.results.score.faction1}</span>
@@ -141,7 +141,7 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
                   '0 : 0'
                 )}
               </div>
-              <div className="text-sm text-gray-400">Current Score</div>
+              <div className="text-sm text-[#A8AEBF]">Current Score</div>
               <div className="mt-2">
                 <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-400/30">
                   Map 1 - Live
@@ -160,8 +160,8 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
               }}
             />
-            <h3 className="text-xl font-bold text-white mb-1">{team2.name}</h3>
-            <p className="text-sm text-gray-400">
+            <h3 className="text-xl font-bold text-[#E8EAF5] mb-1">{team2.name}</h3>
+            <p className="text-sm text-[#A8AEBF]">
               {team2.roster?.length || 0} players
             </p>
           </div>
@@ -171,14 +171,14 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
         <div className="mt-6 pt-6 border-t border-theme-gray-medium">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div>
-              <div className="text-sm text-gray-400">Date</div>
-              <div className="text-white font-semibold">
+              <div className="text-sm text-[#A8AEBF]">Date</div>
+              <div className="text-[#E8EAF5] font-semibold">
                 {match.startTime ? new Date(match.startTime).toLocaleDateString() : 'TBC'}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-400">Start Time</div>
-              <div className="text-white font-semibold">
+              <div className="text-sm text-[#A8AEBF]">Start Time</div>
+              <div className="text-[#E8EAF5] font-semibold">
                 {match.startTime ? new Date(match.startTime).toLocaleTimeString([], { 
                   hour: '2-digit', 
                   minute: '2-digit' 
@@ -186,12 +186,12 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-400">Region</div>
-              <div className="text-white font-semibold">{match.faceitData?.region || 'EU'}</div>
+              <div className="text-sm text-[#A8AEBF]">Region</div>
+              <div className="text-[#E8EAF5] font-semibold">{match.faceitData?.region || 'EU'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-400">Type</div>
-              <div className="text-white font-semibold">
+              <div className="text-sm text-[#A8AEBF]">Type</div>
+              <div className="text-[#E8EAF5] font-semibold">
                 {match.faceitData?.calculateElo ? 'ELO Match' : 'League Match'}
               </div>
             </div>

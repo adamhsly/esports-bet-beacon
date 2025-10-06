@@ -93,7 +93,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
   const finishedTime = match.finishedTime || match.finished_at;
 
   return (
-    <Card className={`${isFinished() ? 'bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border-green-500/30' : 'bg-theme-gray-dark border-theme-gray-medium'} overflow-hidden relative`}>
+    <Card className="overflow-hidden relative bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(255,154,62,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(255,154,62,0.4)]">
       <div className="p-3">
         {/* Tournament and Platform Badge */}
         <div className="flex items-center justify-between mb-3">
@@ -104,8 +104,8 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                 <span>LIVE</span>
               </div>
             )}
-            <span className="text-sm font-medium text-white truncate">{match.tournament}</span>
-            <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30 text-xs">
+            <span className="text-sm font-medium text-[#E8EAF5] truncate">{match.tournament}</span>
+            <Badge variant="outline" className="bg-[#FF9A3E]/20 text-[#FF9A3E] border-[#FF9A3E]/30 text-xs">
               <Users size={10} className="mr-1" />
               FACEIT
             </Badge>
@@ -141,7 +141,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
-              <span className="text-xs font-medium text-white text-center max-w-[60px] truncate">
+              <span className="text-xs font-medium text-[#E8EAF5] text-center max-w-[60px] truncate">
                 {match.teams[0]?.name}
               </span>
               {isFinished() && isWinner(0) && (
@@ -153,7 +153,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
             <div className="flex flex-col items-center px-2">
               {isFinished() && match.faceitData?.results ? (
                 <div className="text-center">
-                  <div className="text-lg font-bold text-white">
+                  <div className="text-lg font-bold text-[#E8EAF5]">
                     <span className={isWinner(0) ? 'text-green-400' : 'text-gray-300'}>
                       {getScore(0)}
                     </span>
@@ -179,7 +179,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
-              <span className="text-xs font-medium text-white text-center max-w-[60px] truncate">
+              <span className="text-xs font-medium text-[#E8EAF5] text-center max-w-[60px] truncate">
                 {match.teams[1]?.name}
               </span>
               {isFinished() && isWinner(1) && (
@@ -191,7 +191,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
 
         {/* Bottom Section - Time and Notification */}
         <div className="flex justify-between items-center">
-          <div className="flex items-center text-gray-400 text-xs gap-3">
+          <div className="flex items-center text-[#A8AEBF] text-xs gap-3">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
               <span>

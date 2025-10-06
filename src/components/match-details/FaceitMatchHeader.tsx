@@ -51,14 +51,14 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
   const { date, time } = formatDateTime(match.startTime);
 
   return (
-    <Card className="mt-6 bg-theme-gray-dark border border-theme-gray-medium overflow-hidden">
+    <Card className="mt-6 overflow-hidden bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(255,154,62,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(255,154,62,0.4)]">
       <div className="p-6">
         {/* Top Section - Tournament and Badges */}
         <div className="flex justify-between items-center mb-4">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg text-gray-300">{match.tournament}</span>
-              <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-400/30">
+              <span className="text-lg text-[#E8EAF5]">{match.tournament}</span>
+              <Badge variant="outline" className="bg-[#FF9A3E]/20 text-[#FF9A3E] border-[#FF9A3E]/30">
                 <Users size={12} className="mr-1" />
                 FACEIT
               </Badge>
@@ -69,7 +69,7 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
               )}
             </div>
             {match.faceitData?.region && (
-              <span className="text-sm text-orange-400">{match.faceitData.region}</span>
+              <span className="text-sm text-[#FF9A3E]">{match.faceitData.region}</span>
             )}
           </div>
           <Badge className="bg-theme-purple">
@@ -93,7 +93,7 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
                   }}
                 />
-                <span className="text-xl font-bold text-white">{team.name}</span>
+                <span className="text-xl font-bold text-[#E8EAF5]">{team.name}</span>
               </div>
               {index === 0 && (
                 <span className="mx-6 text-2xl text-gray-400 font-bold">vs</span>
@@ -104,7 +104,7 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
 
         {/* Match Details */}
         <div className="flex justify-between items-center">
-          <div className="flex items-center text-gray-400 text-sm gap-4">
+          <div className="flex items-center text-[#A8AEBF] text-sm gap-4">
             <div className="flex items-center">
               <Calendar size={14} className="mr-1.5" />
               <span>{date}</span>

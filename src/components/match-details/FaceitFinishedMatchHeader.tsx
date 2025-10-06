@@ -71,11 +71,11 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
     if (!results) return '-';
     return teamIndex === 0 ? results.score.faction1 : results.score.faction2;
   };
-  return <Card className="bg-slate-700 ring-1 ring-orange-400/30 border-0 rounded-xl shadow-none">
+  return <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(255,154,62,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(255,154,62,0.4)]">
       <div className="flex flex-col gap-2 px-3 py-3">
         {/* Badges row */}
         <div className="flex items-center gap-1">
-          <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-orange-500/20 text-orange-400 border-orange-400/30">
+          <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#FF9A3E]/20 text-[#FF9A3E] border-[#FF9A3E]/30">
             <Users size={10} className="mr-1" />
             FACEIT
           </Badge>
@@ -104,7 +104,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
             <img src={team1.logo || team1.avatar || '/placeholder.svg'} alt={`${team1.name} logo`} className="w-8 h-8 object-contain rounded-md bg-gray-800" onError={e => {
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }} />
-            <span className="truncate font-semibold text-sm text-white max-w-[90px]">{team1.name}</span>
+            <span className="truncate font-semibold text-sm text-[#E8EAF5] max-w-[90px]">{team1.name}</span>
             {isWinner(0) && <Crown className="h-4 w-4 text-green-400 ml-1" />}
           </div>
           
@@ -113,7 +113,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
           {/* Team 2 */}
           <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-2 transition-all ${getTeamStyling(1)}`}>
             {isWinner(1) && <Crown className="h-4 w-4 text-green-400 mr-1" />}
-            <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{team2.name}</span>
+            <span className="truncate font-semibold text-sm text-[#E8EAF5] max-w-[90px] text-right">{team2.name}</span>
             <img src={team2.logo || team2.avatar || '/placeholder.svg'} alt={`${team2.name} logo`} className="w-8 h-8 object-contain rounded-md bg-gray-800" onError={e => {
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }} />
@@ -122,7 +122,7 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
         
         {/* Bottom info row */}
         <div className="flex items-center justify-start">
-          <div className="flex items-center gap-3 text-xs text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-[#A8AEBF]">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
               <span>{finishedTime ? new Date(finishedTime).toLocaleDateString() : match.startTime ? new Date(match.startTime).toLocaleDateString() : 'TBC'}</span>

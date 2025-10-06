@@ -120,14 +120,14 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
   console.log('🎯 Final formatted prize pool:', formattedPrizePool);
 
   return (
-    <Card className="mt-6 overflow-hidden">
+    <Card className="mt-6 overflow-hidden bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
       <div className="p-6">
         {/* Top Section - Tournament and Badges */}
         <div className="flex justify-between items-center mb-4">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg text-gray-300">{match.tournament || 'Pro Match'}</span>
-              <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+              <span className="text-lg text-[#E8EAF5]">{match.tournament || 'Pro Match'}</span>
+              <Badge variant="outline" className="bg-[#49A8FF]/20 text-[#49A8FF] border-[#49A8FF]/30">
                 <Trophy size={12} className="mr-1" />
                 PRO
               </Badge>
@@ -143,7 +143,7 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
                 </Badge>
               )}
             </div>
-            <span className="text-sm text-blue-400 uppercase">{match.esportType}</span>
+            <span className="text-sm text-[#49A8FF] uppercase">{match.esportType}</span>
           </div>
           <Badge className="bg-theme-purple">
             BO{match.bestOf || 3}
@@ -177,7 +177,7 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
                   }}
                 />
-                <span className="text-xl font-bold text-white">{team.name}</span>
+                <span className="text-xl font-bold text-[#E8EAF5]">{team.name}</span>
               </div>
               {index === 0 && (
                 <span className="mx-6 text-2xl text-gray-400 font-bold">vs</span>
@@ -188,7 +188,7 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
 
         {/* Bottom Section - Time and Notification */}
         <div className="flex justify-between items-center">
-          <div className="flex items-center text-gray-400 text-sm gap-4">
+          <div className="flex items-center text-[#A8AEBF] text-sm gap-4">
             <div className="flex items-center">
               <Calendar size={14} className="mr-1.5" />
               <span>{date}</span>

@@ -44,15 +44,15 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white flex items-center">
+      <h2 className="text-2xl font-bold text-[#E8EAF5] flex items-center">
         <Radio className="h-6 w-6 mr-3 text-red-400 animate-pulse" />
         Live Scorecard
       </h2>
 
       {/* Main Scorecard */}
-      <Card className="bg-slate-700 border border-red-500/30 overflow-hidden">
-        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 p-1">
-          <div className="bg-slate-700 p-6">
+      <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(255,154,62,0.3)] overflow-hidden transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(255,154,62,0.4)]">
+        <div className="p-1">
+          <div className="p-6">
             {/* Map and Round Info */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
@@ -68,7 +68,7 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
                   {Math.floor(roundStatus.timeLeft / 60)}:{(roundStatus.timeLeft % 60).toString().padStart(2, '0')}
                 </Badge>
               </div>
-              <Badge className="bg-red-500 text-white">
+              <Badge className="bg-red-500 text-white shadow-[0_0_12px_rgba(255,77,62,0.3)] animate-pulse">
                 <Radio className="h-3 w-3 mr-1 animate-pulse" />
                 LIVE
               </Badge>
@@ -88,7 +88,7 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
                     }}
                   />
                   <div>
-                    <h3 className="text-lg font-bold text-white">{team1.name}</h3>
+                    <h3 className="text-lg font-bold text-[#E8EAF5]">{team1.name}</h3>
                     <div className="flex items-center space-x-2">
                       <Badge variant="outline" className="text-xs">
                         {roundStatus.side === 'T' ? 'T-Side' : 'CT-Side'}
@@ -100,11 +100,11 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
 
               {/* Score */}
               <div className="text-center">
-                <div className="bg-theme-gray-medium rounded-lg p-4">
-                  <div className="text-3xl font-bold text-white mb-1">
+                <div className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-lg p-4">
+                  <div className="text-3xl font-bold text-[#E8EAF5] mb-1">
                     {Math.floor(Math.random() * 16)} : {Math.floor(Math.random() * 16)}
                   </div>
-                  <div className="text-xs text-gray-400">Current Score</div>
+                  <div className="text-xs text-[#A8AEBF]">Current Score</div>
                 </div>
               </div>
 
@@ -112,7 +112,7 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
               <div className="col-span-2">
                 <div className="flex items-center space-x-3 justify-end">
                   <div className="text-right">
-                    <h3 className="text-lg font-bold text-white">{team2.name}</h3>
+                    <h3 className="text-lg font-bold text-[#E8EAF5]">{team2.name}</h3>
                     <div className="flex items-center space-x-2 justify-end">
                       <Badge variant="outline" className="text-xs">
                         {roundStatus.side === 'T' ? 'CT-Side' : 'T-Side'}
@@ -135,19 +135,19 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
             <div className="mt-6 pt-4 border-t border-theme-gray-medium">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center space-x-4">
-                  <span className="text-gray-400">Economy:</span>
+                  <span className="text-[#A8AEBF]">Economy:</span>
                   <span className="text-green-400">$3,750 avg</span>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className="text-gray-400">Players Alive:</span>
-                  <span className="text-white">
+                  <span className="text-[#A8AEBF]">Players Alive:</span>
+                  <span className="text-[#E8EAF5]">
                     <Users className="h-4 w-4 inline mr-1" />
                     4v3
                   </span>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className="text-gray-400">First to:</span>
-                  <span className="text-white">16 rounds</span>
+                  <span className="text-[#A8AEBF]">First to:</span>
+                  <span className="text-[#E8EAF5]">16 rounds</span>
                 </div>
               </div>
             </div>
@@ -156,8 +156,8 @@ export const FaceitLiveScorecard: React.FC<FaceitLiveScorecardProps> = ({ match 
       </Card>
 
       {/* Round Timeline */}
-      <Card className="bg-slate-700 border border-theme-gray-medium p-4">
-        <h3 className="text-lg font-bold text-white mb-4">Round Timeline</h3>
+      <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05)] p-4">
+        <h3 className="text-lg font-bold text-[#E8EAF5] mb-4">Round Timeline</h3>
         <div className="flex items-center space-x-2 overflow-x-auto pb-2">
           {Array.from({ length: Math.min(roundStatus.round, 30) }, (_, i) => (
             <div 

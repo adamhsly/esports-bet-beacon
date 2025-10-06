@@ -137,12 +137,12 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
   } = getTournamentInfo();
   const formattedPrizePool = formatPrizePool(prizePool);
   console.log('🎯 Finished Match Final formatted prize pool:', formattedPrizePool);
-  return <Card className="bg-slate-700 border border-theme-gray-medium rounded-xl">
+  return <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
       <div className="flex flex-col gap-2 px-3 py-3">
         {/* Tournament info row */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2 flex-1">
-            <span className="text-sm text-gray-400 truncate max-w-[45%] font-medium">
+            <span className="text-sm text-[#A8AEBF] truncate max-w-[45%] font-medium">
               {getTournamentName()}
             </span>
             {formattedPrizePool && <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30 text-xs">
@@ -170,7 +170,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
             <img src={team1.logo || team1.avatar || '/placeholder.svg'} alt={`${team1.name} logo`} className="w-8 h-8 object-contain rounded-md bg-gray-800" onError={e => {
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }} />
-            <span className="truncate font-semibold text-sm text-white max-w-[90px]">{team1.name}</span>
+            <span className="truncate font-semibold text-sm text-[#E8EAF5] max-w-[90px]">{team1.name}</span>
             {isWinner(0) && <Crown className="h-4 w-4 text-green-400 ml-1" />}
           </div>
           
@@ -179,7 +179,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
           {/* Team 2 */}
           <div className={`flex items-center gap-2 flex-1 justify-end rounded-lg p-2 transition-all ${getTeamStyling(1)}`}>
             {isWinner(1) && <Crown className="h-4 w-4 text-green-400 mr-1" />}
-            <span className="truncate font-semibold text-sm text-white max-w-[90px] text-right">{team2.name}</span>
+            <span className="truncate font-semibold text-sm text-[#E8EAF5] max-w-[90px] text-right">{team2.name}</span>
             <img src={team2.logo || team2.avatar || '/placeholder.svg'} alt={`${team2.name} logo`} className="w-8 h-8 object-contain rounded-md bg-gray-800" onError={e => {
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }} />
@@ -189,7 +189,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
         {/* Bottom info row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-blue-500/20 text-blue-400 border-blue-400/30">
+            <Badge variant="outline" className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#49A8FF]/20 text-[#49A8FF] border-[#49A8FF]/30">
               <Users size={10} className="mr-1" />
               PROFESSIONAL
             </Badge>
@@ -199,7 +199,7 @@ export const PandaScoreFinishedMatchHeader: React.FC<PandaScoreFinishedMatchHead
             </Badge>
           </div>
           
-          <div className="flex items-center gap-3 text-xs text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-[#A8AEBF]">
             {(match.videogameName || match.videogame_name || match.esport_type) && <div className="flex items-center">
                 <span className="text-gray-400 font-semibold uppercase">
                   {match.videogameName || match.videogame_name || match.esport_type}
