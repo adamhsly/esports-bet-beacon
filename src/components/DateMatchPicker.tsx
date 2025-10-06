@@ -114,7 +114,7 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
       {/* Date carousel */}
       <div
         ref={scrollContainerRef}
-        className="flex gap-1 overflow-x-auto scrollbar-hide w-full pb-0.5"
+        className="flex gap-1 overflow-x-auto scrollbar-hide w-full py-1 px-0.5"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {dates.map((date) => {
