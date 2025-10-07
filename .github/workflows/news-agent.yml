@@ -20,6 +20,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_TIMEOUT_MS: "600000"
+          OPENAI_TIMEOUT_MS: "60000000"
           IMAGE_TIMEOUT_MS: "12000"
           MAX_IMAGES: "1"
