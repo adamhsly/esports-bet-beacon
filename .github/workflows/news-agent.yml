@@ -1,8 +1,8 @@
 name: news-agent
 on:
   schedule:
-    - cron: "*/30 * * * *"   # every 30 minutes
-  workflow_dispatch: {}       # manual trigger
+    - cron: "0 22 * * *"   # daily at 22:00 UTC
+  workflow_dispatch: {}
 
 jobs:
   run:
@@ -20,6 +20,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_TIMEOUT_MS: "60000000"
+          OPENAI_TIMEOUT_MS: "120000"   # 120s (string!)
           IMAGE_TIMEOUT_MS: "12000"
           MAX_IMAGES: "1"
+          USE_SEARCH: "1"               # set to "0" to force no web_search
