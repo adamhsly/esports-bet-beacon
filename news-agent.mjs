@@ -9,8 +9,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 90000);
-const IMAGE_TIMEOUT_MS  = Number(process.env.IMAGE_TIMEOUT_MS  || 12000);
+const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 600000);
+const IMAGE_TIMEOUT_MS  = Number(process.env.IMAGE_TIMEOUT_MS  || 600000);
 const MAX_IMAGES        = Number(process.env.MAX_IMAGES        || 1);
 const USE_SEARCH_ENV    = (process.env.USE_SEARCH ?? "1").trim(); // "1" or "0"
 const USE_SEARCH        = USE_SEARCH_ENV !== "0";
