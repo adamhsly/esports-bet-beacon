@@ -9,22 +9,21 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // knobs
-const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3 min is plenty for no-tools
+const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m is plenty (no tools)
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
 const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap before GPT
 const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // how many stories to produce
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1600);  // cap cost
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
 
-// ---------- FEEDS (based on your Colab results) ----------
+// ---------- FEEDS ----------
 const FEEDS = [
-  "https://www.hltv.org/rss/news",                          // ✅ CS2
-  "https://dotesports.com/category/league-of-legends/feed", // ✅ LoL
-  "https://esportsinsider.com/feed",                        // ✅ Industry news
-  "https://esports-news.co.uk/feed",                        // ✅ UK-focused
-  "https://www.dexerto.com/esports/feed",                   // ✅ Esports section
-  "https://blix.gg/feed"                                    // ✅ BLIX
-  // Skipped: DotEsports CS2 feed (404), esports.gg (SSL issue), ESTNN (too many promos)
+  "https://www.hltv.org/rss/news",
+  "https://dotesports.com/category/league-of-legends/feed",
+  "https://esportsinsider.com/feed",
+  "https://esports-news.co.uk/feed",
+  "https://www.dexerto.com/esports/feed",
+  "https://blix.gg/feed",
 ];
 
 // ---------- INIT ----------
@@ -53,14 +52,10 @@ function isTodayUTC(isoOrStr) {
 async function fetchWithTimeout(url, opts = {}, ms = FEED_TIMEOUT_MS) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { ...opts, signal: controller.signal });
-  } finally {
-    clearTimeout(t);
-  }
+  try { return await fetch(url, { ...opts, signal: controller.signal }); }
+  finally { clearTimeout(t); }
 }
 
-// very small RSS/Atom parser (no deps)
 function getAll(str, re) {
   const out = []; let m;
   while ((m = re.exec(str)) !== null) out.push(m);
@@ -113,17 +108,12 @@ function toISO(s) {
   if (!s) return "";
   const d = new Date(s);
   if (!isNaN(d.getTime())) return d.toISOString();
-  // try lenient: some feeds give "Tue, 07 Oct 2025 18:00:00 +0000"
   const parsed = Date.parse(s);
   return isNaN(parsed) ? "" : new Date(parsed).toISOString();
 }
-
-// Basic relevance: esports-only and exclude spammy promos
 function isEsportsTitle(title) {
   const t = (title || "").toLowerCase();
-  const include = /(cs2|counter[- ]?strike|league of legends|lol\b|worlds|dota|valorant|vct|esl|blast|iem|lpl|lec|lcs|karmine|fnatic|g2|vitality|hltv|lolesports|vici|koi|gentle mates)/i.test(
-    t
-  );
+  const include = /(cs2|counter[- ]?strike|league of legends|lol\b|worlds|dota|valorant|vct|esl|blast|iem|lpl|lec|lcs|karmine|fnatic|g2|vitality|hltv|lolesports|vici|koi|gentle mates)/i.test(t);
   const exclude = /(promo code|referral code|casino|slots|betting code|coupon)/i.test(t);
   return include && !exclude;
 }
@@ -157,26 +147,29 @@ async function fetchFeed(url) {
 
 async function buildShortlist() {
   const all = (await Promise.all(FEEDS.map(fetchFeed))).flat();
-
-  // Filter today + relevance + valid url
   const today = all.filter(
     (i) => i.url && isTodayUTC(i.published_time) && isEsportsTitle(i.title)
   );
-
-  // Deduplicate by canonical url (strip tracking)
   const seen = new Set();
   const deduped = [];
   for (const item of today) {
-    const u = new URL(item.url);
-    u.search = ""; // drop qs
-    const key = u.toString();
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduped.push(item);
+    try {
+      const u = new URL(item.url);
+      u.search = "";
+      const key = u.toString();
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(item);
+      }
+    } catch {
+      // if URL parsing fails, keep as-is with original link
+      const key = item.url;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(item);
+      }
     }
   }
-
-  // Sort newest first and clamp
   deduped.sort((a, b) => (a.published_time < b.published_time ? 1 : -1));
   return deduped.slice(0, MAX_FEED_ITEMS);
 }
@@ -243,8 +236,7 @@ Return ONLY the JSON object; no extra commentary.
           { role: "user", content: USER },
         ],
         text: { format: { type: "text" } }, // no tools
-        max_output_tokens: MAX_OUTPUT_TOKENS,
-        modalities: ["text"],
+        max_output_tokens: MAX_OUTPUT_TOKENS
       }),
     });
     const raw = await res.text();
@@ -274,8 +266,6 @@ async function md5(str) {
   const hash = await crypto.subtle.digest("MD5", data);
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-
-// simple validator for one post
 function ensureShape(p) {
   const need = ["kind", "title", "summary", "tweet", "article", "sources", "images"];
   const missing = need.filter((k) => !(k in p));
@@ -323,7 +313,7 @@ function ensureShape(p) {
         league: post.league ?? null,
         teams: post.teams ?? [],
         tags: post.tags ?? [],
-        images: [], // always empty for RSS pipeline
+        images: [],
         unique_hash,
         status: "ready",
         published_time: post.published_time ?? null,
