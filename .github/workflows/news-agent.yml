@@ -3,6 +3,7 @@ on:
   schedule:
     - cron: "0 22 * * *"     # daily at 22:00 UTC
   workflow_dispatch: {}
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -11,15 +12,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+      - name: Install deps
+        run: |
+          npm init -y
+          npm install @supabase/supabase-js@2
       - name: Run news agent (RSS → GPT-5)
         run: node news-agent.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_TIMEOUT_MS: "180000"          # 3m (no tools, fast)
+          OPENAI_TIMEOUT_MS: "180000"
           FEED_TIMEOUT_MS: "15000"
-          MAX_FEED_ITEMS: "12"                 # shortlist size cap
-          MAX_POSTS: "3"                       # posts to produce
-          MAX_OUTPUT_TOKENS: "1600"            # cost control
+          MAX_FEED_ITEMS: "12"
+          MAX_POSTS: "3"
+          MAX_OUTPUT_TOKENS: "1600"
           USER_AGENT: "FragsFortunes-RSS/1.0 (+contact@example.com)"
