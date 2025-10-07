@@ -1,24 +1,32 @@
 // news-agent.mjs
-// Runs under GitHub Actions: uses GPT-5 + web_search to gather 1 esports story and save it to Supabase.
+// GitHub Actions runner: GPT-5 + web_search → JSON → Supabase Storage + DB.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+// Tunables
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 60000);
-const IMAGE_TIMEOUT_MS = Number(process.env.IMAGE_TIMEOUT_MS || 12000);
-const MAX_IMAGES = Number(process.env.MAX_IMAGES || 1);
+const IMAGE_TIMEOUT_MS  = Number(process.env.IMAGE_TIMEOUT_MS  || 12000);
+const MAX_IMAGES        = Number(process.env.MAX_IMAGES        || 1);
+
+// Startup diagnostics (safe)
+console.log('🔧 Env check:', {
+  has_SUPABASE_URL: !!SUPABASE_URL,
+  has_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY,
+  has_OPENAI_API_KEY: !!OPENAI_API_KEY,
+  OPENAI_TIMEOUT_MS,
+  IMAGE_TIMEOUT_MS,
+  MAX_IMAGES,
+});
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !OPENAI_API_KEY) {
-  console.error({
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY,
-    OPENAI_API_KEY: !!OPENAI_API_KEY,
-  });
-  throw new Error('Missing required environment variables');
+  console.error('❌ Missing required env vars. Please set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY.');
+  process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -76,7 +84,8 @@ async function callOpenAI() {
       { role: 'system', content: PROMPT },
       { role: 'user', content: 'Prioritise CS2 & LoL headlines with UK relevance.' },
     ],
-    text: { format: { type: 'text' } }, // web_search requires text format
+    // web_search requires "text" mode
+    text: { format: { type: 'text' } },
   };
 
   const resp = await fetchWithTimeout('https://api.openai.com/v1/responses', {
@@ -89,29 +98,35 @@ async function callOpenAI() {
   }, OPENAI_TIMEOUT_MS);
 
   const raw = await resp.text();
-  if (!resp.ok) throw new Error(`OpenAI error: ${raw}`);
+  if (!resp.ok) {
+    console.error('❌ OpenAI error raw:', raw);
+    throw new Error(`OpenAI HTTP ${resp.status}`);
+  }
 
-  const data = JSON.parse(raw);
+  let env;
+  try { env = JSON.parse(raw); }
+  catch { throw new Error('OpenAI returned non-JSON envelope'); }
+
   const text =
-    data.output_text ??
-    data.output?.[0]?.content?.[0]?.text ??
-    data.message?.content?.[0]?.text;
+    env.output_text ??
+    env.output?.[0]?.content?.[0]?.text ??
+    env.message?.content?.[0]?.text;
 
-  if (!text) throw new Error('No text returned from model');
+  if (!text) throw new Error('No content from model');
 
   const trimmed = text.trim();
-  if (!trimmed.startsWith('{')) throw new Error(`Model did not return JSON: ${trimmed.slice(0, 200)}`);
+  if (!trimmed.startsWith('{')) throw new Error(`Model did not return JSON: ${trimmed.slice(0, 300)}`);
   return JSON.parse(trimmed);
 }
 
 // ---------- VALIDATE ----------
 function ensureShape(p) {
   const missing = [];
-  for (const key of ['kind', 'title', 'summary', 'tweet', 'article', 'sources', 'images']) {
+  for (const key of ['kind','title','summary','tweet','article','sources','images']) {
     if (!(key in p)) missing.push(key);
   }
   if (missing.length) throw new Error('Missing keys: ' + missing.join(', '));
-  if (!p.article?.markdown || p.article.markdown.length < 200)
+  if (!p.article?.markdown || typeof p.article.markdown !== 'string' || p.article.markdown.length < 200)
     throw new Error('article.markdown must be at least 200 characters');
   if (!Array.isArray(p.sources) || p.sources.length < 2)
     throw new Error('Need at least 2 sources');
@@ -127,15 +142,17 @@ async function cacheImageToStorage(url, slug, i) {
   const type = res.headers.get('content-type') || 'image/jpeg';
   const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : type.includes('gif') ? 'gif' : 'jpg';
   const path = `news/${new Date().toISOString().slice(0, 10)}/${slug}-${i}.${ext}`;
+
   const up = await supabase.storage.from('content').upload(path, arr, { contentType: type, upsert: true });
-  if (up.error) throw up.error;
+  if (!up || up.error) throw new Error(`storage upload: ${up?.error?.message || 'unknown'}`);
+
   const { data } = supabase.storage.from('content').getPublicUrl(path);
   return { storage_path: path, public_url: data.publicUrl };
 }
 
 // ---------- MAIN ----------
 async function run() {
-  console.log('🤖 Running Frags & Fortunes News Agent...');
+  console.log('🤖 Starting Frags & Fortunes News Agent...');
   const post = await callOpenAI();
   ensureShape(post);
 
@@ -157,25 +174,22 @@ async function run() {
 
   const { data, error } = await supabase
     .from('posts')
-    .upsert(
-      {
-        kind: post.kind,
-        title: post.title,
-        slug,
-        summary: post.summary,
-        tweet_text: post.tweet,
-        discord_payload: null,
-        article_markdown: post.article.markdown,
-        images,
-        sources: post.sources,
-        league: post.league ?? null,
-        teams: post.teams ?? null,
-        tags: post.tags ?? null,
-        unique_hash,
-        status: 'ready',
-      },
-      { onConflict: 'unique_hash' },
-    )
+    .upsert({
+      kind: post.kind || 'news',
+      title: post.title,
+      slug,
+      summary: post.summary,
+      tweet_text: post.tweet,
+      discord_payload: null,
+      article_markdown: post.article.markdown,
+      images,
+      sources: post.sources,
+      league: post.league ?? null,
+      teams: post.teams ?? null,
+      tags: post.tags ?? null,
+      unique_hash,
+      status: 'ready',
+    }, { onConflict: 'unique_hash' })
     .select()
     .single();
 
@@ -184,6 +198,7 @@ async function run() {
 }
 
 run().catch((err) => {
+  // Always print a clear, one-line JSON error so Actions shows it in the log
   console.error(JSON.stringify({ ok: false, error: String(err) }, null, 2));
   process.exit(1);
 });
