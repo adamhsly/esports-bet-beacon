@@ -1,20 +1,20 @@
 // news-agent.mjs
-// GitHub Actions runner: GPT-5 + web_search → JSON → Supabase Storage + DB.
+// Tries with web_search; on timeout, retries once without. Also supports USE_SEARCH env to force-enable/disable.
 
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
 
-// ---------- ENV ----------
+// -------- ENV --------
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-// Tunables
-const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 60000);
+const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 90000);
 const IMAGE_TIMEOUT_MS  = Number(process.env.IMAGE_TIMEOUT_MS  || 12000);
 const MAX_IMAGES        = Number(process.env.MAX_IMAGES        || 1);
+const USE_SEARCH_ENV    = (process.env.USE_SEARCH ?? "1").trim(); // "1" or "0"
+const USE_SEARCH        = USE_SEARCH_ENV !== "0";
 
-// Startup diagnostics (safe)
 console.log('🔧 Env check:', {
   has_SUPABASE_URL: !!SUPABASE_URL,
   has_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY,
@@ -22,16 +22,17 @@ console.log('🔧 Env check:', {
   OPENAI_TIMEOUT_MS,
   IMAGE_TIMEOUT_MS,
   MAX_IMAGES,
+  USE_SEARCH
 });
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !OPENAI_API_KEY) {
-  console.error('❌ Missing required env vars. Please set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY.');
+  console.error('❌ Missing required env vars. Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY.');
   process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// ---------- HELPERS ----------
+// -------- HELPERS --------
 function slugify(s) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
@@ -41,23 +42,20 @@ function md5(str) {
 async function fetchWithTimeout(input, init = {}, ms = 45000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(new DOMException('Timeout', 'AbortError')), ms);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
+  try { return await fetch(input, { ...init, signal: controller.signal }); }
+  finally { clearTimeout(id); }
 }
 
-// ---------- PROMPT ----------
+// -------- PROMPT --------
 const PROMPT = `
 You are the Frags & Fortunes esports News agent.
-Use web_search to gather exactly ONE fresh, UK-relevant esports story (CS2 or LoL preferred).
+Gather exactly ONE fresh, UK-relevant esports story (CS2 or LoL preferred).
 
 Rules:
-- Timezone: Europe/London (e.g., 30 September 2025, 14:30 BST).
+- Timezone: Europe/London.
 - Return ONLY a compact JSON object (no comments, no code fences).
-- Sources: 2–3 credible links (HLTV, BLIX, DotEsports, esports.gg, official sites).
-- Images: 1–2 DIRECT https image URLs (press kit/official/CC).
+- Prefer 2–3 credible sources (HLTV, BLIX, DotEsports, esports.gg, official sites).
+- 1–2 DIRECT https image URLs (press kit/official/CC).
 
 JSON structure:
 {
@@ -73,19 +71,18 @@ JSON structure:
   "images": [ { "url": "https://..." }, ... ]
 }
 Return only the JSON object.
-`;
+`.trim();
 
-// ---------- OPENAI CALL ----------
-async function callOpenAI() {
+// -------- OpenAI call --------
+async function callOpenAI({ useSearch, timeoutMs }) {
   const body = {
     model: 'gpt-5',
-    tools: [{ type: 'web_search' }],
+    tools: useSearch ? [{ type: 'web_search' }] : [],
     input: [
       { role: 'system', content: PROMPT },
       { role: 'user', content: 'Prioritise CS2 & LoL headlines with UK relevance.' },
     ],
-    // web_search requires "text" mode
-    text: { format: { type: 'text' } },
+    text: { format: { type: 'text' } }, // tools require text mode
   };
 
   const resp = await fetchWithTimeout('https://api.openai.com/v1/responses', {
@@ -95,18 +92,15 @@ async function callOpenAI() {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
-  }, OPENAI_TIMEOUT_MS);
+  }, timeoutMs);
 
   const raw = await resp.text();
   if (!resp.ok) {
-    console.error('❌ OpenAI error raw:', raw);
+    console.error(`❌ OpenAI HTTP ${resp.status} (${useSearch ? 'with' : 'without'} web_search) raw:`, raw);
     throw new Error(`OpenAI HTTP ${resp.status}`);
   }
 
-  let env;
-  try { env = JSON.parse(raw); }
-  catch { throw new Error('OpenAI returned non-JSON envelope'); }
-
+  const env = JSON.parse(raw);
   const text =
     env.output_text ??
     env.output?.[0]?.content?.[0]?.text ??
@@ -116,15 +110,14 @@ async function callOpenAI() {
 
   const trimmed = text.trim();
   if (!trimmed.startsWith('{')) throw new Error(`Model did not return JSON: ${trimmed.slice(0, 300)}`);
+
   return JSON.parse(trimmed);
 }
 
-// ---------- VALIDATE ----------
+// -------- Shape check --------
 function ensureShape(p) {
   const missing = [];
-  for (const key of ['kind','title','summary','tweet','article','sources','images']) {
-    if (!(key in p)) missing.push(key);
-  }
+  for (const k of ['kind','title','summary','tweet','article','sources','images']) if (!(k in p)) missing.push(k);
   if (missing.length) throw new Error('Missing keys: ' + missing.join(', '));
   if (!p.article?.markdown || typeof p.article.markdown !== 'string' || p.article.markdown.length < 200)
     throw new Error('article.markdown must be at least 200 characters');
@@ -134,7 +127,7 @@ function ensureShape(p) {
     throw new Error('Need at least 1 image');
 }
 
-// ---------- IMAGE CACHE ----------
+// -------- Image cache --------
 async function cacheImageToStorage(url, slug, i) {
   const res = await fetchWithTimeout(url, {}, IMAGE_TIMEOUT_MS);
   if (!res.ok) throw new Error(`image fetch ${res.status} ${url}`);
@@ -150,13 +143,31 @@ async function cacheImageToStorage(url, slug, i) {
   return { storage_path: path, public_url: data.publicUrl };
 }
 
-// ---------- MAIN ----------
+// -------- Main --------
 async function run() {
   console.log('🤖 Starting Frags & Fortunes News Agent...');
-  const post = await callOpenAI();
+
+  let post, usedSearch = USE_SEARCH;
+
+  try {
+    // Attempt with configured USE_SEARCH first
+    post = await callOpenAI({ useSearch: USE_SEARCH, timeoutMs: OPENAI_TIMEOUT_MS });
+    console.log(`✅ OpenAI returned (${USE_SEARCH ? 'with' : 'without'} web_search)`);
+  } catch (e) {
+    const msg = String(e?.message || e);
+    if (USE_SEARCH && /AbortError|Timeout/i.test(msg)) {
+      console.warn('⏱️ Timed out WITH web_search. Retrying WITHOUT web_search…');
+      usedSearch = false;
+      post = await callOpenAI({ useSearch: false, timeoutMs: Math.min(OPENAI_TIMEOUT_MS, 60000) });
+      console.log('⚡ OpenAI returned WITHOUT web_search');
+    } else {
+      throw e;
+    }
+  }
+
   ensureShape(post);
 
-  const srcKey = (post.sources || []).map((s) => s.url).sort().join('|');
+  const srcKey = (post.sources || []).map(s => s.url).sort().join('|');
   const unique_hash = md5(`${post.title}|${srcKey}`);
   const slug = slugify(post.title);
 
@@ -189,16 +200,16 @@ async function run() {
       tags: post.tags ?? null,
       unique_hash,
       status: 'ready',
+      used_search: usedSearch
     }, { onConflict: 'unique_hash' })
     .select()
     .single();
 
   if (error) throw error;
-  console.log(JSON.stringify({ ok: true, id: data.id, slug }, null, 2));
+  console.log(JSON.stringify({ ok: true, id: data.id, slug, used_search: usedSearch }, null, 2));
 }
 
-run().catch((err) => {
-  // Always print a clear, one-line JSON error so Actions shows it in the log
+run().catch(err => {
   console.error(JSON.stringify({ ok: false, error: String(err) }, null, 2));
   process.exit(1);
 });
