@@ -28,4 +28,5 @@ jobs:
           MAX_FEED_ITEMS: "12"
           MAX_POSTS: "1"
           MAX_OUTPUT_TOKENS: "3600"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           USER_AGENT: "FragsFortunes-RSS/1.0 (+contact@example.com)"
