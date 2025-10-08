@@ -1,7 +1,9 @@
 // news-agent.mjs
-// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts (with adaptive retry + robust parsing)
+// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts
+// Improvements: lower article length, fewer posts, reasoning.effort=low, higher retry cap, robust JSON salvage.
 
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto"; // ✅ for unique_hash
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -9,18 +11,22 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // knobs
-const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m (no tools)
+const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
-const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap
-const MAX_POSTS         = Number(process.env.MAX_POSTS         || 1);     // posts to produce (attempt 1)
-const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 3600);  // cap cost (attempt 1)
+const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 10);    // shortlist cap
+const MAX_POSTS         = Number(process.env.MAX_POSTS         || 1);     // attempt 1 posts
+const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 3600);  // attempt 1 cap
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
 
-// retry (attempt 2) knobs when we hit token cap
+// retry knobs
 const RETRY_MAX_POSTS         = Number(process.env.RETRY_MAX_POSTS         || 1);
-const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 2200);
-const RETRY_WORDS_MIN         = Number(process.env.RETRY_WORDS_MIN         || 220);
-const RETRY_WORDS_MAX         = Number(process.env.RETRY_WORDS_MAX         || 350);
+const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 3000);
+const RETRY_WORDS_MIN         = Number(process.env.RETRY_WORDS_MIN         || 180);
+const RETRY_WORDS_MAX         = Number(process.env.RETRY_WORDS_MAX         || 260);
+
+// attempt 1 word range
+const WORDS_MIN = Number(process.env.WORDS_MIN || 220);
+const WORDS_MAX = Number(process.env.WORDS_MAX || 350);
 
 // ---------- FEEDS ----------
 const FEEDS = [
@@ -222,7 +228,7 @@ function shortlistToUser(shortlist) {
     .join("\n");
 }
 
-// robust envelope parsing
+// ---- JSON salvage helpers ----
 function extractTextFromEnvelope(env) {
   if (typeof env?.output_text === "string" && env.output_text.trim()) {
     return env.output_text.trim();
@@ -251,17 +257,19 @@ function extractTextFromEnvelope(env) {
   return chunks.length ? chunks.join("\n") : null;
 }
 
-function extractJSON(text) {
-  if (!text) return null;
-  const trimmed = text.trim();
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try { return JSON.parse(trimmed); } catch {}
-  }
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start !== -1 && end !== -1 && end > start) {
-    const slice = text.slice(start, end + 1);
-    try { return JSON.parse(slice); } catch {}
+function parseLargestJSONObject(text) {
+  const t = (text || "").trim();
+  try {
+    if (t.startsWith("{") && t.endsWith("}")) return JSON.parse(t);
+  } catch {}
+  const closes = [];
+  for (let i = 0; i < t.length; i++) if (t[i] === "}") closes.push(i);
+  for (let i = closes.length - 1; i >= 0; i--) {
+    const slice = t.slice(0, closes[i] + 1);
+    const start = slice.indexOf("{");
+    if (start === -1) continue;
+    const candidate = slice.slice(start);
+    try { return JSON.parse(candidate); } catch {}
   }
   return null;
 }
@@ -286,9 +294,9 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
           { role: "system", content: SYSTEM },
           { role: "user", content: USER },
         ],
-        text: { format: { type: "json_object" } },
+        text: { format: { type: "json_object" }, verbosity: "low" },
+        reasoning: { effort: "low" }, // reduce reasoning tokens
         max_output_tokens: maxOutputTokens
-        // NOTE: no temperature/top_p — not supported by this model deployment
       }),
     });
 
@@ -317,7 +325,7 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
       throw new Error("No content from model");
     }
 
-    const obj = extractJSON(text);
+    const obj = parseLargestJSONObject(text);
     if (!obj) {
       console.error("⚠️ Could not parse JSON. First 600 chars of text:\n", text.slice(0, 600));
       throw new Error("Model did not return parseable JSON");
@@ -333,16 +341,15 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
 function slugify(s) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
-async function md5(str) {
-  const data = new TextEncoder().encode(str);
-  const hash = await crypto.subtle.digest("MD5", data);
-  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+// ✅ Replace MD5 with Node hash (SHA-256 default)
+function hashStr(str, algo = "sha256") {
+  return createHash(algo).update(str, "utf8").digest("hex");
 }
 function ensureShape(p) {
   const need = ["kind", "title", "summary", "tweet", "article", "sources", "images"];
   const missing = need.filter((k) => !(k in p));
   if (missing.length) throw new Error("Missing keys: " + missing.join(", "));
-  if (!p.article?.markdown || p.article.markdown.length < 200)
+  if (!p.article?.markdown || p.article.markdown.length < 180)
     throw new Error("article.markdown too short");
   if (!Array.isArray(p.sources) || p.sources.length < 1)
     throw new Error("At least 1 source required");
@@ -363,12 +370,12 @@ function ensureShape(p) {
   let attempt = await callOpenAI_JSON({
     shortlist,
     maxPosts: MAX_POSTS,
-    wordsMin: 400,
-    wordsMax: 650,
+    wordsMin: WORDS_MIN,
+    wordsMax: WORDS_MAX,
     maxOutputTokens: MAX_OUTPUT_TOKENS
   }).catch(e => ({ error: e }));
 
-  // If we hit max_output_tokens or got incomplete, retry with smaller ask
+  // Retry with smaller ask / bigger cap
   if (!attempt?.data) {
     const env = attempt?.env;
     const hitCap = env?.status === "incomplete" && env?.incomplete_details?.reason === "max_output_tokens";
@@ -400,7 +407,7 @@ function ensureShape(p) {
   for (const post of result.posts) {
     ensureShape(post);
     const srcKey = (post.sources || []).map((s) => s.url).sort().join("|");
-    const unique_hash = await md5(`${post.title}|${srcKey}`);
+    const unique_hash = hashStr(`${post.title}|${srcKey}`); // ✅ was md5(...)
     const slug = slugify(post.title);
 
     const { error } = await supabase.from("posts").upsert(
