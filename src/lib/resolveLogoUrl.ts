@@ -28,16 +28,21 @@ function normalizeName(name?: string | null) {
   return (name ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-/** Build a CORS-safe proxy URL (Edge Function must be public, no auth) */
+/** Build a CORS-safe proxy URL (Supabase Edge Function must be public) */
 function proxifyForCanvas(url?: string | null): string | null {
   if (!url) return null;
-  if (!/^https?:\/\//i.test(url)) return url; // relative/data: URL are fine
+  // relative/data/blob are already fine
+  if (!/^https?:\/\//i.test(url)) return url;
+
   try {
-    const base = SUPABASE_URL; // ✅ from client.ts (works in Vite/browser)
-    const supaOrigin = new URL(base).origin;
+    const base = new URL(SUPABASE_URL).origin;
     const u = new URL(url);
-    // If already same-origin (e.g., your Storage bucket or proxy), return as-is
-    if (u.origin === supaOrigin) return u.href;
+
+    // already proxied via our function?
+    if (u.origin === base && u.pathname.includes('/functions/v1/public-image-proxy')) {
+      return url;
+    }
+    // otherwise proxy any external http(s)
     return `${base}/functions/v1/public-image-proxy?url=${encodeURIComponent(u.href)}`;
   } catch {
     return url;
@@ -54,26 +59,23 @@ async function getProTeamLogo(
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   const numericId = Number(teamId);
-  // IMPORTANT: the 'cs' operator expects a **stringified JSON** value
+  // IMPORTANT: the 'cs' operator expects a stringified JSON value
   const containsNumeric = JSON.stringify([{ opponent: { id: numericId } }]);
   const containsString  = JSON.stringify([{ opponent: { id: String(teamId) } }]);
 
   let matches: any[] | null = null;
 
-  // Try numeric id first (some rows store id as number)
   try {
     const { data } = await supabase
       .from('pandascore_matches')
       .select('teams,start_time,status')
       .gte('start_time', sixMonthsAgo.toISOString())
       .in('status', ['finished','running','not_started','upcoming'])
-      .filter('teams', 'cs', containsNumeric)     // ✅ string, not object
+      .filter('teams', 'cs', containsNumeric)
       .order('start_time', { ascending: false })
       .limit(60);
     matches = data;
-  } catch {
-    // ignore and fall back
-  }
+  } catch {}
 
   if (!matches?.length) {
     try {
@@ -82,18 +84,15 @@ async function getProTeamLogo(
         .select('teams,start_time,status')
         .gte('start_time', sixMonthsAgo.toISOString())
         .in('status', ['finished','running','not_started','upcoming'])
-        .filter('teams', 'cs', containsString)    // ✅ string, not object
+        .filter('teams', 'cs', containsString)
         .order('start_time', { ascending: false })
         .limit(80);
       matches = data;
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   if (!matches?.length) return null;
 
-  // Walk the teams blobs to extract logo
   for (const m of matches) {
     if (!Array.isArray(m?.teams)) continue;
     for (const t of m.teams as any[]) {
@@ -101,7 +100,6 @@ async function getProTeamLogo(
       const opp = t.opponent;
       const oppId = String(opp?.id ?? '');
       const oppSlug = String(opp?.slug ?? '');
-
       if (oppId === String(teamId) || oppId === String(numericId) || oppSlug === String(teamId)) {
         const candidate = opp.image_url || opp.logo;
         if (isValidHttpsUrl(candidate)) return candidate;
@@ -109,7 +107,7 @@ async function getProTeamLogo(
     }
   }
 
-  // NOTE: We intentionally do NOT query pandascore_teams here (common RLS 400s).
+  // not querying pandascore_teams here (RLS issues common)
   return null;
 }
 
@@ -118,7 +116,6 @@ async function getAmateurTeamLogo(
   teamId: string | undefined,
   teamName?: string | null
 ): Promise<string | null> {
-  // 1) Try catalog RPC (if available)
   try {
     const { data: faceitTeams } = await supabase.rpc('get_all_faceit_teams');
     if (Array.isArray(faceitTeams)) {
@@ -126,11 +123,8 @@ async function getAmateurTeamLogo(
       const hit = faceitTeams.find((t: any) => String(t.team_id) === String(key));
       if (hit?.logo_url && isValidHttpsUrl(hit.logo_url)) return hit.logo_url;
     }
-  } catch {
-    // ignore and fallback to matches
-  }
+  } catch {}
 
-  // 2) Fallback — scan recent matches for faction logos
   const { data: matches } = await supabase
     .from('faceit_matches')
     .select('teams, started_at')
@@ -145,7 +139,6 @@ async function getAmateurTeamLogo(
     const factions = [m?.teams?.faction1, m?.teams?.faction2].filter(Boolean);
     for (const f of factions as any[]) {
       const fName = normalizeName(f?.name);
-      // match by id (if they used name as id) or by normalized name
       const idMatch = teamId && (String(f?.name) === String(teamId));
       const nameMatch = targetName && fName === targetName;
       if (idMatch || nameMatch) {
@@ -170,7 +163,6 @@ export async function getTeamLogoUrl(opts: ResolveLogoOptions): Promise<string |
     resolved = await getAmateurTeamLogo(supabase, teamId ? String(teamId) : undefined, teamName);
   }
 
-  // Proxy for canvas to avoid cross-origin taint/CORS issues
   if (forCanvas && resolved) {
     resolved = proxifyForCanvas(resolved) ?? resolved;
   }
