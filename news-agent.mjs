@@ -1,21 +1,22 @@
 // news-agent.mjs
-// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts
-// Improvements: lower article length, fewer posts, reasoning.effort=low, higher retry cap, robust JSON salvage.
+// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts → post to Discord
+// Includes: robust JSON salvage, low reasoning, retry caps, and Discord embed webhook.
 
 import { createClient } from "@supabase/supabase-js";
-import { createHash } from "node:crypto"; // ✅ for unique_hash
+import { createHash } from "node:crypto"; // for unique_hash
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || "";
 
 // knobs
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
 const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 10);    // shortlist cap
-const MAX_POSTS         = Number(process.env.MAX_POSTS         || 1);     // attempt 1 posts
-const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 3600);  // attempt 1 cap
+const MAX_POSTS         = Number(process.env.MAX_POSTS         || 2);     // attempt 1 posts
+const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 2000);  // attempt 1 cap
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
 
 // retry knobs
@@ -341,7 +342,7 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
 function slugify(s) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
-// ✅ Replace MD5 with Node hash (SHA-256 default)
+// SHA-256 default (stable, non-cryptographic use)
 function hashStr(str, algo = "sha256") {
   return createHash(algo).update(str, "utf8").digest("hex");
 }
@@ -354,6 +355,47 @@ function ensureShape(p) {
   if (!Array.isArray(p.sources) || p.sources.length < 1)
     throw new Error("At least 1 source required");
   if (!Array.isArray(p.images)) throw new Error("images must be array");
+}
+
+// ---------- DISCORD ----------
+async function postToDiscord(post) {
+  if (!DISCORD_WEBHOOK_URL) {
+    console.warn("⚠️ No DISCORD_WEBHOOK_URL set; skipping Discord post.");
+    return;
+  }
+  // Build a clean embed; we’ll use first source as the link
+  const primaryUrl = post.sources?.[0]?.url || null;
+  const embed = {
+    title: post.title,
+    description: post.summary?.slice(0, 1900) || "",
+    url: primaryUrl,
+    color: 16753920, // gold-ish
+    fields: [
+      { name: "League", value: post.league || "—", inline: true },
+      { name: "Tags", value: (post.tags || []).join(", ") || "—", inline: true }
+    ],
+    timestamp: new Date().toISOString()
+  };
+
+  const body = {
+    content: "", // leave empty; embed carries the content
+    embeds: [embed]
+  };
+
+  try {
+    const res = await fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("⚠️ Discord webhook failed:", res.status, await res.text());
+    } else {
+      console.log("✅ Posted to Discord:", post.title);
+    }
+  } catch (err) {
+    console.error("⚠️ Discord webhook error:", err);
+  }
 }
 
 // ---------- MAIN ----------
@@ -375,7 +417,7 @@ function ensureShape(p) {
     maxOutputTokens: MAX_OUTPUT_TOKENS
   }).catch(e => ({ error: e }));
 
-  // Retry with smaller ask / bigger cap
+  // Retry with smaller ask / bigger cap if needed
   if (!attempt?.data) {
     const env = attempt?.env;
     const hitCap = env?.status === "incomplete" && env?.incomplete_details?.reason === "max_output_tokens";
@@ -407,30 +449,40 @@ function ensureShape(p) {
   for (const post of result.posts) {
     ensureShape(post);
     const srcKey = (post.sources || []).map((s) => s.url).sort().join("|");
-    const unique_hash = hashStr(`${post.title}|${srcKey}`); // ✅ was md5(...)
+    const unique_hash = hashStr(`${post.title}|${srcKey}`);
     const slug = slugify(post.title);
 
-    const { error } = await supabase.from("posts").upsert(
-      {
-        kind: post.kind || "news",
-        title: post.title,
-        slug,
-        summary: post.summary,
-        tweet_text: post.tweet,
-        article_markdown: post.article.markdown,
-        sources: post.sources,
-        league: post.league ?? null,
-        teams: post.teams ?? [],
-        tags: post.tags ?? [],
-        images: [],
-        unique_hash,
-        status: "ready",
-        published_time: post.published_time ?? null,
-      },
-      { onConflict: "unique_hash" }
-    );
+    const payload = {
+      kind: post.kind || "news",
+      title: post.title,
+      slug,
+      summary: post.summary,
+      tweet_text: post.tweet,
+      article_markdown: post.article.markdown,
+      sources: post.sources,
+      league: post.league ?? null,
+      teams: post.teams ?? [],
+      tags: post.tags ?? [],
+      images: [],
+      unique_hash,
+      status: "ready",
+      // published_time intentionally omitted unless your table has this column
+    };
+
+    // Quick debug preview
+    console.log("📝 Upsert payload:", {
+      title: payload.title,
+      slug: payload.slug,
+      len_article: payload.article_markdown?.length,
+      sources: (payload.sources || []).map(s => s.url).slice(0, 3)
+    });
+
+    const { error } = await supabase.from("posts").upsert(payload, { onConflict: "unique_hash" });
     if (error) throw error;
     console.log("✅ Upserted:", post.title);
+
+    // 🚀 Post to Discord
+    await postToDiscord(post);
   }
 
   console.log("🎯 Done.");
