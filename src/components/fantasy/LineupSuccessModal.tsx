@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Share2, TrendingUp, Download, Copy, ExternalLink, MessageSquare } from 'lucide-react';
-import { toast } from 'sonner';
-import { renderShareCard } from '@/utils/shareCardRenderer';
-import { useMobile } from '@/hooks/useMobile';
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Share2, TrendingUp, Download, Copy, ExternalLink, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
+import { renderShareCard } from "@/utils/shareCardRenderer";
+import { useMobile } from "@/hooks/useMobile";
+import { copyToClipboard } from "@/utils/copy";
 
 interface LineupSuccessModalProps {
   open: boolean;
@@ -24,7 +25,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
   roundName,
   userId,
   starTeamName,
-  onCheckProgress
+  onCheckProgress,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
@@ -33,55 +34,48 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
 
   const handleSharePicks = async () => {
     setIsGenerating(true);
-    
+
     try {
-      console.log('Starting share card generation...');
-      
+      console.log("Starting share card generation...");
       const result = await renderShareCard(roundId, userId);
       setShareData(result);
-      
-      console.log('Share card generated successfully');
-      
-      // Missions: sharing
+      console.log("Share card generated successfully");
+
+      // Missions
       try {
-        const { MissionBus } = await import('@/lib/missionBus');
+        const { MissionBus } = await import("@/lib/missionBus");
         MissionBus.onShareLineup(roundId);
         MissionBus.onShareThisWeek();
-        // Optional: Month 2 share (caller may gate by calendar externally)
-        // MissionBus.onM2_Share();
       } catch (e) {
-        console.warn('Mission share tracking failed', e);
+        console.warn("Mission share tracking failed", e);
       }
-      
-      // Check if Web Share API supports files
-      if (navigator.canShare?.({ files: [new File([result.blob], 'lineup.png', { type: 'image/png' })] })) {
+
+      // Web Share API with file if available
+      const file = new File([result.blob], "lineup.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({
-            title: 'My Fantasy Picks',
-            text: `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`,
-            files: [new File([result.blob], 'lineup.png', { type: 'image/png' })],
-            url: result.publicUrl
+            title: "My Fantasy Picks",
+            text: `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ""}`,
+            files: [file],
+            url: result.publicUrl,
           });
-          toast.success('Share card ready!');
+          toast.success("Shared!");
+          return;
         } catch (shareError) {
-          if ((shareError as Error).name !== 'AbortError') {
-            console.log('Native share failed, showing custom sheet');
-            // If native share fails, show our custom share sheet
-            setShowShareSheet(true);
-          }
+          if ((shareError as Error).name === "AbortError") return; // user cancelled
+          // Otherwise, show custom sheet
+          setShowShareSheet(true);
         }
       } else {
-        // Show custom share sheet for browsers without file sharing support
-        console.log('Native share not supported, showing custom sheet');
+        // Not supported → show our share sheet
         setShowShareSheet(true);
       }
-      
-      toast.success('Share card ready!');
+
+      toast.success("Share card ready!");
     } catch (error) {
-      console.error('Share card generation failed:', error);
-      
-      // Provide more specific error message
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error("Share card generation failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast.error(`Failed to generate share card: ${errorMessage}`);
     } finally {
       setIsGenerating(false);
@@ -90,100 +84,98 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
 
   const handleSaveImage = () => {
     if (!shareData) return;
-    
+
     const url = URL.createObjectURL(shareData.blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `fantasy-lineup-${roundName.toLowerCase().replace(' ', '-')}.png`;
+    a.download = `fantasy-lineup-${roundName.toLowerCase().replace(" ", "-")}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success('Image saved!');
+    toast.success("Image saved!");
   };
 
   const handleCopyImage = async () => {
     if (!shareData) return;
-    
+
     try {
-      if (navigator.clipboard && window.ClipboardItem) {
-        const item = new ClipboardItem({ 'image/png': shareData.blob });
+      if (navigator.clipboard && (window as any).ClipboardItem) {
+        const item = new (window as any).ClipboardItem({ "image/png": shareData.blob });
         await navigator.clipboard.write([item]);
-        toast.success('Image copied to clipboard!');
+        toast.success("Image copied to clipboard!");
       } else {
-        // Fallback: save image instead
         handleSaveImage();
-        toast.success('Image saved (clipboard not supported)');
+        toast.success("Image saved (clipboard not supported)");
       }
-      
-      // Missions on successful copy
+
       try {
-        const { MissionBus } = await import('@/lib/missionBus');
+        const { MissionBus } = await import("@/lib/missionBus");
         MissionBus.onShareLineup(roundId);
         MissionBus.onShareThisWeek();
       } catch (e) {
-        console.warn('Mission share tracking failed', e);
+        console.warn("Mission share tracking failed", e);
       }
     } catch (error) {
-      console.error('Failed to copy image:', error);
-      toast.error('Failed to copy image');
+      console.error("Failed to copy image:", error);
+      toast.error("Failed to copy image");
     }
   };
 
   const handleCopyLink = async () => {
     if (!shareData) return;
-    
+
     const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
-    
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      // Missions on successful copy
+    const ok = await copyToClipboard(shareUrl);
+    if (ok) {
       try {
-        const { MissionBus } = await import('@/lib/missionBus');
+        const { MissionBus } = await import("@/lib/missionBus");
         MissionBus.onShareLineup(roundId);
         MissionBus.onShareThisWeek();
       } catch (e) {
-        console.warn('Mission share tracking failed', e);
+        console.warn("Mission share tracking failed", e);
       }
-      toast.success('Link copied!');
-    } catch (error) {
-      toast.error('Failed to copy link');
+      toast.success("Link copied!");
+    } else {
+      toast.error("Failed to copy link");
     }
   };
 
-  const openSocialShare = (platform: string) => {
+  const openSocialShare = async (platform: string) => {
     if (!shareData) return;
-    
+
     const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
-    const text = `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`;
-    
-    let url = '';
+    const text = `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ""}`;
+
+    let url = "";
     switch (platform) {
-      case 'twitter':
+      case "twitter":
         url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
         break;
-      case 'facebook':
+      case "facebook":
         url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
         break;
-      case 'whatsapp':
+      case "whatsapp":
         url = `https://wa.me/?text=${encodeURIComponent(`${text} ${shareUrl}`)}`;
         break;
-      case 'discord':
-        // Discord doesn't have a direct share URL, copy to clipboard with instructions
-        navigator.clipboard.writeText(`${text}\n${shareUrl}\n\nImage: ${shareData.publicUrl}`)
-          .then(() => toast.success('Discord share info copied! Paste in Discord.'))
-          .catch(() => toast.error('Failed to copy Discord share info'));
+      case "discord": {
+        // Copy composite text for Discord in a single user gesture
+        const ok = await copyToClipboard(`${text}\n${shareUrl}\n\nImage: ${shareData.publicUrl}`);
+        toast[ok ? "success" : "error"](
+          ok ? "Discord share info copied! Paste in Discord." : "Failed to copy Discord share info",
+        );
         return;
-      case 'reddit':
+      }
+      case "reddit":
         url = `https://reddit.com/submit?title=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
         break;
-      case 'telegram':
+      case "telegram":
         url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
         break;
     }
-    
+
     if (url) {
-      window.open(url, '_blank', 'width=600,height=400');
+      window.open(url, "_blank", "width=600,height=400");
     }
   };
 
@@ -192,25 +184,25 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
       <DialogHeader>
         <DialogTitle className="text-2xl font-bold text-center text-white">Good luck! 🚀</DialogTitle>
       </DialogHeader>
-      
+
       <div className="space-y-6 pt-4">
         <p className="text-center text-muted-foreground">
           Your lineup is locked in. Share your picks or check your live progress.
         </p>
-        
+
         <div className="space-y-3">
-          <Button 
-            onClick={handleSharePicks} 
+          <Button
+            onClick={handleSharePicks}
             disabled={isGenerating}
             className="w-full bg-theme-purple hover:bg-theme-purple/90 h-12"
           >
             <Share2 className="w-4 h-4 mr-2" />
-            {isGenerating ? 'Preparing your share card...' : 'Share your picks'}
+            {isGenerating ? "Preparing your share card..." : "Share your picks"}
           </Button>
-          
-          <Button 
-            onClick={onCheckProgress} 
-            variant="outline" 
+
+          <Button
+            onClick={onCheckProgress}
+            variant="outline"
             className="w-full h-12 text-white border-white/20 hover:bg-white/10"
           >
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -226,92 +218,62 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
       <SheetHeader>
         <SheetTitle>Share Your Picks</SheetTitle>
       </SheetHeader>
-      
+
       <div className="space-y-4 pt-4">
         <div className="grid grid-cols-2 gap-3">
           <Button onClick={handleSaveImage} variant="outline" className="h-12">
             <Download className="w-4 h-4 mr-2" />
             Save Image
           </Button>
-          
+
           <Button onClick={handleCopyImage} variant="outline" className="h-12">
             <Copy className="w-4 h-4 mr-2" />
             Copy Image
           </Button>
         </div>
-        
+
         <div className="space-y-3">
           <p className="text-sm font-medium text-muted-foreground">Share to Platforms:</p>
-          
+
           <div className="grid grid-cols-2 gap-2">
-            <Button 
-              onClick={() => openSocialShare('discord')} 
-              variant="outline" 
-              size="sm"
-              className="h-10"
-            >
+            <Button onClick={() => openSocialShare("discord")} variant="outline" size="sm" className="h-10">
               <MessageSquare className="w-3 h-3 mr-1" />
               Discord
             </Button>
-            
-            <Button 
-              onClick={() => openSocialShare('reddit')} 
-              variant="outline" 
-              size="sm"
-              className="h-10"
-            >
+
+            <Button onClick={() => openSocialShare("reddit")} variant="outline" size="sm" className="h-10">
               <ExternalLink className="w-3 h-3 mr-1" />
               Reddit
             </Button>
-            
-            <Button 
-              onClick={() => openSocialShare('telegram')} 
-              variant="outline" 
-              size="sm"
-              className="h-10"
-            >
+
+            <Button onClick={() => openSocialShare("telegram")} variant="outline" size="sm" className="h-10">
               <ExternalLink className="w-3 h-3 mr-1" />
               Telegram
             </Button>
-            
+
             <Button onClick={handleCopyLink} variant="outline" size="sm" className="h-10">
               <Copy className="w-3 h-3 mr-1" />
               Copy Link
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-2">
-            <Button 
-              onClick={() => openSocialShare('twitter')} 
-              variant="outline" 
-              size="sm"
-              className="h-9"
-            >
+            <Button onClick={() => openSocialShare("twitter")} variant="outline" size="sm" className="h-9">
               <ExternalLink className="w-3 h-3 mr-1" />
               Twitter/X
             </Button>
-            
-            <Button 
-              onClick={() => openSocialShare('facebook')} 
-              variant="outline" 
-              size="sm"
-              className="h-9"
-            >
+
+            <Button onClick={() => openSocialShare("facebook")} variant="outline" size="sm" className="h-9">
               <ExternalLink className="w-3 h-3 mr-1" />
               Facebook
             </Button>
-            
-            <Button 
-              onClick={() => openSocialShare('whatsapp')} 
-              variant="outline" 
-              size="sm"
-              className="h-9"
-            >
+
+            <Button onClick={() => openSocialShare("whatsapp")} variant="outline" size="sm" className="h-9">
               <ExternalLink className="w-3 h-3 mr-1" />
               WhatsApp
             </Button>
           </div>
-          
+
           <p className="text-xs text-muted-foreground mt-2">
             <strong>Instagram:</strong> Save the image then post manually.
           </p>
@@ -328,7 +290,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
             <ModalContent />
           </SheetContent>
         </Sheet>
-        
+
         <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
           <SheetContent side="bottom" className="h-auto">
             <ShareSheetContent />
@@ -345,7 +307,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           <ModalContent />
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={showShareSheet} onOpenChange={setShowShareSheet}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
