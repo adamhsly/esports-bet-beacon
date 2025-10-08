@@ -1,5 +1,5 @@
 // news-agent.mjs
-// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts (with adaptive retry + richer logs)
+// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts (with adaptive retry + robust parsing)
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -18,7 +18,7 @@ const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+con
 
 // retry (attempt 2) knobs when we hit token cap
 const RETRY_MAX_POSTS         = Number(process.env.RETRY_MAX_POSTS         || 1);
-const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 2200); // give a bit more room
+const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 2200); // slightly higher
 const RETRY_WORDS_MIN         = Number(process.env.RETRY_WORDS_MIN         || 220);
 const RETRY_WORDS_MAX         = Number(process.env.RETRY_WORDS_MAX         || 350);
 
@@ -222,6 +222,53 @@ function shortlistToUser(shortlist) {
     .join("\n");
 }
 
+// NEW robust extractor: collect every text fragment from envelope
+function extractTextFromEnvelope(env) {
+  if (typeof env?.output_text === "string" && env.output_text.trim()) {
+    return env.output_text.trim();
+  }
+  const chunks = [];
+
+  if (Array.isArray(env?.output)) {
+    for (const out of env.output) {
+      const c = out?.content;
+      if (Array.isArray(c)) {
+        for (const block of c) {
+          if (typeof block?.text === "string" && block.text.trim()) {
+            chunks.push(block.text.trim());
+          }
+        }
+      }
+    }
+  }
+
+  const mc = env?.message?.content;
+  if (Array.isArray(mc)) {
+    for (const block of mc) {
+      if (typeof block?.text === "string" && block.text.trim()) {
+        chunks.push(block.text.trim());
+      }
+    }
+  }
+
+  return chunks.length ? chunks.join("\n") : null;
+}
+
+function extractJSON(text) {
+  if (!text) return null;
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try { return JSON.parse(trimmed); } catch { /* fallthrough */ }
+  }
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    const slice = text.slice(start, end + 1);
+    try { return JSON.parse(slice); } catch { /* fallthrough */ }
+  }
+  return null;
+}
+
 async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOutputTokens }) {
   const SYSTEM = buildSystemPrompt({ maxPosts, wordsMin, wordsMax });
   const USER = shortlistToUser(shortlist);
@@ -243,7 +290,9 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
           { role: "user", content: USER },
         ],
         text: { format: { type: "json_object" } },
-        max_output_tokens: maxOutputTokens
+        max_output_tokens: maxOutputTokens,
+        temperature: 0.3,
+        top_p: 1
       }),
     });
 
@@ -256,32 +305,29 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
 
     const env = JSON.parse(raw);
 
-    // Rich logs for debugging
-    const dbg = {
+    // Debug essentials
+    console.log("ℹ️ OpenAI envelope:", JSON.stringify({
       status: env.status,
       incomplete_details: env.incomplete_details,
       usage: env.usage,
-      max_output_tokens: env.max_output_tokens,
-    };
-    console.log("ℹ️ OpenAI envelope:", JSON.stringify(dbg));
+      max_output_tokens: env.max_output_tokens
+    }));
 
     if (env.output_parsed) return { data: env.output_parsed, env };
 
-    // Fallbacks
-    const content =
-      env.output_text ??
-      env.output?.[0]?.content?.[0]?.text ??
-      env.message?.content?.[0]?.text ??
-      null;
-
-    if (!content) {
+    const text = extractTextFromEnvelope(env);
+    if (!text) {
       console.error("Envelope preview:", JSON.stringify(env).slice(0, 1200));
       throw new Error("No content from model");
     }
 
-    const trimmed = content.trim();
-    if (!trimmed.startsWith("{")) throw new Error("Model did not return JSON");
-    return { data: JSON.parse(trimmed), env };
+    const obj = extractJSON(text);
+    if (!obj) {
+      console.error("⚠️ Could not parse JSON. First 600 chars of text:\n", text.slice(0, 600));
+      throw new Error("Model did not return parseable JSON");
+    }
+    return { data: obj, env };
+
   } finally {
     clearTimeout(t);
   }
@@ -330,11 +376,8 @@ function ensureShape(p) {
   if (!attempt?.data) {
     const env = attempt?.env;
     const hitCap = env?.status === "incomplete" && env?.incomplete_details?.reason === "max_output_tokens";
-    if (hitCap) {
-      console.warn("⏳ Hit max_output_tokens; retrying with lighter request…");
-    } else {
-      console.warn("⚠️ First attempt failed; retrying smaller anyway…");
-    }
+    if (hitCap) console.warn("⏳ Hit max_output_tokens; retrying with lighter request…");
+    else console.warn("⚠️ First attempt failed; retrying smaller anyway…");
 
     attempt = await callOpenAI_JSON({
       shortlist,
