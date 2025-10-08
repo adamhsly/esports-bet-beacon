@@ -26,6 +26,6 @@ jobs:
           OPENAI_TIMEOUT_MS: "180000"
           FEED_TIMEOUT_MS: "15000"
           MAX_FEED_ITEMS: "12"
-          MAX_POSTS: "3"
-          MAX_OUTPUT_TOKENS: "1600"
+          MAX_POSTS: "1"
+          MAX_OUTPUT_TOKENS: "3600"
           USER_AGENT: "FragsFortunes-RSS/1.0 (+contact@example.com)"
