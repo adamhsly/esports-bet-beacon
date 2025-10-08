@@ -1,34 +1,47 @@
 import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 /**
- * Utility to ensure all assets are CORS-safe for html2canvas
- * Proxies external URLs while keeping local assets unchanged
+ * Utilities to ensure assets are CORS-safe for html2canvas.
+ * - Keep data:/blob:/relative untouched
+ * - Proxy external http(s) via Supabase Edge Function
+ * - Idempotent (won't double-proxy)
  */
 
 export function isExternalUrl(url: string): boolean {
   try {
-    // Handle relative URLs and data URLs
-    if (url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
-      return false;
-    }
-    
+    if (!url) return false;
+    if (url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) return false;
     const urlObj = new URL(url);
     const currentOrigin = window.location.origin;
     return urlObj.origin !== currentOrigin;
   } catch {
-    // If URL parsing fails, assume it's a relative path
     return false;
   }
 }
 
-export function proxifyAsset(url: string, forCanvas: boolean = false): string {
-  // Skip proxying if not for canvas or if it's already a local asset
-  if (!forCanvas || !isExternalUrl(url)) {
-    return url;
+function supaOrigin(): string {
+  return new URL(SUPABASE_URL).origin;
+}
+
+function alreadyProxied(url: string): boolean {
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.origin === supaOrigin() && u.pathname.includes('/functions/v1/public-image-proxy');
+  } catch {
+    return false;
   }
-  
-  // Use the public image proxy for external URLs
-  return `${SUPABASE_URL}/functions/v1/public-image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+export function proxifyAsset(url?: string | null, forCanvas: boolean = false): string | undefined {
+  if (!url) return undefined;
+
+  // No need to proxy local/data/blob or when not rendering to canvas
+  if (!forCanvas || !/^https?:\/\//i.test(url)) return url;
+
+  // Idempotency guard
+  if (alreadyProxied(url)) return url;
+
+  return `${supaOrigin()}/functions/v1/public-image-proxy?url=${encodeURIComponent(url)}`;
 }
 
 export function proxifyAvatarUrl(avatarUrl?: string | null, forCanvas: boolean = false): string | undefined {
@@ -46,10 +59,13 @@ export function proxifyBorderAsset(borderAsset?: string | null, forCanvas: boole
   return proxifyAsset(borderAsset, forCanvas);
 }
 
-export function proxifyBadgeAssets(badges: Array<{ asset_url: string }>, forCanvas: boolean = false): Array<{ asset_url: string }> {
-  return badges.map(badge => ({
-    ...badge,
-    asset_url: proxifyAsset(badge.asset_url, forCanvas)
+export function proxifyBadgeAssets(
+  badges: Array<{ asset_url: string }>,
+  forCanvas: boolean = false
+): Array<{ asset_url: string }> {
+  return (badges ?? []).map(b => ({
+    ...b,
+    asset_url: proxifyAsset(b.asset_url, forCanvas) ?? b.asset_url,
   }));
 }
 
@@ -57,16 +73,15 @@ export async function preloadAsset(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
     img.onload = () => resolve();
-    img.onerror = (e) => reject(new Error(`Failed to preload asset: ${url}`));
+    img.onerror = () => reject(new Error(`Failed to preload asset: ${url}`));
     img.src = url;
   });
 }
 
 export async function preloadAssetsSafely(urls: string[]): Promise<void> {
   await Promise.allSettled(
-    urls.map(url => preloadAsset(url).catch(e => 
-      console.warn(`Failed to preload asset ${url}:`, e)
-    ))
+    (urls || []).map((u) => preloadAsset(u))
   );
 }
