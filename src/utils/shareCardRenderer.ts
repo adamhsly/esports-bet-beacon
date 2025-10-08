@@ -5,12 +5,12 @@ import { getTeamLogoUrl, getPlaceholderLogo, preloadImage } from '@/lib/resolveL
 import { getShareCardUrl } from './shareUrlHelper';
 import { resolveAvatarFrameAsset } from './avatarFrames';
 import { resolveAvatarBorderAsset } from './avatarBorders';
-import { 
-  proxifyAvatarUrl, 
-  proxifyFrameAsset, 
+import {
+  proxifyAvatarUrl,
+  proxifyFrameAsset,
   proxifyBorderAsset,
   proxifyAsset,
-  preloadAssetsSafely 
+  preloadAssetsSafely
 } from './assetProxyHelper';
 import { resolveRewardAssetSafe } from './rewardsAssetResolver';
 
@@ -34,7 +34,7 @@ interface ShareCardData {
   starTeamId?: string;
   roundName: string;
   roundId: string;
-  badges: Array<{ 
+  badges: Array<{
     reward_type: string;
     reward_value: string;
   }>;
@@ -48,6 +48,20 @@ interface ShareCardResult {
 const FRAME_WIDTH = 1080;
 const FRAME_HEIGHT = 1350;
 
+// Force-proxy guard (belt & braces)
+const ensureProxied = (u?: string | null) => {
+  if (!u) return u as undefined;
+  if (u.startsWith('data:') || u.startsWith('/assets/')) return u;
+  if (u.includes('/functions/v1/public-image-proxy')) return u;
+
+  if (/^https?:\/\//i.test(u)) {
+    const base = (supabase as any).supabaseUrl ?? 'https://YOURPROJECT.supabase.co';
+    const origin = new URL(base).origin;
+    return `${origin}/functions/v1/public-image-proxy?url=${encodeURIComponent(u)}`;
+  }
+  return u; // relative same-origin is fine
+};
+
 export async function renderShareCard(
   roundId: string,
   userId: string
@@ -56,7 +70,7 @@ export async function renderShareCard(
   console.log('Round ID:', roundId);
   console.log('User ID:', userId);
 
-  // Create offscreen container
+  // Offscreen container
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.top = '-9999px';
@@ -64,27 +78,25 @@ export async function renderShareCard(
   container.style.width = `${FRAME_WIDTH}px`;
   container.style.height = `${FRAME_HEIGHT}px`;
   container.style.fontFamily = 'Inter, system-ui, sans-serif';
+  // mark root to isolate in onclone
+  container.setAttribute('data-share-root', 'true');
   document.body.appendChild(container);
 
   try {
     // Fetch data
     console.log('Step 1: Fetching share card data...');
     const shareData = await fetchShareCardData(roundId, userId);
-
     console.log('Step 2: Share data fetched successfully:', shareData);
 
-    // Render share card
+    // Render HTML
     console.log('Step 3: Rendering HTML...');
     await renderShareCardHTML(container, shareData);
 
     console.log('Step 4: HTML rendered, waiting for images to load...');
-    
-    // Wait for all images to load
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     console.log('Step 5: Generating canvas with enhanced error handling...');
 
-    // Generate image with enhanced error handling
     const canvas = await html2canvas(container, {
       width: FRAME_WIDTH,
       height: FRAME_HEIGHT,
@@ -100,28 +112,43 @@ export async function renderShareCard(
       },
       onclone: (clonedDoc) => {
         console.log('html2canvas cloning document...');
-        // Ensure all images have crossOrigin set
-        const images = clonedDoc.querySelectorAll('img');
-        images.forEach(img => {
-          if (img.src && !img.src.startsWith('data:')) {
-            img.crossOrigin = 'anonymous';
+
+        // 1) Isolate our share root: remove everything else from the cloned DOM
+        const root = clonedDoc.querySelector('[data-share-root="true"]') as HTMLElement | null;
+        if (root) {
+          // Remove siblings of root
+          const bodyChildren = Array.from(clonedDoc.body.children);
+          for (const child of bodyChildren) {
+            if (child !== root) child.remove();
           }
-        });
+
+          // Ensure body has neutral background to avoid page-level background loads
+          clonedDoc.body.style.background = '#1a1a1a';
+
+          // 2) Ensure all <img> in our root are CORS-friendly
+          root.querySelectorAll('img').forEach((img: HTMLImageElement) => {
+            if (img.src && !img.src.startsWith('data:')) {
+              img.crossOrigin = 'anonymous';
+            }
+          });
+        } else {
+          // Fallback: at least set CORS on all images
+          clonedDoc.querySelectorAll('img').forEach((img: HTMLImageElement) => {
+            if (img.src && !img.src.startsWith('data:')) img.crossOrigin = 'anonymous';
+          });
+        }
       }
     });
 
     console.log('Step 6: Canvas generated successfully, size:', canvas.width, 'x', canvas.height);
 
-    // Convert to blob with better error handling
+    // Convert to blob
     console.log('Step 7: Converting canvas to blob...');
     const blob = await new Promise<Blob>((resolve, reject) => {
       try {
         canvas.toBlob((b) => {
-          if (b) {
-            resolve(b);
-          } else {
-            reject(new Error('Canvas toBlob returned null - canvas may be tainted by cross-origin content'));
-          }
+          if (b) resolve(b);
+          else reject(new Error('Canvas toBlob returned null - canvas may be tainted by cross-origin content'));
         }, 'image/png', 1.0);
       } catch (error) {
         reject(new Error(`Canvas toBlob failed: ${error}`));
@@ -130,8 +157,6 @@ export async function renderShareCard(
     console.log('Step 8: Blob created successfully, size:', blob.size, 'bytes');
 
     console.log('Step 9: Uploading to Supabase storage...');
-
-    // Upload to Supabase Storage
     const fileName = `${roundId}/${userId}.png`;
     const { error: uploadError } = await supabase.storage
       .from('shares')
@@ -147,9 +172,7 @@ export async function renderShareCard(
 
     console.log('Step 10: File uploaded successfully');
 
-    // Generate custom domain URL instead of direct Supabase URL
     const customUrl = getShareCardUrl(roundId, userId, true);
-
     console.log('Step 11: Custom URL generated:', customUrl);
     console.log('=== Share Card Generation Completed Successfully ===');
 
@@ -159,11 +182,8 @@ export async function renderShareCard(
     console.error('Error details:', error);
     throw error;
   } finally {
-    // Cleanup
     try {
-      if (container.parentNode) {
-        document.body.removeChild(container);
-      }
+      if (container.parentNode) document.body.removeChild(container);
     } catch {}
   }
 }
@@ -171,71 +191,54 @@ export async function renderShareCard(
 async function fetchShareCardData(roundId: string, userId: string): Promise<ShareCardData> {
   console.log('Fetching share card data for roundId:', roundId, 'userId:', userId);
 
-  // Fetch user profile and progress
+  // Profile
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('username, avatar_url, avatar_frame_id, avatar_border_id')
     .eq('id', userId)
     .single();
+  if (profileError) throw new Error(`Failed to fetch user profile: ${profileError.message}`);
 
-  if (profileError) {
-    throw new Error(`Failed to fetch user profile: ${profileError.message}`);
-  }
-
+  // Progress
   const { data: progress } = await supabase
     .from('user_progress')
     .select('level, xp')
     .eq('user_id', userId)
     .maybeSingle();
 
-  // Fetch user's lineup for the round
+  // Picks
   const { data: picks, error: picksError } = await supabase
     .from('fantasy_round_picks')
     .select('team_picks')
     .eq('round_id', roundId)
     .eq('user_id', userId)
     .maybeSingle();
+  if (picksError) throw new Error(`Failed to fetch lineup picks: ${picksError.message}`);
+  if (!picks?.team_picks) throw new Error('No lineup found for this round');
 
-  if (picksError) {
-    throw new Error(`Failed to fetch lineup picks: ${picksError.message}`);
-  }
-
-  if (!picks?.team_picks) {
-    throw new Error('No lineup found for this round');
-  }
-
-  // Enhance team picks with logos (resolver now proxies for canvas)
+  // Logos (proxy guaranteed)
   const enhancedTeamPicks = await Promise.all(
     (picks.team_picks as any[]).map(async (team) => {
       console.log(`Resolving logo for: ${team.name} (ID: ${team.id}, Type: ${team.type})`);
 
-      const safeLogo = await getTeamLogoUrl({
+      const raw = await getTeamLogoUrl({
         supabase: supabase as any,
         teamType: team.type,
         teamId: team.id,
         teamName: team.name,
-        forCanvas: true, // CORS-safe for html2canvas
+        forCanvas: true, // ask resolver to proxy
       });
 
+      const safeLogo = ensureProxied(raw); // enforce proxy even if helper slips
+
       if (safeLogo) {
-        try {
-          await preloadImage(safeLogo);
-        } catch (e) {
-          console.warn(`Failed to preload ${team.name} logo:`, e);
-        }
-        return {
-          ...team,
-          logo_url: safeLogo,
-          image_url: safeLogo,
-        };
+        try { await preloadImage(safeLogo); } catch (e) { console.warn(`Failed to preload ${team.name} logo:`, e); }
+        // console.log('Resolved/Proxied logo for', team.name, '→', safeLogo);
+        return { ...team, logo_url: safeLogo, image_url: safeLogo };
       }
 
       const ph = getPlaceholderLogo(team.name);
-      return {
-        ...team,
-        logo_url: ph,
-        image_url: ph,
-      };
+      return { ...team, logo_url: ph, image_url: ph };
     })
   );
 
@@ -248,9 +251,13 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .maybeSingle();
 
   // Round info
-  const { data: round } = await supabase.from('fantasy_rounds').select('type').eq('id', roundId).maybeSingle();
+  const { data: round } = await supabase
+    .from('fantasy_rounds')
+    .select('type')
+    .eq('id', roundId)
+    .maybeSingle();
 
-  // User badges (recent 4) - fetch with reward_type
+  // Badges (recent 4)
   const { data: badges } = await supabase
     .from('user_rewards')
     .select('season_rewards(reward_type, reward_value)')
@@ -259,27 +266,33 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     .order('unlocked_at', { ascending: false })
     .limit(4);
 
-  // Resolve avatar frame and border assets with CORS-safe proxying
-  const avatarFrameAsset = profile?.avatar_frame_id ? 
-    proxifyFrameAsset(resolveAvatarFrameAsset(profile.avatar_frame_id), true) : undefined;
-  const avatarBorderAsset = profile?.avatar_border_id ? 
-    proxifyBorderAsset(resolveAvatarBorderAsset(profile.avatar_border_id), true) : undefined;
+  // Resolve avatar frame/border and proxy
+  const avatarFrameAsset = profile?.avatar_frame_id
+    ? proxifyFrameAsset(resolveAvatarFrameAsset(profile.avatar_frame_id), true)
+    : undefined;
 
-  // Proxy avatar URL for CORS safety if it exists
-  const proxiedAvatarUrl = proxifyAvatarUrl(profile?.avatar_url, true);
+  const avatarBorderAsset = profile?.avatar_border_id
+    ? proxifyBorderAsset(resolveAvatarBorderAsset(profile.avatar_border_id), true)
+    : undefined;
 
-  // Next XP threshold
+  // Proxy avatar URL (if external)
+  const proxiedAvatarUrl = ensureProxied(proxifyAvatarUrl(profile?.avatar_url, true));
+
+  // Compute XP threshold + round name
   const next_xp_threshold = Math.pow((progress?.level ?? 1) + 1, 2) * 100;
-
   const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
 
-  // Process badges with proper asset resolution - filter to only badge type rewards
-  const processedBadges = badges
-    ?.filter((b) => b.season_rewards?.reward_type === 'badge')
-    .map((b) => ({
-      reward_type: b.season_rewards?.reward_type || 'badge',
-      reward_value: b.season_rewards?.reward_value || '',
-    })) || [];
+  // Process badges → asset URLs → proxy
+  const processedBadges = (badges ?? [])
+    .filter(b => (b?.season_rewards?.reward_type ?? 'badge') === 'badge')
+    .map(b => {
+      const resolved = resolveRewardAssetSafe({
+        reward_type: 'badge',
+        reward_value: b.season_rewards?.reward_value || '',
+      });
+      const proxied = ensureProxied(proxifyAsset(resolved ?? '', true) as string);
+      return { reward_type: 'badge', reward_value: b.season_rewards?.reward_value || '', asset_url: proxied };
+    });
 
   return {
     user: {
@@ -290,35 +303,35 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
       level: progress?.level || 1,
       xp: progress?.xp || 0,
       next_xp_threshold,
-    },
+    } as any,
     lineup: enhancedTeamPicks,
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges: processedBadges,
+    badges: processedBadges.map(({ reward_type, reward_value }) => ({ reward_type, reward_value })),
   };
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
-  // Resolve and proxy badge assets
-  const badgeAssetUrls = data.badges.map(badge => {
-    const resolved = resolveRewardAssetSafe({
-      reward_type: badge.reward_type as any,
-      reward_value: badge.reward_value
-    });
-    return resolved ? proxifyAsset(resolved, true) : null;
-  }).filter(Boolean) as string[];
+  // Badge asset URLs (already proxied in fetch step if external)
+  const badgeAssetUrls = (data as any).badges_assets ??
+    (data as any).badges?.map((b: any) => b.asset_url).filter(Boolean) ?? [];
 
-  // Collect all asset URLs for preloading
+  // Collect assets to preload
+  const isUsable = (u?: string) => !!u && u !== 'undefined' && u !== 'null';
+
+  const lineupAssets = data.lineup
+    .map((t) => t.image_url || t.logo_url)
+    .filter(isUsable) as string[];
+
   const assetsToPreload = [
     data.user.avatar_url,
-    data.user.avatar_frame_asset,
-    data.user.avatar_border_asset,
+    data.user.avatar_frame_asset as any,
+    data.user.avatar_border_asset as any,
     ...badgeAssetUrls,
-    ...data.lineup.map(team => team.image_url || team.logo_url).filter(Boolean)
-  ].filter(Boolean) as string[];
+    ...lineupAssets,
+  ].filter(isUsable) as string[];
 
-  // Preload all assets safely
   console.log('Preloading assets for canvas rendering:', assetsToPreload.length, 'assets');
   await preloadAssetsSafely(assetsToPreload);
 
@@ -334,7 +347,6 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       <div style="position: absolute; left: 72px; top: 160px; display: flex; align-items: center; gap: 24px;">
         <!-- Enhanced Avatar with Frame and Border -->
         <div style="position: relative; width: 120px; height: 120px;">
-          <!-- Border (background layer) -->
           ${data.user.avatar_border_asset ? `
             <div style="
               position: absolute; top: 0; left: 0; width: 120px; height: 120px;
@@ -343,20 +355,18 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
               z-index: 1;
             "></div>
           ` : ''}
-          
-          <!-- Avatar (middle layer) -->
+
           <div style="
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: ${data.user.avatar_border_asset ? '96px' : '120px'}; 
-            height: ${data.user.avatar_border_asset ? '96px' : '120px'}; 
+            width: ${data.user.avatar_border_asset ? '96px' : '120px'};
+            height: ${data.user.avatar_border_asset ? '96px' : '120px'};
             border-radius: 50%;
             background: ${data.user.avatar_url ? `url('${data.user.avatar_url}')` : 'linear-gradient(135deg, #8B5CF6, #F97316)'};
             background-size: cover; background-position: center;
             border: ${data.user.avatar_border_asset ? 'none' : '4px solid #8B5CF6'};
             z-index: 2;
           "></div>
-          
-          <!-- Frame (top layer) -->
+
           ${data.user.avatar_frame_asset ? `
             <div style="
               position: absolute; top: 0; left: 0; width: 120px; height: 120px;
@@ -366,6 +376,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
             "></div>
           ` : ''}
         </div>
+
         <div>
           <div style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">${data.user.username}</div>
           <div style="font-size: 20px; color: #CFE3FF; margin-bottom: 12px;">Level ${data.user.level}</div>
@@ -384,7 +395,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 
       <!-- Badges -->
       <div style="position: absolute; left: 72px; top: 410px; display: flex; gap: 16px;">
-        ${badgeAssetUrls.slice(0, 4).map(assetUrl => `
+        ${badgeAssetUrls.slice(0, 4).map((assetUrl: string) => `
           <div style="
             width: 56px; height: 56px;
             background: url('${assetUrl}');
@@ -406,18 +417,11 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 
       <!-- Team Lineup -->
       <div style="position: absolute; left: 72px; top: 540px;">
-        <!-- First Row (3 teams) -->
         <div style="display: flex; gap: 72px; margin-bottom: 64px; justify-content: center;">
-          ${data.lineup.slice(0, 3).map((team) =>
-            renderTeamSlot(team, data.starTeamId === team.id)
-          ).join('')}
+          ${data.lineup.slice(0, 3).map((team) => renderTeamSlot(team, data.starTeamId === team.id)).join('')}
         </div>
-
-        <!-- Second Row (2 teams) -->
         <div style="display: flex; gap: 168px; justify-content: center;">
-          ${data.lineup.slice(3, 5).map((team) =>
-            renderTeamSlot(team, data.starTeamId === team.id)
-          ).join('')}
+          ${data.lineup.slice(3, 5).map((team) => renderTeamSlot(team, data.starTeamId === team.id)).join('')}
         </div>
       </div>
 
@@ -443,7 +447,6 @@ function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = isAmateur ? '#F97316' : '#8B5CF6';
   const safeLogoUrl = team.image_url || team.logo_url || getPlaceholderLogo(team.name);
 
-  // Only show top-left pill for amateur bonus (no PRO pill)
   const amateurBonusTag = isAmateur
     ? `
       <div style="
@@ -505,7 +508,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
         word-break: break-word;
         white-space: normal;
         line-height: 1.25;
-        min-height: 40px; /* prevents clipping/cut-off */
+        min-height: 40px;
       ">
         ${team.name}
       </div>
