@@ -12,8 +12,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m (no tools)
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
 const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap
-const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // posts to produce (attempt 1)
-const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1600);  // cap cost (attempt 1)
+const MAX_POSTS         = Number(process.env.MAX_POSTS         || 1);     // posts to produce (attempt 1)
+const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 3600);  // cap cost (attempt 1)
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
 
 // retry (attempt 2) knobs when we hit token cap
