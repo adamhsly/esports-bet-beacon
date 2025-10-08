@@ -1,5 +1,5 @@
 // news-agent.mjs
-// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts to Supabase
+// RSS prefetch → shortlist → GPT-5 (no tools) → upsert posts (with adaptive retry + richer logs)
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -12,9 +12,15 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m (no tools)
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
 const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap
-const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // posts to produce
-const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1600);  // cap cost
+const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // posts to produce (attempt 1)
+const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1600);  // cap cost (attempt 1)
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
+
+// retry (attempt 2) knobs when we hit token cap
+const RETRY_MAX_POSTS         = Number(process.env.RETRY_MAX_POSTS         || 1);
+const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 2200); // give a bit more room
+const RETRY_WORDS_MIN         = Number(process.env.RETRY_WORDS_MIN         || 220);
+const RETRY_WORDS_MAX         = Number(process.env.RETRY_WORDS_MAX         || 350);
 
 // ---------- FEEDS ----------
 const FEEDS = [
@@ -174,16 +180,8 @@ async function buildShortlist() {
 }
 
 // ---------- OPENAI (NO TOOLS) ----------
-// TINY PATCH: JSON mode + prefer output_parsed
-async function callOpenAI(shortlist, { maxPosts = MAX_POSTS } = {}) {
-  const shortlistText = shortlist
-    .map(
-      (i, idx) =>
-        `${idx + 1}. ${i.title}\n   ${i.url}\n   ${i.published_time} (${i.source})`
-    )
-    .join("\n");
-
-  const SYSTEM = `
+function buildSystemPrompt({ maxPosts, wordsMin, wordsMax }) {
+  return `
 You are the Frags & Fortunes esports News agent.
 
 You will receive a shortlist of today's esports headlines (title, URL, ISO UTC time, source).
@@ -203,7 +201,7 @@ JSON OUTPUT (ONLY this):
       "summary": "1–2 sentences (>=30 chars)",
       "tweet": "<=260 chars, max 2 hashtags",
       "article": {
-        "markdown": "400–650 words, with H2 headings, concise paragraphs, and a Sources section that lists the same URLs you used."
+        "markdown": "${wordsMin}–${wordsMax} words, with H2 headings, concise paragraphs, and a Sources section that lists the same URLs you used."
       },
       "sources": [
         { "title": "string", "url": "https://..." },
@@ -216,8 +214,17 @@ JSON OUTPUT (ONLY this):
 }
 Return ONLY the JSON object; no extra commentary.
 `.trim();
+}
 
-  const USER = `Shortlist (today, UTC):\n${shortlistText}`;
+function shortlistToUser(shortlist) {
+  return `Shortlist (today, UTC):\n` + shortlist
+    .map((i, idx) => `${idx + 1}. ${i.title}\n   ${i.url}\n   ${i.published_time} (${i.source})`)
+    .join("\n");
+}
+
+async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOutputTokens }) {
+  const SYSTEM = buildSystemPrompt({ maxPosts, wordsMin, wordsMax });
+  const USER = shortlistToUser(shortlist);
 
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
@@ -235,32 +242,46 @@ Return ONLY the JSON object; no extra commentary.
           { role: "system", content: SYSTEM },
           { role: "user", content: USER },
         ],
-        text: { format: { type: "json_object" } },   // ✅ JSON mode
-        max_output_tokens: MAX_OUTPUT_TOKENS
+        text: { format: { type: "json_object" } },
+        max_output_tokens: maxOutputTokens
       }),
     });
+
     const raw = await res.text();
-    if (!res.ok) throw new Error(raw);
+    if (!res.ok) {
+      console.error("❌ OpenAI HTTP error:", res.status, res.statusText);
+      console.error("Raw:", raw.slice(0, 1200));
+      throw new Error(`OpenAI HTTP ${res.status}`);
+    }
 
     const env = JSON.parse(raw);
 
-    // ✅ Prefer parsed object in JSON mode
-    if (env.output_parsed) return env.output_parsed;
+    // Rich logs for debugging
+    const dbg = {
+      status: env.status,
+      incomplete_details: env.incomplete_details,
+      usage: env.usage,
+      max_output_tokens: env.max_output_tokens,
+    };
+    console.log("ℹ️ OpenAI envelope:", JSON.stringify(dbg));
 
-    // Fallbacks for older envelopes
+    if (env.output_parsed) return { data: env.output_parsed, env };
+
+    // Fallbacks
     const content =
       env.output_text ??
       env.output?.[0]?.content?.[0]?.text ??
-      env.message?.content?.[0]?.text;
+      env.message?.content?.[0]?.text ??
+      null;
 
     if (!content) {
-      console.error("Envelope preview:", JSON.stringify(env).slice(0, 900));
+      console.error("Envelope preview:", JSON.stringify(env).slice(0, 1200));
       throw new Error("No content from model");
     }
 
     const trimmed = content.trim();
     if (!trimmed.startsWith("{")) throw new Error("Model did not return JSON");
-    return JSON.parse(trimmed);
+    return { data: JSON.parse(trimmed), env };
   } finally {
     clearTimeout(t);
   }
@@ -296,8 +317,41 @@ function ensureShape(p) {
     process.exit(0);
   }
 
-  console.log("🧠 Asking GPT-5 (no tools) to write posts…");
-  const result = await callOpenAI(shortlist, { maxPosts: MAX_POSTS });
+  console.log("🧠 Asking GPT-5 (no tools) to write posts… (attempt 1)");
+  let attempt = await callOpenAI_JSON({
+    shortlist,
+    maxPosts: MAX_POSTS,
+    wordsMin: 400,
+    wordsMax: 650,
+    maxOutputTokens: MAX_OUTPUT_TOKENS
+  }).catch(e => ({ error: e }));
+
+  // If we hit max_output_tokens or got incomplete, retry with smaller ask
+  if (!attempt?.data) {
+    const env = attempt?.env;
+    const hitCap = env?.status === "incomplete" && env?.incomplete_details?.reason === "max_output_tokens";
+    if (hitCap) {
+      console.warn("⏳ Hit max_output_tokens; retrying with lighter request…");
+    } else {
+      console.warn("⚠️ First attempt failed; retrying smaller anyway…");
+    }
+
+    attempt = await callOpenAI_JSON({
+      shortlist,
+      maxPosts: RETRY_MAX_POSTS,
+      wordsMin: RETRY_WORDS_MIN,
+      wordsMax: RETRY_WORDS_MAX,
+      maxOutputTokens: RETRY_MAX_OUTPUT_TOKENS
+    }).catch(e => ({ error: e }));
+  }
+
+  if (!attempt?.data) {
+    console.error("❌ No content after retry.", attempt?.error || "");
+    process.exit(1);
+  }
+
+  const result = attempt.data;
+
   if (!Array.isArray(result?.posts) || result.posts.length === 0) {
     console.warn("⚠️ No posts returned by model. Full payload:", JSON.stringify(result, null, 2));
     process.exit(0);
