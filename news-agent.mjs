@@ -9,10 +9,10 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // knobs
-const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m is plenty (no tools)
+const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m (no tools)
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
-const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap before GPT
-const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // how many stories to produce
+const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap
+const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // posts to produce
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1600);  // cap cost
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
 
@@ -162,7 +162,6 @@ async function buildShortlist() {
         deduped.push(item);
       }
     } catch {
-      // if URL parsing fails, keep as-is with original link
       const key = item.url;
       if (!seen.has(key)) {
         seen.add(key);
@@ -175,6 +174,7 @@ async function buildShortlist() {
 }
 
 // ---------- OPENAI (NO TOOLS) ----------
+// TINY PATCH: JSON mode + prefer output_parsed
 async function callOpenAI(shortlist, { maxPosts = MAX_POSTS } = {}) {
   const shortlistText = shortlist
     .map(
@@ -235,7 +235,7 @@ Return ONLY the JSON object; no extra commentary.
           { role: "system", content: SYSTEM },
           { role: "user", content: USER },
         ],
-        text: { format: { type: "text" } }, // no tools
+        text: { format: { type: "json_object" } },   // ✅ JSON mode
         max_output_tokens: MAX_OUTPUT_TOKENS
       }),
     });
@@ -243,11 +243,20 @@ Return ONLY the JSON object; no extra commentary.
     if (!res.ok) throw new Error(raw);
 
     const env = JSON.parse(raw);
+
+    // ✅ Prefer parsed object in JSON mode
+    if (env.output_parsed) return env.output_parsed;
+
+    // Fallbacks for older envelopes
     const content =
       env.output_text ??
       env.output?.[0]?.content?.[0]?.text ??
       env.message?.content?.[0]?.text;
-    if (!content) throw new Error("No content from model");
+
+    if (!content) {
+      console.error("Envelope preview:", JSON.stringify(env).slice(0, 900));
+      throw new Error("No content from model");
+    }
 
     const trimmed = content.trim();
     if (!trimmed.startsWith("{")) throw new Error("Model did not return JSON");
