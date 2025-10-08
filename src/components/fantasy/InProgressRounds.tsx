@@ -13,6 +13,8 @@ import { useRoundStar } from '@/hooks/useRoundStar';
 import { RoundLeaderboard } from './RoundLeaderboard';
 import { renderShareCard } from '@/utils/shareCardRenderer';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
+import { copyToClipboard } from '@/utils/copy';
+
 interface InProgressRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
@@ -23,6 +25,7 @@ interface InProgressRound {
   bench_team: any;
   scores: FantasyScore[];
 }
+
 interface FantasyScore {
   team_id: string;
   team_name: string;
@@ -34,29 +37,23 @@ interface FantasyScore {
   clean_sweeps: number;
   matches_played: number;
 }
+
 export const InProgressRounds: React.FC = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [rounds, setRounds] = useState<InProgressRound[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (user) {
       fetchInProgressRounds();
     }
   }, [user]);
 
-  // Removed automatic round status update - now manual only
-
   const calculateScores = async () => {
     try {
       console.log('🎯 Triggering fantasy score calculation...');
-      const {
-        error
-      } = await supabase.functions.invoke('calculate-fantasy-scores', {
-        body: {
-          user_id: user?.id
-        }
+      const { error } = await supabase.functions.invoke('calculate-fantasy-scores', {
+        body: { user_id: user?.id }
       });
       if (error) {
         console.error('Error calculating scores:', error);
@@ -70,46 +67,47 @@ export const InProgressRounds: React.FC = () => {
       toast.error('Failed to trigger score calculation');
     }
   };
+
   const fetchInProgressRounds = async () => {
     if (!user) return;
     try {
       console.log('Fetching in-progress rounds for user:', user.id);
-
-      // Trigger score calculation for active rounds
       await calculateScores();
 
-      // Fetch user's picks for open and active rounds (rounds in progress)
-      const {
-        data: picks,
-        error: picksError
-      } = await supabase.from('fantasy_round_picks').select(`
-          *,
-          fantasy_rounds!inner(*)
-        `).eq('user_id', user.id).in('fantasy_rounds.status', ['open', 'active']);
+      const { data: picks, error: picksError } = await supabase
+        .from('fantasy_round_picks')
+        .select(`*, fantasy_rounds!inner(*)`)
+        .eq('user_id', user.id)
+        .in('fantasy_rounds.status', ['open', 'active']);
       if (picksError) throw picksError;
       console.log('Fantasy picks fetched:', picks);
 
-      // Fetch scores for each round
-      const roundsWithScores = await Promise.all((picks || []).map(async pick => {
-        const {
-          data: scores,
-          error: scoresError
-        } = await supabase.from('fantasy_round_scores').select('*').eq('round_id', pick.round_id).eq('user_id', user.id);
-        if (scoresError) throw scoresError;
-        return {
-          id: pick.round_id,
-          type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
-          start_date: pick.fantasy_rounds.start_date,
-          end_date: pick.fantasy_rounds.end_date,
-          total_score: pick.total_score,
-          team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
-          bench_team: pick.bench_team,
-          scores: (scores || []).map(score => ({
-            ...score,
-            team_type: score.team_type as 'pro' | 'amateur'
-          }))
-        };
-      }));
+      const roundsWithScores = await Promise.all(
+        (picks || []).map(async (pick) => {
+          const { data: scores, error: scoresError } = await supabase
+            .from('fantasy_round_scores')
+            .select('*')
+            .eq('round_id', pick.round_id)
+            .eq('user_id', user.id);
+
+          if (scoresError) throw scoresError;
+
+          return {
+            id: pick.round_id,
+            type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
+            start_date: pick.fantasy_rounds.start_date,
+            end_date: pick.fantasy_rounds.end_date,
+            total_score: pick.total_score,
+            team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
+            bench_team: pick.bench_team,
+            scores: (scores || []).map((score) => ({
+              ...score,
+              team_type: score.team_type as 'pro' | 'amateur'
+            }))
+          };
+        })
+      );
+
       console.log('Rounds with scores processed:', roundsWithScores);
       setRounds(roundsWithScores);
     } catch (error) {
@@ -119,14 +117,16 @@ export const InProgressRounds: React.FC = () => {
       setLoading(false);
     }
   };
+
   const calculateProgress = (startDate: string, endDate: string) => {
     const now = new Date();
     const start = new Date(startDate);
     const end = new Date(endDate);
     const total = end.getTime() - start.getTime();
     const elapsed = now.getTime() - start.getTime();
-    return Math.min(Math.max(elapsed / total * 100, 0), 100);
+    return Math.min(Math.max((elapsed / total) * 100, 0), 100);
   };
+
   const formatTimeRemaining = (endDate: string) => {
     const now = new Date();
     const end = new Date(endDate);
@@ -136,7 +136,8 @@ export const InProgressRounds: React.FC = () => {
     const days = Math.floor(hours / 24);
     if (days > 0) return `${days}d ${hours % 24}h remaining`;
     return `${hours}h remaining`;
-  };
+    };
+
   const getRoundTypeColor = (type: string) => {
     switch (type) {
       case 'daily':
@@ -149,14 +150,19 @@ export const InProgressRounds: React.FC = () => {
         return 'bg-muted text-muted-foreground';
     }
   };
+
   if (loading) {
-    return <div className="text-center py-12">
+    return (
+      <div className="text-center py-12">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading your active rounds...</p>
-      </div>;
+      </div>
+    );
   }
+
   if (rounds.length === 0) {
-    return <Card className="bg-card border-border">
+    return (
+      <Card className="bg-card border-border">
         <CardContent className="text-center py-12">
           <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No Active Rounds</h3>
@@ -164,19 +170,24 @@ export const InProgressRounds: React.FC = () => {
             You don't have any teams in active rounds. Join a round to get started!
           </p>
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
-  return <div className="space-y-6">
 
+  return (
+    <div className="space-y-6">
       <div className="space-y-6">
-        {rounds.map(round => <Card key={round.id} className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250">
+        {rounds.map((round) => (
+          <Card
+            key={round.id}
+            className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250"
+          >
             <CardHeader className="border-b border-gray-700/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     {round.type} Round
                   </CardTitle>
-                  
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
@@ -190,7 +201,10 @@ export const InProgressRounds: React.FC = () => {
                   <ShareButton roundId={round.id} userId={user?.id} roundType={round.type} />
                 </div>
               </div>
-              <Progress value={calculateProgress(round.start_date, round.end_date)} className="h-2 bg-gray-800/50 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500" />
+              <Progress
+                value={calculateProgress(round.start_date, round.end_date)}
+                className="h-2 bg-gray-800/50 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+              />
             </CardHeader>
 
             <CardContent className="p-4 sm:p-6 overflow-hidden">
@@ -201,7 +215,7 @@ export const InProgressRounds: React.FC = () => {
                     <Users className="h-4 w-4" />
                     Team Performance
                   </h4>
-                  
+
                   <InProgressTeamsList round={round} />
                 </div>
 
@@ -211,17 +225,18 @@ export const InProgressRounds: React.FC = () => {
                     <Trophy className="h-4 w-4" />
                     Round Leaderboard
                   </h4>
-                  
+
                   <RoundLeaderboard roundId={round.id} />
                 </div>
 
                 {/* Scoring Breakdown */}
-                {round.scores.length > 0 && <div>
+                {round.scores.length > 0 && (
+                  <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
                       <TrendingUp className="h-4 w-4" />
                       Scoring Breakdown
                     </h4>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-center">
                       <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
                         <div className="text-lg sm:text-xl font-bold text-green-400">
@@ -248,45 +263,40 @@ export const InProgressRounds: React.FC = () => {
                         <div className="text-xs text-gray-400 leading-tight">Tournaments</div>
                       </div>
                     </div>
-                  </div>}
+                  </div>
+                )}
 
                 {/* Bench Team */}
-                {round.bench_team && <div>
+                {round.bench_team && (
+                  <div>
                     <h4 className="font-semibold mb-2 text-sm text-white">Bench Team</h4>
                     <Badge variant="outline" className="text-sm bg-orange-500/10 border-orange-400/30 text-orange-400">
                       {round.bench_team.name} (Amateur)
                     </Badge>
-                  </div>}
+                  </div>
+                )}
               </div>
             </CardContent>
-          </Card>)}
+          </Card>
+        ))}
       </div>
-    </div>;
+    </div>
+  );
 };
 
 // Helper component for rendering teams in progress rounds
-const InProgressTeamsList: React.FC<{
-  round: InProgressRound;
-}> = ({
-  round
-}) => {
-  const {
-    starTeamId,
-    changeUsed,
-    canChange,
-    setStarTeam
-  } = useRoundStar(round.id);
+const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) => {
+  const { starTeamId, changeUsed, canChange, setStarTeam } = useRoundStar(round.id);
   const [showStarModal, setShowStarModal] = useState(false);
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
+
   const handleStarToggle = (teamId: string) => {
     if (!canChange) return;
-    if (starTeamId === teamId) {
-      // Already starred, do nothing
-      return;
-    }
+    if (starTeamId === teamId) return;
     setPendingTeamId(teamId);
     setShowStarModal(true);
   };
+
   const handleConfirmStarChange = async () => {
     if (!pendingTeamId) return;
     const result = await setStarTeam(pendingTeamId);
@@ -298,53 +308,89 @@ const InProgressTeamsList: React.FC<{
     setShowStarModal(false);
     setPendingTeamId(null);
   };
+
   const getStarTeamName = () => {
     if (!starTeamId) return 'None';
-
-    // Find team name from scores or picks
     if (round.scores.length > 0) {
-      const team = round.scores.find(s => s.team_id === starTeamId);
+      const team = round.scores.find((s) => s.team_id === starTeamId);
       return team?.team_name || 'Unknown';
     } else {
-      const team = round.team_picks.find(t => t.id === starTeamId);
+      const team = round.team_picks.find((t) => t.id === starTeamId);
       return team?.name || 'Unknown';
     }
   };
-  return <>
+
+  return (
+    <>
       {/* Star Team Status */}
       <div className="mb-4 p-3 rounded-lg bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50">
         <div className="flex items-center gap-2 text-sm">
           <Star className={`h-4 w-4 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-gray-400'}`} />
           <span className="text-gray-300">
-            Star Team: <span className="text-white font-medium">{getStarTeamName()}</span> • 
+            Star Team: <span className="text-white font-medium">{getStarTeamName()}</span> •
             Change left: <span className="text-white font-medium">{changeUsed ? '0/1' : '1/1'}</span>
           </span>
-          {!canChange && <div className="flex items-center gap-1 ml-2">
+          {!canChange && (
+            <div className="flex items-center gap-1 ml-2">
               <Lock className="h-3 w-3 text-orange-400" />
               <span className="text-xs text-orange-400">Star change used</span>
-            </div>}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        {round.scores.length > 0 ?
-      // Show scored teams
-      round.scores.map(score => <TeamCard key={score.team_id} team={{
-        id: score.team_id,
-        name: score.team_name,
-        type: score.team_type,
-        logo_url: round.team_picks.find(team => team.id === score.team_id)?.logo_url || ''
-      }} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === score.team_id} onToggleStar={() => handleStarToggle(score.team_id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" fantasyPoints={score.current_score} />) :
-      // Show picked teams without scores
-      round.team_picks.map((team, index) => <TeamCard key={team.id || index} team={team} isSelected={true} onClick={() => {}} showStarToggle={true} isStarred={starTeamId === team.id} onToggleStar={() => handleStarToggle(team.id)} disabledReason={!canChange ? "Star change used" : null} variant="progress" />)}
+        {round.scores.length > 0
+          ? round.scores.map((score) => (
+              <TeamCard
+                key={score.team_id}
+                team={{
+                  id: score.team_id,
+                  name: score.team_name,
+                  type: score.team_type,
+                  logo_url: round.team_picks.find((team) => team.id === score.team_id)?.logo_url || ''
+                }}
+                isSelected={true}
+                onClick={() => {}}
+                showStarToggle={true}
+                isStarred={starTeamId === score.team_id}
+                onToggleStar={() => handleStarToggle(score.team_id)}
+                disabledReason={!canChange ? 'Star change used' : null}
+                variant="progress"
+                fantasyPoints={score.current_score}
+              />
+            ))
+          : round.team_picks.map((team, index) => (
+              <TeamCard
+                key={team.id || index}
+                team={team}
+                isSelected={true}
+                onClick={() => {}}
+                showStarToggle={true}
+                isStarred={starTeamId === team.id}
+                onToggleStar={() => handleStarToggle(team.id)}
+                disabledReason={!canChange ? 'Star change used' : null}
+                variant="progress"
+              />
+            ))}
       </div>
 
       {/* Star Change Modal */}
-      <StarTeamConfirmModal open={showStarModal} onOpenChange={setShowStarModal} title="Change Star Team?" description="You can change your Star Team only once per round. The new Star Team will score double points from now on." onConfirm={handleConfirmStarChange} onCancel={() => {
-      setShowStarModal(false);
-      setPendingTeamId(null);
-    }} confirmText="Confirm Change" cancelText="Cancel" />
-    </>;
+      <StarTeamConfirmModal
+        open={showStarModal}
+        onOpenChange={setShowStarModal}
+        title="Change Star Team?"
+        description="You can change your Star Team only once per round. The new Star Team will score double points from now on."
+        onConfirm={handleConfirmStarChange}
+        onCancel={() => {
+          setShowStarModal(false);
+          setPendingTeamId(null);
+        }}
+        confirmText="Confirm Change"
+        cancelText="Cancel"
+      />
+    </>
+  );
 };
 
 // Share Button Component
@@ -352,59 +398,49 @@ const ShareButton: React.FC<{
   roundId: string;
   userId?: string;
   roundType: string;
-}> = ({
-  roundId,
-  userId,
-  roundType
-}) => {
+}> = ({ roundId, userId, roundType }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+
   const handleShare = async () => {
     if (!userId) return;
     setIsGenerating(true);
+
     try {
       const result = await renderShareCard(roundId, userId);
       const roundName = `${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`;
 
-      // Track missions for share
+      // Track missions
       try {
-        const {
-          MissionBus
-        } = await import('@/lib/missionBus');
+        const { MissionBus } = await import('@/lib/missionBus');
         MissionBus.onShareLineup(roundId);
         MissionBus.onShareThisWeek();
-        // MissionBus.onM2_Share(); // optional gating by calendar
       } catch (e) {
         console.warn('Mission share tracking failed', e);
       }
 
-      // Check if Web Share API supports files
-      if (navigator.canShare?.({
-        files: [new File([result.blob], 'lineup.png', {
-          type: 'image/png'
-        })]
-      })) {
+      // Use Web Share API with file if available
+      const file = new File([result.blob], 'lineup.png', { type: 'image/png' });
+      if (navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({
             title: 'My Fantasy Picks',
             text: `My ${roundName} picks - Check out my live progress!`,
-            files: [new File([result.blob], 'lineup.png', {
-              type: 'image/png'
-            })],
+            files: [file],
             url: result.publicUrl
           });
-          toast.success('Share card ready!');
+          toast.success('Shared!');
+          return;
         } catch (shareError) {
-          if ((shareError as Error).name !== 'AbortError') {
-            // If native share fails, copy link as fallback
-            await navigator.clipboard.writeText(`${window.location.origin}/lineup/${roundId}/${userId}`);
-            toast.success('Link copied to clipboard!');
-          }
+          if ((shareError as Error).name === 'AbortError') return; // user cancelled
+          // fall through to copy fallback
         }
-      } else {
-        // Show link copy as fallback
-        await navigator.clipboard.writeText(`${window.location.origin}/lineup/${roundId}/${userId}`);
-        toast.success('Link copied to clipboard!');
       }
+
+      // Fallback: copy link (still within the same click handler → user gesture)
+      const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
+      const ok = await copyToClipboard(shareUrl);
+      toast[ok ? 'success' : 'error'](ok ? 'Link copied to clipboard!' : 'Could not copy. Long-press/tap the link to copy.');
+
     } catch (error) {
       console.error('Share failed:', error);
       toast.error("Couldn't generate share card, please try again.");
@@ -412,8 +448,17 @@ const ShareButton: React.FC<{
       setIsGenerating(false);
     }
   };
-  return <Button variant="ghost" size="sm" onClick={handleShare} disabled={isGenerating || !userId} className="h-8 px-2 text-gray-400 hover:text-white hover:bg-gray-700/50">
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleShare}
+      disabled={isGenerating || !userId}
+      className="h-8 px-2 text-gray-400 hover:text-white hover:bg-gray-700/50"
+    >
       <Share2 className="h-4 w-4" />
       {isGenerating && <span className="ml-1 text-xs">Sharing...</span>}
-    </Button>;
+    </Button>
+  );
 };
