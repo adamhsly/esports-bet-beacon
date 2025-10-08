@@ -13,12 +13,12 @@ const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 180000); // 3m
 const FEED_TIMEOUT_MS   = Number(process.env.FEED_TIMEOUT_MS   || 15000);
 const MAX_FEED_ITEMS    = Number(process.env.MAX_FEED_ITEMS    || 12);    // shortlist cap
 const MAX_POSTS         = Number(process.env.MAX_POSTS         || 3);     // posts to produce (attempt 1)
-const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 2600);  // cap cost (attempt 1)
+const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS || 1600);  // cap cost (attempt 1)
 const USER_AGENT        = process.env.USER_AGENT || "FragsFortunes-RSS/1.0 (+contact@example.com)";
 
 // retry (attempt 2) knobs when we hit token cap
 const RETRY_MAX_POSTS         = Number(process.env.RETRY_MAX_POSTS         || 1);
-const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 2200); // slightly higher
+const RETRY_MAX_OUTPUT_TOKENS = Number(process.env.RETRY_MAX_OUTPUT_TOKENS || 2200);
 const RETRY_WORDS_MIN         = Number(process.env.RETRY_WORDS_MIN         || 220);
 const RETRY_WORDS_MAX         = Number(process.env.RETRY_WORDS_MAX         || 350);
 
@@ -222,13 +222,12 @@ function shortlistToUser(shortlist) {
     .join("\n");
 }
 
-// NEW robust extractor: collect every text fragment from envelope
+// robust envelope parsing
 function extractTextFromEnvelope(env) {
   if (typeof env?.output_text === "string" && env.output_text.trim()) {
     return env.output_text.trim();
   }
   const chunks = [];
-
   if (Array.isArray(env?.output)) {
     for (const out of env.output) {
       const c = out?.content;
@@ -241,7 +240,6 @@ function extractTextFromEnvelope(env) {
       }
     }
   }
-
   const mc = env?.message?.content;
   if (Array.isArray(mc)) {
     for (const block of mc) {
@@ -250,7 +248,6 @@ function extractTextFromEnvelope(env) {
       }
     }
   }
-
   return chunks.length ? chunks.join("\n") : null;
 }
 
@@ -258,13 +255,13 @@ function extractJSON(text) {
   if (!text) return null;
   const trimmed = text.trim();
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try { return JSON.parse(trimmed); } catch { /* fallthrough */ }
+    try { return JSON.parse(trimmed); } catch {}
   }
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start !== -1 && end !== -1 && end > start) {
     const slice = text.slice(start, end + 1);
-    try { return JSON.parse(slice); } catch { /* fallthrough */ }
+    try { return JSON.parse(slice); } catch {}
   }
   return null;
 }
@@ -290,9 +287,8 @@ async function callOpenAI_JSON({ shortlist, maxPosts, wordsMin, wordsMax, maxOut
           { role: "user", content: USER },
         ],
         text: { format: { type: "json_object" } },
-        max_output_tokens: maxOutputTokens,
-        temperature: 0.3,
-        top_p: 1
+        max_output_tokens: maxOutputTokens
+        // NOTE: no temperature/top_p — not supported by this model deployment
       }),
     });
 
