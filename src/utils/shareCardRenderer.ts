@@ -8,10 +8,11 @@ import { resolveAvatarBorderAsset } from './avatarBorders';
 import { 
   proxifyAvatarUrl, 
   proxifyFrameAsset, 
-  proxifyBorderAsset, 
-  proxifyBadgeAssets,
+  proxifyBorderAsset,
+  proxifyAsset,
   preloadAssetsSafely 
 } from './assetProxyHelper';
+import { resolveRewardAssetSafe } from './rewardsAssetResolver';
 
 interface ShareCardData {
   user: {
@@ -33,7 +34,10 @@ interface ShareCardData {
   starTeamId?: string;
   roundName: string;
   roundId: string;
-  badges: Array<{ asset_url: string }>;
+  badges: Array<{ 
+    reward_type: string;
+    reward_value: string;
+  }>;
 }
 
 interface ShareCardResult {
@@ -246,10 +250,10 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
   // Round info
   const { data: round } = await supabase.from('fantasy_rounds').select('type').eq('id', roundId).maybeSingle();
 
-  // User badges (recent 4)
+  // User badges (recent 4) - fetch with reward_type
   const { data: badges } = await supabase
     .from('user_rewards')
-    .select('season_rewards(reward_value)')
+    .select('season_rewards(reward_type, reward_value)')
     .eq('user_id', userId)
     .eq('unlocked', true)
     .order('unlocked_at', { ascending: false })
@@ -269,11 +273,13 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
 
   const roundName = round?.type ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round` : 'Fantasy Round';
 
-  // Process badges with CORS-safe proxying
-  const processedBadges = badges?.map((b) => ({ 
-    asset_url: `/assets/rewards/${b.season_rewards?.reward_value}.png` 
-  })) || [];
-  const proxiedBadges = proxifyBadgeAssets(processedBadges, true);
+  // Process badges with proper asset resolution - filter to only badge type rewards
+  const processedBadges = badges
+    ?.filter((b) => b.season_rewards?.reward_type === 'badge')
+    .map((b) => ({
+      reward_type: b.season_rewards?.reward_type || 'badge',
+      reward_value: b.season_rewards?.reward_value || '',
+    })) || [];
 
   return {
     user: {
@@ -289,18 +295,26 @@ async function fetchShareCardData(roundId: string, userId: string): Promise<Shar
     starTeamId: starTeam?.star_team_id,
     roundName,
     roundId,
-    badges: proxiedBadges,
+    badges: processedBadges,
   };
 }
 
 async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) {
+  // Resolve and proxy badge assets
+  const badgeAssetUrls = data.badges.map(badge => {
+    const resolved = resolveRewardAssetSafe({
+      reward_type: badge.reward_type as any,
+      reward_value: badge.reward_value
+    });
+    return resolved ? proxifyAsset(resolved, true) : null;
+  }).filter(Boolean) as string[];
+
   // Collect all asset URLs for preloading
   const assetsToPreload = [
-    '/assets/share-frame.png', // Background
     data.user.avatar_url,
     data.user.avatar_frame_asset,
     data.user.avatar_border_asset,
-    ...data.badges.map(b => b.asset_url),
+    ...badgeAssetUrls,
     ...data.lineup.map(team => team.image_url || team.logo_url).filter(Boolean)
   ].filter(Boolean) as string[];
 
@@ -308,15 +322,12 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
   console.log('Preloading assets for canvas rendering:', assetsToPreload.length, 'assets');
   await preloadAssetsSafely(assetsToPreload);
 
-  const shareFrameUrl = '/assets/share-frame.png';
   container.innerHTML = `
     <div style="
       position: relative;
       width: ${FRAME_WIDTH}px;
       height: ${FRAME_HEIGHT}px;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
-      background-size: cover;
-      background-position: center;
       color: #EAF2FF;
     ">
       <!-- User/Profile Header -->
@@ -373,10 +384,10 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
 
       <!-- Badges -->
       <div style="position: absolute; left: 72px; top: 410px; display: flex; gap: 16px;">
-        ${data.badges.slice(0, 4).map(badge => `
+        ${badgeAssetUrls.slice(0, 4).map(assetUrl => `
           <div style="
             width: 56px; height: 56px;
-            background: url('${badge.asset_url}');
+            background: url('${assetUrl}');
             background-size: cover; background-position: center;
             border-radius: 8px;
           "></div>
