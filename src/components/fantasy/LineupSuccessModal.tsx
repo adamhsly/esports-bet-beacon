@@ -197,7 +197,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
       </DialogHeader>
 
       <div className="space-y-6 pt-4">
-        <p className="text-center text-muted-foreground">
+        <p className="text-center text-white">
           Your lineup is locked in. Share your picks or check your live progress.
         </p>
 
@@ -227,7 +227,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
   const ShareSheetContent = () => (
     <>
       <SheetHeader>
-        <SheetTitle>Share Your Picks</SheetTitle>
+        <SheetTitle className="text-white">Share Your Picks</SheetTitle>
       </SheetHeader>
 
       <div className="space-y-4 pt-4">
@@ -244,7 +244,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
         </div>
 
         <div className="space-y-3">
-          <p className="text-sm font-medium text-muted-foreground">Share to Platforms:</p>
+          <p className="text-sm font-medium text-white">Share to Platforms:</p>
 
           <div className="grid grid-cols-2 gap-2">
             <Button onClick={() => openSocialShare('discord')} variant="outline" size="sm" className="h-10">
@@ -285,7 +285,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
             </Button>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-white mt-2">
             <strong>Instagram:</strong> Save the image then post manually.
           </p>
         </div>
@@ -321,8 +321,8 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
 
       <Dialog open={showShareSheet} onOpenChange={setShowShareSheet}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Share Your Picks</DialogTitle>
+        <DialogHeader>
+            <DialogTitle className="text-white">Share Your Picks</DialogTitle>
           </DialogHeader>
           <ShareSheetContent />
         </DialogContent>
