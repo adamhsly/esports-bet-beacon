@@ -9,16 +9,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Soft limits (override via env or request body)
 const DEFAULT_PAGE_SIZE = Number(Deno.env.get("PAGE_SIZE") ?? 25);
 const DEFAULT_MAX_PAGES = Number(Deno.env.get("MAX_PAGES") ?? 4);
 const DEFAULT_FETCH_TIMEOUT_MS = Number(Deno.env.get("FETCH_TIMEOUT_MS") ?? 15000);
 
-// Default FACEIT titles (FACEIT-supported). LoL/Valorant aren't FACEIT tourney games.
 const DEFAULT_GAMES = (Deno.env.get("FACEIT_DEFAULT_GAMES") ?? "cs2,dota2,r6s,overwatch2")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
+  .split(",").map(s => s.trim()).filter(Boolean);
 
 function convertFaceitTimestamp(timestamp: string | number | null | undefined) {
   if (!timestamp) return null;
@@ -30,18 +26,15 @@ function convertFaceitTimestamp(timestamp: string | number | null | undefined) {
 
 function normalizeStatus(status: string | undefined) {
   const s = (status || "").toLowerCase();
-  const allowed = ["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"];
-  return allowed.includes(s) ? s : "unknown";
+  const allowed = ["scheduled","ready","upcoming","configured","ongoing","started","finished","cancelled"];
+  return allowed.includes(s) ? s : (s || "unknown");
 }
 
 async function fetchWithTimeout(url: string, opts: RequestInit = {}, ms = DEFAULT_FETCH_TIMEOUT_MS) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
-  try {
-    return await fetch(url, { ...opts, signal: ctrl.signal });
-  } finally {
-    clearTimeout(id);
-  }
+  try { return await fetch(url, { ...opts, signal: ctrl.signal }); }
+  finally { clearTimeout(id); }
 }
 
 type FaceitListResponse<T> = { items?: T[] };
@@ -70,29 +63,18 @@ async function paginateList<T>(
 async function getValidGameIds(faceitApiKey: string, desired: string[]) {
   try {
     const url = new URL("https://open.faceit.com/data/v4/games");
-    url.searchParams.set("limit", "200");
+    url.searchParams.set("limit","200");
     const res = await fetchWithTimeout(url.toString(), { headers: { Authorization: `Bearer ${faceitApiKey}` } });
-    if (!res.ok) {
-      console.warn("⚠️ /games failed, using desired:", desired);
-      return desired;
-    }
+    if (!res.ok) return desired;
     const { items = [] } = (await res.json()) as FaceitListResponse<{ game_id: string }>;
     const ids = new Set(items.map(g => g.game_id));
     const filtered = desired.filter(id => ids.has(id));
-    if (!filtered.length) {
-      console.warn("⚠️ /games returned none of desired ids; using desired raw.");
-      return desired;
-    }
-    console.log("🎮 Valid FACEIT game ids:", filtered);
-    return filtered;
-  } catch (e) {
-    console.warn("⚠️ getValidGameIds error, using desired:", e);
-    return desired;
-  }
+    return filtered.length ? filtered : desired;
+  } catch { return desired; }
 }
 
 // Faceit lists
-async function listAllChampionships(game: string, type: "upcoming" | "ongoing" | "past" | "all", key: string, pageSize: number, maxPages: number) {
+async function listAllChampionships(game: string, type: "upcoming"|"ongoing"|"past"|"all", key: string, pageSize: number, maxPages: number) {
   const base = new URL("https://open.faceit.com/data/v4/championships");
   base.searchParams.set("game", game);
   base.searchParams.set("type", type);
@@ -125,9 +107,9 @@ serve(async (req) => {
     console.log("🟢 Function triggered");
     if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-    // Parse optional overrides from body
+    // Body overrides
     let body: any = null;
-    try { body = await req.json(); } catch { /* no body is fine */ }
+    try { body = await req.json(); } catch {}
 
     const faceitApiKey = Deno.env.get("FACEIT_API_KEY");
     if (!faceitApiKey) {
@@ -163,7 +145,7 @@ serve(async (req) => {
     const allMatchStatuses = new Set<string>();
 
     for (const game of games) {
-      // Championships: upcoming + ongoing (finished matches can live inside)
+      // Championships (upcoming + ongoing)
       for (const type of ["ongoing", "upcoming"] as const) {
         console.log(`🎯 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
         const championships = await listAllChampionships(game, type, faceitApiKey, pageSize, maxPages);
@@ -186,9 +168,8 @@ serve(async (req) => {
               console.log(`🚫 Skipping ${match.match_id}: unknown status "${match.status}"`);
               continue;
             }
-            // ✅ Include ALL matches (finished, ongoing, upcoming)
             allMatchStatuses.add(status);
-            allMatches.push({ match, championshipDetails: details, sourceType: "championship" });
+            allMatches.push({ match, championshipDetails: details, sourceType: "championship" as const });
           }
         }
       }
@@ -211,12 +192,11 @@ serve(async (req) => {
             console.log(`🚫 Skipping ${match.match_id}: unknown status "${match.status}"`);
             continue;
           }
-          // ✅ Include ALL matches
           allMatchStatuses.add(status);
           allMatches.push({
             match,
             championshipDetails: { ...tournament, stream_url: tournament.stream_url || tournament.faceit_url || null },
-            sourceType: "tournament",
+            sourceType: "tournament" as const,
           });
         }
       }
@@ -226,35 +206,39 @@ serve(async (req) => {
     let added = 0;
     let updated = 0;
 
-    for (const { match, championshipDetails } of allMatches) {
+    for (const { match, championshipDetails, sourceType } of allMatches) {
       const status = normalizeStatus(match.status);
+
+      // 💡 Table requires: status NOT NULL, teams NOT NULL JSONB
+      const teams = (match && match.teams) ? match.teams : {}; // ensure non-null json
+      const game = match?.game || "cs2"; // your column is NOT NULL with default, but we send a safe value
 
       const matchData = {
         match_id: match.match_id,
-        game: match.game,
-        region: match.region,
-        competition_name: match.competition_name,
-        competition_type: match.competition_type,
-        organized_by: match.organized_by,
-        status, // store real status, includes "finished"
+        game,
+        region: match.region ?? null,
+        competition_name: match.competition_name ?? null,
+        competition_type: match.competition_type ?? null,
+        organized_by: match.organized_by ?? null,
+        status, // write true faceit status
         started_at: convertFaceitTimestamp(match.started_at),
         scheduled_at: convertFaceitTimestamp(match.scheduled_at),
         finished_at: convertFaceitTimestamp(match.finished_at),
         configured_at: convertFaceitTimestamp(match.configured_at),
-        calculate_elo: match.calculate_elo,
-        version: match.version,
-        teams: match.teams,
-        voting: match.voting || null,
+        calculate_elo: typeof match.calculate_elo === "boolean" ? match.calculate_elo : false,
+        version: typeof match.version === "number" ? match.version : null,
+        teams,                          // ✅ never null
+        voting: match.voting ?? null,
         faceit_data: {
-          region: match.region,
-          competition_type: match.competition_type,
-          organized_by: match.organized_by,
-          calculate_elo: match.calculate_elo,
+          region: match.region ?? null,
+          competition_type: match.competition_type ?? null,
+          organized_by: match.organized_by ?? null,
+          calculate_elo: typeof match.calculate_elo === "boolean" ? match.calculate_elo : false,
         },
-        raw_data: match,
+        raw_data: match ?? null,
         championship_stream_url: championshipDetails?.stream_url || championshipDetails?.url || null,
-        championship_raw_data: championshipDetails || null,
-        // NOTE: intentionally not writing source_type to avoid schema mismatch
+        championship_raw_data: championshipDetails ?? null,
+        source_type: sourceType,        // ✅ 'championship' | 'tournament' (matches your CHECK)
       };
 
       const { error } = await supabase
@@ -263,6 +247,7 @@ serve(async (req) => {
 
       if (error) {
         console.error(`❌ Error upserting match ${match.match_id}:`, error);
+        // keep going so one bad row doesn't kill the run
         continue;
       }
 
@@ -283,7 +268,6 @@ serve(async (req) => {
       }
     }
 
-    // Finish log (best-effort)
     if (logId) {
       const { error } = await supabase
         .from("faceit_sync_logs")
@@ -298,16 +282,14 @@ serve(async (req) => {
       if (error) console.warn("⚠️ Could not update log:", error);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        matches_processed: allMatches.length,
-        matches_added: added,
-        matches_updated: updated,
-        match_statuses: Array.from(allMatchStatuses),
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      matches_processed: allMatches.length,
+      matches_added: added,
+      matches_updated: updated,
+      match_statuses: Array.from(allMatchStatuses),
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (err) {
     console.error("💥 Unhandled error:", err);
     return new Response(JSON.stringify({ success: false, error: String(err) }), {
