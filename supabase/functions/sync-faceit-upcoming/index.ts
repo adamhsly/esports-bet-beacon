@@ -106,7 +106,7 @@ serve(async (req) => {
   if (!faceitApiKey) return new Response("FACEIT_API_KEY not set", { status: 500 });
 
   // FACEIT-supported titles. Avoid LoL/Valorant which aren’t FACEIT tournament games.
-  const desiredDefault = ["cs2"];
+  const desiredDefault = ["dota2"];
 
   let requestedGames: string[] | null = null;
   try {
