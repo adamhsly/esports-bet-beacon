@@ -12,6 +12,7 @@ const DEFAULT_PAGE_SIZE = Number(Deno.env.get("PAGE_SIZE") ?? 20);
 const DEFAULT_MAX_PAGES = Number(Deno.env.get("MAX_PAGES") ?? 2);
 const DEFAULT_FETCH_TIMEOUT_MS = Number(Deno.env.get("FETCH_TIMEOUT_MS") ?? 15000);
 const DEFAULT_TIME_BUDGET_MS = Number(Deno.env.get("TIME_BUDGET_MS") ?? 55000);
+const DEFAULT_UPSERT_BATCH = Number(Deno.env.get("UPSERT_BATCH") ?? 200);
 const DIAGNOSTIC_ENV = (Deno.env.get("DIAGNOSTIC") ?? "") === "1";
 
 // FACEIT titles to try by default; we’ll validate with /games
@@ -29,8 +30,8 @@ function convertFaceitTimestamp(timestamp: string | number | null | undefined) {
 
 function normalizeStatus(status: string | undefined) {
   const s = (status || "").toLowerCase();
-  const allowed = ["scheduled","ready","upcoming","configured","ongoing","started","finished","cancelled"];
-  return allowed.includes(s) ? s : (s || "unknown");
+  // Accept anything we see; only treat empty as unknown
+  return s || "unknown";
 }
 
 async function fetchWithTimeout(url: string, opts: RequestInit = {}, ms = DEFAULT_FETCH_TIMEOUT_MS) {
@@ -121,6 +122,12 @@ async function listTournamentMatches(tournamentId: string, key: string, pageSize
   return paginateList<any>(base, key, pageSize, maxPages, breadcrumbs);
 }
 
+function chunk<T>(arr: T[], size: number) {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 /** ------------------------ Handler ------------------------ **/
 serve(async (req) => {
   const breadcrumbs: string[] = [];
@@ -128,7 +135,6 @@ serve(async (req) => {
   const deadline = started + DEFAULT_TIME_BUDGET_MS;
 
   try {
-    console.log("🟢 Function triggered");
     if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
     let body: any = null;
@@ -149,9 +155,11 @@ serve(async (req) => {
 
     const pageSize = Number(body?.page_size ?? DEFAULT_PAGE_SIZE);
     const maxPages = Number(body?.max_pages ?? DEFAULT_MAX_PAGES);
+    const upsertBatch = Number(body?.upsert_batch ?? DEFAULT_UPSERT_BATCH);
     const requestedGames: string[] | null = Array.isArray(body?.games) ? body.games : null;
 
-    breadcrumbs.push(`page_size=${pageSize} max_pages=${maxPages} DIAG=${DIAG ? "1" : "0"}`);
+    breadcrumbs.push(`page_size=${pageSize} max_pages=${maxPages} upsert_batch=${upsertBatch} DIAG=${DIAG ? "1" : "0"}`);
+
     let games = await getValidGameIds(faceitApiKey, requestedGames ?? DEFAULT_GAMES, breadcrumbs);
     if (!games.length) games = ["cs2"];
     breadcrumbs.push(`games=${games.join(",")}`);
@@ -174,10 +182,7 @@ serve(async (req) => {
     const allMatchStatuses = new Set<string>();
 
     for (const game of games) {
-      if (Date.now() > deadline - 5000) {
-        breadcrumbs.push("⏳ time budget nearly exhausted (before championships)");
-        break;
-      }
+      if (Date.now() > deadline - 5000) { breadcrumbs.push("⏳ budget near (before championships)"); break; }
 
       for (const type of ["ongoing", "upcoming"] as const) {
         breadcrumbs.push(`list championships ${game}/${type}`);
@@ -187,11 +192,7 @@ serve(async (req) => {
         for (const championship of championships) {
           const champId = championship?.championship_id;
           if (!champId) continue;
-
-          if (Date.now() > deadline - 5000) {
-            breadcrumbs.push("⏳ time budget nearly exhausted (inside championships)");
-            break;
-          }
+          if (Date.now() > deadline - 5000) { breadcrumbs.push("⏳ budget near (inside championships)"); break; }
 
           const [details, matches] = await Promise.all([
             listChampionshipDetails(champId, faceitApiKey, breadcrumbs),
@@ -201,17 +202,14 @@ serve(async (req) => {
           breadcrumbs.push(`champ ${champId} matches: ${matches.length}`);
           for (const match of matches) {
             const status = normalizeStatus(match.status);
-            if (status === "unknown") continue;
+            if (status === "unknown") continue; // only drop empty
             allMatchStatuses.add(status);
             allMatches.push({ match, championshipDetails: details, sourceType: "championship" as const });
           }
         }
       }
 
-      if (Date.now() > deadline - 5000) {
-        breadcrumbs.push("⏳ time budget nearly exhausted (before tournaments)");
-        break;
-      }
+      if (Date.now() > deadline - 5000) { breadcrumbs.push("⏳ budget near (before tournaments)"); break; }
 
       breadcrumbs.push(`list tournaments ${game}`);
       const tournaments = await listAllTournaments(game, faceitApiKey, pageSize, maxPages, breadcrumbs);
@@ -220,11 +218,7 @@ serve(async (req) => {
       for (const tournament of tournaments) {
         const tournamentId = tournament?.tournament_id;
         if (!tournamentId) continue;
-
-        if (Date.now() > deadline - 5000) {
-          breadcrumbs.push("⏳ time budget nearly exhausted (inside tournaments)");
-          break;
-        }
+        if (Date.now() > deadline - 5000) { breadcrumbs.push("⏳ budget near (inside tournaments)"); break; }
 
         const matches = await listTournamentMatches(tournamentId, faceitApiKey, pageSize, maxPages, breadcrumbs);
         breadcrumbs.push(`tournament ${tournamentId} matches: ${matches.length}`);
@@ -241,11 +235,20 @@ serve(async (req) => {
       }
     }
 
-    breadcrumbs.push(`TOTAL matches collected: ${allMatches.length}`);
+    breadcrumbs.push(`TOTAL matches collected (pre-dedupe): ${allMatches.length}`);
+
+    // -------- Deduplicate by match_id --------
+    const byId = new Map<string, { match: any; championshipDetails: any; sourceType: "championship"|"tournament" }>();
+    for (const m of allMatches) {
+      const id = m?.match?.match_id;
+      if (!id) continue;
+      if (!byId.has(id)) byId.set(id, m);
+    }
+    const deduped = Array.from(byId.values());
+    breadcrumbs.push(`TOTAL matches after dedupe: ${deduped.length}`);
 
     if (DIAG) {
-      // Return a tiny preview and breadcrumbs without touching DB
-      const preview = allMatches.slice(0, 5).map(m => ({
+      const preview = deduped.slice(0, 10).map(m => ({
         match_id: m.match?.match_id,
         status: normalizeStatus(m.match?.status),
         has_teams: !!m.match?.teams,
@@ -261,30 +264,26 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ---------- UPSERT (row-guarded) ----------
-    let added = 0;
-    let updated = 0;
-
-    for (const { match, championshipDetails, sourceType } of allMatches) {
+    // -------- Prepare rows for batch upsert --------
+    const rows = deduped.map(({ match, championshipDetails, sourceType }) => {
       const status = normalizeStatus(match.status);
       const teams = match?.teams ? match.teams : {};  // jsonb NOT NULL
       const game = match?.game || "cs2";
-
-      const matchData = {
+      return {
         match_id: match.match_id,
         game,
         region: match.region ?? null,
         competition_name: match.competition_name ?? null,
         competition_type: match.competition_type ?? null,
         organized_by: match.organized_by ?? null,
-        status, // your schema allows any text
+        status,
         started_at: convertFaceitTimestamp(match.started_at),
         scheduled_at: convertFaceitTimestamp(match.scheduled_at),
         finished_at: convertFaceitTimestamp(match.finished_at),
         configured_at: convertFaceitTimestamp(match.configured_at),
         calculate_elo: typeof match.calculate_elo === "boolean" ? match.calculate_elo : false,
         version: typeof match.version === "number" ? match.version : null,
-        teams, // never null
+        teams,
         voting: match.voting ?? null,
         faceit_data: {
           region: match.region ?? null,
@@ -295,59 +294,35 @@ serve(async (req) => {
         raw_data: match ?? null,
         championship_stream_url: championshipDetails?.stream_url || championshipDetails?.url || null,
         championship_raw_data: championshipDetails ?? null,
-        source_type: sourceType, // 'championship' | 'tournament' or null
+        source_type: sourceType, // satisfies your CHECK
       };
+    });
 
-      try {
-        const { error } = await supabase
-          .from("faceit_matches")
-          .upsert(matchData, { onConflict: "match_id", ignoreDuplicates: false });
+    // -------- Batch upsert --------
+    let upserted = 0;
+    const batches = chunk(rows, upsertBatch);
+    for (let i = 0; i < batches.length; i++) {
+      if (Date.now() > deadline - 3000) { breadcrumbs.push(`⏳ budget near (before batch ${i}/${batches.length})`); break; }
 
-        if (error) {
-          // Immediate, informative failure for the tester UI
-          return new Response(JSON.stringify({
-            success: false,
-            stage: "upsert",
-            match_id: match.match_id,
-            status,
-            supabase_error: error,
-            breadcrumbs,
-          }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
+      const batch = batches[i];
+      const { error } = await supabase
+        .from("faceit_matches")
+        .upsert(batch, { onConflict: "match_id", ignoreDuplicates: false });
 
-        const { data: existingMatch, error: fetchErr } = await supabase
-          .from("faceit_matches")
-          .select("created_at, updated_at")
-          .eq("match_id", match.match_id)
-          .maybeSingle();
-
-        if (fetchErr) {
-          breadcrumbs.push(`WARN fetch timestamps: ${JSON.stringify(fetchErr)}`);
-          continue;
-        }
-        if (existingMatch) {
-          const createdAt = new Date(existingMatch.created_at).getTime();
-          const updatedAt = new Date(existingMatch.updated_at).getTime();
-          if (Math.abs(createdAt - updatedAt) < 1000) added++; else updated++;
-        }
-      } catch (rowErr) {
+      if (error) {
+        // Return a clear error: which batch and a sample match_id
         return new Response(JSON.stringify({
           success: false,
-          stage: "upsert-throw",
-          match_id: match?.match_id,
-          error: String(rowErr),
+          stage: "batch-upsert",
+          batch_index: i,
+          batch_size: batch.length,
+          sample_match_id: batch[0]?.match_id,
+          supabase_error: error,
           breadcrumbs,
         }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-
-      if (Date.now() > deadline - 3000) {
-        breadcrumbs.push("⏳ time budget nearly exhausted (during upserts)");
-        break;
-      }
-    }
-
-    if (Date.now() > deadline - 1000) {
-      breadcrumbs.push("⏳ time budget exhausted before finishing");
+      upserted += batch.length;
+      breadcrumbs.push(`batch ${i + 1}/${batches.length} upserted: ${batch.length}`);
     }
 
     // Finish log (best-effort)
@@ -357,9 +332,9 @@ serve(async (req) => {
         .update({
           status: "success",
           completed_at: new Date().toISOString(),
-          matches_processed: allMatches.length,
-          matches_added: added,
-          matches_updated: updated,
+          matches_processed: deduped.length,
+          matches_added: null,   // unknown without expensive per-row checks
+          matches_updated: null, // unknown without expensive per-row checks
         })
         .eq("id", logId);
       if (error) breadcrumbs.push(`LOG update error: ${JSON.stringify(error)}`);
@@ -367,9 +342,8 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      matches_processed: allMatches.length,
-      matches_added: added,
-      matches_updated: updated,
+      matches_processed: deduped.length,
+      rows_upserted: upserted,
       match_statuses: Array.from(allMatchStatuses),
       breadcrumbs,
       elapsed_ms: Date.now() - started,
