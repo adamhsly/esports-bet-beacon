@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -6,20 +7,102 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function convertFaceitTimestamp(timestamp) {
+function convertFaceitTimestamp(timestamp: string | number | null | undefined) {
   if (!timestamp) return null;
   if (typeof timestamp === "string" && timestamp.includes("T")) return timestamp;
   const unixSeconds = typeof timestamp === "string" ? parseInt(timestamp, 10) : timestamp;
-  if (isNaN(unixSeconds) || unixSeconds <= 0) return null;
-  return new Date(unixSeconds * 1000).toISOString();
+  if (isNaN(unixSeconds as number) || (unixSeconds as number) <= 0) return null;
+  return new Date((unixSeconds as number) * 1000).toISOString();
+}
+
+type FaceitListResponse<T> = { items?: T[] };
+
+async function fetchJSON<T>(url: string, faceitApiKey: string): Promise<Response & { json: () => Promise<T> }> {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${faceitApiKey}` } });
+  return res as any;
+}
+
+async function getValidGameIds(faceitApiKey: string, desired: string[]) {
+  // Discover valid game ids from FACEIT to avoid stale ids like "csgo"
+  const url = new URL("https://open.faceit.com/data/v4/games");
+  url.searchParams.set("limit", "200");
+  const res = await fetchJSON<FaceitListResponse<{ game_id: string }>>(url.toString(), faceitApiKey);
+  if (!res.ok) {
+    console.warn("⚠️ Failed to fetch /games. Falling back to desired list:", desired);
+    return desired;
+  }
+  const { items = [] } = await res.json();
+  const ids = new Set(items.map((g) => g.game_id));
+  const finalList = desired.filter((id) => ids.has(id));
+  if (finalList.length === 0) {
+    console.warn("⚠️ /games returned none of the desired ids; using raw desired list.");
+    return desired;
+  }
+  console.log("🎮 Valid FACEIT game ids:", finalList);
+  return finalList;
+}
+
+async function paginateList<T>(baseUrl: string, faceitApiKey: string, pageSize = 50, maxPages = 200): Promise<T[]> {
+  const out: T[] = [];
+  for (let offset = 0, page = 0; page < maxPages; offset += pageSize, page++) {
+    const u = new URL(baseUrl);
+    u.searchParams.set("limit", String(pageSize));
+    u.searchParams.set("offset", String(offset));
+    const res = await fetchJSON<FaceitListResponse<T>>(u.toString(), faceitApiKey);
+    if (!res.ok) break;
+    const { items = [] } = await res.json();
+    out.push(...items);
+    if (items.length < pageSize) break;
+  }
+  return out;
+}
+
+async function listAllChampionships(game: string, type: "upcoming" | "ongoing" | "past" | "all", key: string) {
+  const base = new URL("https://open.faceit.com/data/v4/championships");
+  base.searchParams.set("game", game);
+  base.searchParams.set("type", type);
+  return paginateList<any>(base.toString(), key, 50);
+}
+
+async function listChampionshipDetails(championshipId: string, key: string) {
+  const url = `https://open.faceit.com/data/v4/championships/${championshipId}`;
+  const res = await fetchJSON<any>(url, key);
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+async function listChampionshipMatches(championshipId: string, key: string) {
+  const base = `https://open.faceit.com/data/v4/championships/${championshipId}/matches`;
+  return paginateList<any>(base, key, 50);
+}
+
+async function listAllTournaments(game: string, key: string) {
+  const base = new URL("https://open.faceit.com/data/v4/tournaments");
+  base.searchParams.set("game", game);
+  return paginateList<any>(base.toString(), key, 50);
+}
+
+async function listTournamentMatches(tournamentId: string, key: string) {
+  const base = `https://open.faceit.com/data/v4/tournaments/${tournamentId}/matches`;
+  return paginateList<any>(base, key, 50);
+}
+
+function isFutureOrOngoing(match: any, nowISO: string) {
+  const now = new Date(nowISO).getTime();
+  const finishedAt = convertFaceitTimestamp(match.finished_at);
+  if (finishedAt && new Date(finishedAt).getTime() <= now) return false;
+  return true;
+}
+
+function normalizeStatus(status: string | undefined) {
+  const s = (status || "").toLowerCase();
+  const allowed = ["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"];
+  return allowed.includes(s) ? s : "unknown";
 }
 
 serve(async (req) => {
   console.log("🟢 Function triggered");
-
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -27,21 +110,23 @@ serve(async (req) => {
   );
 
   const faceitApiKey = Deno.env.get("FACEIT_API_KEY");
-  if (!faceitApiKey) {
-    console.error("❌ FACEIT_API_KEY not set");
-    return new Response("FACEIT_API_KEY not set", { status: 500 });
-  }
+  if (!faceitApiKey) return new Response("FACEIT_API_KEY not set", { status: 500 });
 
-  let games = ["csgo", "dota2", "valorant", "lol", "r6s", "overwatch"];
+  // Desired FACEIT titles (FACEIT-supported). Avoid LoL/Valorant which aren't FACEIT tournament games.
+  const desiredDefault = ["cs2", "dota2", "r6s", "overwatch2"];
+
+  let requestedGames: string[] | null = null;
   try {
     const body = await req.json();
-    if (body.games && Array.isArray(body.games)) {
-      games = body.games;
-      console.log("🎮 Using custom games list:", games);
+    if (body?.games && Array.isArray(body.games)) {
+      requestedGames = body.games;
+      console.log("🎮 Using custom games list (will verify against /games):", requestedGames);
     }
   } catch {
-    console.warn("⚠️ Failed to parse request body or no custom games specified");
+    // noop – treat as no custom body
   }
+
+  const games = await getValidGameIds(faceitApiKey, requestedGames ?? desiredDefault);
 
   const { data: logEntry } = await supabase
     .from("faceit_sync_logs")
@@ -49,125 +134,69 @@ serve(async (req) => {
     .select()
     .single();
 
-  const allUpcomingMatches = [];
-  const allMatchStatuses = new Set();
-  const now = new Date();
+  const nowISO = new Date().toISOString();
+  const allUpcomingMatches: any[] = [];
+  const allMatchStatuses = new Set<string>();
 
   for (const game of games) {
-    for (const type of ["ongoing", "upcoming"]) {
+    // Championships: upcoming + ongoing
+    for (const type of ["ongoing", "upcoming"] as const) {
       console.log(`🎯 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
-      const championshipsUrl = new URL("https://open.faceit.com/data/v4/championships");
-      championshipsUrl.searchParams.set("game", game);
-      championshipsUrl.searchParams.set("type", type);
-
-      const response = await fetch(championshipsUrl.toString(), {
-        headers: { Authorization: `Bearer ${faceitApiKey}` },
-      });
-
-      if (!response.ok) {
-        console.warn(`⚠️ Failed to fetch championships for ${game} (${type})`);
-        continue;
-      }
-
-      const { items: championships } = await response.json();
-      console.log(`🏆 Found ${championships.length} championships`);
+      const championships = await listAllChampionships(game, type, faceitApiKey);
+      console.log(`🏆 Found ${championships.length} championships for ${game} (${type})`);
 
       for (const championship of championships) {
         const champId = championship.championship_id;
-        const detailsResp = await fetch(
-          `https://open.faceit.com/data/v4/championships/${champId}`,
-          { headers: { Authorization: `Bearer ${faceitApiKey}` } }
-        );
-        const details = detailsResp.ok ? await detailsResp.json() : null;
+        if (!champId) continue;
 
-        const matchesResp = await fetch(
-          `https://open.faceit.com/data/v4/championships/${champId}/matches`,
-          { headers: { Authorization: `Bearer ${faceitApiKey}` } }
-        );
+        const [details, matches] = await Promise.all([
+          listChampionshipDetails(champId, faceitApiKey),
+          listChampionshipMatches(champId, faceitApiKey),
+        ]);
 
-        if (!matchesResp.ok) {
-          console.warn(`⚠️ Failed to fetch matches for championship ${champId}`);
-          continue;
-        }
-
-        const { items: matches } = await matchesResp.json();
-        console.log(`📦 Found ${matches.length} matches in championship ${champId}`);
+        console.log(`📦 Championship ${champId}: ${matches.length} matches`);
 
         for (const match of matches) {
-          const status = (match.status || "").toLowerCase();
-          const finishedAt = convertFaceitTimestamp(match.finished_at);
+          const status = normalizeStatus(match.status);
           allMatchStatuses.add(status);
-
-          if (!["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"].includes(status)) {
-            console.log(`🚫 Skipping ${match.match_id}: unknown status "${status}"`);
+          if (status === "unknown") {
+            console.log(`🚫 Skipping ${match.match_id}: unknown status "${match.status}"`);
+            continue;
+          }
+          if (!isFutureOrOngoing(match, nowISO)) {
+            console.log(`📌 Skipping ${match.match_id}: already finished`);
             continue;
           }
 
-          if (finishedAt && new Date(finishedAt) <= now) {
-            console.log(`📌 Skipping ${match.match_id}: already finished at ${finishedAt}`);
-            continue;
-          }
-
-          console.log(`✅ Including championship match ${match.match_id}`);
           allUpcomingMatches.push({ match, championshipDetails: details, sourceType: "championship" });
         }
       }
     }
 
-    // 🔁 Now fetch tournaments
+    // Tournaments
     console.log(`🎲 Fetching tournaments for ${game.toUpperCase()}`);
-    const tournamentsUrl = new URL("https://open.faceit.com/data/v4/tournaments");
-    tournamentsUrl.searchParams.set("game", game);
-    tournamentsUrl.searchParams.set("limit", "50");
-
-    const tournamentsResp = await fetch(tournamentsUrl.toString(), {
-      headers: { Authorization: `Bearer ${faceitApiKey}` },
-    });
-
-    if (!tournamentsResp.ok) {
-      console.warn(`⚠️ Failed to fetch tournaments for ${game}`);
-      continue;
-    }
-
-    const { items: tournaments } = await tournamentsResp.json();
-    console.log(`📦 Found ${tournaments.length} tournaments`);
+    const tournaments = await listAllTournaments(game, faceitApiKey);
+    console.log(`📦 Found ${tournaments.length} tournaments for ${game}`);
 
     for (const tournament of tournaments) {
       const tournamentId = tournament.tournament_id;
-      if (!tournamentId) {
-        console.warn("⚠️ Tournament missing tournament_id, skipping:", tournament);
-        continue;
-      }
+      if (!tournamentId) continue;
 
-      const matchesResp = await fetch(
-        `https://open.faceit.com/data/v4/tournaments/${tournamentId}/matches`,
-        { headers: { Authorization: `Bearer ${faceitApiKey}` } }
-      );
-
-      if (!matchesResp.ok) {
-        console.warn(`⚠️ Failed to fetch matches for tournament ${tournamentId}`);
-        continue;
-      }
-
-      const { items: matches } = await matchesResp.json();
-      console.log(`🎯 Found ${matches.length} matches for tournament ${tournamentId}`);
+      const matches = await listTournamentMatches(tournamentId, faceitApiKey);
+      console.log(`🎯 Tournament ${tournamentId}: ${matches.length} matches`);
 
       for (const match of matches) {
-        const status = (match.status || "").toLowerCase();
-        const finishedAt = convertFaceitTimestamp(match.finished_at);
+        const status = normalizeStatus(match.status);
         allMatchStatuses.add(status);
-
-        if (!["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"].includes(status)) {
-          console.log(`🚫 Skipping ${match.match_id}: unknown status "${status}"`);
+        if (status === "unknown") {
+          console.log(`🚫 Skipping ${match.match_id}: unknown status "${match.status}"`);
           continue;
         }
-
-        if (finishedAt && new Date(finishedAt) <= now) {
+        if (!isFutureOrOngoing(match, nowISO)) {
           console.log(`📌 Skipping ${match.match_id}: already finished`);
           continue;
         }
 
-        console.log(`✅ Including tournament match ${match.match_id}`);
         allUpcomingMatches.push({
           match,
           championshipDetails: {
@@ -180,10 +209,9 @@ serve(async (req) => {
     }
   }
 
+  console.log(`📝 Upserting ${allUpcomingMatches.length} matches...`);
   let added = 0;
   let updated = 0;
-
-  console.log(`📝 Upserting ${allUpcomingMatches.length} matches...`);
 
   for (const { match, championshipDetails, sourceType } of allUpcomingMatches) {
     const matchData = {
@@ -240,16 +268,18 @@ serve(async (req) => {
     }
   }
 
-  await supabase
-    .from("faceit_sync_logs")
-    .update({
-      status: "success",
-      completed_at: new Date().toISOString(),
-      matches_processed: allUpcomingMatches.length,
-      matches_added: added,
-      matches_updated: updated,
-    })
-    .eq("id", logEntry.id);
+  if (logEntry?.id) {
+    await supabase
+      .from("faceit_sync_logs")
+      .update({
+        status: "success",
+        completed_at: new Date().toISOString(),
+        matches_processed: allUpcomingMatches.length,
+        matches_added: added,
+        matches_updated: updated,
+      })
+      .eq("id", logEntry.id);
+  }
 
   return new Response(
     JSON.stringify({
