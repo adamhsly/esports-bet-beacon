@@ -87,13 +87,6 @@ async function listTournamentMatches(tournamentId: string, key: string) {
   return paginateList<any>(base, key, 50);
 }
 
-function isFutureOrOngoing(match: any, nowISO: string) {
-  const now = new Date(nowISO).getTime();
-  const finishedAt = convertFaceitTimestamp(match.finished_at);
-  if (finishedAt && new Date(finishedAt).getTime() <= now) return false;
-  return true;
-}
-
 function normalizeStatus(status: string | undefined) {
   const s = (status || "").toLowerCase();
   const allowed = ["scheduled", "ready", "upcoming", "configured", "ongoing", "started", "finished"];
@@ -112,7 +105,7 @@ serve(async (req) => {
   const faceitApiKey = Deno.env.get("FACEIT_API_KEY");
   if (!faceitApiKey) return new Response("FACEIT_API_KEY not set", { status: 500 });
 
-  // Desired FACEIT titles (FACEIT-supported). Avoid LoL/Valorant which aren't FACEIT tournament games.
+  // FACEIT-supported titles. Avoid LoL/Valorant which aren’t FACEIT tournament games.
   const desiredDefault = ["cs2", "dota2", "r6s", "overwatch2"];
 
   let requestedGames: string[] | null = null;
@@ -123,7 +116,7 @@ serve(async (req) => {
       console.log("🎮 Using custom games list (will verify against /games):", requestedGames);
     }
   } catch {
-    // noop – treat as no custom body
+    // no body provided; continue with defaults
   }
 
   const games = await getValidGameIds(faceitApiKey, requestedGames ?? desiredDefault);
@@ -134,12 +127,11 @@ serve(async (req) => {
     .select()
     .single();
 
-  const nowISO = new Date().toISOString();
-  const allUpcomingMatches: any[] = [];
+  const allMatches: any[] = [];
   const allMatchStatuses = new Set<string>();
 
   for (const game of games) {
-    // Championships: upcoming + ongoing
+    // Championships: upcoming + ongoing (finished matches can appear inside ongoing champs)
     for (const type of ["ongoing", "upcoming"] as const) {
       console.log(`🎯 Fetching championships for ${game.toUpperCase()} (${type.toUpperCase()})`);
       const championships = await listAllChampionships(game, type, faceitApiKey);
@@ -163,12 +155,9 @@ serve(async (req) => {
             console.log(`🚫 Skipping ${match.match_id}: unknown status "${match.status}"`);
             continue;
           }
-          if (!isFutureOrOngoing(match, nowISO)) {
-            console.log(`📌 Skipping ${match.match_id}: already finished`);
-            continue;
-          }
 
-          allUpcomingMatches.push({ match, championshipDetails: details, sourceType: "championship" });
+          // ✅ Include ALL matches (finished, ongoing, upcoming)
+          allMatches.push({ match, championshipDetails: details, sourceType: "championship" });
         }
       }
     }
@@ -192,12 +181,9 @@ serve(async (req) => {
           console.log(`🚫 Skipping ${match.match_id}: unknown status "${match.status}"`);
           continue;
         }
-        if (!isFutureOrOngoing(match, nowISO)) {
-          console.log(`📌 Skipping ${match.match_id}: already finished`);
-          continue;
-        }
 
-        allUpcomingMatches.push({
+        // ✅ Include ALL matches (finished, ongoing, upcoming)
+        allMatches.push({
           match,
           championshipDetails: {
             ...tournament,
@@ -209,11 +195,13 @@ serve(async (req) => {
     }
   }
 
-  console.log(`📝 Upserting ${allUpcomingMatches.length} matches...`);
+  console.log(`📝 Upserting ${allMatches.length} matches...`);
   let added = 0;
   let updated = 0;
 
-  for (const { match, championshipDetails, sourceType } of allUpcomingMatches) {
+  for (const { match, championshipDetails, sourceType } of allMatches) {
+    const status = normalizeStatus(match.status);
+
     const matchData = {
       match_id: match.match_id,
       game: match.game,
@@ -221,7 +209,7 @@ serve(async (req) => {
       competition_name: match.competition_name,
       competition_type: match.competition_type,
       organized_by: match.organized_by,
-      status: "upcoming",
+      status, // ⬅️ store true status (finished/ongoing/upcoming/etc.)
       started_at: convertFaceitTimestamp(match.started_at),
       scheduled_at: convertFaceitTimestamp(match.scheduled_at),
       finished_at: convertFaceitTimestamp(match.finished_at),
@@ -239,6 +227,7 @@ serve(async (req) => {
       raw_data: match,
       championship_stream_url: championshipDetails?.stream_url || championshipDetails?.url || null,
       championship_raw_data: championshipDetails || null,
+      // If you removed this column earlier, also remove the next line:
       source_type: sourceType,
     };
 
@@ -274,7 +263,7 @@ serve(async (req) => {
       .update({
         status: "success",
         completed_at: new Date().toISOString(),
-        matches_processed: allUpcomingMatches.length,
+        matches_processed: allMatches.length,
         matches_added: added,
         matches_updated: updated,
       })
@@ -284,7 +273,7 @@ serve(async (req) => {
   return new Response(
     JSON.stringify({
       success: true,
-      matches_processed: allUpcomingMatches.length,
+      matches_processed: allMatches.length,
       matches_added: added,
       matches_updated: updated,
       match_statuses: Array.from(allMatchStatuses),
