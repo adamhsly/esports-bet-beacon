@@ -205,18 +205,19 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           <Button
             onClick={handleSharePicks}
             disabled={isGenerating}
-            className="w-full bg-theme-purple hover:bg-theme-purple/90 h-12"
+            variant="outline"
+            className="w-full h-12 text-white border-white/20 hover:bg-white/10 hover:text-white"
           >
-            <Share2 className="w-4 h-4 mr-2" />
+            <Share2 className="w-4 h-4 mr-2 text-white" />
             {isGenerating ? 'Preparing your share card...' : 'Share your picks'}
           </Button>
 
           <Button
             onClick={onCheckProgress}
             variant="outline"
-            className="w-full h-12 text-white border-white/20 hover:bg-white/10"
+            className="w-full h-12 text-white border-white/20 hover:bg-white/10 hover:text-white"
           >
-            <TrendingUp className="w-4 h-4 mr-2" />
+            <TrendingUp className="w-4 h-4 mr-2 text-white" />
             Check your progress
           </Button>
         </div>
@@ -232,13 +233,13 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
 
       <div className="space-y-4 pt-4">
         <div className="grid grid-cols-2 gap-3">
-          <Button onClick={handleSaveImage} variant="outline" className="h-12">
-            <Download className="w-4 h-4 mr-2" />
+          <Button onClick={handleSaveImage} variant="outline" className="h-12 text-white border-white/20 hover:bg-white/10 hover:text-white">
+            <Download className="w-4 h-4 mr-2 text-white" />
             Save Image
           </Button>
 
-          <Button onClick={handleCopyImage} variant="outline" className="h-12">
-            <Copy className="w-4 h-4 mr-2" />
+          <Button onClick={handleCopyImage} variant="outline" className="h-12 text-white border-white/20 hover:bg-white/10 hover:text-white">
+            <Copy className="w-4 h-4 mr-2 text-white" />
             Copy Image
           </Button>
         </div>
@@ -247,40 +248,40 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           <p className="text-sm font-medium text-white">Share to Platforms:</p>
 
           <div className="grid grid-cols-2 gap-2">
-            <Button onClick={() => openSocialShare('discord')} variant="outline" size="sm" className="h-10">
-              <MessageSquare className="w-3 h-3 mr-1" />
+            <Button onClick={() => openSocialShare('discord')} variant="outline" size="sm" className="h-10 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <MessageSquare className="w-3 h-3 mr-1 text-white" />
               Discord
             </Button>
 
-            <Button onClick={() => openSocialShare('reddit')} variant="outline" size="sm" className="h-10">
-              <ExternalLink className="w-3 h-3 mr-1" />
+            <Button onClick={() => openSocialShare('reddit')} variant="outline" size="sm" className="h-10 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <ExternalLink className="w-3 h-3 mr-1 text-white" />
               Reddit
             </Button>
 
-            <Button onClick={() => openSocialShare('telegram')} variant="outline" size="sm" className="h-10">
-              <ExternalLink className="w-3 h-3 mr-1" />
+            <Button onClick={() => openSocialShare('telegram')} variant="outline" size="sm" className="h-10 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <ExternalLink className="w-3 h-3 mr-1 text-white" />
               Telegram
             </Button>
 
-            <Button onClick={handleCopyLink} variant="outline" size="sm" className="h-10">
-              <Copy className="w-3 h-3 mr-1" />
+            <Button onClick={handleCopyLink} variant="outline" size="sm" className="h-10 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <Copy className="w-3 h-3 mr-1 text-white" />
               Copy Link
             </Button>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <Button onClick={() => openSocialShare('twitter')} variant="outline" size="sm" className="h-9">
-              <ExternalLink className="w-3 h-3 mr-1" />
+            <Button onClick={() => openSocialShare('twitter')} variant="outline" size="sm" className="h-9 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <ExternalLink className="w-3 h-3 mr-1 text-white" />
               Twitter/X
             </Button>
 
-            <Button onClick={() => openSocialShare('facebook')} variant="outline" size="sm" className="h-9">
-              <ExternalLink className="w-3 h-3 mr-1" />
+            <Button onClick={() => openSocialShare('facebook')} variant="outline" size="sm" className="h-9 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <ExternalLink className="w-3 h-3 mr-1 text-white" />
               Facebook
             </Button>
 
-            <Button onClick={() => openSocialShare('whatsapp')} variant="outline" size="sm" className="h-9">
-              <ExternalLink className="w-3 h-3 mr-1" />
+            <Button onClick={() => openSocialShare('whatsapp')} variant="outline" size="sm" className="h-9 text-white border-white/20 hover:bg-white/10 hover:text-white">
+              <ExternalLink className="w-3 h-3 mr-1 text-white" />
               WhatsApp
             </Button>
           </div>
