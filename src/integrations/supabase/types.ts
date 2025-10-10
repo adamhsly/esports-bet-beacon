@@ -67,6 +67,45 @@ export type Database = {
         }
         Relationships: []
       }
+      esports_posts: {
+        Row: {
+          body_raw: Json | null
+          created_at: string
+          discord_message_id: string | null
+          discord_post: string
+          id: string
+          posted_to_discord: boolean | null
+          source: string | null
+          tags: string[] | null
+          title: string
+          x_post: string
+        }
+        Insert: {
+          body_raw?: Json | null
+          created_at?: string
+          discord_message_id?: string | null
+          discord_post: string
+          id?: string
+          posted_to_discord?: boolean | null
+          source?: string | null
+          tags?: string[] | null
+          title: string
+          x_post: string
+        }
+        Update: {
+          body_raw?: Json | null
+          created_at?: string
+          discord_message_id?: string | null
+          discord_post?: string
+          id?: string
+          posted_to_discord?: boolean | null
+          source?: string | null
+          tags?: string[] | null
+          title?: string
+          x_post?: string
+        }
+        Relationships: []
+      }
       faceit_live_match_stats: {
         Row: {
           bomb_site: string | null
@@ -351,9 +390,14 @@ export type Database = {
           economy_data: Json | null
           effective_start: string | null
           faceit_data: Json | null
+          faction1_id: string | null
+          faction1_name: string | null
+          faction2_id: string | null
+          faction2_name: string | null
           finished_at: string | null
           game: string
           id: string
+          is_finished: boolean | null
           kill_feed: Json | null
           last_live_update: string | null
           live_player_status: Json | null
@@ -370,6 +414,7 @@ export type Database = {
           round_results: Json | null
           round_timer_seconds: number | null
           scheduled_at: string | null
+          source_type: string | null
           started_at: string | null
           status: string
           teams: Json
@@ -390,9 +435,14 @@ export type Database = {
           economy_data?: Json | null
           effective_start?: string | null
           faceit_data?: Json | null
+          faction1_id?: string | null
+          faction1_name?: string | null
+          faction2_id?: string | null
+          faction2_name?: string | null
           finished_at?: string | null
           game?: string
           id?: string
+          is_finished?: boolean | null
           kill_feed?: Json | null
           last_live_update?: string | null
           live_player_status?: Json | null
@@ -409,6 +459,7 @@ export type Database = {
           round_results?: Json | null
           round_timer_seconds?: number | null
           scheduled_at?: string | null
+          source_type?: string | null
           started_at?: string | null
           status: string
           teams: Json
@@ -429,9 +480,14 @@ export type Database = {
           economy_data?: Json | null
           effective_start?: string | null
           faceit_data?: Json | null
+          faction1_id?: string | null
+          faction1_name?: string | null
+          faction2_id?: string | null
+          faction2_name?: string | null
           finished_at?: string | null
           game?: string
           id?: string
+          is_finished?: boolean | null
           kill_feed?: Json | null
           last_live_update?: string | null
           live_player_status?: Json | null
@@ -448,6 +504,7 @@ export type Database = {
           round_results?: Json | null
           round_timer_seconds?: number | null
           scheduled_at?: string | null
+          source_type?: string | null
           started_at?: string | null
           status?: string
           teams?: Json
@@ -1933,6 +1990,69 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          article_markdown: string | null
+          created_at: string
+          discord_payload: Json | null
+          id: string
+          images: Json | null
+          kind: string
+          league: string | null
+          published_at: string | null
+          published_time: string | null
+          slug: string
+          sources: Json | null
+          status: string
+          summary: string | null
+          tags: string[] | null
+          teams: string[] | null
+          title: string
+          tweet_text: string | null
+          unique_hash: string | null
+        }
+        Insert: {
+          article_markdown?: string | null
+          created_at?: string
+          discord_payload?: Json | null
+          id?: string
+          images?: Json | null
+          kind: string
+          league?: string | null
+          published_at?: string | null
+          published_time?: string | null
+          slug: string
+          sources?: Json | null
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          teams?: string[] | null
+          title: string
+          tweet_text?: string | null
+          unique_hash?: string | null
+        }
+        Update: {
+          article_markdown?: string | null
+          created_at?: string
+          discord_payload?: Json | null
+          id?: string
+          images?: Json | null
+          kind?: string
+          league?: string | null
+          published_at?: string | null
+          published_time?: string | null
+          slug?: string
+          sources?: Json | null
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          teams?: string[] | null
+          title?: string
+          tweet_text?: string | null
+          unique_hash?: string | null
+        }
+        Relationships: []
+      }
       premium_receipts: {
         Row: {
           amount_total: number
@@ -2921,6 +3041,10 @@ export type Database = {
           match_date: string
           source: string
         }[]
+      }
+      faceit_team_form: {
+        Args: { game_filter?: string; team_name: string }
+        Returns: Json
       }
       get_all_faceit_teams: {
         Args: { end_date?: string; start_date?: string }
