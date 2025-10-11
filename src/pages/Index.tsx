@@ -7,8 +7,9 @@ import SearchableNavbar from '@/components/SearchableNavbar';
 import SEOContentBlock from '@/components/SEOContentBlock';
 import Footer from '@/components/Footer';
 import { MatchCard, MatchInfo } from '@/components/MatchCard';
-import { FilterPills } from '@/components/FilterPills';
 import { EsportsLogoFilter } from '@/components/EsportsLogoFilter';
+import { StatusFilter } from '@/components/StatusFilter';
+import { SourceFilter } from '@/components/SourceFilter';
 import { DateMatchPicker } from '@/components/DateMatchPicker';
 import LiveDataTestPanel from '@/components/LiveDataTestPanel';
 
@@ -451,16 +452,18 @@ const getTournamentMetadata = (matches: MatchInfo[]) => {
               />
             </div>
 
-            {/* FILTER PILLS */}
-            <div className="mx-2 md:mx-4">
-              <div className="flex flex-wrap items-center gap-2 mb-6 px-4 py-1">
-                <FilterPills
-                  gameType={selectedGameType}
-                  statusFilter={selectedStatusFilter}
-                  sourceFilter={selectedSourceFilter}
-                  onGameTypeChange={setSelectedGameType}
-                  onStatusFilterChange={setSelectedStatusFilter}
-                  onSourceFilterChange={setSelectedSourceFilter}
+            {/* STATUS & SOURCE FILTERS */}
+            <div className="mx-2 md:mx-4 mb-6 space-y-4">
+              <div className="px-4">
+                <StatusFilter
+                  selectedStatus={selectedStatusFilter}
+                  onStatusChange={setSelectedStatusFilter}
+                />
+              </div>
+              <div className="px-4">
+                <SourceFilter
+                  selectedSource={selectedSourceFilter}
+                  onSourceChange={setSelectedSourceFilter}
                 />
               </div>
             </div>
