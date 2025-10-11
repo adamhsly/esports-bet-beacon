@@ -30,7 +30,7 @@ const Hero = () => {
               <ArrowRight size={20} />
             </Link>
             
-            <Link to="/tournaments" className="bg-transparent hover:bg-theme-gray-medium border border-theme-purple text-white font-medium py-3 px-6 rounded-md transition-all flex items-center justify-center gap-2">
+            <Link to="/tournaments" className="relative bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border-2 border-transparent text-white font-medium py-3 px-6 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4)] transition-all duration-[250ms] ease-in-out flex items-center justify-center gap-2 before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none hover:translate-y-[-3px] hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(150,90,255,0.2),0_4px_15px_rgba(0,0,0,0.4)]">
               Browse Tournaments
               <ArrowRight size={20} />
             </Link>

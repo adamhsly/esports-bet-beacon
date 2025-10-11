@@ -159,15 +159,72 @@
 
 /* Button styles */
 .btn-primary {
-  background-color: #A855F7;
+  position: relative;
+  background: linear-gradient(to bottom, #2B2F3A, #1B1F28);
   color: white;
   padding: 10px 20px;
-  border-radius: 5px;
+  border-radius: 0.75rem;
   text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  border: 2px solid transparent;
+  transition: all 250ms ease-in-out;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
 }
 
 .btn-primary:hover {
-  background-color: #9333EA;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 0 15px rgba(150, 90, 255, 0.2), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(-2px);
+  border-color: #965AFF;
+  box-shadow: 0 0 20px rgba(150, 90, 255, 0.4), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.cta-button {
+  position: relative;
+  background: linear-gradient(to bottom, #2B2F3A, #1B1F28);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  border: 2px solid transparent;
+  transition: all 250ms ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.cta-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.cta-button:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 0 15px rgba(150, 90, 255, 0.2), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.cta-button:active {
+  transform: translateY(-2px);
+  border-color: #965AFF;
+  box-shadow: 0 0 20px rgba(150, 90, 255, 0.4), 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 /* Card styles */
