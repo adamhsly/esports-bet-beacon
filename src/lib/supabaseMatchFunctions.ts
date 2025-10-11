@@ -168,8 +168,20 @@ export async function getMatchesForDate({
 
   const rows = (data || []) as MatchCardsDayRow[];
 
+  // Filter out amateur matches with BYE teams
+  const filteredRows = rows.filter((r) => {
+    if (r.source === 'amateur') {
+      const team1Name = (r.team1_name || '').toLowerCase().trim();
+      const team2Name = (r.team2_name || '').toLowerCase().trim();
+      if (team1Name === 'bye' || team2Name === 'bye') {
+        return false;
+      }
+    }
+    return true;
+  });
+
   // Map rows -> MatchInfo (return **raw** match_id; no prefixes)
-  const matches: MatchInfo[] = rows.map((r) => ({
+  const matches: MatchInfo[] = filteredRows.map((r) => ({
     id: r.match_id,
     source: r.source,
     startTime: r.start_time,

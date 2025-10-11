@@ -253,8 +253,20 @@ const Index = () => {
   };
 
   const applyAllFilters = (matches: MatchInfo[]) => {
-    // extra safety client-side: drop cancelled/aborted
+    // Filter out BYE teams from amateur matches
     let filtered = matches.filter((m) => {
+      if (m.source === 'amateur') {
+        const team1Name = (m.teams[0]?.name || '').toLowerCase().trim();
+        const team2Name = (m.teams[1]?.name || '').toLowerCase().trim();
+        if (team1Name === 'bye' || team2Name === 'bye') {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    // Extra safety client-side: drop cancelled/aborted
+    filtered = filtered.filter((m) => {
       const s = (m.status || '').toLowerCase();
       return !s.startsWith('cancel') && !s.startsWith('abort');
     });
