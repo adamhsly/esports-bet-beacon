@@ -134,7 +134,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
           </button>
 
           {openPill === id && (
-            <div className="relative absolute top-full left-0 mt-2 w-full min-w-max bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4)] z-50 overflow-hidden before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none">
+            <div className="absolute top-full left-0 mt-2 w-full min-w-max bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4)] z-50 overflow-hidden before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none">
               {getOptions(id).map((option) => (
                 <button
                   key={option.value}
