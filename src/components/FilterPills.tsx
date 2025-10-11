@@ -109,10 +109,14 @@ export const FilterPills: React.FC<FilterPillProps> = ({
           <button
             onClick={() => handlePillClick(id)}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200",
-              "[background:_#374151] hover:bg-theme-purple text-white border-theme-gray-medium hover:border-theme-purple",
+              "relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-[250ms] ease-in-out",
+              "bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white",
+              "shadow-[0_4px_15px_rgba(0,0,0,0.4)]",
+              "before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none",
               "min-w-[100px] justify-between text-xs",
-              openPill === id && "border-theme-purple bg-theme-purple/20"
+              openPill === id 
+                ? "border-2 border-[#965AFF] shadow-[0_0_20px_rgba(150,90,255,0.4),0_4px_15px_rgba(0,0,0,0.4)] translate-y-[-2px]"
+                : "border-2 border-transparent hover:translate-y-[-3px] hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(150,90,255,0.2),0_4px_15px_rgba(0,0,0,0.4)]"
             )}
           >
             <div className="flex items-center gap-1.5">
@@ -130,7 +134,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
           </button>
 
           {openPill === id && (
-            <div className="absolute top-full left-0 mt-2 w-full min-w-max bg-theme-gray-dark border border-theme-gray-medium rounded-xl shadow-lg z-50 overflow-hidden">
+            <div className="relative absolute top-full left-0 mt-2 w-full min-w-max bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4)] z-50 overflow-hidden before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none">
               {getOptions(id).map((option) => (
                 <button
                   key={option.value}
