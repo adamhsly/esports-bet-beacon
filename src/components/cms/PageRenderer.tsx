@@ -123,7 +123,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <article className="prose prose-lg prose-invert max-w-none">
-          <h1 className="text-4xl font-bold text-foreground mb-8">{page.title}</h1>
+          <h1 className="text-4xl font-bold text-white mb-8">{page.title}</h1>
           <div className="text-foreground">
             <ReactMarkdown
               components={{
