@@ -186,7 +186,7 @@ export const PandaScorePreMatchStats: React.FC<PandaScorePreMatchStatsProps> = (
       </div>
 
       {/* Head-to-Head History Section */}
-      <Card className="bg-theme-gray-dark border-theme-gray-medium p-6">
+      <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)] p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Target className="h-5 w-5 text-theme-purple" />
           <h4 className="text-lg font-bold text-white">Head-to-Head History</h4>
