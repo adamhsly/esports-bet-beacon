@@ -239,7 +239,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           <TabsContent value="overview" className="space-y-4">
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardContent className="p-3">
                   <div className="text-xs text-theme-gray-light mb-1">Skill Level</div>
                   <Badge className={`${getSkillLevelColor(profile.skill_level)} text-white`}>
@@ -248,14 +248,14 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
               
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardContent className="p-3">
                   <div className="text-xs text-theme-gray-light mb-1">ELO</div>
                   <div className="text-lg font-semibold text-white">{profile.faceit_elo || 'N/A'}</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardContent className="p-3">
                   <div className="text-xs text-theme-gray-light mb-1">Win Rate</div>
                   <div className="text-lg font-semibold text-white">
@@ -264,7 +264,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
               
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardContent className="p-3">
                   <div className="text-xs text-theme-gray-light mb-1">K/D Ratio</div>
                   <div className="text-lg font-semibold text-white">
@@ -276,7 +276,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
             {/* Recent Form */}
             {(recentStats?.recent_form || player.recent_form_string || player.recent_form) && (
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-white">Recent Form</CardTitle>
                 </CardHeader>
@@ -308,7 +308,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           <TabsContent value="statistics" className="space-y-4">
             {careerStats ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+                <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                   <CardHeader>
                     <CardTitle className="text-white">Career Statistics</CardTitle>
                   </CardHeader>
@@ -341,7 +341,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </Card>
 
                 {recentStats && (
-                  <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+                  <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                     <CardHeader>
                       <CardTitle className="text-white">Recent Performance (30d)</CardTitle>
                     </CardHeader>
@@ -375,7 +375,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 )}
               </div>
             ) : (
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardContent className="p-6 text-center">
                   <p className="text-theme-gray-light">Enhanced statistics not available for this player.</p>
                 </CardContent>
@@ -385,7 +385,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           <TabsContent value="matches" className="space-y-4">
             {recentMatches.length > 0 ? (
-              <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardHeader>
                   <CardTitle className="text-white">Recent Match History</CardTitle>
                 </CardHeader>

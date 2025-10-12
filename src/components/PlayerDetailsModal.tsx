@@ -266,7 +266,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-slate-700 border border-theme-gray-medium">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardHeader>
                   <CardTitle className="text-white">Career Statistics</CardTitle>
                 </CardHeader>
@@ -284,7 +284,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-700 border border-theme-gray-medium">
+              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
                 <CardHeader>
                   <CardTitle className="text-white">Recent Form</CardTitle>
                 </CardHeader>
@@ -323,7 +323,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <Card className="bg-slate-700 border border-theme-gray-medium">
+            <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
               <CardHeader>
                 <CardTitle className="text-white">Recent Match History</CardTitle>
               </CardHeader>
