@@ -55,7 +55,7 @@ const FantasyPage: React.FC = () => {
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
+                <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] p-1">
                   <TabsTrigger
                     value="join"
                     className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
