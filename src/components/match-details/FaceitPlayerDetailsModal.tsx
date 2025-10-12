@@ -230,7 +230,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-theme-gray-medium/30">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] p-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="statistics">Statistics</TabsTrigger>
             <TabsTrigger value="matches">Recent Matches</TabsTrigger>

@@ -248,7 +248,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="statistics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] p-1">
             <TabsTrigger 
               value="statistics" 
               className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
