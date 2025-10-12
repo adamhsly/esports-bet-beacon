@@ -248,16 +248,16 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="statistics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] p-1">
+          <TabsList className="flex bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-[10px] p-1.5 gap-1.5">
             <TabsTrigger 
               value="statistics" 
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+              className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white"
             >
               Statistics
             </TabsTrigger>
             <TabsTrigger 
               value="matches" 
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+              className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white"
             >
               Recent Matches
             </TabsTrigger>

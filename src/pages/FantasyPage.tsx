@@ -55,24 +55,24 @@ const FantasyPage: React.FC = () => {
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto [background:_#374151] p-1 rounded-lg shadow-md">
+                <TabsList className="flex bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-[10px] p-1.5 gap-1.5 max-w-md mx-auto">
                   <TabsTrigger
                     value="join"
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
                   >
                     <Calendar className="h-4 w-4" />
                     Join a Round
                   </TabsTrigger>
                   <TabsTrigger
                     value="in-progress"
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
                   >
                     <Clock className="h-4 w-4" />
                     In Progress
                   </TabsTrigger>
                   <TabsTrigger
                     value="finished"
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
+                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
                   >
                     <Trophy className="h-4 w-4" />
                     Finished
