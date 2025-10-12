@@ -248,7 +248,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="statistics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] p-1">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] p-1">
             <TabsTrigger 
               value="statistics" 
               className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white data-[state=active]:[background:_#8B5CF6] data-[state=active]:text-white transition-colors"
@@ -266,7 +266,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           <TabsContent value="statistics" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
+              <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(139,92,246,0.4)]">
                 <CardHeader>
                   <CardTitle className="text-white">Career Statistics</CardTitle>
                 </CardHeader>
@@ -284,7 +284,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
+              <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(139,92,246,0.4)]">
                 <CardHeader>
                   <CardTitle className="text-white">Recent Form</CardTitle>
                 </CardHeader>
@@ -323,7 +323,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
           </TabsContent>
 
           <TabsContent value="matches" className="space-y-4">
-            <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
+            <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(139,92,246,0.4)]">
               <CardHeader>
                 <CardTitle className="text-white">Recent Match History</CardTitle>
               </CardHeader>
