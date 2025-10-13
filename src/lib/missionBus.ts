@@ -156,4 +156,12 @@ export const MissionBus = {
     this.onM1_XP(amount);
     this.onSeasonXP(amount);
   },
+
+  // Weekly missions
+  onWeeklyStreak() { 
+    return this.oncePerDay('w_streak5', () => this.safeProgress('w_streak5')); 
+  },
+  onWeeklyTop50() { 
+    return this.oncePerDay('w_top50', () => this.safeProgress('w_top50')); 
+  },
 };

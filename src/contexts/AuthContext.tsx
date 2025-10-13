@@ -57,8 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         MissionBus.onM1_LoginDay(); // Track monthly login
       });
 
-      // Check for 3 consecutive days streak
-      const checkConsecutiveDays = async () => {
+      // Check for consecutive days streaks
+      const checkStreaks = async () => {
         try {
           const { data: progress } = await supabase
             .from('user_progress')
@@ -66,17 +66,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .eq('user_id', session.user.id)
             .single();
           
-          if (progress?.streak_count >= 3) {
-            import('@/lib/missionBus').then(({ MissionBus }) => 
-              MissionBus.onThreeConsecutiveDays()
-            );
+          if (progress?.streak_count) {
+            import('@/lib/missionBus').then(({ MissionBus }) => {
+              if (progress.streak_count >= 3) {
+                MissionBus.onThreeConsecutiveDays();
+              }
+              if (progress.streak_count >= 5) {
+                MissionBus.onWeeklyStreak();
+              }
+            });
           }
         } catch (e) {
           // Silent fail
         }
       };
       
-      checkConsecutiveDays();
+      checkStreaks();
     }
   }, [session?.user?.id]);
   const signUp = async (email: string, password: string, metadata: any = {}) => {

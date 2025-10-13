@@ -60,6 +60,26 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
       const currentUserPos = currentUserEntry?.position || null;
       setUserPosition(currentUserPos);
 
+      // Track leaderboard position missions
+      if (currentUserPos && user) {
+        import('@/lib/missionBus').then(async ({ MissionBus }) => {
+          if (currentUserPos <= 25) {
+            MissionBus.onTop25Placement();
+          }
+          
+          // Check if this is a weekly round for top 50 mission
+          const { data: roundData } = await supabase
+            .from('fantasy_rounds')
+            .select('type')
+            .eq('id', roundId)
+            .single();
+          
+          if (roundData?.type === 'weekly' && currentUserPos <= 50) {
+            MissionBus.onWeeklyTop50();
+          }
+        });
+      }
+
       // Apply 6-row logic
       let displayEntries: LeaderboardEntry[] = [];
       

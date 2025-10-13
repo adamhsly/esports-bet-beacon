@@ -24,6 +24,7 @@ import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
+import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 
 interface FantasyRound {
   id: string;
@@ -348,6 +349,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           ? `Lineup saved with ${(bonusCreditsAmount).toFixed(1)} bonus credits used!`
           : 'Teams submitted successfully!'
       );
+
+      // Check for star team performance mission (w_star_top)
+      if (starTeamId) {
+        await checkStarTeamPerformance(user.id, round.id, starTeamId);
+      }
 
       setShowSuccessModal(true);
     } catch (error: any) {
