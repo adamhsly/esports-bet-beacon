@@ -19,8 +19,8 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
 
   if (loading) {
     return (
-      <div className={`fixed bottom-0 left-0 right-0 z-50 h-16 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-white/[0.08] animate-pulse ${className}`} 
-           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className={`fixed bottom-0 left-0 right-0 z-50 h-16 bg-[#0d0d0f] border-t border-[rgba(255,215,0,0.35)] animate-pulse ${className}`} 
+           style={{ paddingBottom: 'env(safe-area-inset-bottom)', boxShadow: 'inset 0 2px 8px rgba(255,215,0,0.15), 0 -4px 16px rgba(255,215,0,0.2)' }}>
         <div className="px-4 py-3 flex items-center gap-3">
           <div className="h-6 w-12 bg-white/10 rounded"></div>
           <div className="flex-1 h-2 bg-white/10 rounded-full"></div>
@@ -59,14 +59,17 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
   return (
     <>
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-50 h-16 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-neon-gold/30 cursor-pointer transition-all duration-200 hover:border-neon-gold/40 animate-premium-glow shadow-[0_0_20px_rgba(255,215,0,0.3)] ${className}`}
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className={`fixed bottom-0 left-0 right-0 z-50 h-16 bg-[#0d0d0f] border-t border-[rgba(255,215,0,0.35)] cursor-pointer transition-all duration-200 hover:border-[rgba(255,215,0,0.5)] ${className}`}
+        style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          boxShadow: 'inset 0 2px 8px rgba(255,215,0,0.15), 0 -4px 16px rgba(255,215,0,0.2)'
+        }}
         onClick={openProfile}
       >
         <div className="px-4 py-3 flex items-center gap-3">
           {/* Level + Streak */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="font-gaming text-sm text-[#EAEFFC] tracking-[0.04em]">
+            <span className="font-gaming text-sm text-[#f6e7b1] tracking-[0.04em] font-semibold">
               Lv.{level}
             </span>
             {streak_count > 0 && (
@@ -82,7 +85,7 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
           {/* XP Meter */}
           <div className="flex-1 min-w-0">
             <div 
-              className="h-2 bg-[#0F1722] rounded-full shadow-inner overflow-hidden"
+              className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
               role="progressbar"
               aria-valuenow={Math.floor(currentLevelXP)}
               aria-valuemin={0}
@@ -90,24 +93,24 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
               aria-label="XP progress"
             >
               <div 
-                className="h-full bg-gradient-to-r from-neon-blue to-neon-purple rounded-full transition-all duration-200 ease-out shadow-[0_0_12px_currentColor] motion-reduce:transition-none"
+                className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
                 style={{ 
                   width: `${xpProgress}%`,
-                  filter: 'drop-shadow(0 0 6px currentColor)'
+                  boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
                 }}
               />
             </div>
           </div>
 
           {/* Mission Summary */}
-          <div className="flex items-center gap-1 text-xs text-[#EAEFFC] flex-shrink-0">
-            <span className="text-neon-purple">{dailyCompleted}/{dailyTotal}</span>
+          <div className="flex items-center gap-1 text-xs text-[#f6e7b1] font-semibold flex-shrink-0">
+            <span className="text-[#FFCC33]">{dailyCompleted}/{dailyTotal}</span>
             <span className="text-white/40">•</span>
-            <span className="text-neon-cyan">{weeklyCompleted}/{weeklyTotal}</span>
+            <span className="text-[#FF9900]">{weeklyCompleted}/{weeklyTotal}</span>
           </div>
 
           {/* Expand Icon */}
-          <ChevronUp className="h-4 w-4 text-white/60 flex-shrink-0" />
+          <ChevronUp className="h-4 w-4 text-[#f6e7b1]/60 flex-shrink-0" />
         </div>
       </div>
 
