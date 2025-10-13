@@ -13,12 +13,15 @@ import { useRPCActions } from '@/hooks/useRPCActions';
 import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
 import { ProgressHudSidebar } from '@/components/fantasy/ProgressHudSidebar';
 import { useMobile } from '@/hooks/useMobile';
+import { FantasyRulesModal } from '@/components/fantasy/FantasyRulesModal';
+import { BookOpen } from 'lucide-react';
 
 
 const FantasyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const { awardXP, progressMission } = useRPCActions();
   const isMobile = useMobile();
 
@@ -38,6 +41,13 @@ const FantasyPage: React.FC = () => {
               <p className="text-muted-foreground text-base">
                 Create teams mixing pro and amateur teams. Higher risk, higher reward with amateur teams getting 25% bonus points.
               </p>
+              <button
+                onClick={() => setRulesModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors mt-2"
+              >
+                <BookOpen className="h-4 w-4" />
+                View Rules & Scoring
+              </button>
             </div>
           )}
 
@@ -124,6 +134,9 @@ const FantasyPage: React.FC = () => {
           <ProgressHudSidebar />
         </div>
       )}
+
+      {/* Fantasy Rules Modal */}
+      <FantasyRulesModal open={rulesModalOpen} onOpenChange={setRulesModalOpen} />
     </div>
   );
 };
