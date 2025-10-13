@@ -55,6 +55,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
         const { MissionBus } = await import('@/lib/missionBus');
         MissionBus.onShareLineup(roundId);
         MissionBus.onShareThisWeek();
+        MissionBus.onM2_Share(); // Track monthly share mission
       } catch (e) {
         console.warn('Mission share tracking failed', e);
       }

@@ -52,7 +52,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Trigger daily login mission once per day when a session exists
   useEffect(() => {
     if (session?.user) {
-      import('@/lib/missionBus').then(({ MissionBus }) => MissionBus.onAppOpen());
+      import('@/lib/missionBus').then(({ MissionBus }) => {
+        MissionBus.onAppOpen();
+        MissionBus.onM1_LoginDay(); // Track monthly login
+      });
+
+      // Check for 3 consecutive days streak
+      const checkConsecutiveDays = async () => {
+        try {
+          const { data: progress } = await supabase
+            .from('user_progress')
+            .select('streak_count')
+            .eq('user_id', session.user.id)
+            .single();
+          
+          if (progress?.streak_count >= 3) {
+            import('@/lib/missionBus').then(({ MissionBus }) => 
+              MissionBus.onThreeConsecutiveDays()
+            );
+          }
+        } catch (e) {
+          // Silent fail
+        }
+      };
+      
+      checkConsecutiveDays();
     }
   }, [session?.user?.id]);
   const signUp = async (email: string, password: string, metadata: any = {}) => {

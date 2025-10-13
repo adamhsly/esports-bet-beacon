@@ -38,6 +38,14 @@ export const useRPCActions = () => {
           description: `+${result.xp ?? 0} XP earned! ${result.unlocked_rewards_count && result.unlocked_rewards_count > 0 ? `🎁 ${result.unlocked_rewards_count} rewards unlocked!` : ''}`,
           duration: 3000
         });
+
+        // Track XP for daily, monthly, and seasonal missions
+        const xpAmount = result.xp ?? 0;
+        if (xpAmount > 0) {
+          import('@/lib/missionBus').then(({ MissionBus }) => 
+            MissionBus.onXPEarned(xpAmount)
+          );
+        }
       }
 
       return result;
@@ -79,6 +87,13 @@ export const useRPCActions = () => {
           description: `${(result.awarded_xp ?? 0) > 0 ? `+${result.awarded_xp} XP earned!` : 'Mission completed!'}`,
           duration: 3000
         });
+
+        // Track daily mission completions
+        if (code.startsWith('d_')) {
+          import('@/lib/missionBus').then(({ MissionBus }) => 
+            MissionBus.onDailyMissionCompleted()
+          );
+        }
       }
 
       return result;

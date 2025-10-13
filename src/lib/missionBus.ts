@@ -144,4 +144,16 @@ export const MissionBus = {
   onSeasonXP(xp: number) { return this.safeProgress('s_earn2000', Math.max(0, Math.floor(xp || 0))); },
   onTop25Placement() { return this.safeProgress('s_top25_once'); },
   onTypePerMonth() { return this.safeProgress('s_round_types_each_month'); },
+
+  // New mission trackers
+  onDailyMissionCompleted() { return this.safeProgress('d_complete2'); },
+  onDailyXP(xp: number) { return this.safeProgress('d_earn50xp', Math.max(0, Math.floor(xp || 0))); },
+  
+  // Combo tracker: Call when XP is earned to track daily, monthly, and seasonal
+  onXPEarned(xp: number) {
+    const amount = Math.max(0, Math.floor(xp || 0));
+    this.onDailyXP(amount);
+    this.onM1_XP(amount);
+    this.onSeasonXP(amount);
+  },
 };
