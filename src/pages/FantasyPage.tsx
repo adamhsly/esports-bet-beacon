@@ -45,11 +45,10 @@ const FantasyPage: React.FC = () => {
             {selectedRound ? (
               <div className="mb-6">
                 <Button
-                  variant="outline"
                   onClick={() => setSelectedRound(null)}
-                  className="flex items-center gap-2 text-white border-white/20 hover:bg-white/10 hover:text-white"
+                  className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
                 >
-                  <Home className="h-4 w-4 text-white" />
+                  <Home className="h-4 w-4" />
                   Fantasy
                 </Button>
               </div>
