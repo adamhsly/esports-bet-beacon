@@ -131,19 +131,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           </div>
           
           {/* Stats */}
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div className="mt-3 grid grid-cols-1 gap-2 text-xs">
             <div>
               <span className="text-gray-400">Matches:</span>
               <span className="ml-1 text-white font-medium">
                 {isAmateur ? team.match_volume ?? 0 : team.matches_in_period ?? 0}
               </span>
             </div>
-            {team.recent_win_rate !== undefined && <div>
-                <span className="text-gray-400">Win Rate:</span>
-                <span className="ml-1 text-white font-medium">
-                  {Math.round((team.recent_win_rate ?? 0) * 100)}%
-                </span>
-              </div>}
           </div>
 
           {/* Star Team Double Points Label */}
