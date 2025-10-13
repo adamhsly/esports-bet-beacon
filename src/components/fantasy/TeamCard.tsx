@@ -104,8 +104,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             
             {/* Stats Button and Price */}
             <div className="flex items-center gap-2 ml-4">
-              {/* Stats Button - Only for Pro teams */}
-              {team.type === 'pro' && onStatsClick && (
+              {/* Stats Button - For both Pro and Amateur teams */}
+              {onStatsClick && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -113,7 +113,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                     e.stopPropagation();
                     onStatsClick(team);
                   }}
-                  className="h-8 px-2 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                  className={`h-8 px-2 text-xs ${isAmateur ? 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-400/10'}`}
                 >
                   <BarChart3 className="w-3 h-3 mr-1" />
                   Stats

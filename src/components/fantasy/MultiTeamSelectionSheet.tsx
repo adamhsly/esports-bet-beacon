@@ -15,6 +15,7 @@ import { TeamCard } from './TeamCard';
 import { Progress } from '@/components/ui/progress';
 import { TeamFiltersOverlay, FilterState } from './TeamFiltersOverlay';
 import { TeamStatsModal } from './TeamStatsModal';
+import { AmateurTeamStatsModal } from './AmateurTeamStatsModal';
 interface Team {
   id: string;
   name: string;
@@ -56,6 +57,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   
   // Stats modal state
   const [statsModalOpen, setStatsModalOpen] = useState(false);
+  const [amateurStatsModalOpen, setAmateurStatsModalOpen] = useState(false);
   const [selectedStatsTeam, setSelectedStatsTeam] = useState<Team | null>(null);
 
   // Pro team filters
@@ -192,7 +194,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
   const handleStatsClick = (team: Team) => {
     setSelectedStatsTeam(team);
-    setStatsModalOpen(true);
+    if (team.type === 'amateur') {
+      setAmateurStatsModalOpen(true);
+    } else {
+      setStatsModalOpen(true);
+    }
   };
 
   // Reset filters when modal opens
@@ -360,7 +366,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
                 const wouldExceedLimit = !isSelected && tempSelectedTeams.length >= 5;
                 return <div key={team.id} className={`${!canAfford || wouldExceedLimit ? 'opacity-50' : ''}`}>
-                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" />
+                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} />
                     </div>;
               })}
                 {filteredAmateurTeams.length === 0 && <div className="text-center py-8 text-gray-400">
@@ -398,6 +404,13 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         <TeamStatsModal 
           isOpen={statsModalOpen} 
           onClose={() => setStatsModalOpen(false)} 
+          team={selectedStatsTeam} 
+        />
+
+        {/* Amateur Team Stats Modal */}
+        <AmateurTeamStatsModal 
+          isOpen={amateurStatsModalOpen} 
+          onClose={() => setAmateurStatsModalOpen(false)} 
           team={selectedStatsTeam} 
         />
       </SheetContent>
