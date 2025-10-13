@@ -63,9 +63,17 @@ const SearchableNavbar: React.FC = () => {
             )}
           </div>
           
-          {/* Mobile - only show UserMenu for authenticated users */}
+          {/* Mobile Actions */}
           <div className="flex md:hidden items-center">
-            {!loading && user && <UserMenu />}
+            {!loading && (
+              user ? (
+                <UserMenu />
+              ) : (
+                <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
+                  <Link to="/auth">Login</Link>
+                </Button>
+              )
+            )}
           </div>
         </div>
         
