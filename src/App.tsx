@@ -23,6 +23,7 @@ import CardsPage from '@/pages/CardsPage';
 import AdvancedCardsPage from '@/pages/AdvancedCardsPage';
 import FantasyPage from '@/pages/FantasyPage';
 import AuthPage from '@/pages/AuthPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
 import PremiumSuccessPage from '@/pages/PremiumSuccessPage';
 import PremiumCancelPage from '@/pages/PremiumCancelPage';
@@ -111,6 +112,7 @@ function App() {
           <Route path="/fantasy" element={<FantasyPage />} />
           <Route path="/lineup/:roundId/:userId" element={<LineupSharePage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/profile" element={<Web3ProfilePage />} />
           <Route path="/web3-profile" element={<Web3ProfilePage />} />
           <Route path="/premium/success" element={<PremiumSuccessPage />} />
