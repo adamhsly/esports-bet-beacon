@@ -314,7 +314,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           ...t,
           price: typeof row.price === 'number' ? row.price : t.price,
           recent_win_rate: typeof row.recent_win_rate === 'number' ? row.recent_win_rate : t.recent_win_rate,
-          abandon_rate: typeof row.abandon_rate === 'number' ? row.abandon_rate : t.abandon_rate
+          abandon_rate: typeof row.abandon_rate === 'number' ? row.abandon_rate : t.abandon_rate,
+          match_volume: typeof row.match_volume === 'number' ? row.match_volume : t.match_volume
         } : t));
       }
     }).subscribe();
