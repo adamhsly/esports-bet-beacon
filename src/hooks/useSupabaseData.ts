@@ -215,6 +215,31 @@ export const useMissions = () => {
     }
   }, [user, fetchMissions]);
 
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('user_missions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_missions',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchMissions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchMissions]);
+
   return { 
     missions, 
     loading, 
