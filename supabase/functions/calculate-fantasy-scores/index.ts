@@ -77,57 +77,87 @@ serve(async (req) => {
         const teamPicks = Array.isArray(pick.team_picks) ? pick.team_picks : [];
         console.log(`🎮 Processing picks for user ${pick.user_id} with ${teamPicks.length} teams`);
 
-        for (const rawTeam of teamPicks) {
-          const teamId = String(rawTeam?.id ?? rawTeam?.team_id ?? '').trim();
-          const teamName = String(rawTeam?.name ?? rawTeam?.team_name ?? '').trim();
-          let teamType = String(rawTeam?.type ?? rawTeam?.team_type ?? 'pro').toLowerCase();
-          teamType = teamType === 'amateur' ? 'amateur' : 'pro';
+        // Prepare team data for batch calculation
+        const teamData = teamPicks
+          .map(rawTeam => ({
+            team_id: String(rawTeam?.id ?? rawTeam?.team_id ?? '').trim(),
+            team_name: String(rawTeam?.name ?? rawTeam?.team_name ?? '').trim(),
+            team_type: String(rawTeam?.type ?? rawTeam?.team_type ?? 'pro').toLowerCase() === 'amateur' ? 'amateur' : 'pro'
+          }))
+          .filter(team => team.team_id && team.team_name);
 
-          if (!teamId || !teamName) {
-            console.warn('⏭️ Skipping invalid team pick (missing id/name)', { roundId: round.id, userId: pick.user_id, rawTeam });
-            continue;
-          }
+        if (teamData.length === 0) {
+          console.warn('⏭️ No valid teams for user', pick.user_id);
+          continue;
+        }
 
-          console.log(`⚡ Calculating scores for team ${teamName} (${teamId})`);
+        // Call optimized RPC function with all teams at once
+        const { data: teamScores, error: scoresError } = await supabase
+          .rpc('calculate_fantasy_scores_batch', {
+            team_data: teamData,
+            start_date: round.start_date,
+            end_date: round.end_date
+          });
 
-          // Calculate scores for this team
-          const teamScore = await calculateTeamScore(supabase, teamId, teamName, teamType, round.start_date, round.end_date);
+        if (scoresError) {
+          console.error(`❌ Error calculating scores for user ${pick.user_id}:`, scoresError);
+          continue;
+        }
 
-          // Upsert the score record
+        console.log(`✅ Calculated scores for ${teamScores?.length || 0} teams`);
+
+        // Upsert all scores for this user's picks
+        const scoresToUpsert = (teamScores || []).map((score: any) => {
+          const teamType = teamData.find(t => t.team_id === score.team_id)?.team_type || 'pro';
+          const totalScore = calculateTotalScore({
+            team_id: score.team_id,
+            team_name: score.team_name,
+            team_type: teamType as 'pro' | 'amateur',
+            match_wins: score.match_wins,
+            map_wins: score.map_wins,
+            tournaments_won: 0,
+            clean_sweeps: score.clean_sweeps,
+            matches_played: score.matches_played
+          });
+
+          return {
+            round_id: round.id,
+            user_id: pick.user_id,
+            team_id: score.team_id,
+            team_name: score.team_name,
+            team_type: teamType,
+            current_score: totalScore,
+            match_wins: score.match_wins,
+            map_wins: score.map_wins,
+            tournaments_won: 0,
+            clean_sweeps: score.clean_sweeps,
+            matches_played: score.matches_played,
+            last_updated: new Date().toISOString()
+          };
+        });
+
+        if (scoresToUpsert.length > 0) {
           const { error: upsertError } = await supabase
             .from('fantasy_round_scores')
-            .upsert({
-              round_id: round.id,
-              user_id: pick.user_id,
-              team_id: teamId,
-              team_name: teamName,
-              team_type: teamType,
-              current_score: calculateTotalScore(teamScore),
-              match_wins: teamScore.match_wins,
-              map_wins: teamScore.map_wins,
-              tournaments_won: teamScore.tournaments_won,
-              clean_sweeps: teamScore.clean_sweeps,
-              matches_played: teamScore.matches_played,
-              last_updated: new Date().toISOString()
-            }, {
+            .upsert(scoresToUpsert, {
               onConflict: 'round_id,user_id,team_id'
             });
 
           if (upsertError) {
-            console.error(`❌ Error upserting score for team ${teamId}:`, upsertError);
+            console.error(`❌ Error upserting scores for user ${pick.user_id}:`, upsertError);
           } else {
-            console.log(`✅ Updated scores for team ${teamName}: ${teamScore.match_wins} wins, ${teamScore.matches_played} matches`);
+            console.log(`✅ Updated ${scoresToUpsert.length} team scores for user ${pick.user_id}`);
           }
         }
 
         // Update total score for the pick
-        const { data: userScores, error: scoresError } = await supabase
+        const { data: userScores, error: totalScoreError } = await supabase
           .from('fantasy_round_scores')
           .select('current_score')
           .eq('round_id', round.id)
           .eq('user_id', pick.user_id);
 
-        if (!scoresError && userScores) {
+        if (!totalScoreError && userScores) {
           const totalScore = userScores.reduce((sum, score) => sum + (score.current_score || 0), 0);
           
           await supabase
@@ -167,172 +197,7 @@ serve(async (req) => {
   }
 });
 
-async function calculateTeamScore(
-  supabase: any,
-  teamId: string,
-  teamName: string,
-  teamType: string,
-  startDate: string,
-  endDate: string
-): Promise<TeamScore> {
-  console.log(`🔍 Calculating scores for team ${teamName} between ${startDate} and ${endDate}`);
-
-  let totalMatchWins = 0;
-  let totalMapWins = 0;
-  let totalTournamentWins = 0;
-  let totalCleanSweeps = 0;
-  let totalMatchesPlayed = 0;
-
-  // Query PandaScore matches
-  const { data: pandaMatches, error: pandaError } = await supabase
-    .from('pandascore_matches')
-    .select('match_id, teams, winner_id, raw_data, number_of_games, status, start_time')
-    .gte('start_time', startDate)
-    .lte('start_time', endDate)
-    .eq('status', 'finished');
-
-  if (!pandaError && pandaMatches) {
-    console.log(`🐼 Found ${pandaMatches.length} finished PandaScore matches in timeframe`);
-    
-    for (const match of pandaMatches) {
-      const teams = Array.isArray(match.teams) ? match.teams : [];
-      const teamInMatch = teams.find((t: any) => 
-        String(t.opponent?.id) === teamId || String(t.opponent?.opponent?.id) === teamId
-      );
-
-      if (teamInMatch) {
-        totalMatchesPlayed++;
-        console.log(`🎯 Team ${teamName} played in match ${match.match_id}`);
-
-        // Check if team won the match
-        if (String(match.winner_id) === teamId) {
-          totalMatchWins++;
-          console.log(`🏆 Team ${teamName} won match ${match.match_id}`);
-
-          // Check for clean sweep (best of 3 won 2-0, best of 5 won 3-0)
-          const games = match.raw_data?.games || [];
-          if (games.length > 0) {
-            const teamWins = games.filter((game: any) => String(game.winner?.id) === teamId).length;
-            totalMapWins += teamWins;
-            
-            if ((match.number_of_games === 3 && teamWins === 2 && games.length === 2) ||
-                (match.number_of_games === 5 && teamWins === 3 && games.length === 3)) {
-              totalCleanSweeps++;
-              console.log(`🧹 Team ${teamName} achieved clean sweep in match ${match.match_id}`);
-            }
-          }
-        } else {
-          // Count map wins even in losing matches
-          const games = match.raw_data?.games || [];
-          const teamWins = games.filter((game: any) => String(game.winner?.id) === teamId).length;
-          totalMapWins += teamWins;
-        }
-      }
-    }
-  }
-
-  // Query Faceit matches
-  const { data: faceitMatches, error: faceitError } = await supabase
-    .from('faceit_matches')
-    .select('match_id, teams, status, started_at, faceit_data')
-    .gte('started_at', startDate)
-    .lte('started_at', endDate)
-    .in('status', ['finished', 'FINISHED']);
-
-  if (!faceitError && faceitMatches) {
-    console.log(`🎮 Found ${faceitMatches.length} finished Faceit matches in timeframe`);
-    
-    for (const match of faceitMatches) {
-      const teams = match.teams || {};
-      
-      // FACEIT uses faction1/faction2 structure, normalize team names for matching
-      const faction1Name = teams.faction1?.name ? String(teams.faction1.name).toLowerCase().trim() : '';
-      const faction2Name = teams.faction2?.name ? String(teams.faction2.name).toLowerCase().trim() : '';
-      const normalizedTeamId = teamId.toLowerCase().trim();
-      const normalizedTeamName = teamName.toLowerCase().trim();
-      
-      console.log(`🔍 Checking FACEIT match ${match.match_id}: ${faction1Name} vs ${faction2Name} against ${normalizedTeamName} (${normalizedTeamId})`);
-      
-      // Helper function to check if team names match (exact or partial)
-      const isTeamMatch = (factionName: string, teamId: string, teamName: string) => {
-        if (!factionName) return false;
-        
-        // Exact matches
-        if (factionName === teamId || factionName === teamName) return true;
-        
-        // Partial matches (team name contains faction name or vice versa)
-        if (teamName.includes(factionName) || factionName.includes(teamName)) return true;
-        if (teamId.includes(factionName) || factionName.includes(teamId)) return true;
-        
-        return false;
-      };
-      
-      let teamFaction = null;
-      if (isTeamMatch(faction1Name, normalizedTeamId, normalizedTeamName)) {
-        teamFaction = 'faction1';
-      } else if (isTeamMatch(faction2Name, normalizedTeamId, normalizedTeamName)) {
-        teamFaction = 'faction2';
-      }
-
-      if (teamFaction) {
-        totalMatchesPlayed++;
-        console.log(`🎯 Team ${teamName} played as ${teamFaction} in Faceit match ${match.match_id}`);
-
-        // Check results from faceit_data - handle object structure
-        const faceitData = match.faceit_data;
-        if (faceitData && faceitData.results) {
-          const winner = faceitData.results.winner;
-          console.log(`🏁 Match winner: ${winner}, team faction: ${teamFaction}`);
-          
-          if (winner === teamFaction) {
-            totalMatchWins++;
-            console.log(`🏆 Team ${teamName} won Faceit match ${match.match_id}`);
-            
-            // Calculate map wins from score
-            const score = faceitData.results.score;
-            if (score && score[teamFaction]) {
-              const teamMapWins = parseInt(score[teamFaction]) || 0;
-              totalMapWins += teamMapWins;
-              console.log(`🗺️ Team ${teamName} won ${teamMapWins} maps in match ${match.match_id}`);
-              
-              // Check for clean sweep (won all maps without opponent winning any)
-              const opponentFaction = teamFaction === 'faction1' ? 'faction2' : 'faction1';
-              const opponentMapWins = parseInt(score[opponentFaction]) || 0;
-              if (opponentMapWins === 0 && teamMapWins > 0) {
-                totalCleanSweeps++;
-                console.log(`🧹 Team ${teamName} achieved clean sweep in match ${match.match_id}`);
-              }
-            }
-          } else {
-            // Count map wins even in losing matches
-            const score = faceitData.results.score;
-            if (score && score[teamFaction]) {
-              const teamMapWins = parseInt(score[teamFaction]) || 0;
-              totalMapWins += teamMapWins;
-              console.log(`🗺️ Team ${teamName} won ${teamMapWins} maps in losing match ${match.match_id}`);
-            }
-          }
-        } else {
-          console.warn(`⚠️ No faceit_data.results found for match ${match.match_id}`);
-        }
-      }
-    }
-  }
-
-  const finalScore: TeamScore = {
-    team_id: teamId,
-    team_name: teamName,
-    team_type: teamType as 'pro' | 'amateur',
-    match_wins: totalMatchWins,
-    map_wins: totalMapWins,
-    tournaments_won: totalTournamentWins, // TODO: Implement tournament win detection
-    clean_sweeps: totalCleanSweeps,
-    matches_played: totalMatchesPlayed
-  };
-
-  console.log(`📊 Final scores for ${teamName}:`, finalScore);
-  return finalScore;
-}
+// Removed calculateTeamScore - now handled by database RPC function
 
 function calculateTotalScore(teamScore: TeamScore): number {
   // Scoring system: 
