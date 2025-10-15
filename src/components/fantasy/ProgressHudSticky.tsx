@@ -31,12 +31,9 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
     );
   }
 
-  // Calculate XP for next level
-  const baseXPForLevel = 1000 + level * 100;
-  const currentLevelStart = level === 1 ? 0 : (level - 1) * 1000 + ((level - 1) * (level - 2) / 2) * 100;
-  const currentLevelXP = xp - currentLevelStart;
-  const nextXp = baseXPForLevel;
-  const xpProgress = Math.min((currentLevelXP / nextXp) * 100, 100);
+  // Calculate XP for next level (matches share card formula)
+  const nextXp = Math.pow(level + 1, 2) * 100;
+  const xpProgress = Math.min((xp / nextXp) * 100, 100);
 
   // Mission counts
   const dailyCompleted = dailyMissions.filter(m => m.completed).length;
@@ -87,7 +84,7 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
             <div 
               className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
               role="progressbar"
-              aria-valuenow={Math.floor(currentLevelXP)}
+              aria-valuenow={Math.floor(xp)}
               aria-valuemin={0}
               aria-valuemax={nextXp}
               aria-label="XP progress"

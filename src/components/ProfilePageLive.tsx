@@ -49,11 +49,10 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
 
   const loading = progressLoading || missionsLoading || rewardsLoading || entitlementLoading;
 
-  // Calculate XP progress
-  const baseXPForLevel = 1000 + (level - 1) * 100;
-  const currentLevelXP = xp - ((level - 1) * 1000 + ((level - 1) * (level - 2) / 2) * 100);
-  const xpProgress = Math.min((currentLevelXP / baseXPForLevel) * 100, 100);
-  const xpToNext = Math.max(baseXPForLevel - currentLevelXP, 0);
+  // Calculate XP progress (matches share card formula)
+  const nextXp = Math.pow(level + 1, 2) * 100;
+  const xpProgress = Math.min((xp / nextXp) * 100, 100);
+  const xpToNext = Math.max(nextXp - xp, 0);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -125,7 +124,7 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm text-white font-gaming">
                     <span>Level {level}</span>
-                    <span>{currentLevelXP} / {baseXPForLevel} XP</span>
+                    <span>{xp} / {nextXp} XP</span>
                   </div>
                   <Progress 
                     value={xpProgress} 
@@ -207,8 +206,8 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                       <p className="text-sm text-muted-foreground">Total XP</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-gaming text-neon-green">{currentLevelXP}</p>
-                      <p className="text-sm text-muted-foreground">Level XP</p>
+                      <p className="text-2xl font-gaming text-neon-green">{xp}</p>
+                      <p className="text-sm text-muted-foreground">Current XP</p>
                     </div>
                     <div>
                       <p className="text-2xl font-gaming text-neon-orange">{xpToNext}</p>
