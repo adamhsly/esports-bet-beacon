@@ -393,3 +393,76 @@ export const useEntitlement = () => {
     hasPremium: premiumActive
   };
 };
+
+// Level rewards hook - shows what users actually get when leveling up
+export const useLevelRewards = () => {
+  const { user } = useAuthUser();
+  const [rewards, setRewards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLevelRewards = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('level_rewards')
+        .select(`
+          *,
+          user_level_rewards!left(granted_at)
+        `)
+        .order('level, track');
+
+      if (error) throw error;
+
+      const formattedRewards = data.map((reward: any) => ({
+        ...reward,
+        unlocked: reward.user_level_rewards?.length > 0
+      }));
+
+      setRewards(formattedRewards);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchLevelRewards();
+  }, [fetchLevelRewards]);
+
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('user_level_rewards_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_level_rewards',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchLevelRewards();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchLevelRewards]);
+
+  return { 
+    rewards, 
+    loading, 
+    error,
+    refetch: fetchLevelRewards,
+    freeRewards: rewards.filter(r => r.track === 'free'),
+    premiumRewards: rewards.filter(r => r.track === 'premium')
+  };
+};

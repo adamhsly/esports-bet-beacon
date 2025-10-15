@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useProgress, useMissions, useRewards, useEntitlement } from '@/hooks/useSupabaseData';
+import { useProgress, useMissions, useRewards, useLevelRewards, useEntitlement } from '@/hooks/useSupabaseData';
 import { 
   User, 
   Trophy, 
@@ -30,7 +30,7 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   const { missions, loading: missionsLoading } = useMissions();
-  const { freeRewards, premiumRewards, loading: rewardsLoading } = useRewards();
+  const { freeRewards, premiumRewards, loading: rewardsLoading } = useLevelRewards();
   const { premiumActive, loading: entitlementLoading } = useEntitlement();
 
   if (!isAuthenticated) {
@@ -377,10 +377,12 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                               "font-gaming mb-1",
                               isUnlocked ? "text-white" : "text-muted-foreground"
                             )}>
-                              {freeReward?.reward_value || `Reward Tier ${rewardLevel / 5}`}
+                              {freeReward?.reward_type === 'credits' 
+                                ? `${freeReward.amount} Credits`
+                                : freeReward?.item_code || `Reward Tier ${rewardLevel / 5}`}
                             </h4>
                             <p className="text-xs text-muted-foreground">
-                              {freeReward?.reward_type || 'Free Track Reward'}
+                              {freeReward?.reward_type === 'credits' ? 'Bonus Credits' : 'Item Reward'}
                             </p>
                             {freeReward?.unlocked && (
                               <CheckCircle className="w-4 h-4 text-neon-green mt-2" />
@@ -417,10 +419,12 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                               "font-gaming mb-1",
                               isUnlocked && premiumActive ? "text-neon-gold" : "text-muted-foreground"
                             )}>
-                              {premiumReward?.reward_value || `Premium Tier ${rewardLevel / 5}`}
+                              {premiumReward?.reward_type === 'credits' 
+                                ? `${premiumReward.amount} Credits`
+                                : premiumReward?.item_code || `Premium Tier ${rewardLevel / 5}`}
                             </h4>
                             <p className="text-xs text-muted-foreground">
-                              {premiumReward?.reward_type || 'Premium Track Reward'}
+                              {premiumReward?.reward_type === 'credits' ? 'Bonus Credits' : 'Item Reward'}
                             </p>
                             {premiumReward?.unlocked && premiumActive && (
                               <CheckCircle className="w-4 h-4 text-neon-gold mt-2" />
