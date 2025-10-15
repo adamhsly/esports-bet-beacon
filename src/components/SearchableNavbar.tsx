@@ -26,11 +26,8 @@ const SearchableNavbar: React.FC = () => {
             </Link>
             
             <div className="flex space-x-2 md:space-x-4 text-sm md:text-base">
-              <Link to="/tournaments" className="text-gray-300 hover:text-white">
-                Tournaments
-              </Link>
-              <Link to="/teams" className="text-gray-300 hover:text-white">
-                Teams
+              <Link to="/" className="text-gray-300 hover:text-white">
+                Matches
               </Link>
               <Link to="/fantasy" className="text-gray-300 hover:text-white">
                 Fantasy

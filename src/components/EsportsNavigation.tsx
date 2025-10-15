@@ -26,34 +26,16 @@ const EsportsNavigation: React.FC<EsportsNavigationProps> = ({
             
             <div className="hidden md:flex items-center space-x-6">
               <Link 
-                to="/teams" 
+                to="/" 
                 className="text-gray-300 hover:text-white transition-colors"
               >
-                Teams
-              </Link>
-              <Link 
-                to="/tournaments" 
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Tournaments
-              </Link>
-              <Link 
-                to="/cards" 
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Cards
+                Matches
               </Link>
               <Link 
                 to="/fantasy" 
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 Fantasy
-              </Link>
-              <Link 
-                to="/news" 
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                News
               </Link>
             </div>
           </div>
