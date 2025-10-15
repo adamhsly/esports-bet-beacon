@@ -129,7 +129,11 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                   </div>
                   <Progress 
                     value={xpProgress} 
-                    className="h-3 bg-engagement-bg-start [&>div]:bg-gradient-to-r [&>div]:from-neon-blue [&>div]:to-neon-purple [&>div]:animate-neon-pulse [&>div]:shadow-lg [&>div]:shadow-neon-blue/50"
+                    className="h-3 bg-black/40 shadow-inner"
+                    style={{
+                      ['--progress-background' as any]: 'linear-gradient(to right, #FFCC33, #FF9900)',
+                      ['--progress-shadow' as any]: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
+                    } as React.CSSProperties}
                   />
                   <p className="text-xs text-neon-blue/80 font-gaming">{xpToNext} XP to next level</p>
                 </div>
@@ -192,7 +196,10 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                   <div className="text-6xl font-gaming text-neon-purple animate-neon-pulse">{level}</div>
                   <Progress 
                     value={xpProgress} 
-                    className="h-6 bg-engagement-bg-start [&>div]:bg-gradient-to-r [&>div]:from-neon-blue [&>div]:to-neon-purple [&>div]:animate-neon-pulse [&>div]:shadow-lg [&>div]:shadow-neon-blue/50"
+                    className="h-6 bg-black/40 shadow-inner [&>div]:bg-gradient-to-r [&>div]:from-[#FFCC33] [&>div]:to-[#FF9900] [&>div]:rounded-full"
+                    style={{
+                      ['--tw-shadow' as any]: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
+                    } as React.CSSProperties}
                   />
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
