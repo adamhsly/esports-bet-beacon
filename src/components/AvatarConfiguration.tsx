@@ -165,9 +165,9 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-surface border border-border text-foreground max-w-2xl mx-auto rounded-xl max-h-[85vh] overflow-hidden">
+      <DialogContent className="bg-surface/100 border border-border text-white max-w-2xl mx-auto rounded-xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-xl font-gaming text-foreground">
+          <DialogTitle className="text-xl font-gaming text-white">
             Configure Avatar
           </DialogTitle>
         </DialogHeader>
@@ -199,7 +199,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User className="w-8 h-8 text-foreground" />
+                  <User className="w-8 h-8 text-white" />
                 )}
               </div>
               
@@ -235,10 +235,10 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
             {/* Upload Tab */}
             <TabsContent value="upload" className="space-y-4 mt-6">
               <div className="text-center space-y-2">
-                <h3 className="text-lg font-medium text-foreground">
+                <h3 className="text-lg font-medium text-white">
                   Upload Your Profile Picture
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/80">
                   This is your personal avatar image that represents you. Upload an image file (JPG, PNG, GIF) up to 5MB.
                 </p>
               </div>
@@ -271,7 +271,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                 className="hidden"
               />
 
-              <div className="text-xs text-muted-foreground text-center space-y-1">
+              <div className="text-xs text-white/80 text-center space-y-1">
                 <p>• Recommended size: 256x256 pixels</p>
                 <p>• Supported formats: JPG, PNG, GIF</p>
                 <p>• Maximum file size: 5MB</p>
@@ -282,21 +282,21 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
             <TabsContent value="frame" className="space-y-4 mt-6">
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-medium text-foreground">
+                  <h3 className="text-lg font-medium text-white">
                     Earned Avatar Frames
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-white/80">
                     These decorative frames overlay on your avatar. Unlock more by leveling up!
                   </p>
                 </div>
 
                 {/* Debug info - temporarily show what's unlocked */}
-                <div className="text-xs text-muted-foreground text-center p-2 bg-muted/50 rounded">
+                <div className="text-xs text-white/80 text-center p-2 bg-muted/50 rounded">
                   Level {currentLevel} • {frameRewards.filter(f => f.state === 'unlocked').length} frames unlocked
                 </div>
                 
                 {frameRewards.length === 0 ? (
-                  <div className="text-center text-muted-foreground">
+                  <div className="text-center text-white/80">
                     <p>No frame rewards available.</p>
                   </div>
                 ) : (
@@ -304,7 +304,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {/* Unlocked Frames */}
                     {availableFrames.length > 1 && (
                       <div>
-                        <h4 className="text-sm font-medium text-foreground mb-3">Available to Use:</h4>
+                        <h4 className="text-sm font-medium text-white mb-3">Available to Use:</h4>
                         <ScrollArea className="max-h-64">
                           <div className="grid grid-cols-3 gap-3 pr-3">
                             {availableFrames.map((frame) => (
@@ -332,7 +332,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
-                                    <User className="w-4 h-4 text-foreground" />
+                                    <User className="w-4 h-4 text-white" />
                                   )}
                                 </div>
                                 
@@ -348,7 +348,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Frame Info */}
                               <div className="text-center">
-                                <p className="text-xs font-medium text-foreground mb-1">
+                                <p className="text-xs font-medium text-white mb-1">
                                   {frame.value}
                                 </p>
                                 {frame.level > 0 && (
@@ -377,7 +377,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {/* Locked Frames Preview */}
                     {frameRewards.filter(f => f.state === 'locked').length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Coming Soon:</h4>
+                        <h4 className="text-sm font-medium text-white/80 mb-3">Coming Soon:</h4>
                         <ScrollArea className="max-h-48">
                           <div className="grid grid-cols-3 gap-3 pr-3">
                             {frameRewards.filter(f => f.state === 'locked').slice(0, 6).map((frame) => (
@@ -393,7 +393,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                     "bg-gradient-to-br from-muted to-muted-foreground/20"
                                   )}
                                 >
-                                  <User className="w-4 h-4 text-muted-foreground" />
+                                  <User className="w-4 h-4 text-white/60" />
                                 </div>
                                 
                                 {/* Frame Overlay - greyed out */}
@@ -408,10 +408,10 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Frame Info */}
                               <div className="text-center">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                <p className="text-xs font-medium text-white/60 mb-1">
                                   {frame.value}
                                 </p>
-                                <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground">
+                                <Badge variant="outline" className="text-xs border-white/30 text-white/60">
                                   Level {frame.level}
                                 </Badge>
                                 {frame.tier === 'premium' && (
@@ -428,7 +428,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     )}
 
                     {availableFrames.length === 1 && frameRewards.filter(f => f.state === 'locked').length === 0 && (
-                      <div className="text-center text-muted-foreground">
+                      <div className="text-center text-white/80">
                         <p>No avatar frames available yet.</p>
                         <p className="text-sm mt-1">Keep leveling up to unlock decorative frames!</p>
                       </div>
@@ -442,21 +442,21 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
             <TabsContent value="border" className="space-y-4 mt-6">
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-medium text-foreground">
+                  <h3 className="text-lg font-medium text-white">
                     Avatar Borders
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-white/80">
                     These decorative borders appear around your avatar. Unlock more by leveling up!
                   </p>
                 </div>
 
                 {/* Debug info - temporarily show what's unlocked */}
-                <div className="text-xs text-muted-foreground text-center p-2 bg-muted/50 rounded">
+                <div className="text-xs text-white/80 text-center p-2 bg-muted/50 rounded">
                   Level {currentLevel} • {borderRewards.filter(b => b.state === 'unlocked').length} borders unlocked
                 </div>
                 
                 {borderRewards.length === 0 ? (
-                  <div className="text-center text-muted-foreground">
+                  <div className="text-center text-white/80">
                     <p>No border rewards available.</p>
                   </div>
                 ) : (
@@ -464,7 +464,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {/* Unlocked Borders */}
                     {availableBorders.length > 1 && (
                       <div>
-                        <h4 className="text-sm font-medium text-foreground mb-3">Available to Use:</h4>
+                        <h4 className="text-sm font-medium text-white mb-3">Available to Use:</h4>
                         <ScrollArea className="max-h-64">
                           <div className="grid grid-cols-3 gap-3 pr-3">
                             {availableBorders.map((border) => (
@@ -500,14 +500,14 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
-                                    <User className="w-4 h-4 text-foreground" />
+                                    <User className="w-4 h-4 text-white" />
                                   )}
                                 </div>
                               </div>
 
                               {/* Border Info */}
                               <div className="text-center">
-                                <p className="text-xs font-medium text-foreground mb-1">
+                                <p className="text-xs font-medium text-white mb-1">
                                   {border.value}
                                 </p>
                                 {border.level > 0 && (
@@ -536,7 +536,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     {/* Locked Borders Preview */}
                     {borderRewards.filter(b => b.state === 'locked').length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Coming Soon:</h4>
+                        <h4 className="text-sm font-medium text-white/80 mb-3">Coming Soon:</h4>
                         <ScrollArea className="max-h-48">
                           <div className="grid grid-cols-3 gap-3 pr-3">
                             {borderRewards.filter(b => b.state === 'locked').slice(0, 6).map((border) => (
@@ -560,16 +560,16 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                   )}
                                   style={{ zIndex: 1 }}
                                 >
-                                  <User className="w-4 h-4 text-muted-foreground" />
+                                  <User className="w-4 h-4 text-white/60" />
                                 </div>
                               </div>
 
                               {/* Border Info */}
                               <div className="text-center">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                <p className="text-xs font-medium text-white/60 mb-1">
                                   {border.value}
                                 </p>
-                                <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground">
+                                <Badge variant="outline" className="text-xs border-white/30 text-white/60">
                                   Level {border.level}
                                 </Badge>
                                 {border.tier === 'premium' && (
@@ -586,7 +586,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     )}
 
                     {availableBorders.length === 1 && borderRewards.filter(b => b.state === 'locked').length === 0 && (
-                      <div className="text-center text-muted-foreground">
+                      <div className="text-center text-white/80">
                         <p>No avatar borders available yet.</p>
                         <p className="text-sm mt-1">Keep leveling up to unlock decorative borders!</p>
                       </div>
@@ -602,7 +602,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
             <Button
               onClick={handleClose}
               variant="outline"
-              className="border-border text-foreground hover:bg-muted"
+              className="border-border text-white hover:bg-muted"
             >
               Done
             </Button>
