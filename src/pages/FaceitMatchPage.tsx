@@ -249,22 +249,6 @@ const FaceitMatchPage = () => {
             </div>
           </Card>}
 
-        {/* Live Room Access for live matches */}
-        {headerType === 'live' && safeTeams.length > 0 && <Card className="bg-card border border-border">
-            <div className="p-4">
-              <h3 className="text-lg font-bold text-white mb-4">Match Room Access</h3>
-              <FaceitLiveRoomAccess matchId={matchData?.id || matchData?.match_id} teams={safeTeams} status="live" />
-            </div>
-          </Card>}
-
-        {/* Player Performance for finished matches */}
-        {headerType === 'finished' && safeTeams.length > 0 && <Card className="bg-card border border-border">
-            <div className="p-4">
-              <h3 className="text-lg font-bold text-white mb-4">Player Performance</h3>
-              <FaceitPlayerPerformanceTable teams={safeTeams} matchResult={matchData?.faceitData?.results} />
-            </div>
-          </Card>}
-
       </div>;
   };
   return <div className="min-h-screen flex flex-col bg-theme-gray-dark theme-alt-card">
