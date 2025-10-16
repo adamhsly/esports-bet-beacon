@@ -48,7 +48,7 @@ const mapGameTypeToQuery = (v: string): string => {
   const key = (v || "all").toLowerCase();
   const map: Record<string, string> = {
     all: "all",
-    "counter-strike": "counter", // matches "Counter-Strike"
+    "counter-strike": "cs", // matches both "Counter-Strike", "csgo", and "cs2"
     lol: "lol", // matches "LoL"
     valorant: "valorant",
     dota2: "dota", // matches "Dota 2"
