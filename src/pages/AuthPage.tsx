@@ -521,7 +521,7 @@ const AuthPage: React.FC = () => {
                       onChange={(e) => setSignUpDateOfBirth(e.target.value)}
                       required
                       max={new Date().toISOString().split('T')[0]}
-                      className="bg-theme-gray-dark border-theme-gray-light text-white"
+                      className="w-full bg-theme-gray-dark border-theme-gray-light text-white"
                     />
                   </div>
                   
