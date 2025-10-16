@@ -240,7 +240,14 @@ const FaceitMatchPage = () => {
         {headerType === 'live' && <FaceitLiveScorecard match={matchData} />}
         
         {/* Pre-Match Stats for all match types */}
-        {safeTeams.length > 0 && <FaceitPreMatchStats teams={safeTeams} faceitData={matchData.faceitData} />}
+        {safeTeams.length > 0 && (
+          <FaceitPreMatchStats 
+            teams={safeTeams} 
+            faceitData={matchData.faceitData}
+            matchId={matchData.match_id || matchData.id}
+            game={matchData.game || 'cs2'}
+          />
+        )}
         
         {/* Community Voting for upcoming matches */}
         {headerType === 'upcoming' && safeTeams.length >= 2 && <Card className="bg-card border border-border">

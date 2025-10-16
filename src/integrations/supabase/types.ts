@@ -3078,6 +3078,16 @@ export type Database = {
           source: string
         }[]
       }
+      get_faceit_head_to_head: {
+        Args: {
+          p_game?: string
+          p_match_id?: string
+          p_months?: number
+          p_team1_name: string
+          p_team2_name: string
+        }
+        Returns: Json
+      }
       get_faceit_matches_around_date: {
         Args: { target_date: string }
         Returns: {

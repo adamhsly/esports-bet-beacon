@@ -56,6 +56,41 @@ export async function getMatchSpecificHeadToHeadRecord(
 }
 
 /**
+ * FACEIT head-to-head for amateur matches.
+ * Calls SQL function: public.get_faceit_head_to_head(p_team1_name, p_team2_name, p_game, p_match_id, p_months)
+ *
+ * - Matches teams by name (amateur teams don't have numeric IDs)
+ * - Filters to FINISHED matches
+ * - Considers only matches in the last `monthsLookback` months BEFORE the given match's start_time
+ */
+export async function getFaceitHeadToHead(
+  team1Name: string,
+  team2Name: string,
+  game: string = 'cs2',
+  matchId?: string,
+  monthsLookback = 6
+): Promise<HeadToHead> {
+  const { data, error } = await (supabase.rpc as any)('get_faceit_head_to_head', {
+    p_team1_name: team1Name,
+    p_team2_name: team2Name,
+    p_game: game,
+    p_match_id: matchId || null,
+    p_months: monthsLookback,
+  });
+
+  if (error || !data) {
+    console.error('get_faceit_head_to_head error:', error);
+    return { team1Wins: 0, team2Wins: 0, totalMatches: 0 };
+  }
+
+  return {
+    team1Wins: Number(data.team1_wins ?? 0),
+    team2Wins: Number(data.team2_wins ?? 0),
+    totalMatches: Number(data.total_matches ?? 0),
+  };
+}
+
+/**
  * All-time head-to-head helper (kept for convenience).
  * Uses the precomputed table `panda_team_head_to_head`.
  *

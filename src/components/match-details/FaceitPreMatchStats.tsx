@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Award, Clock, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Users, Award, Clock, Target } from 'lucide-react';
+import { getFaceitHeadToHead } from '@/lib/teamStatsCalculator';
+import type { HeadToHead } from '@/lib/teamStatsCalculator';
 
 interface FaceitPreMatchStatsProps {
   teams: Array<{
@@ -21,9 +23,19 @@ interface FaceitPreMatchStatsProps {
     competitionType?: string;
     calculateElo?: boolean;
   };
+  matchId?: string;
+  game?: string;
 }
 
-export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams, faceitData }) => {
+export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ 
+  teams, 
+  faceitData, 
+  matchId, 
+  game = 'cs2' 
+}) => {
+  const [headToHead, setHeadToHead] = useState<HeadToHead | null>(null);
+  const [loadingH2H, setLoadingH2H] = useState(false);
+
   console.log('📊 Rendering FACEIT pre-match stats with real roster data:', teams);
   
   // Check if we have sufficient data for meaningful analysis
@@ -89,6 +101,22 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
   const team1Stats = generateTeamStats(team1);
   const team2Stats = generateTeamStats(team2);
 
+  // Fetch head-to-head data when component mounts
+  useEffect(() => {
+    if (team1.name && team2.name && matchId) {
+      setLoadingH2H(true);
+      getFaceitHeadToHead(team1.name, team2.name, game, matchId, 6)
+        .then(h2h => {
+          console.log('📈 Head-to-head data fetched:', h2h);
+          setHeadToHead(h2h);
+        })
+        .catch(err => {
+          console.error('❌ Error fetching head-to-head:', err);
+        })
+        .finally(() => setLoadingH2H(false));
+    }
+  }, [team1.name, team2.name, matchId, game]);
+
   // Don't show comparison if we don't have meaningful data for both teams
   const canShowComparison = team1Stats && team2Stats && 
     team1Stats.avgSkillLevel && team2Stats.avgSkillLevel;
@@ -128,6 +156,39 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ teams,
         <TrendingUp className="h-5 w-5 mr-2 text-orange-400" />
         Pre-Match Intelligence
       </h3>
+
+      {/* Head-to-Head History Section */}
+      {headToHead && headToHead.totalMatches > 0 && (
+        <Card className="bg-slate-700 border border-theme-gray-medium p-6">
+          <h4 className="text-lg font-semibold text-white mb-4 text-center">
+            <Target className="h-5 w-5 inline mr-2 text-orange-400" />
+            Head-to-Head History
+          </h4>
+          <p className="text-gray-400 text-sm mb-4 text-center">
+            Previous meetings: {headToHead.totalMatches} matches (last 6 months)
+          </p>
+          <div className="flex items-center justify-center space-x-4">
+            <div className="text-center">
+              <div className="text-white font-semibold text-lg">{team1.name}</div>
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30 mt-1">
+                {headToHead.team1Wins} wins
+              </Badge>
+            </div>
+            <div className="text-gray-400 font-bold text-2xl">VS</div>
+            <div className="text-center">
+              <div className="text-white font-semibold text-lg">{team2.name}</div>
+              <Badge className="bg-red-500/20 text-red-400 border-red-400/30 mt-1">
+                {headToHead.team2Wins} wins
+              </Badge>
+            </div>
+          </div>
+          {headToHead.team1Wins !== headToHead.team2Wins && (
+            <p className="text-gray-400 text-sm mt-3 text-center">
+              {headToHead.team1Wins > headToHead.team2Wins ? team1.name : team2.name} leads the series
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* Team Comparison - only show if we have real data */}
       <Card className="bg-slate-700 border border-theme-gray-medium p-6">
