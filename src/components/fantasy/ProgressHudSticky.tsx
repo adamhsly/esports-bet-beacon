@@ -3,6 +3,7 @@ import React from 'react';
 import { ChevronUp, Flame } from 'lucide-react';
 import { useProgress, useMissions, useRewards, useEntitlement } from '@/hooks/useSupabaseData';
 import { useProfilePanel } from '@/components/ProfileSheet';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface ProgressHudStickyProps {
   className?: string;
@@ -10,12 +11,18 @@ interface ProgressHudStickyProps {
 
 export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className = "" }) => {
   const { openProfile } = useProfilePanel();
+  const { isAuthenticated } = useAuthUser();
   const { level, xp, streak_count, loading: progressLoading } = useProgress();
   const { dailyMissions, weeklyMissions, loading: missionsLoading } = useMissions();
   const { freeRewards, premiumRewards, loading: rewardsLoading } = useRewards();
   const { premiumActive, loading: entitlementLoading } = useEntitlement();
 
   const loading = progressLoading || missionsLoading || rewardsLoading || entitlementLoading;
+
+  // Don't show HUD if user is not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (loading) {
     return (
