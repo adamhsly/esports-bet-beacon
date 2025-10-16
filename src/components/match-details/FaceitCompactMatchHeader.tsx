@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Users, Trophy, MapPin, Bell, BellRing, Loader2, CheckCircle, Crown } from 'lucide-react';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import CountdownTimer from "@/components/CountdownTimer";
+import { getFaceitScore } from '@/utils/faceitScoreUtils';
 
 interface FaceitCompactMatchHeaderProps {
   match: {
@@ -30,6 +31,8 @@ interface FaceitCompactMatchHeaderProps {
         };
       };
     };
+    rawData?: any;
+    liveTeamScores?: any;
     bestOf?: number;
     finishedTime?: string;
     finished_at?: string;
@@ -73,19 +76,23 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
     return now >= matchStart;
   };
 
-  // Helper functions for finished matches
+  // Extract score from multiple sources using utility
+  const faceitResult = getFaceitScore(match.rawData, match.faceitData, match.liveTeamScores);
+  const hasScore = faceitResult.score !== null;
+
+  // Helper functions for finished/live matches
   const isWinner = (teamIndex: number) => {
-    if (!match.faceitData?.results) return false;
-    return match.faceitData.results.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
+    if (!faceitResult.winner) return false;
+    return faceitResult.winner === (teamIndex === 0 ? 'faction1' : 'faction2');
   };
 
   const getScore = (teamIndex: number) => {
-    if (!match.faceitData?.results) return '-';
-    return teamIndex === 0 ? match.faceitData.results.score.faction1 : match.faceitData.results.score.faction2;
+    if (!faceitResult.score) return '-';
+    return teamIndex === 0 ? faceitResult.score.faction1 : faceitResult.score.faction2;
   };
 
   const getTeamStyling = (teamIndex: number) => {
-    if (!isFinished() || !match.faceitData?.results) return '';
+    if (!isFinished() || !hasScore) return '';
     return isWinner(teamIndex) ? 'border-green-400 bg-green-500/10' : 'opacity-75';
   };
 
@@ -151,7 +158,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
 
             {/* Score or VS */}
             <div className="flex flex-col items-center px-2">
-              {isFinished() && match.faceitData?.results ? (
+              {hasScore ? (
                 <div className="text-center">
                   <div className="text-lg font-bold text-[#E8EAF5]">
                     <span className={isWinner(0) ? 'text-green-400' : 'text-gray-300'}>
@@ -162,7 +169,9 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                       {getScore(1)}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">Final</span>
+                  <span className="text-xs text-gray-400">
+                    {isFinished() ? 'Final' : 'Live'}
+                  </span>
                 </div>
               ) : (
                 <span className="text-lg font-bold text-gray-400">vs</span>
