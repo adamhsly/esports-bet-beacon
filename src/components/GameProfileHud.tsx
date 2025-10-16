@@ -93,7 +93,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   }, [profile?.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
 
   // Calculate XP progress
-  const baseXPForLevel = 1000 + (level - 1) * 100;
+  const baseXPForLevel = 1000 + level * 100;
   const currentLevelStart = level === 1 ? 0 : (level - 1) * 1000 + ((level - 1) * (level - 2) / 2) * 100;
   const currentLevelXP = xp - currentLevelStart;
   const xpProgress = Math.min((currentLevelXP / baseXPForLevel) * 100, 100);
@@ -161,10 +161,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                   <span>{Math.floor(currentLevelXP)}</span>
                   <span>{baseXPForLevel} XP</span>
                 </div>
-                <Progress 
-                  value={xpProgress} 
-                  className="h-2 bg-[#0F1722]"
-                />
+                <div className="relative">
+                  <div 
+                    className="h-3 bg-[#0F1722] rounded-full shadow-inner overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={Math.floor(currentLevelXP)}
+                    aria-valuemin={0}
+                    aria-valuemax={baseXPForLevel}
+                    aria-label="XP progress"
+                  >
+                    <div 
+                      className="h-full bg-gradient-to-r from-neon-blue to-neon-purple rounded-full transition-all duration-[220ms] ease-out shadow-[0_0_18px_currentColor] motion-reduce:transition-none"
+                      style={{ 
+                        width: `${xpProgress}%`,
+                        filter: 'drop-shadow(0 0 8px currentColor)'
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Streak Badge */}
