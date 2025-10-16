@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,12 +11,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-center justify-items-center">
           <div className="space-y-4">
             <h3 className="text-xl font-bold font-gaming tracking-wider">
-              <span className="text-theme-purple">Frags</span>{' '}
-              <span className="text-yellow-400">&</span>{' '}
-              <span className="text-white">Fortunes</span>
+              <span className="text-theme-purple">FRAGS</span> <span className="text-yellow-400">&</span>{" "}
+              <span className="text-white">FORTUNES</span>
             </h3>
             <p className="text-gray-400 text-sm max-w-xs mx-auto">
-              The premier destination for esports fantasy leagues and scores where both amateur and pro teams wage battle.
+              The premier destination for esports fantasy leagues and scores where both amateur and pro teams wage
+              battle.
             </p>
           </div>
 
@@ -45,9 +45,7 @@ const Footer = () => {
 
         {/* Bottom section */}
         <div className="border-t border-theme-gray-medium mt-8 pt-8 flex flex-col md:flex-row justify-center items-center">
-          <p className="text-gray-400 text-sm text-center">
-            © {currentYear} Frags and Fortunes. All rights reserved.
-          </p>
+          <p className="text-gray-400 text-sm text-center">© {currentYear} Frags and Fortunes. All rights reserved.</p>
         </div>
       </div>
     </footer>
