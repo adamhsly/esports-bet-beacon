@@ -320,6 +320,10 @@ serve(async (req) => {
         calculate_elo: match.calculate_elo,
         version: match.version,
         teams: match.teams,
+        faction1_name: match.teams?.faction1?.name || null,
+        faction2_name: match.teams?.faction2?.name || null,
+        faction1_id: match.teams?.faction1?.id || null,
+        faction2_id: match.teams?.faction2?.id || null,
         voting: match.voting || null,
         faceit_data: {
           region: match.region,

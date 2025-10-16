@@ -284,6 +284,10 @@ serve(async (req) => {
         calculate_elo: typeof match.calculate_elo === "boolean" ? match.calculate_elo : false,
         version: typeof match.version === "number" ? match.version : null,
         teams,
+        faction1_name: teams?.faction1?.name ?? null,
+        faction2_name: teams?.faction2?.name ?? null,
+        faction1_id: teams?.faction1?.id ?? null,
+        faction2_id: teams?.faction2?.id ?? null,
         voting: match.voting ?? null,
         faceit_data: {
           region: match.region ?? null,
