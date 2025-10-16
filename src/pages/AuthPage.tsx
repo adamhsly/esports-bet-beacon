@@ -22,6 +22,7 @@ const AuthPage: React.FC = () => {
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
   const [signUpUsername, setSignUpUsername] = useState('');
   const [signUpFullName, setSignUpFullName] = useState('');
+  const [signUpDateOfBirth, setSignUpDateOfBirth] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -191,6 +192,7 @@ const AuthPage: React.FC = () => {
     const { error } = await signUp(signUpEmail, signUpPassword, {
       username: signUpUsername,
       full_name: signUpFullName,
+      date_of_birth: signUpDateOfBirth,
       marketing_preferences: JSON.stringify(marketingPreferences),
       terms_accepted: termsAccepted
     });
@@ -216,6 +218,7 @@ const AuthPage: React.FC = () => {
       setSignUpConfirmPassword('');
       setSignUpUsername('');
       setSignUpFullName('');
+      setSignUpDateOfBirth('');
       setMarketingPreferences({
         product_updates: false,
         event_notifications: false
@@ -503,6 +506,23 @@ const AuthPage: React.FC = () => {
                     {fieldErrors.email && (
                       <p className="text-sm text-red-400">{fieldErrors.email}</p>
                     )}
+                  </div>
+
+                  {/* Date of Birth Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-dob" className="text-gray-300">
+                      <User className="inline w-4 h-4 mr-2" />
+                      Date of Birth
+                    </Label>
+                    <Input
+                      id="signup-dob"
+                      type="date"
+                      value={signUpDateOfBirth}
+                      onChange={(e) => setSignUpDateOfBirth(e.target.value)}
+                      required
+                      max={new Date().toISOString().split('T')[0]}
+                      className="bg-theme-gray-dark border-theme-gray-light text-white"
+                    />
                   </div>
                   
                   <div className="space-y-2">

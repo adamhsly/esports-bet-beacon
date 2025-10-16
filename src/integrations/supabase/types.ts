@@ -2088,6 +2088,7 @@ export type Database = {
           bio: string | null
           country: string | null
           created_at: string
+          date_of_birth: string | null
           full_name: string | null
           id: string
           last_login_at: string | null
@@ -2108,6 +2109,7 @@ export type Database = {
           bio?: string | null
           country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           full_name?: string | null
           id: string
           last_login_at?: string | null
@@ -2128,6 +2130,7 @@ export type Database = {
           bio?: string | null
           country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           full_name?: string | null
           id?: string
           last_login_at?: string | null
@@ -3385,6 +3388,7 @@ export type Database = {
           bio: string | null
           country: string | null
           created_at: string
+          date_of_birth: string | null
           full_name: string | null
           id: string
           last_login_at: string | null
