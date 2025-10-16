@@ -46,9 +46,12 @@ const getPandaScoreStatusCategory = (status: string): "live" | "upcoming" | "fin
 -------------------------------------------- */
 const mapGameTypeToQuery = (v: string): string => {
   const key = (v || "all").toLowerCase();
+  // For Counter-Strike, we can't use a single pattern that matches cs2, csgo, AND Counter-Strike
+  // So we return "all" and rely on client-side filtering
+  if (key === "counter-strike") return "all";
+  
   const map: Record<string, string> = {
     all: "all",
-    "counter-strike": "cs", // matches both "Counter-Strike", "csgo", and "cs2"
     lol: "lol", // matches "LoL"
     valorant: "valorant",
     dota2: "dota", // matches "Dota 2"
