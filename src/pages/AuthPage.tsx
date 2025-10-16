@@ -257,7 +257,7 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-theme-gray-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-theme-gray-dark flex items-center justify-center p-4 pb-32 md:pb-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
           <Button asChild variant="ghost" size="sm" className="text-gray-400 hover:text-white">
