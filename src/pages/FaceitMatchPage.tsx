@@ -176,41 +176,6 @@ const FaceitMatchPage = () => {
     return <FaceitCompactMatchHeader match={matchData} isMobile={false} />;
   };
   const renderMainContent = () => {
-    // Enhanced live match dashboard for live matches with enhanced data
-    if (headerType === 'live' && isEnhancedData && matchDetails.matchData?.livePlayerStatus) {
-      const liveMatchData = {
-        matchId: matchData.match_id || matchData.id,
-        currentRound: matchDetails.matchData.currentRound || 0,
-        roundTimer: matchDetails.matchData.roundTimer || 0,
-        matchPhase: matchDetails.matchData.matchPhase as any || 'live',
-        teamScores: matchDetails.matchData.liveTeamScores || {
-          faction1: 0,
-          faction2: 0
-        },
-        playerStatus: matchDetails.matchData.livePlayerStatus || {},
-        killFeed: matchDetails.killFeed?.slice(-10).map(kill => ({
-          id: `${kill.matchId}-${kill.roundNumber}-${kill.timestamp}`,
-          killer: kill.killerNickname,
-          victim: kill.victimNickname,
-          weapon: kill.weapon,
-          headshot: kill.headshot,
-          timestamp: kill.timestamp
-        })) || [],
-        bombStatus: (matchDetails as any).liveStats?.bombStatus || 'none',
-        bombTimer: (matchDetails as any).liveStats?.bombTimer,
-        autoRefreshInterval: matchDetails.matchData.autoRefreshInterval || 15000
-      };
-      const teams = safeTeams?.map((team: any, index: number) => ({
-        name: team.name,
-        logo: team.logo || team.avatar,
-        faction: index === 0 ? 'faction1' as const : 'faction2' as const,
-        roster: team.roster
-      })) || [];
-      return <div className="space-y-4">
-          <FaceitLiveMatchDashboard matchData={liveMatchData} teams={teams} onRefresh={refetch} />
-        </div>;
-    }
-
     // Enhanced match analysis for finished matches with comprehensive data
     if (headerType === 'finished' && isEnhancedData) {
       const teams = safeTeams?.map((team: any, index: number) => ({
@@ -231,21 +196,34 @@ const FaceitMatchPage = () => {
       const isByeMatch = teams.some(team => team.name?.toLowerCase() === 'bye');
       if (isByeMatch || matchDetails.playerPerformances?.length === 0) {
         return <div className="space-y-4">
+          {/* Pre-Match Stats for all match types */}
+          {safeTeams.length > 0 && (
+            <FaceitPreMatchStats 
+              teams={safeTeams} 
+              matchId={matchData.match_id || matchData.id}
+              game={matchData.game || 'cs2'}
+            />
+          )}
           <Card className="bg-card border border-border">
               
             </Card>
           </div>;
       }
       return <div className="space-y-4">
+          {/* Pre-Match Stats for all match types */}
+          {safeTeams.length > 0 && (
+            <FaceitPreMatchStats 
+              teams={safeTeams} 
+              matchId={matchData.match_id || matchData.id}
+              game={matchData.game || 'cs2'}
+            />
+          )}
           <FaceitMatchAnalysis matchId={matchData.match_id || matchData.id} teams={teams} playerPerformances={matchDetails.playerPerformances} roundResults={matchDetails.roundResults} mapResults={mapResults} matchResult={matchResult} />
         </div>;
     }
 
-    // Fallback to original layout for basic data or upcoming matches
+    // Show pre-match stats for all match types (upcoming, live, finished without enhanced data)
     return <div className="space-y-4">
-        {/* Live scorecard for live matches */}
-        {headerType === 'live' && <FaceitLiveScorecard match={matchData} />}
-        
         {/* Pre-Match Stats for all match types */}
         {safeTeams.length > 0 && (
           <FaceitPreMatchStats 
