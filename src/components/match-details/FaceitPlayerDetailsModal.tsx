@@ -202,11 +202,6 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                     }} 
                   />
                 )}
-                {isCalculatedData && (
-                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-400/30">
-                    Calculated Stats
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
