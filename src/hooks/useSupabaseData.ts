@@ -168,9 +168,13 @@ export const useMissions = () => {
   const { toast } = useToast();
 
   const fetchMissions = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
       // First, seed missions if needed
       await supabase.rpc('seed_user_missions');
 
@@ -263,9 +267,13 @@ export const useRewards = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRewards = useCallback(async () => {
-    if (!user || !season) return;
+    if (!user || !season) {
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('season_rewards')
         .select(`
@@ -406,9 +414,13 @@ export const useLevelRewards = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchLevelRewards = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('level_rewards')
         .select(`
