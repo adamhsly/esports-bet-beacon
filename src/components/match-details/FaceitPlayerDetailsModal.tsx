@@ -40,6 +40,7 @@ interface PlayerDetailsModalProps {
 
 interface EnhancedPlayerData {
   found: boolean;
+  data_source?: 'synced' | 'calculated';
   profile?: {
     player_id: string;
     nickname: string;
@@ -54,10 +55,10 @@ interface EnhancedPlayerData {
     total_wins: number;
     total_losses: number;
     win_rate: number;
-    avg_kd_ratio: number;
-    avg_headshots_percent: number;
-    current_win_streak: number;
-    longest_win_streak: number;
+    avg_kd_ratio?: number | null;
+    avg_headshots_percent?: number | null;
+    current_win_streak?: number | null;
+    longest_win_streak?: number | null;
   };
   recent_stats?: {
     matches_30d: number;
@@ -71,18 +72,19 @@ interface EnhancedPlayerData {
   recent_matches?: Array<{
     matchId: string;
     date: string;
-    map: string;
+    map?: string;
     result: string;
     opponent: string;
     competition: string;
-    kills: number;
-    deaths: number;
-    assists: number;
-    kd_ratio: number;
-    adr: number;
-    mvps: number;
-    headshots_percent: number;
-    elo_change: number;
+    competitionType?: string;
+    kills?: number;
+    deaths?: number;
+    assists?: number;
+    kd_ratio?: number;
+    adr?: number;
+    mvps?: number;
+    headshots_percent?: number;
+    elo_change?: number;
   }>;
 }
 
@@ -90,11 +92,11 @@ interface EnhancedPlayerData {
 const getSkillLevelColor = (level?: number): string => {
   if (!level) return 'bg-gray-500/20 text-gray-400 border-gray-400/30';
   
-  if (level >= 9) return 'bg-purple-500/20 text-purple-300 border-purple-400/30'; // Purple for 9-10
-  if (level >= 7) return 'bg-orange-500/20 text-orange-300 border-orange-400/30'; // Orange for 7-8
-  if (level >= 5) return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30'; // Yellow for 5-6
-  if (level >= 3) return 'bg-green-500/20 text-green-300 border-green-400/30'; // Green for 3-4
-  return 'bg-red-500/20 text-red-300 border-red-400/30'; // Red for 1-2
+  if (level >= 9) return 'bg-purple-500/20 text-purple-300 border-purple-400/30';
+  if (level >= 7) return 'bg-orange-500/20 text-orange-300 border-orange-400/30';
+  if (level >= 5) return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30';
+  if (level >= 3) return 'bg-green-500/20 text-green-300 border-green-400/30';
+  return 'bg-red-500/20 text-red-300 border-red-400/30';
 };
 
 // Helper function to get match result color
@@ -151,6 +153,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
         return;
       }
 
+      console.log('Fetched player data:', data);
       setEnhancedData(data as unknown as EnhancedPlayerData);
     } catch (error) {
       console.error('Error fetching enhanced player data:', error);
@@ -178,6 +181,7 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
   const careerStats = playerData?.career_stats;
   const recentStats = playerData?.recent_stats;
   const recentMatches = playerData?.recent_matches || [];
+  const isCalculatedData = playerData?.data_source === 'calculated';
 
   const getFormBadge = (form?: string) => {
     if (!form) return null;
@@ -223,6 +227,11 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                     {profile.membership}
                   </Badge>
                 )}
+                {isCalculatedData && (
+                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-400/30">
+                    Calculated Stats
+                  </Badge>
+                )}
               </div>
               <p className="text-theme-gray-light">{teamName}</p>
             </div>
@@ -251,7 +260,9 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
               <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(139,92,246,0.4)]">
                 <CardContent className="p-3">
                   <div className="text-xs text-theme-gray-light mb-1">ELO</div>
-                  <div className="text-lg font-semibold text-white">{profile.faceit_elo || 'N/A'}</div>
+                  <div className={`text-lg font-semibold ${!profile.faceit_elo ? 'text-muted-foreground' : 'text-white'}`}>
+                    {profile.faceit_elo || 'N/A'}
+                  </div>
                 </CardContent>
               </Card>
               
@@ -267,9 +278,12 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
               <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(139,92,246,0.4)]">
                 <CardContent className="p-3">
                   <div className="text-xs text-theme-gray-light mb-1">K/D Ratio</div>
-                  <div className="text-lg font-semibold text-white">
-                    {careerStats ? careerStats.avg_kd_ratio.toFixed(2) : (player.kd_ratio || 0).toFixed(2)}
+                  <div className={`text-lg font-semibold ${!careerStats?.avg_kd_ratio ? 'text-muted-foreground' : 'text-white'}`}>
+                    {careerStats?.avg_kd_ratio ? careerStats.avg_kd_ratio.toFixed(2) : 'N/A'}
                   </div>
+                  {!careerStats?.avg_kd_ratio && isCalculatedData && (
+                    <p className="text-xs text-muted-foreground mt-1">Requires sync</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -331,11 +345,27 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-theme-gray-light">Avg K/D:</span>
-                      <span className="text-white font-semibold">{careerStats.avg_kd_ratio.toFixed(2)}</span>
+                      <span className={`font-semibold ${!careerStats.avg_kd_ratio ? 'text-muted-foreground' : 'text-white'}`}>
+                        {careerStats.avg_kd_ratio ? careerStats.avg_kd_ratio.toFixed(2) : 'N/A'}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-theme-gray-light">Avg HS%:</span>
-                      <span className="text-white font-semibold">{careerStats.avg_headshots_percent.toFixed(1)}%</span>
+                      <span className={`font-semibold ${!careerStats.avg_headshots_percent ? 'text-muted-foreground' : 'text-white'}`}>
+                        {careerStats.avg_headshots_percent ? careerStats.avg_headshots_percent.toFixed(1) + '%' : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-theme-gray-light">Current Streak:</span>
+                      <span className="text-white font-semibold">
+                        {careerStats.current_win_streak ?? 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-theme-gray-light">Longest Streak:</span>
+                      <span className={`font-semibold ${!careerStats.longest_win_streak ? 'text-muted-foreground' : 'text-white'}`}>
+                        {careerStats.longest_win_streak ?? 'N/A'}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -362,22 +392,14 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                         <span className="text-theme-gray-light">Win Rate:</span>
                         <span className="text-white font-semibold">{recentStats.win_rate_30d}%</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-theme-gray-light">Current Streak:</span>
-                        <span className="text-white font-semibold">{careerStats.current_win_streak}W</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-theme-gray-light">Best Streak:</span>
-                        <span className="text-white font-semibold">{careerStats.longest_win_streak}W</span>
-                      </div>
                     </CardContent>
                   </Card>
                 )}
               </div>
             ) : (
-              <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
-                <CardContent className="p-6 text-center">
-                  <p className="text-theme-gray-light">Enhanced statistics not available for this player.</p>
+              <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl">
+                <CardContent className="p-6 text-center text-theme-gray-light">
+                  No detailed statistics available
                 </CardContent>
               </Card>
             )}
@@ -385,50 +407,55 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
 
           <TabsContent value="matches" className="space-y-4">
             {recentMatches.length > 0 ? (
-            <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(139,92,246,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(139,92,246,0.4)]">
-              <CardHeader>
-                <CardTitle className="text-white">Recent Match History</CardTitle>
-              </CardHeader>
+              <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-white">Match History</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-64">
+                  <ScrollArea className="h-[400px]">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-theme-gray-light">Result</TableHead>
-                          <TableHead className="text-theme-gray-light">Map</TableHead>
-                          <TableHead className="text-theme-gray-light">Opponent</TableHead>
-                          <TableHead className="text-theme-gray-light">K/D/A</TableHead>
-                          <TableHead className="text-theme-gray-light">ADR</TableHead>
-                          <TableHead className="text-theme-gray-light">ELO</TableHead>
+                        <TableRow className="border-white/5 hover:bg-white/5">
                           <TableHead className="text-theme-gray-light">Date</TableHead>
+                          <TableHead className="text-theme-gray-light">Map</TableHead>
+                          <TableHead className="text-theme-gray-light">Result</TableHead>
+                          <TableHead className="text-theme-gray-light">Opponent</TableHead>
+                          <TableHead className="text-theme-gray-light text-right">K</TableHead>
+                          <TableHead className="text-theme-gray-light text-right">D</TableHead>
+                          <TableHead className="text-theme-gray-light text-right">A</TableHead>
+                          <TableHead className="text-theme-gray-light text-right">K/D</TableHead>
+                          <TableHead className="text-theme-gray-light text-right">ELO</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {recentMatches.map((match, idx) => (
-                          <TableRow key={idx}>
+                        {recentMatches.map((match) => (
+                          <TableRow key={match.matchId} className="border-white/5 hover:bg-white/5">
+                            <TableCell className="text-white font-medium">{formatMatchDate(match.date)}</TableCell>
+                            <TableCell className="text-theme-gray-light">{match.map || '-'}</TableCell>
                             <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs ${getMatchResultColor(match.result)}`}
-                              >
-                                {match.result.toUpperCase()}
+                              <Badge variant={match.result === 'W' ? 'default' : 'destructive'}>
+                                {match.result}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-theme-gray-light">{match.map || 'Unknown'}</TableCell>
-                            <TableCell className="text-theme-gray-light">{match.opponent || 'Unknown'}</TableCell>
-                            <TableCell className="text-theme-gray-light">
-                              {match.kills}/{match.deaths}/{match.assists}
+                            <TableCell className="text-white">{match.opponent}</TableCell>
+                            <TableCell className={`text-right ${!match.kills ? 'text-muted-foreground' : 'text-white'}`}>
+                              {match.kills ?? '-'}
                             </TableCell>
-                            <TableCell className="text-theme-gray-light">{match.adr?.toFixed(1) || 'N/A'}</TableCell>
-                            <TableCell className="text-theme-gray-light">
+                            <TableCell className={`text-right ${!match.deaths ? 'text-muted-foreground' : 'text-white'}`}>
+                              {match.deaths ?? '-'}
+                            </TableCell>
+                            <TableCell className={`text-right ${!match.assists ? 'text-muted-foreground' : 'text-white'}`}>
+                              {match.assists ?? '-'}
+                            </TableCell>
+                            <TableCell className={`text-right ${!match.kd_ratio ? 'text-muted-foreground' : 'text-white'}`}>
+                              {match.kd_ratio ? match.kd_ratio.toFixed(2) : '-'}
+                            </TableCell>
+                            <TableCell className={`text-right ${!match.elo_change ? 'text-muted-foreground' : ''}`}>
                               {match.elo_change ? (
-                                <span className={match.elo_change > 0 ? 'text-green-400' : 'text-red-400'}>
+                                <span className={match.elo_change > 0 ? 'text-green-600' : 'text-red-600'}>
                                   {match.elo_change > 0 ? '+' : ''}{match.elo_change}
                                 </span>
-                              ) : 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-theme-gray-light">
-                              {formatMatchDate(match.date)}
+                              ) : '-'}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -438,60 +465,11 @@ export const FaceitPlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({
                 </CardContent>
               </Card>
             ) : (
-              // Fallback to old match history format if enhanced data not available
-              player.match_history && player.match_history.length > 0 ? (
-                <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
-                  <CardHeader>
-                    <CardTitle className="text-white">Recent Match History</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-64">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-theme-gray-light">Result</TableHead>
-                            <TableHead className="text-theme-gray-light">Teams</TableHead>
-                            <TableHead className="text-theme-gray-light">Competition</TableHead>
-                            <TableHead className="text-theme-gray-light">Date</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {player.match_history.slice(0, 5).map((match) => (
-                            <TableRow key={match.id}>
-                              <TableCell>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs ${getMatchResultColor(match.match_result)}`}
-                                >
-                                  {match.match_result?.toUpperCase() || 'N/A'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-theme-gray-light">
-                                <div className="text-xs">
-                                  <div className="font-medium">{match.team_name || 'Team'}</div>
-                                  <div className="text-gray-400">vs {match.opponent_team_name || 'Opponent'}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-theme-gray-light">
-                                {match.competition_name || 'N/A'}
-                              </TableCell>
-                              <TableCell className="text-theme-gray-light">
-                                {formatMatchDate(match.match_date)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="bg-theme-gray-medium/30 border-theme-gray-medium/50">
-                  <CardContent className="p-6 text-center">
-                    <p className="text-theme-gray-light">No recent match data available.</p>
-                  </CardContent>
-                </Card>
-              )
+              <Card className="bg-gradient-to-b from-[#3D2B5F] to-[#1F1535] border border-white/5 rounded-xl">
+                <CardContent className="p-6 text-center text-theme-gray-light">
+                  No recent matches available
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>

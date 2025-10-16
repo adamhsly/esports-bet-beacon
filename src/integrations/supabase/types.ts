@@ -3045,6 +3045,16 @@ export type Database = {
           source: string
         }[]
       }
+      faceit_form_bulk: {
+        Args: { game?: string; team_names: string[] }
+        Returns: {
+          recent_form: string
+          team_name: string
+          total_matches: number
+          win_rate_30d: number
+          win_rate_overall: number
+        }[]
+      }
       faceit_get_match_counts_around_date: {
         Args: { target_date: string }
         Returns: {
@@ -3128,6 +3138,10 @@ export type Database = {
           version: number
           voting: Json
         }[]
+      }
+      get_faceit_player_basic_stats: {
+        Args: { p_player_id: string }
+        Returns: Json
       }
       get_faceit_player_details: {
         Args: { p_player_id: string }
@@ -3276,6 +3290,16 @@ export type Database = {
       next_weekly_reset_utc: {
         Args: { ts?: string }
         Returns: string
+      }
+      panda_form_bulk: {
+        Args: { team_ids: number[] }
+        Returns: {
+          recent_form: string
+          team_id: number
+          total_matches: number
+          win_rate_30d: number
+          win_rate_overall: number
+        }[]
       }
       pandascore_get_match_counts_around_date: {
         Args: { target_date: string }
