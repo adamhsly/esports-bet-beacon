@@ -1,10 +1,11 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Clock, Trophy, Users, CheckCircle } from 'lucide-react';
+import { Clock, Trophy, Users, CheckCircle, Crown } from 'lucide-react';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { getPandaScoreLiveScore } from '@/utils/pandascoreScoreUtils';
+import { getFaceitScore, formatFaceitScore } from '@/utils/faceitScoreUtils';
 
 export interface TeamInfo {
   name: string;
@@ -59,6 +60,7 @@ export interface MatchInfo {
     };
   };
   rawData?: any;
+  liveTeamScores?: any;
 }
 
 interface MatchCardProps {
@@ -74,10 +76,24 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
 const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
 
-// Live score for PandaScore (professional) matches
-const liveScore = isLive && (source === 'professional' || (id && String(id).startsWith('pandascore_')))
-  ? getPandaScoreLiveScore(rawData, teams)
-  : null;
+// Calculate scores for both professional and amateur matches
+let liveScore: { a: number; b: number } | null = null;
+let faceitWinner: 'faction1' | 'faction2' | null = null;
+
+if (source === 'professional' || (id && String(id).startsWith('pandascore_'))) {
+  // Professional matches use PandaScore scoring
+  if (isLive) {
+    liveScore = getPandaScoreLiveScore(rawData, teams);
+  }
+} else if (source === 'amateur' || (id && String(id).startsWith('faceit_'))) {
+  // Amateur matches use FACEIT scoring
+  const faceitResult = getFaceitScore(rawData, faceitData, match.liveTeamScores);
+  
+  if (faceitResult.score) {
+    liveScore = { a: faceitResult.score.faction1, b: faceitResult.score.faction2 };
+    faceitWinner = faceitResult.winner;
+  }
+}
 
   // Enhanced logging for routing decisions AND winner/score data
   console.log(`🎯 MatchCard rendering for ${id}:`, {
@@ -198,11 +214,16 @@ const liveScore = isLive && (source === 'professional' || (id && String(id).star
     return '';
   };
 
-  // Get final score for finished matches using selective field
+  // Get final score for finished matches using selective field or extracted score
   const getFinalScore = () => {
     if (!isFinished) return null;
     
-    // Use the new selective final_score field from database views
+    // For FACEIT matches, try to get score from extracted data first
+    if (source === 'amateur' && liveScore) {
+      return `${liveScore.a}-${liveScore.b}`;
+    }
+    
+    // Use the selective final_score field from database views
     return match.final_score || null;
   };
 

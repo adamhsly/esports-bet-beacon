@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import { Radio, Clock, Trophy, Bell, BellRing, Loader2 } from 'lucide-react';
+import { getFaceitScore } from '@/utils/faceitScoreUtils';
 
 interface FaceitLiveMatchHeaderProps {
   match: {
@@ -32,6 +33,8 @@ interface FaceitLiveMatchHeaderProps {
         };
       };
     };
+    rawData?: any;
+    liveTeamScores?: any;
     status: string;
   };
 }
@@ -44,6 +47,10 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
 
   const team1 = match.teams[0] || { name: 'Team 1' };
   const team2 = match.teams[1] || { name: 'Team 2' };
+  
+  // Extract live scores from multiple sources
+  const faceitResult = getFaceitScore(match.rawData, match.faceitData, match.liveTeamScores);
+  const liveScore = faceitResult.score || { faction1: 0, faction2: 0 };
 
   const getElapsedTime = () => {
     const startTime = new Date(match.startTime);
@@ -131,15 +138,9 @@ export const FaceitLiveMatchHeader: React.FC<FaceitLiveMatchHeaderProps> = ({ ma
           <div className="text-center">
             <div className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] rounded-lg p-4 border border-white/5">
               <div className="text-4xl font-bold text-[#E8EAF5] mb-2">
-                {match.faceitData?.results ? (
-                  <>
-                    <span className="text-theme-purple">{match.faceitData.results.score.faction1}</span>
-                    <span className="text-gray-400 mx-2">:</span>
-                    <span className="text-theme-purple">{match.faceitData.results.score.faction2}</span>
-                  </>
-                ) : (
-                  '0 : 0'
-                )}
+                <span className="text-theme-purple">{liveScore.faction1}</span>
+                <span className="text-gray-400 mx-2">:</span>
+                <span className="text-theme-purple">{liveScore.faction2}</span>
               </div>
               <div className="text-sm text-[#A8AEBF]">Current Score</div>
               <div className="mt-2">

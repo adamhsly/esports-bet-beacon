@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, Users, Calendar, Crown } from 'lucide-react';
+import { getFaceitScore } from '@/utils/faceitScoreUtils';
 interface FaceitFinishedMatchHeaderProps {
   match: {
     id: string;
@@ -32,6 +33,8 @@ interface FaceitFinishedMatchHeaderProps {
         };
       };
     };
+    rawData?: any;
+    liveTeamScores?: any;
     status: string;
   };
 }
@@ -44,7 +47,14 @@ export const FaceitFinishedMatchHeader: React.FC<FaceitFinishedMatchHeaderProps>
   const team2 = match.teams[1] || {
     name: 'Team 2'
   };
-  const results = match.faceitData?.results;
+  
+  // Extract score and winner from multiple sources
+  const faceitResult = getFaceitScore(match.rawData, match.faceitData, match.liveTeamScores);
+  const results = match.faceitData?.results || (faceitResult.score ? {
+    winner: faceitResult.winner || '',
+    score: faceitResult.score
+  } : null);
+  
   const finishedTime = match.finishedTime || match.finished_at;
   const getMatchDuration = () => {
     if (!finishedTime) return 'Unknown duration';
