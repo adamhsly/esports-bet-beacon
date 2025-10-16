@@ -150,7 +150,14 @@ const FaceitMatchPage = () => {
   const isEnhancedData = 'playerPerformances' in matchDetails;
 
   // Ensure teams data exists and is valid
-  const safeTeams = matchData?.teams || [];
+  // Transform teams object to array if needed
+  const safeTeams = matchData?.teams 
+    ? (Array.isArray(matchData.teams) 
+        ? matchData.teams 
+        : (matchData.teams.faction1 && matchData.teams.faction2
+            ? [matchData.teams.faction1, matchData.teams.faction2]
+            : []))
+    : [];
   const headerType = getHeaderType(matchData?.status, matchData?.startTime);
   console.log(`🎯 Rendering ${headerType} header for match ${matchId} with status: ${matchData?.status}`, {
     isEnhancedData,
