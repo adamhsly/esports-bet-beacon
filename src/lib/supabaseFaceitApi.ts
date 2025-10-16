@@ -492,15 +492,17 @@ export const fetchSupabaseFaceitMatchDetails = async (matchId: string): Promise<
       esportType: 'csgo',
       bestOf: bestOf,
       source: 'amateur' as const,
-      status: match.status, // 🔧 CRITICAL: Include status for proper header detection
-      finished_at: match.finished_at, // 🔧 CRITICAL: Include finished_at for finished matches
-      finishedTime: match.finished_at, // 🔧 CRITICAL: Legacy field for compatibility
+      status: match.status,
+      finished_at: match.finished_at,
+      finishedTime: match.finished_at,
+      rawData: match.raw_data, // 🔧 CRITICAL: Include full raw_data for score extraction
+      liveTeamScores: match.live_team_scores, // 🔧 CRITICAL: Include live scores for score display
       faceitData: {
         region: match.region,
         competitionType: match.competition_type,
         organizedBy: match.organized_by,
         calculateElo: match.calculate_elo,
-        results: results // 🔧 CRITICAL: Include results data for winner/score display
+        results: results
       },
       faceitMatchDetails: {
         version: match.version,
