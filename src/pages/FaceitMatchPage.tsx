@@ -168,20 +168,12 @@ const FaceitMatchPage = () => {
     if (headerType === 'finished') {
       return <FaceitFinishedMatchHeader match={{
         ...matchData,
-        finishedTime: matchData.finished_at || matchData.startTime,
-        rawData: matchData.raw_data,
-        faceitData: matchData.faceit_data,
-        liveTeamScores: matchData.live_team_scores
+        finishedTime: matchData.finished_at || matchData.startTime
       }} />;
     }
 
     // Use compact header for all devices
-    return <FaceitCompactMatchHeader match={{
-      ...matchData,
-      rawData: matchData.raw_data,
-      faceitData: matchData.faceit_data,
-      liveTeamScores: matchData.live_team_scores
-    }} isMobile={false} />;
+    return <FaceitCompactMatchHeader match={matchData} isMobile={false} />;
   };
   const renderMainContent = () => {
     // Enhanced match analysis for finished matches with comprehensive data
