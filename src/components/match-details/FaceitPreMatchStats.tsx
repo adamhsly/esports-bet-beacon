@@ -29,32 +29,32 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({
 
   useEffect(() => {
     const fetchTeamStats = async () => {
-      if (!matchId) return;
+      if (!matchId || !teams || teams.length < 2) {
+        setLoading(false);
+        return;
+      }
+
+      const team1Name = teams[0]?.name;
+      const team2Name = teams[1]?.name;
+
+      if (!team1Name || !team2Name) {
+        setLoading(false);
+        console.warn('FaceitPreMatchStats: Missing team names');
+        return;
+      }
       
       setLoading(true);
       try {
         const promises = [];
 
         // Fetch team1 stats via faceit_team_form RPC
-        if (team1.name) {
-          promises.push(getFaceitTeamStats(team1.name, game));
-        } else {
-          promises.push(Promise.resolve(null));
-        }
+        promises.push(getFaceitTeamStats(team1Name, game));
         
         // Fetch team2 stats via faceit_team_form RPC
-        if (team2.name) {
-          promises.push(getFaceitTeamStats(team2.name, game));
-        } else {
-          promises.push(Promise.resolve(null));
-        }
+        promises.push(getFaceitTeamStats(team2Name, game));
 
         // Fetch head-to-head record
-        if (team1.name && team2.name) {
-          promises.push(getFaceitHeadToHead(team1.name, team2.name, game, matchId, 6));
-        } else {
-          promises.push(Promise.resolve(null));
-        }
+        promises.push(getFaceitHeadToHead(team1Name, team2Name, game, matchId, 6));
 
         const [stats1, stats2, h2h] = await Promise.all(promises);
         
@@ -71,7 +71,7 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({
     };
 
     fetchTeamStats();
-  }, [team1.name, team2.name, game, matchId]);
+  }, [matchId, teams, game]);
 
   const TeamStatsCard = ({ team, stats }: { team: any; stats: TeamStatsData | null }) => (
     <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)] p-4">

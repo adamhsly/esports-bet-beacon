@@ -65,7 +65,7 @@ export const useSeason = () => {
           .select('*')
           .lte('starts_at', new Date().toISOString())
           .gte('ends_at', new Date().toISOString())
-          .single();
+          .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
           throw error;
