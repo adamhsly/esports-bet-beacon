@@ -243,7 +243,6 @@ const FaceitMatchPage = () => {
         {safeTeams.length > 0 && (
           <FaceitPreMatchStats 
             teams={safeTeams} 
-            faceitData={matchData.faceitData}
             matchId={matchData.match_id || matchData.id}
             game={matchData.game || 'cs2'}
           />

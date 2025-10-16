@@ -8,6 +8,16 @@ export type HeadToHead = {
   totalMatches: number;
 };
 
+/** Shape returned to the UI for team stats */
+export interface TeamStatsData {
+  winRate: number;
+  recentForm: string;
+  tournamentWins: number;
+  totalMatches: number;
+  wins?: number;
+  losses?: number;
+}
+
 /** JSON shape we expect back from the SQL RPC */
 type H2HJson = {
   team1Wins?: number;
@@ -87,6 +97,34 @@ export async function getFaceitHeadToHead(
     team1Wins: Number(data.team1_wins ?? 0),
     team2Wins: Number(data.team2_wins ?? 0),
     totalMatches: Number(data.total_matches ?? 0),
+  };
+}
+
+/**
+ * Get FACEIT team form/stats using the faceit_team_form RPC function.
+ * Returns: win_rate, recent_form, tournament_wins, total_matches, wins, losses, etc.
+ */
+export async function getFaceitTeamStats(
+  teamName: string,
+  game: string = 'cs2'
+): Promise<TeamStatsData | null> {
+  const { data, error } = await (supabase.rpc as any)('faceit_team_form', {
+    team_name: teamName,
+    game_filter: game
+  });
+
+  if (error || !data) {
+    console.error('faceit_team_form error:', error);
+    return null;
+  }
+
+  return {
+    winRate: Number(data.win_rate ?? 0),
+    recentForm: String(data.recent_form ?? ''),
+    tournamentWins: Number(data.tournament_wins ?? 0),
+    totalMatches: Number(data.total_matches ?? 0),
+    wins: Number(data.wins ?? 0),
+    losses: Number(data.losses ?? 0)
   };
 }
 

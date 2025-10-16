@@ -1,301 +1,232 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Award, Clock, Target } from 'lucide-react';
-import { getFaceitHeadToHead } from '@/lib/teamStatsCalculator';
-import type { HeadToHead } from '@/lib/teamStatsCalculator';
+import { TrendingUp, Target, Loader2 } from 'lucide-react';
+import { getFaceitHeadToHead, getFaceitTeamStats } from '@/lib/teamStatsCalculator';
+import type { HeadToHead, TeamStatsData } from '@/lib/teamStatsCalculator';
 
 interface FaceitPreMatchStatsProps {
   teams: Array<{
     name: string;
-    roster?: Array<{
-      player_id: string;
-      nickname: string;
-      skill_level?: number;
-      elo?: number;
-      games?: number;
-      total_matches?: number;
-    }>;
+    logo?: string;
   }>;
-  faceitData?: {
-    region?: string;
-    competitionType?: string;
-    calculateElo?: boolean;
-  };
   matchId?: string;
   game?: string;
 }
 
 export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({ 
   teams, 
-  faceitData, 
-  matchId, 
-  game = 'cs2' 
+  matchId,
+  game = 'cs2'
 }) => {
+  const [team1Stats, setTeam1Stats] = useState<TeamStatsData | null>(null);
+  const [team2Stats, setTeam2Stats] = useState<TeamStatsData | null>(null);
   const [headToHead, setHeadToHead] = useState<HeadToHead | null>(null);
-  const [loadingH2H, setLoadingH2H] = useState(false);
-
-  console.log('📊 Rendering FACEIT pre-match stats with real roster data:', teams);
-  
-  // Check if we have sufficient data for meaningful analysis
-  const hasValidTeamData = (team: any) => {
-    return team?.roster && team.roster.length > 0;
-  };
+  const [loading, setLoading] = useState(true);
 
   const team1 = teams[0] || { name: 'Team 1' };
   const team2 = teams[1] || { name: 'Team 2' };
-  const hasTeam1Data = hasValidTeamData(team1);
-  const hasTeam2Data = hasValidTeamData(team2);
-  const hasBothTeamsData = hasTeam1Data && hasTeam2Data;
 
-  // Only calculate stats if we have real roster data
-  const generateTeamStats = (team: any) => {
-    const roster = team.roster || [];
-    
-    if (roster.length === 0) {
-      return null; // Return null instead of fallback data
-    }
+  useEffect(() => {
+    const fetchTeamStats = async () => {
+      if (!matchId) return;
+      
+      setLoading(true);
+      try {
+        const promises = [];
 
-    console.log(`📈 Calculating real stats for ${team.name} with ${roster.length} players:`, roster);
-    
-    // Only use data if we have meaningful values
-    const skillLevels = roster
-      .map((player: any) => player.skill_level)
-      .filter((level: any) => level && level > 0);
-    
-    const elos = roster
-      .map((player: any) => player.elo)
-      .filter((elo: any) => elo && elo > 0);
-    
-    const gamesPlayed = roster
-      .map((player: any) => player.games || player.total_matches)
-      .filter((games: any) => games && games > 0);
-    
-    // Only return stats if we have data for at least half the roster
-    const minDataThreshold = Math.ceil(roster.length / 2);
-    
-    return {
-      avgSkillLevel: skillLevels.length >= minDataThreshold 
-        ? (skillLevels.reduce((sum: number, level: number) => sum + level, 0) / skillLevels.length).toFixed(1)
-        : null,
-      avgElo: elos.length >= minDataThreshold 
-        ? Math.round(elos.reduce((sum: number, elo: number) => sum + elo, 0) / elos.length)
-        : null,
-      rosterSize: roster.length,
-      totalGamesPlayed: gamesPlayed.length > 0 
-        ? gamesPlayed.reduce((sum: number, games: number) => sum + games, 0)
-        : null,
-      teamExperience: gamesPlayed.length >= minDataThreshold 
-        ? Math.round(gamesPlayed.reduce((sum: number, games: number) => sum + games, 0) / gamesPlayed.length)
-        : null,
-      dataQuality: {
-        skillLevels: skillLevels.length,
-        elos: elos.length,
-        gamesData: gamesPlayed.length,
-        totalPlayers: roster.length
+        // Fetch team1 stats via faceit_team_form RPC
+        if (team1.name) {
+          promises.push(getFaceitTeamStats(team1.name, game));
+        } else {
+          promises.push(Promise.resolve(null));
+        }
+        
+        // Fetch team2 stats via faceit_team_form RPC
+        if (team2.name) {
+          promises.push(getFaceitTeamStats(team2.name, game));
+        } else {
+          promises.push(Promise.resolve(null));
+        }
+
+        // Fetch head-to-head record
+        if (team1.name && team2.name) {
+          promises.push(getFaceitHeadToHead(team1.name, team2.name, game, matchId, 6));
+        } else {
+          promises.push(Promise.resolve(null));
+        }
+
+        const [stats1, stats2, h2h] = await Promise.all(promises);
+        
+        console.log('📊 FACEIT Team Stats Fetched:', { stats1, stats2, h2h });
+        
+        setTeam1Stats(stats1);
+        setTeam2Stats(stats2);
+        setHeadToHead(h2h);
+      } catch (error) {
+        console.error('Error fetching FACEIT team stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
-  };
 
-  const team1Stats = generateTeamStats(team1);
-  const team2Stats = generateTeamStats(team2);
+    fetchTeamStats();
+  }, [team1.name, team2.name, game, matchId]);
 
-  // Fetch head-to-head data when component mounts
-  useEffect(() => {
-    if (team1.name && team2.name && matchId) {
-      setLoadingH2H(true);
-      getFaceitHeadToHead(team1.name, team2.name, game, matchId, 6)
-        .then(h2h => {
-          console.log('📈 Head-to-head data fetched:', h2h);
-          setHeadToHead(h2h);
-        })
-        .catch(err => {
-          console.error('❌ Error fetching head-to-head:', err);
-        })
-        .finally(() => setLoadingH2H(false));
-    }
-  }, [team1.name, team2.name, matchId, game]);
-
-  // Don't show comparison if we don't have meaningful data for both teams
-  const canShowComparison = team1Stats && team2Stats && 
-    team1Stats.avgSkillLevel && team2Stats.avgSkillLevel;
-
-  const StatCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
-    <Card className="bg-slate-700 border border-theme-gray-medium p-4">
-      <div className="flex items-center mb-3">
-        {icon}
-        <h4 className="text-sm font-semibold text-gray-300 ml-2">{title}</h4>
+  const TeamStatsCard = ({ team, stats }: { team: any; stats: TeamStatsData | null }) => (
+    <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)] p-4">
+      <div className="flex items-center space-x-3 mb-4">
+        <img 
+          src={team.logo || '/placeholder.svg'} 
+          alt={team.name} 
+          className="w-8 h-8 object-contain rounded"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
+        />
+        <h4 className="text-[#E8EAF5] font-semibold">{team.name}</h4>
       </div>
-      {children}
+
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-theme-purple" />
+        </div>
+      ) : stats ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Target className="h-4 w-4 text-blue-400" />
+              <span className="text-gray-300 text-sm">Win Rate</span>
+            </div>
+            <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30">
+              {stats.winRate}%
+            </Badge>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4 text-green-400" />
+              <span className="text-gray-300 text-sm">Recent Form</span>
+            </div>
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              {(stats.recentForm || 'N/A').split('').map((char, index) => (
+                <span
+                  key={index}
+                  className={`
+                    text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center
+                    ${char === 'W' ? 'bg-green-500 text-white' : 
+                      char === 'L' ? 'bg-red-500 text-white' : 
+                      'bg-gray-500 text-white'}
+                  `}
+                >
+                  {char}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-400 mt-2">
+            Based on {stats.totalMatches} matches (last 6 months)
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Target className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-400 text-sm">Win Rate</span>
+            </div>
+            <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30">
+              N/A
+            </Badge>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-400 text-sm">Recent Form</span>
+            </div>
+            <span className="text-gray-400 text-sm">No data</span>
+          </div>
+
+          <div className="text-xs text-gray-400 mt-2">
+            No historical data found
+          </div>
+        </div>
+      )}
     </Card>
   );
 
-  const TeamComparison: React.FC<{ label: string; team1Value: string; team2Value: string; team1Better?: boolean }> = ({ 
-    label, team1Value, team2Value, team1Better 
-  }) => (
-    <div className="flex items-center justify-between p-3 bg-theme-gray-dark/50 rounded">
-      <div className="text-center flex-1">
-        <div className={`font-bold ${team1Better ? 'text-green-400' : 'text-white'}`}>{team1Value}</div>
-      </div>
-      <div className="text-sm text-gray-400 px-4">{label}</div>
-      <div className="text-center flex-1">
-        <div className={`font-bold ${!team1Better ? 'text-green-400' : 'text-white'}`}>{team2Value}</div>
-      </div>
-    </div>
-  );
-
-  // If we don't have sufficient data, return null (don't show anything)
-  if (!hasBothTeamsData || !canShowComparison) {
-    return null;
-  }
-
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-white flex items-center">
-        <TrendingUp className="h-5 w-5 mr-2 text-orange-400" />
-        Pre-Match Intelligence
-      </h3>
+      {/* Overall Team Performance Section */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <TrendingUp className="h-5 w-5 text-theme-purple" />
+          <h4 className="text-lg font-bold text-white">Overall Team Performance</h4>
+        </div>
+        <p className="text-gray-400 text-sm">Individual team statistics Last 6 Months</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TeamStatsCard team={team1} stats={team1Stats} />
+          <TeamStatsCard team={team2} stats={team2Stats} />
+        </div>
+      </div>
 
       {/* Head-to-Head History Section */}
-      {headToHead && headToHead.totalMatches > 0 && (
-        <Card className="bg-slate-700 border border-theme-gray-medium p-6">
-          <h4 className="text-lg font-semibold text-white mb-4 text-center">
-            <Target className="h-5 w-5 inline mr-2 text-orange-400" />
-            Head-to-Head History
-          </h4>
-          <p className="text-gray-400 text-sm mb-4 text-center">
-            Previous meetings: {headToHead.totalMatches} matches (last 6 months)
-          </p>
-          <div className="flex items-center justify-center space-x-4">
-            <div className="text-center">
-              <div className="text-white font-semibold text-lg">{team1.name}</div>
-              <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30 mt-1">
-                {headToHead.team1Wins} wins
-              </Badge>
-            </div>
-            <div className="text-gray-400 font-bold text-2xl">VS</div>
-            <div className="text-center">
-              <div className="text-white font-semibold text-lg">{team2.name}</div>
-              <Badge className="bg-red-500/20 text-red-400 border-red-400/30 mt-1">
-                {headToHead.team2Wins} wins
-              </Badge>
-            </div>
-          </div>
-          {headToHead.team1Wins !== headToHead.team2Wins && (
-            <p className="text-gray-400 text-sm mt-3 text-center">
-              {headToHead.team1Wins > headToHead.team2Wins ? team1.name : team2.name} leads the series
-            </p>
-          )}
-        </Card>
-      )}
-
-      {/* Team Comparison - only show if we have real data */}
-      <Card className="bg-slate-700 border border-theme-gray-medium p-6">
-        <h4 className="text-lg font-semibold text-white mb-4 text-center">Team Comparison</h4>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-center flex-1">
-              <div className="font-bold text-orange-400">{team1.name}</div>
-              <div className="text-xs text-gray-500">{team1Stats.rosterSize} players</div>
-            </div>
-            <div className="text-sm text-gray-400 px-4">VS</div>
-            <div className="text-center flex-1">
-              <div className="font-bold text-orange-400">{team2.name}</div>
-              <div className="text-xs text-gray-500">{team2Stats.rosterSize} players</div>
-            </div>
-          </div>
-          
-          {team1Stats.avgSkillLevel && team2Stats.avgSkillLevel && (
-            <TeamComparison 
-              label="Avg Skill Level" 
-              team1Value={team1Stats.avgSkillLevel}
-              team2Value={team2Stats.avgSkillLevel}
-              team1Better={parseFloat(team1Stats.avgSkillLevel) > parseFloat(team2Stats.avgSkillLevel)}
-            />
-          )}
-          
-          {team1Stats.avgElo && team2Stats.avgElo && (
-            <TeamComparison 
-              label="Average ELO" 
-              team1Value={team1Stats.avgElo.toString()}
-              team2Value={team2Stats.avgElo.toString()}
-              team1Better={team1Stats.avgElo > team2Stats.avgElo}
-            />
-          )}
-          
-          {team1Stats.teamExperience && team2Stats.teamExperience && (
-            <TeamComparison 
-              label="Team Experience" 
-              team1Value={`${team1Stats.teamExperience} avg games`}
-              team2Value={`${team2Stats.teamExperience} avg games`}
-              team1Better={team1Stats.teamExperience > team2Stats.teamExperience}
-            />
-          )}
-          
-          {team1Stats.totalGamesPlayed && team2Stats.totalGamesPlayed && (
-            <TeamComparison 
-              label="Total Games Played" 
-              team1Value={team1Stats.totalGamesPlayed.toString()}
-              team2Value={team2Stats.totalGamesPlayed.toString()}
-              team1Better={team1Stats.totalGamesPlayed > team2Stats.totalGamesPlayed}
-            />
-          )}
+      <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)] p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Target className="h-5 w-5 text-theme-purple" />
+          <h4 className="text-lg font-bold text-white">Head-to-Head History</h4>
         </div>
-
-        {/* Data quality indicator */}
-        <div className="mt-4 pt-4 border-t border-theme-gray-medium">
-          <div className="text-xs text-gray-500">
-            <p>Analysis based on {team1Stats.dataQuality.skillLevels + team2Stats.dataQuality.skillLevels} player skill levels, 
-            {team1Stats.dataQuality.elos + team2Stats.dataQuality.elos} ELO ratings, 
-            and {team1Stats.dataQuality.gamesData + team2Stats.dataQuality.gamesData} game history records</p>
-          </div>
+        <p className="text-gray-400 text-sm mb-4">Direct matchup record between these teams</p>
+        <div className="text-center">
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-theme-purple" />
+            </div>
+          ) : headToHead && headToHead.totalMatches > 0 ? (
+            <div>
+              <p className="text-gray-400 mb-2">Previous meetings: {headToHead.totalMatches} matches</p>
+              <div className="flex items-center justify-center space-x-4">
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team1.name}</div>
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30 mt-1">
+                    {headToHead.team1Wins} wins
+                  </Badge>
+                </div>
+                <div className="text-gray-400 font-bold text-2xl">VS</div>
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team2.name}</div>
+                  <Badge className="bg-red-500/20 text-red-400 border-red-400/30 mt-1">
+                    {headToHead.team2Wins} wins
+                  </Badge>
+                </div>
+              </div>
+              {headToHead.team1Wins !== headToHead.team2Wins && (
+                <p className="text-gray-400 text-sm mt-3">
+                  {headToHead.team1Wins > headToHead.team2Wins ? team1.name : team2.name} leads the series
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-400 mb-2">No previous matchups found</p>
+              <div className="flex items-center justify-center space-x-4">
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team1.name}</div>
+                  <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30 mt-1">0 wins</Badge>
+                </div>
+                <div className="text-gray-400 font-bold text-2xl">VS</div>
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{team2.name}</div>
+                  <Badge className="bg-gray-500/20 text-gray-400 border-gray-400/30 mt-1">0 wins</Badge>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-3">This will be their first recorded meeting</p>
+            </div>
+          )}
         </div>
       </Card>
-
-      {/* Additional match info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {faceitData && (
-          <>
-            <StatCard title="Match Importance" icon={<Award className="h-4 w-4 text-yellow-400" />}>
-              <div className="space-y-2">
-                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-400/30">
-                  {faceitData.calculateElo ? 'ELO Ranked' : 'League Match'}
-                </Badge>
-                <p className="text-sm text-gray-400">
-                  {faceitData.calculateElo ? 'ELO points at stake' : 'Standard league points at stake'}
-                </p>
-              </div>
-            </StatCard>
-
-            <StatCard title="Competition Info" icon={<Users className="h-4 w-4 text-blue-400" />}>
-              <div className="space-y-2">
-                <div className="text-sm">
-                  <span className="text-gray-400">Type: </span>
-                  <span className="text-white">{faceitData.competitionType || 'Competitive'}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-400">Region: </span>
-                  <span className="text-white">{faceitData.region || 'EU'}</span>
-                </div>
-                {faceitData.calculateElo && (
-                  <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-400/30">
-                    ELO Ranked
-                  </Badge>
-                )}
-              </div>
-            </StatCard>
-
-            <StatCard title="Match Format" icon={<Clock className="h-4 w-4 text-purple-400" />}>
-              <div className="space-y-2">
-                <div className="text-lg font-bold text-purple-400">Best of 1</div>
-                <p className="text-sm text-gray-400">Single map elimination</p>
-                <div className="text-xs text-gray-500">Map determined by veto process</div>
-              </div>
-            </StatCard>
-          </>
-        )}
-      </div>
     </div>
   );
 };
