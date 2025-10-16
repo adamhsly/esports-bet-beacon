@@ -37,6 +37,14 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({
       const team1Name = teams[0]?.name;
       const team2Name = teams[1]?.name;
 
+      console.log('🔍 FaceitPreMatchStats - Input data:', {
+        matchId,
+        game,
+        team1Name,
+        team2Name,
+        fullTeamsObject: teams
+      });
+
       if (!team1Name || !team2Name) {
         setLoading(false);
         console.warn('FaceitPreMatchStats: Missing team names');
@@ -48,15 +56,24 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({
         const promises = [];
 
         // Fetch team1 stats via faceit_team_form RPC
+        console.log('📊 Calling getFaceitTeamStats for team1:', { team1Name, game });
         promises.push(getFaceitTeamStats(team1Name, game));
         
         // Fetch team2 stats via faceit_team_form RPC
+        console.log('📊 Calling getFaceitTeamStats for team2:', { team2Name, game });
         promises.push(getFaceitTeamStats(team2Name, game));
 
         // Fetch head-to-head record
+        console.log('⚔️ Calling getFaceitHeadToHead:', { team1Name, team2Name, game, matchId });
         promises.push(getFaceitHeadToHead(team1Name, team2Name, game, matchId, 6));
 
         const [stats1, stats2, h2h] = await Promise.all(promises);
+        
+        console.log('✅ RPC Results:', {
+          team1Stats: stats1,
+          team2Stats: stats2,
+          headToHead: h2h
+        });
         
         console.log('📊 FACEIT Team Stats Fetched:', { stats1, stats2, h2h });
         
@@ -64,9 +81,10 @@ export const FaceitPreMatchStats: React.FC<FaceitPreMatchStatsProps> = ({
         setTeam2Stats(stats2);
         setHeadToHead(h2h);
       } catch (error) {
-        console.error('Error fetching FACEIT team stats:', error);
+        console.error('❌ Error fetching FACEIT team stats:', error);
       } finally {
         setLoading(false);
+        console.log('🏁 FaceitPreMatchStats loading complete');
       }
     };
 
