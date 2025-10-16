@@ -1,15 +1,19 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import heroImage from '/lovable-uploads/Fantasybannerhomepage.png';
 
 const Hero = () => {
   return (
     <div className="relative overflow-hidden py-16 md:py-24">
-      {/* Background gradient effect */}
-      <div className="absolute inset-0 bg-theme-dark z-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-64 h-64 bg-theme-purple/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 -right-32 w-80 h-80 bg-theme-blue/20 rounded-full blur-3xl"></div>
+      {/* Background image with overlay */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={heroImage} 
+          alt="Fantasy Esports Banner" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-theme-dark/60 via-theme-dark/40 to-theme-dark"></div>
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
