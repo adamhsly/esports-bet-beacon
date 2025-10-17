@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,22 +16,47 @@ const ResetPasswordPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
-  // Verify we have a valid session after token exchange
+  // Wait for Supabase to establish session after redirect
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setError('Invalid or expired reset link. Please request a new password reset.');
+    let mounted = true;
+
+    const checkAuth = async () => {
+      try {
+        // Wait a bit for Supabase to process the auth redirect
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setError('Invalid or expired reset link. Please request a new password reset.');
+        } else if (!session) {
+          setError('Invalid or expired reset link. Please request a new password reset.');
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+        if (mounted) {
+          setError('Failed to verify reset link. Please try again.');
+        }
+      } finally {
+        if (mounted) {
+          setIsCheckingAuth(false);
+        }
       }
     };
-    
-    checkSession();
+
+    checkAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -72,6 +97,9 @@ const ResetPasswordPage: React.FC = () => {
           description: "You can now sign in with your new password.",
         });
         
+        // Sign out to clear the recovery session
+        await supabase.auth.signOut();
+        
         // Redirect to auth page after 2 seconds
         setTimeout(() => {
           navigate('/auth');
@@ -88,6 +116,21 @@ const ResetPasswordPage: React.FC = () => {
     
     setLoading(false);
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-theme-gray-dark flex items-center justify-center p-4">
+        <Card className="bg-theme-gray-medium border-theme-gray-light w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-purple"></div>
+              <p className="text-gray-300">Verifying reset link...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-theme-gray-dark flex items-center justify-center p-4">
