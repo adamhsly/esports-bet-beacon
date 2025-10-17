@@ -21,15 +21,18 @@ const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Check if we have the recovery token
+  // Verify we have a valid session after token exchange
   useEffect(() => {
-    const tokenHash = searchParams.get('token_hash');
-    const type = searchParams.get('type');
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setError('Invalid or expired reset link. Please request a new password reset.');
+      }
+    };
     
-    if (!tokenHash || type !== 'recovery') {
-      setError('Invalid or expired reset link. Please request a new password reset.');
-    }
-  }, [searchParams]);
+    checkSession();
+  }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
