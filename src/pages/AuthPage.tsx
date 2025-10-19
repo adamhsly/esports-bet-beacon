@@ -58,8 +58,19 @@ const AuthPage: React.FC = () => {
   const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
+    // Check if we're on a password recovery flow
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Don't redirect if this is a recovery session
+      // Recovery sessions shouldn't redirect users away from /reset-password
+      if (user && session && window.location.pathname !== '/reset-password') {
+        navigate(redirectTo);
+      }
+    };
+    
     if (user) {
-      navigate(redirectTo);
+      checkSession();
     }
   }, [user, navigate, redirectTo]);
 

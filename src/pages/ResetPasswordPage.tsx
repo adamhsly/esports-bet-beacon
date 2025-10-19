@@ -28,18 +28,19 @@ const ResetPasswordPage: React.FC = () => {
     const checkAuth = async () => {
       try {
         // Wait a bit for Supabase to process the auth redirect
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
-        if (sessionError) {
+        // A recovery session should exist - if not, the link is invalid
+        if (sessionError || !session) {
           console.error('Session error:', sessionError);
           setError('Invalid or expired reset link. Please request a new password reset.');
-        } else if (!session) {
-          setError('Invalid or expired reset link. Please request a new password reset.');
         }
+        // If we have a session, we're good to proceed with password reset
+        
       } catch (err) {
         console.error('Auth check error:', err);
         if (mounted) {
