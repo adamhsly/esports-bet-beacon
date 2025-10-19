@@ -213,7 +213,10 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
             <Button
               variant={isSubscribed ? "default" : "outline"}
               className={isSubscribed ? 'bg-blue-500 hover:bg-blue-600' : ''}
-              onClick={toggleNotification}
+              onClick={() => {
+                console.log('🔔 Notification button clicked');
+                toggleNotification();
+              }}
               disabled={isLoading || isMatchInPast()}
             >
               {isLoading ? (

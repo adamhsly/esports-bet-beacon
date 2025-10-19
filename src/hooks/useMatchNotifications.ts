@@ -46,16 +46,34 @@ export const useMatchNotifications = ({ matchId, matchStartTime }: UseMatchNotif
   };
 
   const toggleNotification = async () => {
+    console.log('🔔 Toggle notification clicked', { 
+      user: user?.id, 
+      matchId, 
+      matchStartTime,
+      isSubscribed 
+    });
+
     if (!user) {
-      // Redirect to auth page
-      const currentPath = window.location.pathname;
-      window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}`;
+      console.log('🔔 User not authenticated, showing toast and redirecting');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to set match notifications",
+        variant: "default",
+      });
+      
+      // Small delay so user sees the toast before redirect
+      setTimeout(() => {
+        const currentPath = window.location.pathname;
+        window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}`;
+      }, 1000);
       return;
     }
 
     try {
       setIsLoading(true);
       const action = isSubscribed ? 'unsubscribe' : 'subscribe';
+      
+      console.log('🔔 Invoking edge function', { action, matchId, matchStartTime });
 
       const { data, error } = await supabase.functions.invoke('manage-match-notification', {
         body: {
@@ -65,7 +83,22 @@ export const useMatchNotifications = ({ matchId, matchStartTime }: UseMatchNotif
         }
       });
 
-      if (error) throw error;
+      console.log('🔔 Edge function response', { data, error });
+
+      if (error) {
+        console.error('🔔 Edge function error:', error);
+        throw new Error(error.message || 'Failed to manage notification');
+      }
+
+      if (!data) {
+        console.error('🔔 No data returned from edge function');
+        throw new Error('No response from server');
+      }
+
+      if (typeof data.subscribed !== 'boolean') {
+        console.error('🔔 Invalid response structure:', data);
+        throw new Error('Invalid server response');
+      }
 
       setIsSubscribed(data.subscribed);
       
@@ -77,16 +110,38 @@ export const useMatchNotifications = ({ matchId, matchStartTime }: UseMatchNotif
       });
 
     } catch (error: any) {
-      console.error('Error managing notification:', error);
+      console.error('🔔 Error managing notification:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to manage notification";
+      
+      if (error.message?.includes('fetch')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to manage notification",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      console.log('🔔 Toggle notification completed');
     }
   };
+
+  // Debug authentication state
+  useEffect(() => {
+    console.log('🔔 Authentication state:', { 
+      user: user?.id, 
+      matchId, 
+      matchStartTime,
+      isChecking,
+      isSubscribed 
+    });
+  }, [user, matchId, matchStartTime, isChecking, isSubscribed]);
 
   return {
     isSubscribed,
