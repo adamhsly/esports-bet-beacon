@@ -329,9 +329,9 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       <!-- Website Logo -->
       <div style="position: absolute; right: 72px; top: 60px;">
         <img 
-          src="/lovable-uploads/logo.svg" 
+          src="/lovable-uploads/frags_and_fortunes_transparent.png" 
           crossorigin="anonymous"
-          style="width: 140px; height: auto; object-fit: contain; opacity: 0.95; filter: brightness(0) invert(1);"
+          style="width: 140px; height: auto; object-fit: contain; opacity: 0.95;"
         />
       </div>
 
