@@ -5,6 +5,7 @@ import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProfilePage } from '@/components/GameProfileHud';
 import { useMobile } from '@/hooks/useMobile';
+import { usePremiumCheckout } from '@/hooks/usePremiumCheckout';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface ProfileSheetProps {
@@ -14,9 +15,15 @@ interface ProfileSheetProps {
 
 export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange }) => {
   const isMobile = useMobile();
+  const { startPremiumCheckout } = usePremiumCheckout();
 
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open);
+  };
+
+  const handleUnlockPremium = () => {
+    console.log('🔔 Premium unlock button clicked from ProfileSheet');
+    startPremiumCheckout();
   };
 
   if (isMobile) {
@@ -24,12 +31,10 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
         <DrawerContent className="h-[85vh] bg-[#0F1420] border-t-[#223049] rounded-t-2xl">
           <ScrollArea className="h-full overflow-y-auto">
-            <ProfilePage 
-              variant="sheet"
-              onUnlockPremium={() => {
-                console.log('Navigate to premium checkout');
-              }}
-            />
+          <ProfilePage 
+            variant="sheet"
+            onUnlockPremium={handleUnlockPremium}
+          />
           </ScrollArea>
         </DrawerContent>
       </Drawer>
@@ -47,9 +52,7 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ isOpen, onOpenChange
         <ScrollArea className="h-full max-h-[88vh] overflow-y-auto">
           <ProfilePage 
             variant="sheet"
-            onUnlockPremium={() => {
-              console.log('Navigate to premium checkout');
-            }}
+            onUnlockPremium={handleUnlockPremium}
           />
         </ScrollArea>
       </DialogContent>
