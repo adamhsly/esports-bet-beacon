@@ -217,7 +217,7 @@ export const PandaScoreMatchHeader: React.FC<PandaScoreMatchHeaderProps> = ({ ma
                 console.log('🔔 Notification button clicked');
                 toggleNotification();
               }}
-              disabled={isLoading || isMatchInPast()}
+              disabled={isLoading || isFinished()}
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
