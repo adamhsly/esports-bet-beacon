@@ -290,7 +290,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
                 size="icon"
                 className={isSubscribed ? 'bg-theme-purple hover:bg-theme-purple/80' : ''}
                 onClick={toggleNotification}
-                disabled={isLoading || isMatchInPast()}
+                disabled={isLoading || isFinished()}
               >
                 {isLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin text-white" />

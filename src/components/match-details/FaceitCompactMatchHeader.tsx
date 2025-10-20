@@ -244,7 +244,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                   size="icon"
                   className={isSubscribed ? 'bg-orange-500 hover:bg-orange-600' : ''}
                   onClick={toggleNotification}
-                  disabled={isLoading || isMatchInPast()}
+                  disabled={isLoading || isFinished()}
                 >
                   {isLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
