@@ -326,6 +326,15 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
       color: #EAF2FF;
     ">
+      <!-- Website Logo -->
+      <div style="position: absolute; right: 72px; top: 60px;">
+        <img 
+          src="/lovable-uploads/logo.svg" 
+          crossorigin="anonymous"
+          style="width: 140px; height: auto; object-fit: contain; opacity: 0.95;"
+        />
+      </div>
+
       <!-- User/Profile Header -->
       <div style="position: absolute; left: 72px; top: 160px; display: flex; align-items: center; gap: 24px;">
         <!-- Enhanced Avatar with Frame and Border -->

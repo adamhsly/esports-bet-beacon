@@ -181,6 +181,15 @@ async function renderPicksCardHTML(container: HTMLElement, data: PicksCardData) 
       color: #EAF2FF;
       overflow: hidden;
     ">
+      <!-- Website Logo -->
+      <div style="position: absolute; right: 72px; top: 60px;">
+        <img 
+          src="/lovable-uploads/logo.svg" 
+          crossorigin="anonymous"
+          style="width: 140px; height: auto; object-fit: contain; opacity: 0.95;"
+        />
+      </div>
+
       <!-- Title -->
       <div style="position:absolute; top:120px; left:0; width:100%; text-align:center;">
         <div style="font-size:44px; font-weight:900; letter-spacing:.4px;">Top 5 Fantasy Picks</div>
