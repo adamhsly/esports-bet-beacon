@@ -112,30 +112,13 @@ export async function renderShareCard(
       },
       onclone: (clonedDoc) => {
         console.log('html2canvas cloning document...');
-
-        // 1) Isolate our share root: remove everything else from the cloned DOM
         const root = clonedDoc.querySelector('[data-share-root="true"]') as HTMLElement | null;
         if (root) {
-          // Remove siblings of root
           const bodyChildren = Array.from(clonedDoc.body.children);
           for (const child of bodyChildren) {
             if (child !== root) child.remove();
           }
-
-          // Ensure body has neutral background to avoid page-level background loads
           clonedDoc.body.style.background = '#1a1a1a';
-
-          // 2) Ensure all <img> in our root are CORS-friendly
-          root.querySelectorAll('img').forEach((img: HTMLImageElement) => {
-            if (img.src && !img.src.startsWith('data:')) {
-              img.crossOrigin = 'anonymous';
-            }
-          });
-        } else {
-          // Fallback: at least set CORS on all images
-          clonedDoc.querySelectorAll('img').forEach((img: HTMLImageElement) => {
-            if (img.src && !img.src.startsWith('data:')) img.crossOrigin = 'anonymous';
-          });
         }
       }
     });
@@ -348,32 +331,45 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         <!-- Enhanced Avatar with Frame and Border -->
         <div style="position: relative; width: 120px; height: 120px;">
           ${data.user.avatar_border_asset ? `
-            <div style="
-              position: absolute; top: 0; left: 0; width: 120px; height: 120px;
-              background: url('${data.user.avatar_border_asset}');
-              background-size: cover; background-position: center;
-              z-index: 1;
-            "></div>
+            <img 
+              src="${data.user.avatar_border_asset}" 
+              crossorigin="anonymous"
+              style="position: absolute; top: 0; left: 0; width: 120px; height: 120px; object-fit: cover; z-index: 1;"
+            />
           ` : ''}
 
-          <div style="
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: ${data.user.avatar_border_asset ? '96px' : '120px'};
-            height: ${data.user.avatar_border_asset ? '96px' : '120px'};
-            border-radius: 50%;
-            background: ${data.user.avatar_url ? `url('${data.user.avatar_url}')` : 'linear-gradient(135deg, #8B5CF6, #F97316)'};
-            background-size: cover; background-position: center;
-            border: ${data.user.avatar_border_asset ? 'none' : '4px solid #8B5CF6'};
-            z-index: 2;
-          "></div>
+          ${data.user.avatar_url ? `
+            <img 
+              src="${data.user.avatar_url}" 
+              crossorigin="anonymous"
+              style="
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                width: ${data.user.avatar_border_asset ? '96px' : '120px'};
+                height: ${data.user.avatar_border_asset ? '96px' : '120px'};
+                border-radius: 50%;
+                object-fit: cover;
+                border: ${data.user.avatar_border_asset ? 'none' : '4px solid #8B5CF6'};
+                z-index: 2;
+              "
+            />
+          ` : `
+            <div style="
+              position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+              width: ${data.user.avatar_border_asset ? '96px' : '120px'};
+              height: ${data.user.avatar_border_asset ? '96px' : '120px'};
+              border-radius: 50%;
+              background: linear-gradient(135deg, #8B5CF6, #F97316);
+              border: ${data.user.avatar_border_asset ? 'none' : '4px solid #8B5CF6'};
+              z-index: 2;
+            "></div>
+          `}
 
           ${data.user.avatar_frame_asset ? `
-            <div style="
-              position: absolute; top: 0; left: 0; width: 120px; height: 120px;
-              background: url('${data.user.avatar_frame_asset}');
-              background-size: cover; background-position: center;
-              z-index: 3;
-            "></div>
+            <img 
+              src="${data.user.avatar_frame_asset}" 
+              crossorigin="anonymous"
+              style="position: absolute; top: 0; left: 0; width: 120px; height: 120px; object-fit: cover; z-index: 3;"
+            />
           ` : ''}
         </div>
 
@@ -396,12 +392,11 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       <!-- Badges -->
       <div style="position: absolute; left: 72px; top: 410px; display: flex; gap: 16px;">
         ${badgeAssetUrls.slice(0, 4).map((assetUrl: string) => `
-          <div style="
-            width: 56px; height: 56px;
-            background: url('${assetUrl}');
-            background-size: cover; background-position: center;
-            border-radius: 8px;
-          "></div>
+          <img 
+            src="${assetUrl}" 
+            crossorigin="anonymous"
+            style="width: 56px; height: 56px; object-fit: cover; border-radius: 8px;"
+          />
         `).join('')}
       </div>
 
@@ -484,15 +479,16 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       ${amateurBonusTag}
       ${starTag}
 
-      <div style="
-        width: 120px;
-        height: 120px;
-        background: url('${safeLogoUrl}');
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        border-radius: 12px;
-      "></div>
+      <img 
+        src="${safeLogoUrl}" 
+        crossorigin="anonymous"
+        style="
+          width: 120px;
+          height: 120px;
+          object-fit: contain;
+          border-radius: 12px;
+        "
+      />
 
       <div style="
         font-size: 16px;

@@ -81,17 +81,9 @@ export async function renderPicksShareCard(roundId: string): Promise<PicksCardRe
       onclone: (doc) => {
         const root = doc.querySelector('[data-share-root="true"]') as HTMLElement | null;
         if (root) {
-          // Remove non-share nodes
           const kids = Array.from(doc.body.children);
           for (const k of kids) if (k !== root) k.remove();
           doc.body.style.background = '#0f172a';
-          root.querySelectorAll('img').forEach((img: HTMLImageElement) => {
-            if (img.src && !img.src.startsWith('data:')) img.crossOrigin = 'anonymous';
-          });
-        } else {
-          doc.querySelectorAll('img').forEach((img: HTMLImageElement) => {
-            if (img.src && !img.src.startsWith('data:')) img.crossOrigin = 'anonymous';
-          });
         }
       }
     });
@@ -239,7 +231,11 @@ function renderPickSlot(team: {name:string; type:'pro'|'amateur'; image_url?:str
       </div>
       <div style="position:absolute; top:10px; right:12px; color:#EAF2FF; font-weight:800;">#${rank}</div>
 
-      <div style="width:120px; height:120px; background:url('${logo}') center/contain no-repeat; border-radius:12px;"></div>
+      <img 
+        src="${logo}" 
+        crossorigin="anonymous"
+        style="width:120px; height:120px; object-fit:contain; border-radius:12px;"
+      />
 
       <div style="
         font-size:16px; font-weight:800; color:#EAF2FF; text-align:center;
