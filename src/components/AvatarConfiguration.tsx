@@ -1,5 +1,5 @@
 // Unified avatar upload and frame configuration component
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +7,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Camera, User, Loader2, CheckCircle, Palette, Hexagon } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
-import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+import { useLevelRewardsTrack } from '@/hooks/useLevelRewardsTrack';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { resolveAvatarFrameAsset } from "@/utils/avatarFrames";
 import { resolveAvatarBorderAsset } from "@/utils/avatarBorders";
 import { cn } from '@/lib/utils';
@@ -32,42 +34,60 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
   avatarBorderUrl
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadAvatar, uploading, updateAvatarFrame, updateAvatarBorder } = useProfile();
-  const { free, premium, currentLevel } = useRewardsTrack();
+  const { profile, uploadAvatar, uploading, updateAvatarFrame, updateAvatarBorder } = useProfile();
+  const { user } = useAuth();
+  const [userLevel, setUserLevel] = useState(1);
+  
+  // Fetch user level from user_progress
+  useEffect(() => {
+    if (!user) return;
+    
+    supabase
+      .from('user_progress')
+      .select('level')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setUserLevel(data.level);
+      });
+  }, [user]);
+  
+  const { free, premium, loading } = useLevelRewardsTrack(userLevel, profile?.premium_pass || false);
   const [previewFrameId, setPreviewFrameId] = useState(currentFrameId || '');
   const [previewBorderId, setPreviewBorderId] = useState(currentBorderId || '');
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState(currentAvatarUrl);
 
-  // Get all frame rewards (both unlocked and locked for preview)
+  // Get all frame rewards from level rewards
   const frameRewards = useMemo(() => {
-    const allFrames = [...free, ...premium].filter(item => item.type === 'frame');
+    const allFrames = [...free, ...premium].filter(item => 
+      item.reward_type === 'item' && item.item_code?.startsWith('frame_')
+    );
     return allFrames.sort((a, b) => a.level - b.level);
   }, [free, premium]);
 
-  // Get all border rewards (both unlocked and locked for preview)
+  // Get all border rewards from level rewards
   const borderRewards = useMemo(() => {
     const allBorders = [...free, ...premium].filter(item => 
-      item.value && 
-      (item.value.toLowerCase().includes('border') || 
-       item.value.toLowerCase().includes('pulse'))
+      item.reward_type === 'item' && item.item_code?.startsWith('border_')
     );
     return allBorders.sort((a, b) => a.level - b.level);
   }, [free, premium]);
 
   // Get unlocked frame rewards only
   const availableFrames = useMemo(() => {
-    const unlockedFrames = frameRewards.filter(item => item.state === 'unlocked');
+    const unlockedFrames = frameRewards.filter(item => item.unlocked);
     
     // Add "no frame" option
     return [
       {
         id: 'none',
         level: 0,
-        tier: 'free' as const,
-        type: 'frame' as const,
-        value: 'No Frame',
+        track: 'free' as const,
+        reward_type: 'item' as const,
+        item_code: 'none',
+        amount: null,
         assetUrl: '',
-        state: 'unlocked' as const
+        unlocked: true
       },
       ...unlockedFrames
     ];
@@ -75,18 +95,19 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
   // Get unlocked border rewards only
   const availableBorders = useMemo(() => {
-    const unlockedBorders = borderRewards.filter(item => item.state === 'unlocked');
+    const unlockedBorders = borderRewards.filter(item => item.unlocked);
     
     // Add "no border" option
     return [
       {
         id: 'none',
         level: 0,
-        tier: 'free' as const,
-        type: 'item' as const,
-        value: 'No Border',
+        track: 'free' as const,
+        reward_type: 'item' as const,
+        item_code: 'none',
+        amount: null,
         assetUrl: '',
-        state: 'unlocked' as const
+        unlocked: true
       },
       ...unlockedBorders
     ];
@@ -301,7 +322,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                 {/* Debug info - temporarily show what's unlocked */}
                 <div className="text-xs text-white/80 text-center p-2 bg-muted/50 rounded">
-                  Level {currentLevel} • {frameRewards.filter(f => f.state === 'unlocked').length} frames unlocked
+                  Level {userLevel} • {frameRewards.filter(f => f.unlocked).length} frames unlocked
                 </div>
                 
                 {frameRewards.length === 0 ? (
@@ -349,7 +370,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                 {frame.id !== 'none' && frame.assetUrl && (
                                   <img 
                                     src={frame.assetUrl}
-                                    alt={frame.value}
+                                    alt={frame.item_code || 'Frame'}
                                     className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                                   />
                                 )}
@@ -357,19 +378,19 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Frame Info */}
                               <div className="text-center">
-                                <p className="text-xs font-medium text-white mb-1">
-                                  {frame.value}
-                                </p>
-                                {frame.level > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    L{frame.level}
-                                  </Badge>
-                                )}
-                                {frame.tier === 'premium' && (
-                                  <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
-                                    Premium
-                                  </Badge>
-                                )}
+                                 <p className="text-xs font-medium text-white mb-1">
+                                   {frame.item_code === 'none' ? 'No Frame' : frame.item_code}
+                                 </p>
+                                 {frame.level > 0 && (
+                                   <Badge variant="secondary" className="text-xs">
+                                     L{frame.level}
+                                   </Badge>
+                                 )}
+                                 {frame.track === 'premium' && (
+                                   <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
+                                     Premium
+                                   </Badge>
+                                 )}
                               </div>
 
                               {/* Selected Indicator */}
@@ -384,7 +405,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     )}
 
 
-                    {availableFrames.length === 1 && frameRewards.filter(f => f.state === 'locked').length === 0 && (
+                    {availableFrames.length === 1 && frameRewards.filter(f => !f.unlocked).length === 0 && (
                       <div className="text-center text-white/80 py-8">
                         <p className="text-sm">Level up to unlock more rewards</p>
                       </div>
@@ -408,7 +429,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                 {/* Debug info - temporarily show what's unlocked */}
                 <div className="text-xs text-white/80 text-center p-2 bg-muted/50 rounded">
-                  Level {currentLevel} • {borderRewards.filter(b => b.state === 'unlocked').length} borders unlocked
+                  Level {userLevel} • {borderRewards.filter(b => b.unlocked).length} borders unlocked
                 </div>
                 
                 {borderRewards.length === 0 ? (
@@ -435,12 +456,12 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                             >
                               {/* Border Preview */}
                               <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center">
-                                {border.id !== 'none' && getBorderAssetUrl(border.value || '') && (
-                                  <div 
-                                    className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat"
-                                    style={{ backgroundImage: `url(${getBorderAssetUrl(border.value || '')})` }}
-                                  />
-                                )}
+                                 {border.id !== 'none' && getBorderAssetUrl(border.item_code || '') && (
+                                   <div 
+                                     className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat"
+                                     style={{ backgroundImage: `url(${getBorderAssetUrl(border.item_code || '')})` }}
+                                   />
+                                 )}
                                 
                                 <div 
                                   className={cn(
@@ -461,21 +482,21 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                 </div>
                               </div>
 
-                              {/* Border Info */}
-                              <div className="text-center">
-                                <p className="text-xs font-medium text-white mb-1">
-                                  {border.value}
-                                </p>
-                                {border.level > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    L{border.level}
-                                  </Badge>
-                                )}
-                                {border.tier === 'premium' && (
-                                  <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
-                                    Premium
-                                  </Badge>
-                                )}
+                               {/* Border Info */}
+                               <div className="text-center">
+                                 <p className="text-xs font-medium text-white mb-1">
+                                   {border.item_code === 'none' ? 'No Border' : border.item_code}
+                                 </p>
+                                 {border.level > 0 && (
+                                   <Badge variant="secondary" className="text-xs">
+                                     L{border.level}
+                                   </Badge>
+                                 )}
+                                 {border.track === 'premium' && (
+                                   <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
+                                     Premium
+                                   </Badge>
+                                 )}
                               </div>
 
                               {/* Selected Indicator */}
@@ -490,7 +511,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     )}
 
 
-                    {availableBorders.length === 1 && borderRewards.filter(b => b.state === 'locked').length === 0 && (
+                    {availableBorders.length === 1 && borderRewards.filter(b => !b.unlocked).length === 0 && (
                       <div className="text-center text-white/80 py-8">
                         <p className="text-sm">Level up to unlock more rewards</p>
                       </div>
