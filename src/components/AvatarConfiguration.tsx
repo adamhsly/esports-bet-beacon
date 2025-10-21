@@ -383,58 +383,6 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                       </div>
                     )}
 
-                    {/* Locked Frames Preview */}
-                    {frameRewards.filter(f => f.state === 'locked').length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-white/80 mb-3">Coming Soon:</h4>
-                        <ScrollArea className="max-h-48">
-                          <div className="grid grid-cols-3 gap-3 pr-3">
-                            {frameRewards.filter(f => f.state === 'locked').slice(0, 6).map((frame) => (
-                            <div
-                              key={frame.id}
-                              className="relative p-3 rounded-xl border border-border bg-muted/30 opacity-60"
-                            >
-                              {/* Frame Preview */}
-                              <div className="relative mx-auto w-12 h-12 mb-2">
-                                <div 
-                                  className={cn(
-                                    "w-full h-full rounded-full flex items-center justify-center overflow-hidden",
-                                    "bg-gradient-to-br from-muted to-muted-foreground/20"
-                                  )}
-                                >
-                                  <User className="w-4 h-4 text-white/60" />
-                                </div>
-                                
-                                {/* Frame Overlay - greyed out */}
-                                {frame.assetUrl && (
-                                  <img 
-                                    src={frame.assetUrl}
-                                    alt={frame.value}
-                                    className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-40 grayscale"
-                                  />
-                                )}
-                              </div>
-
-                              {/* Frame Info */}
-                              <div className="text-center">
-                                <p className="text-xs font-medium text-white/60 mb-1">
-                                  {frame.value}
-                                </p>
-                                <Badge variant="outline" className="text-xs border-white/30 text-white/60">
-                                  Level {frame.level}
-                                </Badge>
-                                {frame.tier === 'premium' && (
-                                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs ml-1">
-                                    Premium
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
 
                     {availableFrames.length === 1 && frameRewards.filter(f => f.state === 'locked').length === 0 && (
                       <div className="text-center text-white/80 py-8">
@@ -541,57 +489,6 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                       </div>
                     )}
 
-                    {/* Locked Borders Preview */}
-                    {borderRewards.filter(b => b.state === 'locked').length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-white/80 mb-3">Coming Soon:</h4>
-                        <ScrollArea className="max-h-48">
-                          <div className="grid grid-cols-3 gap-3 pr-3">
-                            {borderRewards.filter(b => b.state === 'locked').slice(0, 6).map((border) => (
-                            <div
-                              key={border.id}
-                              className="relative p-3 rounded-xl border border-border bg-muted/30 opacity-60"
-                            >
-                              {/* Border Preview */}
-                              <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center">
-                                {getBorderAssetUrl(border.value || '') && (
-                                  <div 
-                                    className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat opacity-40 grayscale"
-                                    style={{ backgroundImage: `url(${getBorderAssetUrl(border.value || '')})` }}
-                                  />
-                                )}
-                                
-                                <div 
-                                  className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center overflow-hidden",
-                                    "bg-gradient-to-br from-muted to-muted-foreground/20 relative"
-                                  )}
-                                  style={{ zIndex: 1 }}
-                                >
-                                  <User className="w-4 h-4 text-white/60" />
-                                </div>
-                              </div>
-
-                              {/* Border Info */}
-                              <div className="text-center">
-                                <p className="text-xs font-medium text-white/60 mb-1">
-                                  {border.value}
-                                </p>
-                                <Badge variant="outline" className="text-xs border-white/30 text-white/60">
-                                  Level {border.level}
-                                </Badge>
-                                {border.tier === 'premium' && (
-                                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs ml-1">
-                                    Premium
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
 
                     {availableBorders.length === 1 && borderRewards.filter(b => b.state === 'locked').length === 0 && (
                       <div className="text-center text-white/80 py-8">
