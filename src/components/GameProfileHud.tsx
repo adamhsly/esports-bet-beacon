@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useProfile } from '@/hooks/useProfile';
-import { useRewardsTrack, type RewardItem } from '@/hooks/useRewardsTrack';
+import { useLevelRewardsTrack, type LevelRewardItem } from '@/hooks/useLevelRewardsTrack';
 import { AvatarConfiguration } from '@/components/AvatarConfiguration';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { resolveAvatarFrameAsset } from '@/utils/avatarFrames';
@@ -56,11 +56,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     );
   }
 
-  const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null);
+  const [selectedReward, setSelectedReward] = useState<LevelRewardItem | null>(null);
   const [showAvatarConfig, setShowAvatarConfig] = useState(false);
   const { profile, loading: profileLoading } = useProfile();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
-  const { free, premium, currentLevel, premiumActive } = useRewardsTrack();
+  
+  // Determine if premium is active - check profile subscription or entitlement
+  const isPremium = false; // TODO: Connect to actual premium status
+  const { free, premium } = useLevelRewardsTrack(level, isPremium);
 
   const loading = progressLoading || profileLoading;
 
@@ -68,13 +71,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const currentFrameAsset = useMemo(() => {
     if (!profile?.avatar_frame_id) return null;
     const frameReward = [...free, ...premium].find(
-      item => item.id === profile.avatar_frame_id && item.type === 'frame'
+      item => item.id === profile.avatar_frame_id && item.reward_type === 'item' && item.item_code?.startsWith('frame_')
     );
-    
-    // If we have a frame reward, resolve its asset or use the reward's assetUrl
-    if (frameReward?.value) {
-      return resolveAvatarFrameAsset(frameReward.value) || frameReward.assetUrl || null;
-    }
     return frameReward?.assetUrl || null;
   }, [profile?.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
 
@@ -82,13 +80,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const currentBorderAsset = useMemo(() => {
     if (!profile?.avatar_border_id) return null;
     const borderReward = [...free, ...premium].find(
-      item => item.id === profile.avatar_border_id && item.type === 'border'
+      item => item.id === profile.avatar_border_id && item.reward_type === 'item' && item.item_code?.startsWith('border_')
     );
-    
-    // If we have a border reward, resolve its asset or use the reward's assetUrl
-    if (borderReward?.value) {
-      return resolveAvatarBorderAsset(borderReward.value) || borderReward.assetUrl || null;
-    }
     return borderReward?.assetUrl || null;
   }, [profile?.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
 
@@ -195,7 +188,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-gaming text-[#EAF2FF]">Rewards</h2>
-              {!premiumActive && (
+              {!isPremium && (
                 <Button 
                   onClick={onUnlockPremium}
                   className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]"
@@ -238,7 +231,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                       className="absolute top-0 w-2 h-2 bg-neon-blue rounded-full transform -translate-y-1/2 -translate-x-1/2 shadow-[0_0_8px_rgba(79,172,254,0.6)]"
                       style={{
                         left: `${Math.min(100, Math.max(0, 
-                          ((currentLevel - (free[0]?.level || 1)) / 
+                          ((level - (free[0]?.level || 1)) / 
                           Math.max(1, (free[free.length - 1]?.level || 1) - (free[0]?.level || 1))) * 100
                         ))}%`
                       }}
@@ -254,7 +247,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 font-gaming text-sm px-3 py-1">
                   PREMIUM
                 </Badge>
-                {!premiumActive && (
+                {!isPremium && (
                   <Button 
                     onClick={onUnlockPremium}
                     size="sm"
@@ -310,7 +303,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
         <DialogContent className="bg-[#0B1220] border border-[#223049] text-[#EAF2FF] max-w-sm mx-auto rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-gaming text-[#EAF2FF]">
-              {selectedReward?.value || `${selectedReward?.type?.charAt(0).toUpperCase()}${selectedReward?.type?.slice(1)}`}
+              {selectedReward?.item_code || selectedReward?.reward_type === 'credits' ? 'Credits' : 'Reward'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -320,16 +313,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 {selectedReward?.assetUrl ? (
                   <img 
                     src={selectedReward.assetUrl} 
-                    alt={`${selectedReward.type} reward`} 
+                    alt={`${selectedReward.reward_type} reward`} 
                     className="w-20 h-20 object-contain" 
                   />
-                ) : selectedReward?.type === 'credits' ? (
+                ) : selectedReward?.reward_type === 'credits' ? (
                   <Coins className="w-20 h-20 text-yellow-400" />
-                ) : selectedReward?.type === 'badge' ? (
+                ) : selectedReward?.item_code?.startsWith('badge_') ? (
                   <Star className="w-20 h-20 text-neon-blue" />
-                ) : selectedReward?.type === 'frame' ? (
+                ) : selectedReward?.item_code?.startsWith('frame_') ? (
                   <Trophy className="w-20 h-20 text-purple-400" />
-                ) : selectedReward?.type === 'border' ? (
+                ) : selectedReward?.item_code?.startsWith('border_') ? (
                   <Target className="w-20 h-20 text-neon-purple" />
                 ) : (
                   <Crown className="w-20 h-20 text-yellow-400" />
@@ -342,23 +335,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               <p className="text-[#CFE3FF] text-sm">
                 Unlocks at Level {selectedReward?.level}
               </p>
+              {selectedReward?.reward_type === 'credits' && selectedReward?.amount && (
+                <p className="text-yellow-400 font-gaming text-lg mt-2">
+                  {selectedReward.amount} Credits
+                </p>
+              )}
             </div>
 
             {/* State Display */}
             <div className="flex justify-center">
-              {selectedReward?.state === 'unlocked' && (
+              {selectedReward?.unlocked ? (
                 <Badge className="bg-green-500/20 text-[#79FFD7] border-[#79FFD7]/30">
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Unlocked
                 </Badge>
-              )}
-              {selectedReward?.state === 'claimable' && (
-                <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
-                  <Gift className="w-4 h-4 mr-1" />
-                  Ready to Claim
-                </Badge>
-              )}
-              {selectedReward?.state === 'locked' && (
+              ) : (
                 <Badge className="bg-[#F5C042]/20 text-[#F5C042] border-[#F5C042]/30">
                   <Lock className="w-4 h-4 mr-1" />
                   Locked
@@ -394,7 +385,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
         <DialogContent className="bg-[#0B1220] border border-[#223049] text-[#EAF2FF] max-w-sm mx-auto rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-gaming text-[#EAF2FF]">
-              {selectedReward?.value || `${selectedReward?.type?.charAt(0).toUpperCase()}${selectedReward?.type?.slice(1)}`}
+              {selectedReward?.item_code || selectedReward?.reward_type === 'credits' ? 'Credits' : 'Reward'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -404,16 +395,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 {selectedReward?.assetUrl ? (
                   <img 
                     src={selectedReward.assetUrl} 
-                    alt={`${selectedReward.type} reward`} 
+                    alt={`${selectedReward.reward_type} reward`} 
                     className="w-20 h-20 object-contain" 
                   />
-                ) : selectedReward?.type === 'credits' ? (
+                ) : selectedReward?.reward_type === 'credits' ? (
                   <Coins className="w-20 h-20 text-yellow-400" />
-                ) : selectedReward?.type === 'badge' ? (
+                ) : selectedReward?.item_code?.startsWith('badge_') ? (
                   <Star className="w-20 h-20 text-neon-blue" />
-                ) : selectedReward?.type === 'frame' ? (
+                ) : selectedReward?.item_code?.startsWith('frame_') ? (
                   <Trophy className="w-20 h-20 text-purple-400" />
-                ) : selectedReward?.type === 'border' ? (
+                ) : selectedReward?.item_code?.startsWith('border_') ? (
                   <Target className="w-20 h-20 text-neon-purple" />
                 ) : (
                   <Crown className="w-20 h-20 text-yellow-400" />
@@ -426,23 +417,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               <p className="text-[#CFE3FF] text-sm">
                 Unlocks at Level {selectedReward?.level}
               </p>
+              {selectedReward?.reward_type === 'credits' && selectedReward?.amount && (
+                <p className="text-yellow-400 font-gaming text-lg mt-2">
+                  {selectedReward.amount} Credits
+                </p>
+              )}
             </div>
 
             {/* State Display */}
             <div className="flex justify-center">
-              {selectedReward?.state === 'unlocked' && (
+              {selectedReward?.unlocked ? (
                 <Badge className="bg-green-500/20 text-[#79FFD7] border-[#79FFD7]/30">
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Unlocked
                 </Badge>
-              )}
-              {selectedReward?.state === 'claimable' && (
-                <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
-                  <Gift className="w-4 h-4 mr-1" />
-                  Ready to Claim
-                </Badge>
-              )}
-              {selectedReward?.state === 'locked' && (
+              ) : (
                 <Badge className="bg-[#F5C042]/20 text-[#F5C042] border-[#F5C042]/30">
                   <Lock className="w-4 h-4 mr-1" />
                   Locked
@@ -458,14 +447,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
 
 // Reward Card Component
 interface RewardCardProps {
-  item: RewardItem;
+  item: LevelRewardItem;
   onClick: () => void;
 }
 
 const RewardCard: React.FC<RewardCardProps> = ({ item, onClick }) => {
-  const isUnlocked = item.state === 'unlocked';
-  const isClaimable = item.state === 'claimable';
-  const isLocked = item.state === 'locked';
+  const isUnlocked = item.unlocked;
+  const isClaimable = false; // Level rewards are directly unlocked, no claim step
+  const isLocked = !item.unlocked;
 
   return (
     <div 
@@ -483,20 +472,20 @@ const RewardCard: React.FC<RewardCardProps> = ({ item, onClick }) => {
         {item.assetUrl ? (
           <img 
             src={item.assetUrl} 
-            alt={`${item.type} reward`} 
+            alt={`${item.reward_type} reward`} 
             className={cn(
               "w-8 h-8 object-contain transition-all duration-300",
               isLocked && "grayscale opacity-50"
             )} 
             loading="lazy" 
           />
-        ) : item.type === 'credits' ? (
+        ) : item.reward_type === 'credits' ? (
           <Coins className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-yellow-400")} />
-        ) : item.type === 'badge' ? (
+        ) : item.item_code?.startsWith('badge_') ? (
           <Star className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-neon-blue")} />
-        ) : item.type === 'frame' ? (
+        ) : item.item_code?.startsWith('frame_') ? (
           <Trophy className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-purple-400")} />
-        ) : item.type === 'border' ? (
+        ) : item.item_code?.startsWith('border_') ? (
           <Target className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-neon-purple")} />
         ) : (
           <Crown className={cn("w-6 h-6", isLocked ? "text-gray-500" : "text-yellow-400")} />

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useProgress, useMissions, useRewards, useLevelRewards, useEntitlement } from '@/hooks/useSupabaseData';
+import { useProgress, useMissions, useEntitlement } from '@/hooks/useSupabaseData';
+import { useLevelRewardsTrack } from '@/hooks/useLevelRewardsTrack';
 import { 
   User, 
   Trophy, 
@@ -30,8 +31,8 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
   const { user, isAuthenticated } = useAuthUser();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   const { missions, loading: missionsLoading } = useMissions();
-  const { freeRewards, premiumRewards, loading: rewardsLoading } = useLevelRewards();
   const { premiumActive, loading: entitlementLoading } = useEntitlement();
+  const { free: freeRewards, premium: premiumRewards, loading: rewardsLoading } = useLevelRewardsTrack(level, premiumActive);
 
   if (!isAuthenticated) {
     return (
@@ -346,8 +347,8 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                   <div className="grid gap-4">
                     {[...Array(Math.max(10, Math.ceil(level / 5) * 5))].map((_, index) => {
                       const rewardLevel = (index + 1) * 5;
-                      const freeReward = freeRewards.find(r => r.level_required === rewardLevel);
-                      const premiumReward = premiumRewards.find(r => r.level_required === rewardLevel);
+                      const freeReward = freeRewards.find(r => r.level === rewardLevel);
+                      const premiumReward = premiumRewards.find(r => r.level === rewardLevel);
                       const isUnlocked = level >= rewardLevel;
 
                       return (
