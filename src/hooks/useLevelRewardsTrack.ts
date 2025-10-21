@@ -18,7 +18,6 @@ export type LevelRewardItem = {
 export function useLevelRewardsTrack(userLevel: number = 1, isPremium: boolean = false) {
   const { user } = useAuth();
   const [levelRewards, setLevelRewards] = useState<any[]>([]);
-  const [userUnlockedRewards, setUserUnlockedRewards] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,19 +32,6 @@ export function useLevelRewardsTrack(userLevel: number = 1, isPremium: boolean =
 
       if (rewards) {
         setLevelRewards(rewards);
-      }
-
-      // Fetch user's granted level rewards if logged in
-      if (user) {
-        const { data: unlocked } = await supabase
-          .from("user_level_rewards")
-          .select("id, level, item_code")
-          .eq("user_id", user.id);
-
-        if (unlocked) {
-          // Create set of "level:track" strings to identify unlocked rewards
-          setUserUnlockedRewards(new Set(unlocked.map((r) => `${r.level}:${r.item_code || 'credits'}`)));
-        }
       }
 
       setLoading(false);
