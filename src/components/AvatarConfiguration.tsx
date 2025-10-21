@@ -165,7 +165,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-surface/100 border border-border text-white max-w-2xl mx-auto rounded-xl max-h-[85vh] overflow-hidden">
+      <DialogContent className="bg-[#0F1420] border border-border text-white max-w-2xl mx-auto rounded-xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-gaming text-white">
             Configure Avatar
