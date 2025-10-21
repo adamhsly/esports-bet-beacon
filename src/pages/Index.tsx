@@ -572,20 +572,9 @@ const Index = () => {
                       .map(({ league, matches, tournamentId, metadata }) => (
                         <div key={league} className="mb-6">
                           <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                            {tournamentId ? (
-                              <Link
-                                to={`/tournament/${tournamentId}`}
-                                className="hover:text-theme-purple transition-colors"
-                              >
-                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
-                                  {league}
-                                </div>
-                              </Link>
-                            ) : (
-                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
-                                {league}
-                              </div>
-                            )}
+                            <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                              {league}
+                            </div>
                             {renderTournamentMetadata(metadata)}
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
@@ -618,20 +607,9 @@ const Index = () => {
                       .map(({ league, matches, tournamentId, metadata }) => (
                         <div key={league} className="mb-6">
                           <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                            {tournamentId ? (
-                              <Link
-                                to={`/tournament/${tournamentId}`}
-                                className="hover:text-theme-purple transition-colors"
-                              >
-                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
-                                  {league}
-                                </div>
-                              </Link>
-                            ) : (
-                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
-                                {league}
-                              </div>
-                            )}
+                            <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                              {league}
+                            </div>
                             {renderTournamentMetadata(metadata)}
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
@@ -664,20 +642,9 @@ const Index = () => {
                       .map(({ league, matches, tournamentId, metadata }) => (
                         <div key={league} className="mb-6">
                           <div className="px-2 sm:px-4 lg:px-6 ml-3 mb-2">
-                            {tournamentId ? (
-                              <Link
-                                to={`/tournament/${tournamentId}`}
-                                className="hover:text-theme-purple transition-colors"
-                              >
-                                <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide hover:underline cursor-pointer">
-                                  {league}
-                                </div>
-                              </Link>
-                            ) : (
-                              <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
-                                {league}
-                              </div>
-                            )}
+                            <div className="font-semibold text-sm text-theme-purple uppercase tracking-wide">
+                              {league}
+                            </div>
                             {renderTournamentMetadata(metadata)}
                           </div>
                           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
