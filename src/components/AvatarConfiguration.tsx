@@ -305,8 +305,8 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                 </div>
                 
                 {frameRewards.length === 0 ? (
-                  <div className="text-center text-white/80">
-                    <p>No frame rewards available.</p>
+                  <div className="text-center text-white/80 py-8">
+                    <p className="text-sm">Level up to unlock more rewards</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -437,9 +437,8 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     )}
 
                     {availableFrames.length === 1 && frameRewards.filter(f => f.state === 'locked').length === 0 && (
-                      <div className="text-center text-white/80">
-                        <p>No avatar frames available yet.</p>
-                        <p className="text-sm mt-1">Keep leveling up to unlock decorative frames!</p>
+                      <div className="text-center text-white/80 py-8">
+                        <p className="text-sm">Level up to unlock more rewards</p>
                       </div>
                     )}
                   </div>
@@ -465,8 +464,8 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                 </div>
                 
                 {borderRewards.length === 0 ? (
-                  <div className="text-center text-white/80">
-                    <p>No border rewards available.</p>
+                  <div className="text-center text-white/80 py-8">
+                    <p className="text-sm">Level up to unlock more rewards</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -595,9 +594,8 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                     )}
 
                     {availableBorders.length === 1 && borderRewards.filter(b => b.state === 'locked').length === 0 && (
-                      <div className="text-center text-white/80">
-                        <p>No avatar borders available yet.</p>
-                        <p className="text-sm mt-1">Keep leveling up to unlock decorative borders!</p>
+                      <div className="text-center text-white/80 py-8">
+                        <p className="text-sm">Level up to unlock more rewards</p>
                       </div>
                     )}
                   </div>
