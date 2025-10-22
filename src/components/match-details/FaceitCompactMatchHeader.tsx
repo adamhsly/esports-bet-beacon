@@ -31,7 +31,7 @@ interface FaceitCompactMatchHeaderProps {
         };
       };
     };
-    rawData?: any;
+    raw_data?: any;
     liveTeamScores?: any;
     bestOf?: number;
     finishedTime?: string;
@@ -77,7 +77,7 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
   };
 
   // Extract score from multiple sources using utility
-  const faceitResult = getFaceitScore(match.rawData, match.faceitData, match.liveTeamScores);
+  const faceitResult = getFaceitScore(match.raw_data, match.faceitData, match.liveTeamScores);
   const hasScore = faceitResult.score !== null;
 
   // Helper functions for finished/live matches
@@ -229,10 +229,10 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
                 <span>{match.faceitData.region}</span>
               </div>
             )}
-            {match.rawData?.game && (
+            {match.raw_data?.game && (
               <div className="flex items-center">
                 <Gamepad2 className="h-3 w-3 mr-1" />
-                <span>{match.rawData.game}</span>
+                <span>{match.raw_data.game}</span>
               </div>
             )}
           </div>

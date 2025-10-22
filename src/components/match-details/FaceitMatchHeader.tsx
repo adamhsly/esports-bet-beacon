@@ -22,7 +22,7 @@ interface FaceitMatchHeaderProps {
       calculateElo?: boolean;
     };
     bestOf?: number;
-    rawData?: any;
+    raw_data?: any;
   };
 }
 
@@ -120,10 +120,10 @@ export const FaceitMatchHeader: React.FC<FaceitMatchHeaderProps> = ({ match }) =
                 <span>{match.faceitData.region}</span>
               </div>
             )}
-            {match.rawData?.game && (
+            {match.raw_data?.game && (
               <div className="flex items-center">
                 <Gamepad2 size={14} className="mr-1.5" />
-                <span>{match.rawData.game}</span>
+                <span>{match.raw_data.game}</span>
               </div>
             )}
           </div>
