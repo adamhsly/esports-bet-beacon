@@ -85,11 +85,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
     return borderReward?.assetUrl || null;
   }, [profile?.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
 
-  // Calculate XP progress
-  const baseXPForLevel = 1000 + level * 100;
-  const currentLevelStart = level === 1 ? 0 : (level - 1) * 1000 + ((level - 1) * (level - 2) / 2) * 100;
-  const currentLevelXP = xp - currentLevelStart;
-  const xpProgress = Math.min((currentLevelXP / baseXPForLevel) * 100, 100);
+  // Calculate XP progress (matches mobile HUD formula)
+  const nextXp = Math.pow(level + 1, 2) * 100;
+  const xpProgress = Math.min((xp / nextXp) * 100, 100);
+  const xpToNext = Math.max(nextXp - xp, 0);
 
   if (loading) {
     return (
@@ -151,16 +150,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               {/* XP Progress */}
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm text-white/60">
-                  <span>{Math.floor(currentLevelXP)}</span>
-                  <span>{baseXPForLevel} XP</span>
+                  <span>{Math.floor(xp)}</span>
+                  <span>{nextXp} XP</span>
                 </div>
                 <div className="relative">
                   <div 
                     className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
                     role="progressbar"
-                    aria-valuenow={Math.floor(currentLevelXP)}
+                    aria-valuenow={Math.floor(xp)}
                     aria-valuemin={0}
-                    aria-valuemax={baseXPForLevel}
+                    aria-valuemax={nextXp}
                     aria-label="XP progress"
                   >
                     <div 
