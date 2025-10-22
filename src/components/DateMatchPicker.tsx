@@ -129,7 +129,9 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
               data-role="date-btn"
               onClick={() => onDateSelect(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[78px] max-w-[90px] w-[82px] h-14 rounded-xl relative group
+                flex flex-col items-center justify-center min-w-[78px] max-w-[90px] w-[82px] h-14 
+                lg:min-w-[90px] lg:max-w-[104px] lg:w-[94px] lg:h-16
+                rounded-xl relative group
                 p-0 mx-0
                 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28]
                 shadow-[0_4px_15px_rgba(0,0,0,0.4)]
@@ -141,13 +143,18 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                 }
                 ${isCurrentDay ? 'ring-2 ring-blue-400/50' : ''}
               `}
-              style={{ minWidth: 78, maxWidth: 90, width: 82, height: 56 }}
+              style={{ 
+                minWidth: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 90 : 78, 
+                maxWidth: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 104 : 90, 
+                width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 94 : 82, 
+                height: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 64 : 56 
+              }}
             >
-              <span className="text-xs text-[#A8AEBF] uppercase leading-none mb-1">
+              <span className="text-xs lg:text-sm text-[#A8AEBF] uppercase leading-none mb-1">
                 {format(date, 'EEE')}
               </span>
               <span className={`
-                text-[13px] font-semibold leading-none
+                text-[13px] lg:text-[15px] font-semibold leading-none
                 ${isSelected ? 'text-[#965AFF]' : 'text-[#E8EAF5]'}
               `}>
                 {format(date, 'MMM d')}
@@ -159,18 +166,18 @@ export const DateMatchPicker: React.FC<DateMatchPickerProps> = ({
                   {detailedCount.professional > 0 && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#0A1823] text-[#49A8FF] border-transparent font-medium"
+                      className="text-[10px] lg:text-[11px] px-1 py-0.5 min-w-0 h-4 lg:h-[18px] flex items-center bg-[#0A1823] text-[#49A8FF] border-transparent font-medium"
                     >
-                      <Trophy size={8} className="mr-0.5" />
+                      <Trophy size={8} className="mr-0.5 lg:w-[9px] lg:h-[9px]" />
                       {detailedCount.professional}
                     </Badge>
                   )}
                   {detailedCount.amateur > 0 && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] px-1 py-0.5 min-w-0 h-4 flex items-center bg-[#23180A] text-[#FF9A3E] border-transparent font-medium"
+                      className="text-[10px] lg:text-[11px] px-1 py-0.5 min-w-0 h-4 lg:h-[18px] flex items-center bg-[#23180A] text-[#FF9A3E] border-transparent font-medium"
                     >
-                      <Users size={8} className="mr-0.5" />
+                      <Users size={8} className="mr-0.5 lg:w-[9px] lg:h-[9px]" />
                       {detailedCount.amateur}
                     </Badge>
                   )}
