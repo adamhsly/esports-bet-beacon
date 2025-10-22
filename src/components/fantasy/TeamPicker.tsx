@@ -559,48 +559,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       {/* Selected Teams Widget */}
       <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
-      {/* Bonus Credits Info - Auto-deducted */}
-      {availableBonusCredits > 0 && (
-        <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-orange-300">Bonus Credits Available</h3>
-                  <p className="text-sm text-orange-400">
-                    {availableBonusCredits > 0 
-                      ? `${availableBonusCredits} credits earned from XP rewards`
-                      : 'No bonus credits available'
-                    }
-                  </p>
-                </div>
-              </div>
-              {budgetSpent > SALARY_CAP && (
-                <div className="text-right">
-                  <p className="text-sm text-orange-300 font-medium">
-                    Auto-deducting: {budgetSpent - SALARY_CAP} credits
-                  </p>
-                  <p className="text-xs text-orange-400">
-                    Required for your current selection
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Team Selection Button */}
-      <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
-        
-      </Card>
-
-      {/* Selected Teams Display */}
-      {selectedTeams.length > 0}
-
       {/* Star Team Summary */}
       {selectedTeams.length > 0 && <div className="bg-muted/30 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between">
@@ -657,6 +615,49 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
       </div>
+
+      {/* Bonus Credits Info - Auto-deducted */}
+      {availableBonusCredits > 0 && (
+        <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-orange-300">Bonus Credits Available</h3>
+                  <p className="text-sm text-orange-400">
+                    {availableBonusCredits > 0 
+                      ? `${availableBonusCredits} credits earned from XP rewards`
+                      : 'No bonus credits available'
+                    }
+                  </p>
+                </div>
+              </div>
+              {budgetSpent > SALARY_CAP && (
+                <div className="text-right">
+                  <p className="text-sm text-orange-300 font-medium">
+                    Auto-deducting: {budgetSpent - SALARY_CAP} credits
+                  </p>
+                  <p className="text-xs text-orange-400">
+                    Required for your current selection
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Team Selection Button */}
+      <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50">
+        
+      </Card>
+
+      {/* Selected Teams Display */}
+      {selectedTeams.length > 0}
+
 
       {/* No Star Team Confirmation Modal */}
       <StarTeamConfirmModal open={showNoStarModal} onOpenChange={setShowNoStarModal} title="Proceed without a Star Team?" description="Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed." onConfirm={async () => {
