@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Users, Trophy, MapPin, Bell, BellRing, Loader2, CheckCircle, Crown } from 'lucide-react';
+import { Calendar, Clock, Users, Trophy, MapPin, Bell, BellRing, Loader2, CheckCircle, Crown, Gamepad2 } from 'lucide-react';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import CountdownTimer from "@/components/CountdownTimer";
 import { getFaceitScore } from '@/utils/faceitScoreUtils';
@@ -227,6 +227,12 @@ export const FaceitCompactMatchHeader: React.FC<FaceitCompactMatchHeaderProps> =
               <div className="flex items-center">
                 <MapPin className="h-3 w-3 mr-1" />
                 <span>{match.faceitData.region}</span>
+              </div>
+            )}
+            {match.rawData?.game && (
+              <div className="flex items-center">
+                <Gamepad2 className="h-3 w-3 mr-1" />
+                <span>{match.rawData.game}</span>
               </div>
             )}
           </div>
