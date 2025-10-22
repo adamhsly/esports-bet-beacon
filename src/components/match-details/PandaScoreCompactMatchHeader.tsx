@@ -174,7 +174,7 @@ console.log('🎯 Compact Match Final formatted prize pool:', formattedPrizePool
             )}
             {tier && tier !== 'unranked' && (
               <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-400/30 text-xs">
-                {tier.toUpperCase()}
+                Tier: {tier.toUpperCase()}
               </Badge>
             )}
             {finished && (
