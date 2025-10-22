@@ -69,7 +69,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
 
-  // Fetch enhanced player stats using the same RPC as the modal
+  // Fetch enhanced player stats from faceit_player_stats table (lighter query)
   useEffect(() => {
     const fetchPlayerStats = async () => {
       if (!teams.length) return;
@@ -82,35 +82,40 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
           return;
         }
 
-        // Fetch stats for all players using get_faceit_player_details RPC
-        const playerStatsPromises = allPlayerIds.map(playerId => 
-          supabase.rpc('get_faceit_player_details', { p_player_id: playerId })
-        );
-        
-        const results = await Promise.all(playerStatsPromises);
-        
+        // Fetch stats for all players in one query from faceit_player_stats table
+        const {
+          data: playerStats,
+          error
+        } = await supabase
+          .from('faceit_player_stats')
+          .select('player_id, total_matches, win_rate, current_win_streak, skill_level, avatar')
+          .in('player_id', allPlayerIds);
+          
+        if (error) {
+          console.error('Error fetching player stats:', error);
+          setIsLoadingStats(false);
+          return;
+        }
+
         // Create a map of player stats by player_id
         const statsMap = new Map();
-        results.forEach((result, index) => {
-          const data = result.data as any;
-          if (data?.found) {
-            statsMap.set(allPlayerIds[index], data);
-          }
+        (playerStats || []).forEach(stat => {
+          statsMap.set(stat.player_id, stat);
         });
 
         // Enhance teams with fetched stats
         const enhanced = teams.map(team => ({
           ...team,
           roster: (team.roster || []).map(player => {
-            const playerData = statsMap.get(player.player_id);
-            if (playerData && playerData.career_stats) {
+            const stats = statsMap.get(player.player_id);
+            if (stats) {
               return {
                 ...player,
-                total_matches: playerData.career_stats.total_matches,
-                win_rate: playerData.career_stats.win_rate,
-                current_win_streak: playerData.career_stats.current_win_streak,
-                avatar: playerData.profile?.avatar || player.avatar,
-                skill_level: playerData.profile?.skill_level || player.skill_level
+                total_matches: stats.total_matches,
+                win_rate: stats.win_rate,
+                current_win_streak: stats.current_win_streak,
+                skill_level: stats.skill_level || player.skill_level,
+                avatar: stats.avatar || player.avatar
               };
             }
             return player;
