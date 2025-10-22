@@ -234,7 +234,7 @@ const FaceitMatchPage = () => {
         )}
         
         {/* Community Voting for upcoming matches */}
-        {headerType === 'upcoming' && safeTeams.length >= 2 && <Card className="bg-card border border-border">
+        {headerType === 'upcoming' && safeTeams.length >= 2 && <Card className="bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] border border-white/5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_12px_rgba(73,168,255,0.3)] transition-all duration-[250ms] ease-in-out hover:scale-[1.02] hover:shadow-[0_4px_15px_rgba(0,0,0,0.4),inset_0_0_8px_rgba(255,255,255,0.05),0_0_15px_rgba(73,168,255,0.4)]">
             <div className="p-4">
               <h3 className="text-lg font-bold text-white mb-4">Community Predictions</h3>
               <MatchVotingWidget matchId={matchData?.id || matchData?.match_id} teams={[{
