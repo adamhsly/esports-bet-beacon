@@ -55,6 +55,7 @@ export interface EnhancedMatchData {
   started_at?: string;
   finished_at?: string;
   bestOf?: number;
+  raw_data?: any;
 }
 
 export interface PlayerMatchPerformance {
@@ -292,7 +293,8 @@ export async function fetchEnhancedFaceitMatchData(matchId: string): Promise<{
       bestOf: (() => {
         const rawData = matchData.raw_data as any;
         return rawData?.best_of || 1;
-      })()
+      })(),
+      raw_data: matchData.raw_data
     };
 
     // Transform player performances
