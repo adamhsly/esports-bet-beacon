@@ -458,7 +458,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
         display: inline-flex; align-items: center; justify-content: center;
         height: 20px; padding: 0 10px; border-radius: 9999px;
         background:#F97316; color:#fff;
-        font-size: 11px; font-weight: 800; letter-spacing:.2px; line-height:1;
+        font-size: 11px; font-weight: 800; letter-spacing:.2px; line-height:20px;
       ">
         +25% BONUS
       </div>
