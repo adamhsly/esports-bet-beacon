@@ -200,7 +200,7 @@ const FaceitMatchPage = () => {
           {safeTeams.length > 0 && (
             <FaceitPreMatchStats 
               teams={safeTeams} 
-              matchId={matchData.match_id || matchData.id}
+              matchId={matchData.matchId || matchData.match_id || matchData.id}
               game={matchData.game || 'cs2'}
             />
           )}
@@ -214,7 +214,7 @@ const FaceitMatchPage = () => {
           {safeTeams.length > 0 && (
             <FaceitPreMatchStats 
               teams={safeTeams} 
-              matchId={matchData.match_id || matchData.id}
+              matchId={matchData.matchId || matchData.match_id || matchData.id}
               game={matchData.game || 'cs2'}
             />
           )}
@@ -228,7 +228,7 @@ const FaceitMatchPage = () => {
         {safeTeams.length > 0 && (
           <FaceitPreMatchStats 
             teams={safeTeams} 
-            matchId={matchData.match_id || matchData.id}
+            matchId={matchData.matchId || matchData.match_id || matchData.id}
             game={matchData.game || 'cs2'}
           />
         )}
