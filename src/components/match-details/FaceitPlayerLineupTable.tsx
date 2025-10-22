@@ -13,18 +13,10 @@ interface Player {
   avatar?: string;
   total_matches?: number;
   win_rate?: number;
+  current_win_streak?: number;
   kd_ratio?: number;
   recent_form?: string;
   recent_form_string?: string;
-  // Enhanced stats from faceit_player_stats
-  faceit_elo?: number;
-  avg_headshots_percent?: number;
-  current_win_streak?: number;
-  longest_win_streak?: number;
-  membership?: string;
-  country?: string;
-  map_stats?: any;
-  recent_results?: any[];
   match_history?: Array<{
     id: string;
     match_id: string;
@@ -76,7 +68,8 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
   const [enhancedTeams, setEnhancedTeams] = useState<Team[]>(teams);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
-  // Fetch enhanced player stats from faceit_player_stats table
+
+  // Fetch enhanced player stats using the same RPC as the modal
   useEffect(() => {
     const fetchPlayerStats = async () => {
       if (!teams.length) return;
@@ -89,45 +82,35 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
           return;
         }
 
-        // Fetch stats for all players in one query
-        const {
-          data: playerStats,
-          error
-        } = await supabase.from('faceit_player_stats').select('*').in('player_id', allPlayerIds);
-        if (error) {
-          console.error('Error fetching player stats:', error);
-          setIsLoadingStats(false);
-          return;
-        }
-
+        // Fetch stats for all players using get_faceit_player_details RPC
+        const playerStatsPromises = allPlayerIds.map(playerId => 
+          supabase.rpc('get_faceit_player_details', { p_player_id: playerId })
+        );
+        
+        const results = await Promise.all(playerStatsPromises);
+        
         // Create a map of player stats by player_id
         const statsMap = new Map();
-        (playerStats || []).forEach(stat => {
-          statsMap.set(stat.player_id, stat);
+        results.forEach((result, index) => {
+          const data = result.data as any;
+          if (data?.found) {
+            statsMap.set(allPlayerIds[index], data);
+          }
         });
 
         // Enhance teams with fetched stats
         const enhanced = teams.map(team => ({
           ...team,
           roster: (team.roster || []).map(player => {
-            const stats = statsMap.get(player.player_id);
-            if (stats) {
+            const playerData = statsMap.get(player.player_id);
+            if (playerData && playerData.career_stats) {
               return {
                 ...player,
-                skill_level: stats.skill_level || player.skill_level,
-                // Use skill_level from faceit_player_stats
-                total_matches: stats.total_matches || player.total_matches,
-                win_rate: stats.win_rate || player.win_rate,
-                kd_ratio: stats.avg_kd_ratio || player.kd_ratio,
-                recent_form: stats.recent_form_string || player.recent_form,
-                faceit_elo: stats.faceit_elo,
-                avg_headshots_percent: stats.avg_headshots_percent,
-                current_win_streak: stats.current_win_streak,
-                longest_win_streak: stats.longest_win_streak,
-                membership: stats.membership,
-                country: stats.country,
-                map_stats: stats.map_stats,
-                recent_results: stats.recent_results
+                total_matches: playerData.career_stats.total_matches,
+                win_rate: playerData.career_stats.win_rate,
+                current_win_streak: playerData.career_stats.current_win_streak,
+                avatar: playerData.profile?.avatar || player.avatar,
+                skill_level: playerData.profile?.skill_level || player.skill_level
               };
             }
             return player;
@@ -160,13 +143,11 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
     setSelectedTeamName(teamName);
     setIsModalOpen(true);
   };
-  const getFormBadge = (form?: string) => {
-    if (!form) return null;
-    const wins = (form.match(/W/g) || []).length;
-    const total = form.length;
-    const winRate = wins / total * 100;
-    return <Badge variant="outline" className={`text-xs ${winRate >= 60 ? 'text-green-400 border-green-400/30' : winRate >= 40 ? 'text-yellow-400 border-yellow-400/30' : 'text-red-400 border-red-400/30'}`}>
-        {form}
+  const getStreakBadge = (streak?: number) => {
+    if (!streak) return <span className="text-gray-500 text-xs">-</span>;
+    const isPositive = streak > 0;
+    return <Badge variant="outline" className={`text-xs ${isPositive ? 'bg-green-500/20 text-green-400 border-green-400/30' : 'bg-gray-500/20 text-gray-400 border-gray-400/30'}`}>
+        {isPositive ? `${streak}W` : '0'}
       </Badge>;
   };
   const hasEnhancedStats = (roster?: Player[]) => {
@@ -185,13 +166,9 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
             <TableHeader>
               <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
                 <TableHead className="text-gray-300 font-semibold">Player</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">ELO</TableHead>
                 <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
                 <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">K/D</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">HS%</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">Form</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">Streak</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -203,24 +180,16 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
                 }} />
                       <div className="flex flex-col">
                         <span className="text-white font-medium text-sm">{player.nickname}</span>
-                        {player.membership === 'premium' && <Badge variant="outline" className="text-xs bg-orange-500/20 text-orange-400 border-orange-400/30 w-fit">
-                            PREMIUM
-                          </Badge>}
+                        {player.skill_level && (
+                          <Badge variant="outline" className={`text-xs w-fit ${getSkillLevelColor(player.skill_level)}`}>
+                            Lvl {player.skill_level}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    {player.skill_level ? <Badge variant="outline" className={`text-xs ${getSkillLevelColor(player.skill_level)}`}>
-                        {player.skill_level}
-                      </Badge> : <span className="text-gray-500 text-xs">-</span>}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {player.faceit_elo ? <span className="text-purple-400 text-sm font-semibold">
-                        {player.faceit_elo.toLocaleString()}
-                      </span> : <span className="text-gray-500 text-xs">-</span>}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-white text-sm">
+                    <span className="text-white text-sm font-semibold">
                       {player.total_matches || '-'}
                     </span>
                   </TableCell>
@@ -230,17 +199,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
                       </span> : <span className="text-gray-500 text-xs">-</span>}
                   </TableCell>
                   <TableCell className="text-center">
-                    {player.kd_ratio ? <span className="text-blue-400 text-sm font-semibold">
-                        {player.kd_ratio.toFixed(2)}
-                      </span> : <span className="text-gray-500 text-xs">-</span>}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {player.avg_headshots_percent ? <span className="text-yellow-400 text-sm font-semibold">
-                        {Math.round(player.avg_headshots_percent)}%
-                      </span> : <span className="text-gray-500 text-xs">-</span>}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {getFormBadge(player.recent_form) || <span className="text-gray-500 text-xs">-</span>}
+                    {getStreakBadge(player.current_win_streak)}
                   </TableCell>
                 </TableRow>)}
           </TableBody>
