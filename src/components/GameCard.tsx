@@ -17,6 +17,9 @@ export const GameCard: React.FC<GameCardProps> = ({ title, imageUrl, description
         src={imageUrl} 
         alt={title} 
         className="w-full h-48 object-cover"
+        onError={(e) => {
+          e.currentTarget.src = '/placeholder-image.png';
+        }}
       />
       <div className="relative z-20 p-4">
         <h3 className="text-xl font-bold font-gaming text-white">{title}</h3>

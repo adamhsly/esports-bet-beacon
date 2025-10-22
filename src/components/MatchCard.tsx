@@ -293,7 +293,7 @@ if (source === 'professional' || (id && String(id).startsWith('pandascore_'))) {
                 src={getEnhancedTeamLogoUrl(teams[0])}
                 alt={`${teams[0].name} logo`}
                 className="w-7 h-7 object-contain rounded-md bg-gray-800"
-                onError={e => (e.currentTarget.src = '/placeholder.svg')}
+                onError={e => (e.currentTarget.src = '/placeholder-image.png')}
               />
               <span className="truncate font-semibold text-sm text-white max-w-[90px]">{teams[0].name}</span>
             </div>
@@ -307,7 +307,7 @@ if (source === 'professional' || (id && String(id).startsWith('pandascore_'))) {
                 src={getEnhancedTeamLogoUrl(teams[1])}
                 alt={`${teams[1].name} logo`}
                 className="w-7 h-7 object-contain rounded-md bg-gray-800"
-                onError={e => (e.currentTarget.src = '/placeholder.svg')}
+                onError={e => (e.currentTarget.src = '/placeholder-image.png')}
               />
             </div>
           </div>

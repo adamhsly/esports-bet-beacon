@@ -44,13 +44,14 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
           alt="Avatar border"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{ zIndex: 1 }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       )}
       
       {/* Avatar (middle layer) - centered and smaller to show border around */}
       <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
         <Avatar className={cn('relative', avatarSizeClasses[size])}>
-          {src && <AvatarImage src={src} alt={alt} />}
+          {src && <AvatarImage src={src} alt={alt} onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />}
           <AvatarFallback>
             {fallback}
           </AvatarFallback>
@@ -64,6 +65,7 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
           alt="Avatar frame"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{ zIndex: 3 }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       )}
     </div>

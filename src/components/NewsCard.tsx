@@ -40,9 +40,10 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 h-full">
           <div className="relative h-48 md:h-full">
             <img 
-              src={imageUrl || '/placeholder.svg'} 
+              src={imageUrl || '/placeholder-image.png'} 
               alt={title}
               className="absolute w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }}
             />
             {categories && categories.length > 0 && (
               <div className="absolute top-3 left-3">
@@ -87,9 +88,10 @@ export const NewsCard: React.FC<NewsCardProps> = ({
     <Card className="bg-theme-gray-dark border-theme-gray-medium h-full">
       <div className="relative h-48">
         <img 
-          src={imageUrl || '/placeholder.svg'} 
+          src={imageUrl || '/placeholder-image.png'} 
           alt={title}
           className="w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }}
         />
         {categories && categories.length > 0 && (
           <div className="absolute top-3 left-3">
