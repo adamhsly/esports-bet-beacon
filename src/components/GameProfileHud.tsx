@@ -156,7 +156,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 </div>
                 <div className="relative">
                   <div 
-                    className="h-3 bg-[#0F1722] rounded-full shadow-inner overflow-hidden"
+                    className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
                     role="progressbar"
                     aria-valuenow={Math.floor(currentLevelXP)}
                     aria-valuemin={0}
@@ -164,10 +164,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                     aria-label="XP progress"
                   >
                     <div 
-                      className="h-full bg-gradient-to-r from-neon-blue to-neon-purple rounded-full transition-all duration-[220ms] ease-out shadow-[0_0_18px_currentColor] motion-reduce:transition-none"
+                      className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
                       style={{ 
                         width: `${xpProgress}%`,
-                        filter: 'drop-shadow(0 0 8px currentColor)'
+                        boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
                       }}
                     />
                   </div>
