@@ -49,7 +49,7 @@ export const EsportsLogoFilter: React.FC<EsportsLogoFilterProps> = ({
             onClick={() => onGameTypeChange(game.value)}
             className={cn(
               "flex-shrink-0 p-2 rounded-xl transition-all",
-              "w-20 h-32 flex items-center justify-center",
+              "w-20 h-32 lg:w-[88px] lg:h-[141px] flex items-center justify-center",
               "focus:outline-none touch-manipulation select-none",
               // Premium dark gradient card base
               "bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28]",
