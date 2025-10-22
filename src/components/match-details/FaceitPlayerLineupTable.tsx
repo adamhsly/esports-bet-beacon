@@ -1,42 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Trophy, Target, TrendingUp, Loader2 } from 'lucide-react';
+import { User } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { FaceitPlayerDetailsModal } from './FaceitPlayerDetailsModal';
-import { supabase } from '@/integrations/supabase/client';
 interface Player {
   nickname: string;
   player_id: string;
-  skill_level?: number;
+  game_skill_level?: number;
   avatar?: string;
-  total_matches?: number;
-  win_rate?: number;
-  current_win_streak?: number;
-  kd_ratio?: number;
-  recent_form?: string;
-  recent_form_string?: string;
-  match_history?: Array<{
-    id: string;
-    match_id: string;
-    match_date: string;
-    map_name?: string;
-    team_name?: string;
-    opponent_team_name?: string;
-    match_result: 'win' | 'loss';
-    competition_name?: string;
-    competition_type?: string;
-    kills?: number;
-    deaths?: number;
-    assists?: number;
-    kd_ratio?: number;
-    headshots?: number;
-    headshots_percent?: number;
-    mvps?: number;
-    adr?: number;
-    faceit_elo_change?: number;
-  }>;
 }
 interface Team {
   id?: string;
@@ -65,76 +38,12 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedTeamName, setSelectedTeamName] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [enhancedTeams, setEnhancedTeams] = useState<Team[]>(teams);
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
-
-  // Fetch enhanced player stats from faceit_player_stats table (lighter query)
-  useEffect(() => {
-    const fetchPlayerStats = async () => {
-      if (!teams.length) return;
-      setIsLoadingStats(true);
-      try {
-        // Collect all player IDs from both teams
-        const allPlayerIds = teams.flatMap(team => (team.roster || []).map(player => player.player_id)).filter(Boolean);
-        if (allPlayerIds.length === 0) {
-          setIsLoadingStats(false);
-          return;
-        }
-
-        // Fetch stats for all players in one query from faceit_player_stats table
-        const {
-          data: playerStats,
-          error
-        } = await supabase
-          .from('faceit_player_stats')
-          .select('player_id, total_matches, win_rate, current_win_streak, skill_level, avatar')
-          .in('player_id', allPlayerIds);
-          
-        if (error) {
-          console.error('Error fetching player stats:', error);
-          setIsLoadingStats(false);
-          return;
-        }
-
-        // Create a map of player stats by player_id
-        const statsMap = new Map();
-        (playerStats || []).forEach(stat => {
-          statsMap.set(stat.player_id, stat);
-        });
-
-        // Enhance teams with fetched stats
-        const enhanced = teams.map(team => ({
-          ...team,
-          roster: (team.roster || []).map(player => {
-            const stats = statsMap.get(player.player_id);
-            if (stats) {
-              return {
-                ...player,
-                total_matches: stats.total_matches,
-                win_rate: stats.win_rate,
-                current_win_streak: stats.current_win_streak,
-                skill_level: stats.skill_level || player.skill_level,
-                avatar: stats.avatar || player.avatar
-              };
-            }
-            return player;
-          })
-        }));
-        setEnhancedTeams(enhanced);
-      } catch (error) {
-        console.error('Failed to fetch player stats:', error);
-      } finally {
-        setIsLoadingStats(false);
-      }
-    };
-    fetchPlayerStats();
-  }, [teams]);
-  const team1 = enhancedTeams[0] || {
+  const team1 = teams[0] || {
     name: 'Team 1',
     roster: []
   };
-  const team2 = enhancedTeams[1] || {
+  const team2 = teams[1] || {
     name: 'Team 2',
     roster: []
   };
@@ -147,16 +56,6 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
     setSelectedPlayer(player);
     setSelectedTeamName(teamName);
     setIsModalOpen(true);
-  };
-  const getStreakBadge = (streak?: number) => {
-    if (!streak) return <span className="text-gray-500 text-xs">-</span>;
-    const isPositive = streak > 0;
-    return <Badge variant="outline" className={`text-xs ${isPositive ? 'bg-green-500/20 text-green-400 border-green-400/30' : 'bg-gray-500/20 text-gray-400 border-gray-400/30'}`}>
-        {isPositive ? `${streak}W` : '0'}
-      </Badge>;
-  };
-  const hasEnhancedStats = (roster?: Player[]) => {
-    return roster?.some(player => player.total_matches && player.total_matches > 0) || false;
   };
   const renderTeamTable = (team: Team, teamIndex: number) => <div className={`p-4 rounded-lg ${teamIndex === 0 ? 'bg-blue-500/5' : 'bg-orange-500/5'}`}>
       <div className="flex items-center space-x-3 mb-6">
@@ -171,9 +70,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
             <TableHeader>
               <TableRow className="border-theme-gray-medium hover:bg-theme-gray-medium/30">
                 <TableHead className="text-gray-300 font-semibold">Player</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">Matches</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">Win Rate</TableHead>
-                <TableHead className="text-gray-300 font-semibold text-center">Streak</TableHead>
+                <TableHead className="text-gray-300 font-semibold text-center">Level</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -183,28 +80,13 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
                       <img src={player.avatar || '/placeholder.svg'} alt={player.nickname} className="w-8 h-8 rounded-full object-cover" onError={e => {
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }} />
-                      <div className="flex flex-col">
-                        <span className="text-white font-medium text-sm">{player.nickname}</span>
-                        {player.skill_level && (
-                          <Badge variant="outline" className={`text-xs w-fit ${getSkillLevelColor(player.skill_level)}`}>
-                            Lvl {player.skill_level}
-                          </Badge>
-                        )}
-                      </div>
+                      <span className="text-white font-medium text-sm">{player.nickname}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="text-white text-sm font-semibold">
-                      {player.total_matches || '-'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {player.win_rate ? <span className="text-green-400 text-sm font-semibold">
-                        {Math.round(player.win_rate)}%
-                      </span> : <span className="text-gray-500 text-xs">-</span>}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {getStreakBadge(player.current_win_streak)}
+                    <Badge variant="outline" className={getSkillLevelColor(player.game_skill_level)}>
+                      {player.game_skill_level || '-'}
+                    </Badge>
                   </TableCell>
                 </TableRow>)}
           </TableBody>
@@ -217,11 +99,7 @@ export const FaceitPlayerLineupTable: React.FC<FaceitPlayerLineupTableProps> = (
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
             <User className="h-6 w-6 mr-3" />
             Player Lineups
-            {isLoadingStats && <Loader2 className="h-4 w-4 ml-2 animate-spin text-blue-400" />}
           </h2>
-
-          {/* Enhanced Stats Indicator */}
-          {hasEnhancedStats(team1.roster) || hasEnhancedStats(team2.roster)}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {renderTeamTable(team1, 0)}
