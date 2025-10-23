@@ -39,7 +39,8 @@ const FantasyPage: React.FC = () => {
                 </span>
               </h1>
               <p className="text-muted-foreground text-base">
-                Create teams mixing pro and amateur teams. Higher risk, higher reward with amateur teams getting 25% bonus points.
+                Build your dream roster of pro and amateur players — and earn points based on their real match performances. Every pick matters.
+                Amateurs earn +25% bonus points, so go bold or go home.
               </p>
               <button
                 onClick={() => setRulesModalOpen(true)}
