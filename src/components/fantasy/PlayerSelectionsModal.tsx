@@ -4,7 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
-import { Star } from 'lucide-react';
+import { Star, Users, Trophy } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface PlayerSelectionsModalProps {
   open: boolean;
@@ -19,6 +21,7 @@ interface TeamPick {
   team_name: string;
   team_type: string;
   current_score: number;
+  logo_url?: string;
 }
 
 export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
@@ -85,7 +88,20 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
           return;
         }
 
-        setTeamPicks(scores || []);
+        // Enhance scores with team logos from team_picks jsonb
+        const enhancedScores = (scores || []).map(score => {
+          // Find the team in the picks data to get logo_url
+          const teamInPicks = picks.team_picks && Array.isArray(picks.team_picks) 
+            ? picks.team_picks.find((t: any) => t.id === score.team_id)
+            : null;
+          
+          return {
+            ...score,
+            logo_url: teamInPicks?.logo_url || null
+          };
+        });
+
+        setTeamPicks(enhancedScores);
         setStarTeamId(picks.star_team_id || null);
       }
     } catch (error) {
@@ -142,32 +158,73 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
           </div>
         ) : (
           <div className="space-y-2 py-4">
-            {teamPicks.map((pick) => (
-              <div
-                key={pick.team_id}
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  starTeamId === pick.team_id 
-                    ? 'border-yellow-500/50 bg-yellow-500/10' 
-                    : 'border-border bg-muted/30'
-                }`}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {starTeamId === pick.team_id && (
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{pick.team_name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {pick.team_type === 'pandascore' ? 'Pro Team' : 'Amateur Team'}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg">{pick.current_score}</p>
-                  <p className="text-xs text-muted-foreground">pts</p>
-                </div>
-              </div>
-            ))}
+            {teamPicks.map((pick) => {
+              const isAmateur = pick.team_type === 'faceit';
+              const isStarred = starTeamId === pick.team_id;
+              
+              return (
+                <Card 
+                  key={pick.team_id}
+                  className={`relative transition-all ${
+                    isStarred 
+                      ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` 
+                      : ''
+                  } bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      {/* Team Logo */}
+                      <div className={`relative p-2 rounded-lg ${
+                        isAmateur 
+                          ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' 
+                          : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'
+                      }`}>
+                        {pick.logo_url ? (
+                          <img src={pick.logo_url} alt={pick.team_name} className="w-8 h-8 object-contain" />
+                        ) : isAmateur ? (
+                          <Users className="w-8 h-8 text-orange-400" />
+                        ) : (
+                          <Trophy className="w-8 h-8 text-blue-400" />
+                        )}
+                      </div>
+                      
+                      {/* Team Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-white truncate text-left">{pick.team_name}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
+                            {isAmateur ? 'Amateur' : 'Pro'}
+                          </Badge>
+                          {isAmateur && (
+                            <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+                              +25% Bonus
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Fantasy Points */}
+                      <div className="text-right">
+                        <div className="font-bold text-lg text-blue-400">
+                          {pick.current_score}
+                        </div>
+                        <div className="text-xs text-gray-400">pts</div>
+                      </div>
+                    </div>
+                    
+                    {/* Star Team Double Points Label */}
+                    {isStarred && (
+                      <div className="mt-2 pt-2 border-t border-gray-600/50">
+                        <div className="text-xs text-[#F5C042] font-medium flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-current" />
+                          DOUBLE POINTS
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
             
             <div className="mt-4 pt-4 border-t">
               <div className="flex justify-between items-center">
