@@ -159,7 +159,7 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
         ) : (
           <div className="space-y-2 py-4">
             {teamPicks.map((pick) => {
-              const isAmateur = pick.team_type === 'faceit';
+              const isAmateur = pick.team_type === 'faceit' || pick.team_type === 'amateur';
               const isStarred = starTeamId === pick.team_id;
               
               return (
