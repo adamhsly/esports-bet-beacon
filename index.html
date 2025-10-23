@@ -47,6 +47,14 @@
       m.mazeUniversalSnippetApiKey = e;
     })(window, document, 'https://snippet.maze.co/maze-universal-loader.js', '35c8fd0b-1c6a-40ed-af10-1bce9d01656f');
     </script>
+
+    <!-- Amplitude Analytics -->
+    <script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
+    <script src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz"></script>
+    <script>
+      window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
+      window.amplitude.init('dd8a94425d4256791b4c2390d88fe968', {"autocapture":{"elementInteractions":true}});
+    </script>
   </head>
 
   <body>
