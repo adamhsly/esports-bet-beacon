@@ -48,7 +48,7 @@ const MissionsView: React.FC = () => {
           <Switch 
             checked={showCompleted} 
             onCheckedChange={setShowCompleted}
-            className="data-[state=checked]:bg-neon-blue"
+            className="data-[state=checked]:bg-neon-purple"
           />
         </div>
       </div>
