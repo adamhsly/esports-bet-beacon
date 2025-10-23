@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Camera, User, Loader2, CheckCircle, Palette, Hexagon } from 'lucide-react';
+import { Upload, Camera, User, Loader2, Check, Palette, Hexagon } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useLevelRewardsTrack } from '@/hooks/useLevelRewardsTrack';
 import { useAuth } from '@/contexts/AuthContext';
@@ -395,7 +395,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Selected Indicator */}
                               {previewFrameId === frame.id && (
-                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-green-500 fill-green-500" />
+                                <Check className="absolute top-1 right-1 w-5 h-5 text-green-500 stroke-[3]" />
                               )}
                             </div>
                             ))}
@@ -501,7 +501,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Selected Indicator */}
                               {previewBorderId === border.id && (
-                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-green-500 fill-green-500" />
+                                <Check className="absolute top-1 right-1 w-5 h-5 text-green-500 stroke-[3]" />
                               )}
                             </div>
                             ))}

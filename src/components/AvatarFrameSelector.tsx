@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Lock, User } from 'lucide-react';
+import { Check, Lock, User } from 'lucide-react';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
@@ -163,7 +163,7 @@ export const AvatarFrameSelector: React.FC<AvatarFrameSelectorProps> = ({
 
                     {/* Selected Indicator */}
                     {currentFrameId === frame.id && (
-                      <CheckCircle className="absolute top-1 right-1 w-5 h-5 text-green-500 fill-green-500" />
+                      <Check className="absolute top-1 right-1 w-6 h-6 text-green-500 stroke-[3]" />
                     )}
                   </div>
                 ))}
