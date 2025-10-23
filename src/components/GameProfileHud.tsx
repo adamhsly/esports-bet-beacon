@@ -206,11 +206,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               
               <div className="relative">
                 <div 
-                  className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+                  className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 overscroll-contain"
                   style={{ 
                     scrollbarWidth: 'none', 
                     msOverflowStyle: 'none',
-                    WebkitOverflowScrolling: 'touch'
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehaviorY: 'none'
                   }}
                 >
                   {free.map((item) => (
@@ -258,11 +259,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               </div>
               
               <div 
-                className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+                className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 overscroll-contain"
                 style={{ 
                   scrollbarWidth: 'none', 
                   msOverflowStyle: 'none',
-                  WebkitOverflowScrolling: 'touch'
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehaviorY: 'none'
                 }}
               >
                 {premium.map((item) => (
