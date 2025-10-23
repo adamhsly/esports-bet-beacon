@@ -192,7 +192,13 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-white truncate text-left">{pick.team_name}</h4>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
+                          <Badge 
+                            className={`text-xs ${
+                              isAmateur 
+                                ? 'bg-orange-500/20 text-orange-400 border-orange-400/30' 
+                                : 'bg-blue-500/20 text-blue-400 border-blue-400/30'
+                            }`}
+                          >
                             {isAmateur ? 'Amateur' : 'Pro'}
                           </Badge>
                           {isAmateur && (
