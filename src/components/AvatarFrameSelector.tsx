@@ -163,7 +163,7 @@ export const AvatarFrameSelector: React.FC<AvatarFrameSelectorProps> = ({
 
                     {/* Selected Indicator */}
                     {currentFrameId === frame.id && (
-                      <CheckCircle className="absolute top-1 right-1 w-5 h-5 text-primary" />
+                      <CheckCircle className="absolute top-1 right-1 w-5 h-5 text-green-500 fill-green-500" />
                     )}
                   </div>
                 ))}

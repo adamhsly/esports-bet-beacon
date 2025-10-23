@@ -395,7 +395,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Selected Indicator */}
                               {previewFrameId === frame.id && (
-                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-primary" />
+                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-green-500 fill-green-500" />
                               )}
                             </div>
                             ))}
@@ -501,7 +501,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
 
                               {/* Selected Indicator */}
                               {previewBorderId === border.id && (
-                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-primary" />
+                                <CheckCircle className="absolute top-1 right-1 w-4 h-4 text-green-500 fill-green-500" />
                               )}
                             </div>
                             ))}
