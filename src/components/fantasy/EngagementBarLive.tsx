@@ -38,22 +38,18 @@ export const EngagementBarLive: React.FC = () => {
     const handleDailyLogin = async () => {
       if (!isAuthenticated) return;
       
-      const today = new Date().toDateString();
-      const lastLogin = localStorage.getItem('lastDailyLogin');
-      
-      if (lastLogin !== today) {
-        try {
-          await progressMission('daily_login', 1);
-          localStorage.setItem('lastDailyLogin', today);
-          setHasLoggedInToday(true);
-        } catch (error) {
-          console.error('Error recording daily login:', error);
-        }
+      try {
+        // Use MissionBus for proper mission tracking with debouncing and auto-chaining
+        const { MissionBus } = await import('@/lib/missionBus');
+        await MissionBus.onAppOpen();
+        setHasLoggedInToday(true);
+      } catch (error) {
+        console.error('Error recording daily login:', error);
       }
     };
 
     handleDailyLogin();
-  }, [isAuthenticated, progressMission]);
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return null; // Don't show for unauthenticated users

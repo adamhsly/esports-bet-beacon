@@ -2979,18 +2979,12 @@ export type Database = {
       }
     }
     Functions: {
-      active_season_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      active_season_id: { Args: never; Returns: string }
       allocate_round_extra: {
         Args: { p_amount: number; p_round: string }
         Returns: boolean
       }
-      award_xp: {
-        Args: { p_kind: string; p_ref_id?: string }
-        Returns: Json
-      }
+      award_xp: { Args: { p_kind: string; p_ref_id?: string }; Returns: Json }
       backfill_pandascore_match_date_window: {
         Args: {
           batch_size?: number
@@ -3001,13 +2995,11 @@ export type Database = {
         }
         Returns: number
       }
-      bump_login_streak: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      calculate_fantasy_points: {
-        Args:
-          | {
+      bump_login_streak: { Args: never; Returns: undefined }
+      calculate_fantasy_points:
+        | { Args: { team_id: string }; Returns: Json }
+        | {
+            Args: {
               adr: number
               assists: number
               clutch_rounds: number
@@ -3016,9 +3008,8 @@ export type Database = {
               mvp_rounds: number
               scoring_config: Json
             }
-          | { team_id: string }
-        Returns: Json
-      }
+            Returns: number
+          }
       calculate_fantasy_scores_batch: {
         Args: { end_date: string; start_date: string; team_data: Json }
         Returns: {
@@ -3079,10 +3070,7 @@ export type Database = {
           team_name: string
         }[]
       }
-      get_available_bonus_credits: {
-        Args: { p_user: string }
-        Returns: number
-      }
+      get_available_bonus_credits: { Args: { p_user: string }; Returns: number }
       get_daily_match_counts_fast: {
         Args: { end_date: string; start_date: string }
         Returns: {
@@ -3248,18 +3236,9 @@ export type Database = {
           user_position: number
         }[]
       }
-      get_star_team_state: {
-        Args: { p_round_id: string }
-        Returns: Json
-      }
-      get_team_stats: {
-        Args: { team_id: string }
-        Returns: Json
-      }
-      get_team_stats_optimized: {
-        Args: { p_team_id: string }
-        Returns: Json
-      }
+      get_star_team_state: { Args: { p_round_id: string }; Returns: Json }
+      get_team_stats: { Args: { team_id: string }; Returns: Json }
+      get_team_stats_optimized: { Args: { p_team_id: string }; Returns: Json }
       grant_bonus_credits: {
         Args: { p_amount: number; p_source: string; p_user: string }
         Returns: undefined
@@ -3282,18 +3261,9 @@ export type Database = {
         Args: { p_user_id: string; p_xp: number }
         Returns: undefined
       }
-      level_for_xp: {
-        Args: { x: number }
-        Returns: number
-      }
-      next_daily_reset_utc: {
-        Args: { ts?: string }
-        Returns: string
-      }
-      next_weekly_reset_utc: {
-        Args: { ts?: string }
-        Returns: string
-      }
+      level_for_xp: { Args: { x: number }; Returns: number }
+      next_daily_reset_utc: { Args: { ts?: string }; Returns: string }
+      next_weekly_reset_utc: { Args: { ts?: string }; Returns: string }
       panda_form_bulk: {
         Args: { team_ids: number[] }
         Returns: {
@@ -3316,18 +3286,9 @@ export type Database = {
         Args: { p_code: string; p_inc?: number }
         Returns: Json
       }
-      refresh_daily_match_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      retroactive_grant_level_rewards: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      seed_user_missions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_daily_match_counts: { Args: never; Returns: undefined }
+      retroactive_grant_level_rewards: { Args: never; Returns: Json }
+      seed_user_missions: { Args: never; Returns: undefined }
       select_random_test_users_fallback: {
         Args: { p_limit: number; p_round_id: string }
         Returns: {
@@ -3348,17 +3309,20 @@ export type Database = {
         Args: { p_round_id: string; p_team_id: string }
         Returns: Json
       }
-      spend_bonus_credits: {
-        Args:
-          | { p_amount: number; p_round: string; p_user: string }
-          | {
+      spend_bonus_credits:
+        | {
+            Args: {
               p_base_amount: number
               p_bonus_amount: number
               p_round: string
               p_user: string
             }
-        Returns: boolean
-      }
+            Returns: boolean
+          }
+        | {
+            Args: { p_amount: number; p_round: string; p_user: string }
+            Returns: boolean
+          }
       spend_credits: {
         Args: {
           p_amount: number
@@ -3369,10 +3333,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      update_expired_fantasy_rounds: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      update_expired_fantasy_rounds: { Args: never; Returns: number }
       update_my_profile: {
         Args: {
           p_avatar_url?: string
@@ -3402,11 +3363,14 @@ export type Database = {
           username: string | null
           welcome_pack_claimed: boolean | null
         }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      update_panda_team_head_to_head: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_panda_team_head_to_head: { Args: never; Returns: undefined }
     }
     Enums: {
       cs2_position: "IGL" | "AWPer" | "Entry Fragger" | "Support" | "Lurker"
