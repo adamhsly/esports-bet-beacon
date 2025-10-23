@@ -3,6 +3,7 @@ import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+import { PlayerSelectionsModal } from './PlayerSelectionsModal';
 
 interface LeaderboardEntry {
   position: number;
@@ -25,6 +26,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userPosition, setUserPosition] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState<{ userId: string; username: string } | null>(null);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -176,13 +178,25 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
     );
   }
 
+  const handleRowClick = (entry: LeaderboardEntry) => {
+    // Don't open modal for current user's row
+    if (entry.is_current_user) return;
+    
+    setSelectedPlayer({
+      userId: entry.user_id,
+      username: entry.username
+    });
+  };
+
   return (
-    <div className="space-y-1">
-      {leaderboard.map((entry) => (
-        <div
-          key={entry.user_id}
-          className={`flex items-center gap-3 py-2 px-1 rounded transition-colors h-11 ${getRowHighlight(entry.position, entry.is_current_user)}`}
-        >
+    <>
+      <div className="space-y-1">
+        {leaderboard.map((entry) => (
+          <div
+            key={entry.user_id}
+            onClick={() => handleRowClick(entry)}
+            className={`flex items-center gap-3 py-2 px-1 rounded transition-colors h-11 ${getRowHighlight(entry.position, entry.is_current_user)} ${!entry.is_current_user ? 'cursor-pointer hover:brightness-110' : ''}`}
+          >
           {/* Rank */}
           <div className="w-6 flex items-center justify-center">
             <span className="text-sm font-medium text-white">
@@ -206,9 +220,18 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
               {entry.total_score}
             </span>
           </div>
-        </div>
-      ))}
-    </div>
+          </div>
+        ))}
+      </div>
+
+      <PlayerSelectionsModal
+        open={!!selectedPlayer}
+        onOpenChange={(open) => !open && setSelectedPlayer(null)}
+        userId={selectedPlayer?.userId || ''}
+        username={selectedPlayer?.username || ''}
+        roundId={roundId}
+      />
+    </>
   );
 };
 
