@@ -3236,6 +3236,13 @@ export type Database = {
           user_position: number
         }[]
       }
+      get_public_user_picks: {
+        Args: { p_round_id: string; p_user_id: string }
+        Returns: {
+          star_team_id: string
+          team_picks: Json
+        }[]
+      }
       get_star_team_state: { Args: { p_round_id: string }; Returns: Json }
       get_team_stats: { Args: { team_id: string }; Returns: Json }
       get_team_stats_optimized: { Args: { p_team_id: string }; Returns: Json }

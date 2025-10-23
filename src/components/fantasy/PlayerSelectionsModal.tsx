@@ -63,14 +63,14 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
         .rpc('get_public_user_picks', {
           p_user_id: userId,
           p_round_id: roundId
-        });
+        }) as { data: Array<{ team_picks: any; star_team_id: string }> | null; error: any };
 
       if (pickError) {
         console.error('Error fetching picks:', pickError);
         return;
       }
 
-      if (pickData && pickData.length > 0) {
+      if (pickData && Array.isArray(pickData) && pickData.length > 0) {
         const picks = pickData[0];
         
         // Fetch scores for each team
@@ -86,7 +86,7 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
         }
 
         setTeamPicks(scores || []);
-        setStarTeamId(picks.star_team_id);
+        setStarTeamId(picks.star_team_id || null);
       }
     } catch (error) {
       console.error('Error in fetchPlayerSelections:', error);
