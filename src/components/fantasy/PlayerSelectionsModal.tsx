@@ -142,7 +142,7 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
               size="sm"
               className="h-8 w-8"
             />
-            <span>{username}'s Team</span>
+            <span className="text-white">{username}'s Team</span>
           </DialogTitle>
         </DialogHeader>
 
