@@ -137,7 +137,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
   const getRowHighlight = (position: number, isCurrentUser: boolean) => {
     if (isCurrentUser && position > 3) {
-      return 'bg-gradient-to-r from-yellow-500/70 to-amber-500/30 border border-yellow-400/70';
+      return 'border border-green-500/80';
     }
     
     switch (position) {
