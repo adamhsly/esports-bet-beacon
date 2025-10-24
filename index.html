@@ -21,8 +21,8 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N8HTSGP99B"></script>
-    <script>
+    <script type="text/plain" data-cookieyes="analytics" async src="https://www.googletagmanager.com/gtag/js?id=G-N8HTSGP99B"></script>
+    <script type="text/plain" data-cookieyes="analytics">
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
@@ -30,7 +30,7 @@
     </script>
 
     
-    <script>
+    <script type="text/plain" data-cookieyes="analytics">
     (function (m, a, z, e) {
       var s, t;
       try {
@@ -53,11 +53,61 @@
     </script>
 
     <!-- Amplitude Analytics -->
-    <script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
-    <script src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz"></script>
-    <script>
+    <script type="text/plain" data-cookieyes="analytics" src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
+    <script type="text/plain" data-cookieyes="analytics" src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz"></script>
+    <script type="text/plain" data-cookieyes="analytics">
       window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
       window.amplitude.init('dd8a94425d4256791b4c2390d88fe968', {"autocapture":{"elementInteractions":true}});
+    </script>
+
+    <!-- Cookie Consent Manager -->
+    <script>
+      // Function to load analytics scripts when consent is given
+      function loadAnalyticsScripts() {
+        // Get all blocked analytics scripts
+        const analyticsScripts = document.querySelectorAll('script[type="text/plain"][data-cookieyes="analytics"]');
+        
+        analyticsScripts.forEach(function(script) {
+          // Create new script element
+          const newScript = document.createElement('script');
+          
+          // Copy attributes
+          if (script.src) {
+            newScript.src = script.src;
+          }
+          if (script.async) {
+            newScript.async = true;
+          }
+          
+          // Copy inline content
+          if (script.innerHTML) {
+            newScript.innerHTML = script.innerHTML;
+          }
+          
+          // Replace the blocked script
+          script.parentNode.replaceChild(newScript, script);
+        });
+      }
+
+      // Listen for consent updates
+      document.addEventListener('cookieyes_consent_update', function(eventData) {
+        const consent = eventData.detail;
+        
+        if (consent && consent.accepted && consent.accepted.includes('analytics')) {
+          loadAnalyticsScripts();
+        }
+      });
+
+      // Check for existing consent on page load
+      window.addEventListener('load', function() {
+        // CookieYes sets a cookie with consent preferences
+        if (typeof cookieyes !== 'undefined' && cookieyes.getConsent) {
+          const consent = cookieyes.getConsent();
+          if (consent && consent.analytics) {
+            loadAnalyticsScripts();
+          }
+        }
+      });
     </script>
 
   </head>
