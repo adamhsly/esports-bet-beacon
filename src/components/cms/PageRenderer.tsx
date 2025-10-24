@@ -137,7 +137,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
                 a: ({ href, children }) => (
                   <a 
                     href={href} 
-                    className="text-primary hover:text-primary/80 underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="text-blue-400 hover:text-blue-300 underline focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                     target={href?.startsWith('http') ? '_blank' : undefined}
                     rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
