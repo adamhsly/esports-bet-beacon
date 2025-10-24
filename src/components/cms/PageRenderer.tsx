@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Page } from '@/types/cms';
 import { getPageBySlug } from '@/lib/cms';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -126,6 +127,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
           <h1 className="text-4xl font-bold text-white mb-8">{page.title}</h1>
           <div className="text-foreground">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h1: ({ children }) => <h2 className="text-3xl font-bold mt-8 mb-4 text-white">{children}</h2>,
                 h2: ({ children }) => <h3 className="text-2xl font-semibold mt-6 mb-3 text-white">{children}</h3>,
@@ -143,6 +145,38 @@ export const PageRenderer: React.FC<PageRendererProps> = ({ slug }) => {
                   >
                     {children}
                   </a>
+                ),
+                table: ({ children }) => (
+                  <div className="overflow-x-auto my-6">
+                    <table className="min-w-full border border-gray-700 text-white">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                thead: ({ children }) => (
+                  <thead className="bg-gray-800">
+                    {children}
+                  </thead>
+                ),
+                tbody: ({ children }) => (
+                  <tbody className="divide-y divide-gray-700">
+                    {children}
+                  </tbody>
+                ),
+                tr: ({ children }) => (
+                  <tr className="hover:bg-gray-800/50">
+                    {children}
+                  </tr>
+                ),
+                th: ({ children }) => (
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border-b border-gray-700">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="px-4 py-3 text-sm text-gray-300">
+                    {children}
+                  </td>
                 ),
                 blockquote: ({ children }) => (
                   <blockquote className="border-l-4 border-primary pl-4 my-4 italic text-white">
