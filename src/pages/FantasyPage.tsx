@@ -32,16 +32,12 @@ const FantasyPage: React.FC = () => {
       <div className="flex-grow w-full">
         <div className="mx-2 md:mx-4 my-8">
           {!selectedRound && (
-            <div className="mb-8 max-w-2xl mx-auto">
-              <h1 className="text-3xl font-bold mb-4 text-theme-purple">
-                <span className="[color:_#8B5CF6]">
-                  Fantasy Esports
-                </span>
-              </h1>
-              <p className="text-muted-foreground text-base">
-                Build your dream roster of pro and amateur players — and earn points based on their real match performances. Every pick matters.
-                Amateurs earn +25% bonus points, so go bold or go home.
-              </p>
+            <div className="mb-8 max-w-4xl mx-auto">
+              <img 
+                src="/lovable-uploads/fantasy-banner.png" 
+                alt="Build your dream roster of pro and amateur players" 
+                className="w-full rounded-xl mb-4"
+              />
               <button
                 onClick={() => setRulesModalOpen(true)}
                 className="inline-flex items-center gap-1.5 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors mt-2"
