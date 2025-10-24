@@ -31,6 +31,7 @@ import NotFound from '@/pages/NotFound';
 import LegalPage from '@/pages/LegalPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+import CookiePage from '@/pages/CookiePage';
 import LegacyPrivacyRedirect from '@/components/redirects/LegacyPrivacyRedirect';
 import LegacyTermsRedirect from '@/components/redirects/LegacyTermsRedirect';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
@@ -120,6 +121,7 @@ function App() {
           {/* Legal pages - specific routes only for debugging */}
           <Route path="/legal/privacy" element={<PrivacyPage />} />
           <Route path="/legal/terms" element={<TermsPage />} />
+          <Route path="/legal/cookies" element={<CookiePage />} />
           {/* Legacy redirects for SEO preservation */}
           <Route path="/privacy" element={<LegacyPrivacyRedirect />} />
           <Route path="/terms" element={<LegacyTermsRedirect />} />
