@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { MessageSquare } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -46,6 +47,23 @@ const Footer = () => {
                 >
                   Cookie Policy
                 </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-4">Community</h4>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="https://discord.gg/hNPFaP9bV"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#5865F2] transition-colors duration-200 text-sm cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Join Discord
+                </a>
               </li>
             </ul>
           </div>

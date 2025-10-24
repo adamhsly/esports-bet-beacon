@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import UserMenu from './UserMenu';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import WalletConnector from './WalletConnector';
 
@@ -37,6 +37,15 @@ const SearchableNavbar: React.FC = () => {
           
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            <a
+              href="https://discord.gg/hNPFaP9bV"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-300 hover:text-[#5865F2] transition-colors duration-200"
+              title="Join our Discord community"
+            >
+              <MessageSquare className="w-6 h-6" />
+            </a>
             
             {!loading && (
               user ? (
