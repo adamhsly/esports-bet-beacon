@@ -34,7 +34,7 @@ const FantasyPage: React.FC = () => {
           {!selectedRound && (
             <div className="mb-8 max-w-4xl mx-auto">
               <img 
-                src="/lovable-uploads/fantasy-banner.png" 
+                src="/lovable-uploads/fantasy-banner.jpeg" 
                 alt="Build your dream roster of pro and amateur players" 
                 className="w-full rounded-xl mb-4"
               />
