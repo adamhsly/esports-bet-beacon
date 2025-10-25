@@ -1,5 +1,5 @@
 // Profile component with unified avatar configuration
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,6 +58,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
 
   const [selectedReward, setSelectedReward] = useState<LevelRewardItem | null>(null);
   const [showAvatarConfig, setShowAvatarConfig] = useState(false);
+  const freeTrackRef = useRef<HTMLDivElement>(null);
+  const premiumTrackRef = useRef<HTMLDivElement>(null);
   const { profile, loading: profileLoading } = useProfile();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   
@@ -89,6 +91,38 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const nextXp = Math.pow(level + 1, 2) * 100;
   const xpProgress = Math.min((xp / nextXp) * 100, 100);
   const xpToNext = Math.max(nextXp - xp, 0);
+
+  // Auto-scroll to last unlocked reward on mount/update
+  useEffect(() => {
+    if (loading || !free.length || !premium.length) return;
+
+    const scrollToLastUnlocked = (trackRef: React.RefObject<HTMLDivElement>, rewards: LevelRewardItem[]) => {
+      if (!trackRef.current) return;
+      
+      // Find the last unlocked reward
+      const unlockedRewards = rewards.filter(r => r.unlocked);
+      if (unlockedRewards.length === 0) return;
+      
+      const lastUnlockedIndex = rewards.findIndex(r => r.id === unlockedRewards[unlockedRewards.length - 1].id);
+      if (lastUnlockedIndex === -1) return;
+
+      // Calculate scroll position to center the card
+      const cardWidth = 80 + 12; // card width (80px) + gap (12px)
+      const containerWidth = trackRef.current.offsetWidth;
+      const scrollPosition = (lastUnlockedIndex * cardWidth) - (containerWidth / 2) + (cardWidth / 2);
+
+      trackRef.current.scrollTo({
+        left: Math.max(0, scrollPosition),
+        behavior: 'smooth'
+      });
+    };
+
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      scrollToLastUnlocked(freeTrackRef, free);
+      scrollToLastUnlocked(premiumTrackRef, premium);
+    }, 100);
+  }, [loading, free.length, premium.length]);
 
   if (loading) {
     return (
@@ -206,6 +240,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               
               <div className="relative">
                 <div 
+                  ref={freeTrackRef}
                   className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 overscroll-contain"
                   style={{ 
                     scrollbarWidth: 'none', 
@@ -259,6 +294,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               </div>
               
               <div 
+                ref={premiumTrackRef}
                 className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 overscroll-contain"
                 style={{ 
                   scrollbarWidth: 'none', 
