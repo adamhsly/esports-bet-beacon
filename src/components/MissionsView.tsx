@@ -190,7 +190,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center",
               mission.completed
-                ? "bg-green-500/20 text-white"
+                ? "bg-green-500/20 text-green-400"
                 : "bg-white/10 text-white"
             )}>
               {mission.completed ? (
@@ -203,7 +203,10 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
             {/* Mission Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-gaming text-white text-sm leading-tight">
+                <h3 className={cn(
+                  "font-gaming text-sm leading-tight",
+                  mission.completed ? "text-green-400" : "text-white"
+                )}>
                   {mission.title}
                 </h3>
                 {isInProgress && (
@@ -212,7 +215,10 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-white/60 mb-2">
+              <p className={cn(
+                "text-xs mb-2",
+                mission.completed ? "text-green-400/70" : "text-white/60"
+              )}>
                 {mission.description}
               </p>
               
@@ -220,8 +226,8 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               {mission.target > 1 && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs">
-                    <span className={mission.completed ? "text-white/40" : "text-yellow-400"}>{mission.progress}</span>
-                    <span className="text-white/40">{mission.target}</span>
+                    <span className={mission.completed ? "text-green-400/70" : "text-yellow-400"}>{mission.progress}</span>
+                    <span className={mission.completed ? "text-green-400/50" : "text-white/40"}>{mission.target}</span>
                   </div>
                   <Progress 
                     value={progressPercent} 
@@ -241,7 +247,10 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               +{mission.xp_reward} XP
             </div>
             {mission.target === 1 && (
-              <div className="text-xs text-white/40">
+              <div className={cn(
+                "text-xs",
+                mission.completed ? "text-green-400/70" : "text-white/40"
+              )}>
                 {mission.completed ? 'Complete' : 'Pending'}
               </div>
             )}
