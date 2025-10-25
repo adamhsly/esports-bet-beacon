@@ -68,7 +68,10 @@ export const ProgressHudSticky: React.FC<ProgressHudStickyProps> = ({ className 
           paddingBottom: 'env(safe-area-inset-bottom)',
           boxShadow: 'inset 0 2px 8px rgba(255,215,0,0.15), 0 -4px 16px rgba(255,215,0,0.2)'
         }}
-        onClick={openProfile}
+        onClick={() => {
+          import('@/lib/missionBus').then(({ MissionBus }) => MissionBus.onOpenProfileSheet());
+          openProfile();
+        }}
       >
         <div className="px-4 py-3 flex items-center gap-3">
           {/* Level + Streak */}
