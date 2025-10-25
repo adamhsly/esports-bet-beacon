@@ -96,10 +96,12 @@ export const MissionBus = {
       if (!set.has(type)) {
         set.add(type);
         localStorage.setItem(key, JSON.stringify(Array.from(set)));
-      }
-      if (set.has('daily') && set.has('weekly') && !hasOnceKey(`msn:dw:${todayStr()}`)) {
-        this.safeProgress('d_play_daily_weekly');
-        setOnceKey(`msn:dw:${todayStr()}`);
+        
+        // Check for completion AFTER adding the new type
+        if (set.has('daily') && set.has('weekly') && !hasOnceKey(`msn:dw:${todayStr()}`)) {
+          this.safeProgress('d_play_daily_weekly');
+          setOnceKey(`msn:dw:${todayStr()}`);
+        }
       }
     } catch (e) {
       // noop
