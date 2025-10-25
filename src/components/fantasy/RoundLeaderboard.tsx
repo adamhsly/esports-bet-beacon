@@ -69,13 +69,14 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
             MissionBus.onTop25Placement();
           }
           
-          // Check if this is a weekly round for top 50 mission
+          // Check for top 50% finish (any round type, but weekly mission tracks weekly)
           const { data: roundData } = await supabase
             .from('fantasy_rounds')
             .select('type')
             .eq('id', roundId)
             .single();
           
+          // Track top 50% for weekly rounds specifically
           if (roundData?.type === 'weekly' && currentUserPos <= 50) {
             MissionBus.onWeeklyTop50();
           }

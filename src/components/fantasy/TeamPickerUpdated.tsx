@@ -329,6 +329,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         MissionBus.onJoinRoundAny();
         MissionBus.recordJoinType(round.type);
         MissionBus.onM2_JoinedType();
+        MissionBus.onTypePerMonth(); // s_round_types_each_month tracking
         if (selectedTeams.length >= 3) {
           MissionBus.onLineupHasThree();
         }

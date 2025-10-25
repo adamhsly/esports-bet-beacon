@@ -49,11 +49,18 @@ export const useRPCActions = () => {
 
         // Track badge unlocks for monthly mission (m2_earn3_badges)
         if (result.unlocked_rewards_count && result.unlocked_rewards_count > 0) {
-          // Check if any of the unlocked rewards are badges
-          // This is a simple approximation - badges are typically unlocked at certain levels
-          import('@/lib/missionBus').then(({ MissionBus }) => {
-            for (let i = 0; i < (result.unlocked_rewards_count || 0); i++) {
-              MissionBus.onM2_BadgeEarned();
+          // Query actual rewards to check if they are badges
+          import('@/lib/missionBus').then(async ({ MissionBus }) => {
+            const { data: rewards } = await supabase
+              .from('level_rewards')
+              .select('reward_type, level')
+              .eq('level', Math.floor((result.xp ?? 0) / 100)) // Approximate level calculation
+              .eq('reward_type', 'badge');
+            
+            if (rewards && rewards.length > 0) {
+              for (let i = 0; i < rewards.length; i++) {
+                MissionBus.onM2_BadgeEarned();
+              }
             }
           });
         }
