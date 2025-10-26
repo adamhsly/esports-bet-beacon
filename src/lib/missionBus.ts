@@ -51,7 +51,7 @@ async function callProgress(code: string, inc: number) {
     const result = (data || {}) as { completed?: boolean; completedNow?: boolean; title?: string };
 
     // Auto-chain weekly/seasonal for daily completions
-    if (code.startsWith('d_') && result.completedNow) {
+    if (code.startsWith('d_') && result.completed) {
       // Weekly: 5 dailies
       await (supabase.rpc as any)('progress_mission', { p_code: 'w_5_dailies', p_inc: 1 }).catch(() => {});
       // Seasonal: 70% dailies tracker
@@ -126,7 +126,9 @@ export const MissionBus = {
   // Weekly
   onDailyCompleted() { return this.safeProgress('w_5_dailies'); },
   onJoinRoundAny() { return this.safeProgress('w_join3_rounds'); },
-  onThreeConsecutiveDays() { return this.safeProgress('w_3_consec_days'); },
+  onThreeConsecutiveDays() { 
+    return this.oncePerDay('w_3_consec_days', () => this.safeProgress('w_3_consec_days')); 
+  },
   onLineupHasThreeAmateurs() { return this.safeProgress('w_3_amateurs'); },
   onLineupHasThreePros() { return this.safeProgress('w_3_pros'); },
   onShareThisWeek() { return this.safeProgress('w_share2'); },
@@ -161,7 +163,7 @@ export const MissionBus = {
 
   // Weekly missions
   onWeeklyStreak() { 
-    return this.oncePerDay('w_streak5', () => this.safeProgress('w_streak5')); 
+    return this.oncePerDay('weekly_streak5', () => this.safeProgress('weekly_streak5')); 
   },
   onWeeklyTop50() { 
     return this.oncePerDay('w_top50', () => this.safeProgress('w_top50')); 
