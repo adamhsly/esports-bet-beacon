@@ -79,7 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (progress?.streak_count) {
             import('@/lib/missionBus').then(({ MissionBus }) => {
               if (progress.streak_count >= 3) {
-                MissionBus.onThreeConsecutiveDays();
+        // Consecutive day streak is now tracked server-side via award_xp
+        // and client-side after lineup submission
               }
               if (progress.streak_count >= 5) {
                 MissionBus.onWeeklyStreak();

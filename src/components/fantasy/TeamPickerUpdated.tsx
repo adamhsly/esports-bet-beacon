@@ -340,6 +340,17 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         if (proCount >= 3) MissionBus.onLineupHasThreePros();
         if (starTeamId) MissionBus.onStarTeamChosen();
         MissionBus.onM1_SubmitLineup();
+
+        // Track consecutive day streak for mission
+        const { data: progressData } = await supabase
+          .from('user_progress')
+          .select('streak_count')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (progressData?.streak_count) {
+          MissionBus.onConsecutiveDayStreak(progressData.streak_count);
+        }
       } catch (missionError) {
         console.warn('Mission progression failed (non-blocking)', missionError);
       }

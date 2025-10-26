@@ -146,8 +146,11 @@ export const MissionBus = {
   // Weekly
   onDailyCompleted() { return this.safeProgress('w_5_dailies'); },
   onJoinRoundAny() { return this.safeProgress('w_join3_rounds'); },
-  onThreeConsecutiveDays() { 
-    return this.oncePerDay('w_3_consec_days', () => this.safeProgress('w_3_consec_days')); 
+  onConsecutiveDayStreak(streakCount: number) {
+    // Progress based on current streak (1, 2, or 3 days)
+    if (streakCount >= 1 && streakCount <= 3) {
+      return this.safeProgress('w_3_consec_days', streakCount);
+    }
   },
   onLineupHasThreeAmateurs() { return this.safeProgress('w_3_amateurs'); },
   onLineupHasThreePros() { return this.safeProgress('w_3_pros'); },
