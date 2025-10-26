@@ -181,29 +181,41 @@ export async function getMatchesForDate({
   });
 
   // Map rows -> MatchInfo (return **raw** match_id; no prefixes)
-  const matches: MatchInfo[] = filteredRows.map((r) => ({
-    id: r.match_id,
-    source: r.source,
-    startTime: r.start_time,
-    tournament: r.tournament || undefined,
-    tournament_name: r.tournament || undefined,
-    league_name: r.tournament || undefined, // Use tournament as league_name
-    esportType: r.esport_type || undefined,
-    bestOf: r.best_of ?? undefined,
-    status: r.status || undefined,
-    // Include selective winner/score fields from database views
-    winner_id: (r as any).winner_id || null,
-    winner_type: (r as any).winner_type || null,
-    final_score: (r as any).final_score || null,
-    team1_id: r.team1_id || undefined,
-    team2_id: r.team2_id || undefined,
-    rawData: (r as any).raw_data,
-    faceitData: null,
-    teams: [
-      { id: r.team1_id || undefined, name: r.team1_name || 'Team 1', logo: r.team1_logo || '/placeholder.svg' },
-      { id: r.team2_id || undefined, name: r.team2_name || 'Team 2', logo: r.team2_logo || '/placeholder.svg' },
-    ] as any,
-  }));
+  const matches: MatchInfo[] = filteredRows.map((r) => {
+    // Extract league and tournament from raw_data for professional matches
+    let leagueName = r.tournament;
+    let tournamentName = r.tournament;
+    
+    if (r.source === 'professional' && (r as any).raw_data) {
+      const rawData = (r as any).raw_data;
+      leagueName = rawData?.league?.name || r.tournament;
+      tournamentName = rawData?.tournament?.name || r.tournament;
+    }
+    
+    return {
+      id: r.match_id,
+      source: r.source,
+      startTime: r.start_time,
+      tournament: r.tournament || undefined,
+      tournament_name: tournamentName || undefined,
+      league_name: leagueName || undefined,
+      esportType: r.esport_type || undefined,
+      bestOf: r.best_of ?? undefined,
+      status: r.status || undefined,
+      // Include selective winner/score fields from database views
+      winner_id: (r as any).winner_id || null,
+      winner_type: (r as any).winner_type || null,
+      final_score: (r as any).final_score || null,
+      team1_id: r.team1_id || undefined,
+      team2_id: r.team2_id || undefined,
+      rawData: (r as any).raw_data,
+      faceitData: null,
+      teams: [
+        { id: r.team1_id || undefined, name: r.team1_name || 'Team 1', logo: r.team1_logo || '/placeholder.svg' },
+        { id: r.team2_id || undefined, name: r.team2_name || 'Team 2', logo: r.team2_logo || '/placeholder.svg' },
+      ] as any,
+    };
+  });
 
   return matches;
 }
