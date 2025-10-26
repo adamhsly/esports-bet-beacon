@@ -569,12 +569,13 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         starTeamName={getStarredTeamName()} 
         onCheckProgress={() => {
           setShowSuccessModal(false);
-          if (onNavigateToInProgress) {
-            onNavigateToInProgress();
-          } else {
-            onBack();
-          }
-        }} 
+          onBack(); // Close the TeamPicker modal first
+          setTimeout(() => {
+            if (onNavigateToInProgress) {
+              onNavigateToInProgress();
+            }
+          }, 100); // Small delay to ensure modal closes before navigation
+        }}
       />
 
       <AuthModal 
