@@ -231,7 +231,12 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
                   </div>
                   <Progress 
                     value={progressPercent} 
-                    className="h-1.5 bg-[#0F1722]"
+                    className={cn(
+                      "h-2 bg-[#0F1722]",
+                      mission.completed 
+                        ? "[&>div]:bg-green-500 [&>div]:shadow-lg [&>div]:shadow-green-500/30"
+                        : "[&>div]:bg-gradient-to-r [&>div]:from-neon-blue [&>div]:to-neon-purple [&>div]:shadow-lg [&>div]:shadow-neon-blue/50"
+                    )}
                   />
                 </div>
               )}
