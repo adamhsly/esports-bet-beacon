@@ -50,12 +50,10 @@ async function callProgress(code: string, inc: number) {
 
     const result = (data || {}) as { completed?: boolean; completedNow?: boolean; title?: string };
 
-    // Auto-chain weekly/seasonal for daily completions
+    // Auto-chain weekly for daily completions
     if (code.startsWith('d_') && result.completed) {
       // Weekly: 5 dailies
       await (supabase.rpc as any)('progress_mission', { p_code: 'w_5_dailies', p_inc: 1 }).catch(() => {});
-      // Seasonal: 70% dailies tracker
-      await (supabase.rpc as any)('progress_mission', { p_code: 's_70pct_dailies', p_inc: 1 }).catch(() => {});
     }
 
     // Optional subtle toast when a mission completes now
@@ -108,6 +106,28 @@ export const MissionBus = {
     }
   },
 
+  // Track joined types per month for seasonal mission
+  recordJoinTypeMonth(type: 'daily' | 'weekly' | 'monthly') {
+    try {
+      const key = `msn:month-types:${monthStr()}`;
+      const raw = localStorage.getItem(key);
+      const set = new Set<string>(raw ? JSON.parse(raw) : []);
+      
+      if (!set.has(type)) {
+        set.add(type);
+        localStorage.setItem(key, JSON.stringify(Array.from(set)));
+        
+        // If all 3 types are now present, increment mission once per month
+        if (set.size === 3 && !hasOnceKey(`msn:month-all-types:${monthStr()}`)) {
+          this.safeProgress('s_round_types_each_month');
+          setOnceKey(`msn:month-all-types:${monthStr()}`);
+        }
+      }
+    } catch (e) {
+      // noop
+    }
+  },
+
   // Daily
   onAppOpen() { return this.oncePerDay('d_login', () => this.safeProgress('d_login')); },
   onSubmitLineup() { return this.safeProgress('d_submit_lineup'); },
@@ -144,13 +164,37 @@ export const MissionBus = {
   onM2_Share() { return this.safeProgress('m2_share5'); },
 
   // Seasonal
-  onDailyCompletedSeasonal() { return this.safeProgress('s_70pct_dailies'); },
+  async onDailyCompletedSeasonal() {
+    // Track completed daily missions and check 70% threshold
+    const key = `msn:season-dailies:${monthStr()}`;
+    try {
+      const raw = localStorage.getItem(key);
+      const completed = raw ? parseInt(raw) : 0;
+      const newCount = completed + 1;
+      localStorage.setItem(key, newCount.toString());
+      
+      // Assuming ~5 daily missions available per day * 90 days = 450 total
+      // 70% = 315 missions. Adjust based on actual season length.
+      const seasonTarget = 315;
+      const threshold = Math.floor(seasonTarget * 0.7);
+      
+      if (newCount >= threshold && !hasOnceKey(`msn:season-70pct`)) {
+        await this.safeProgress('s_70pct_dailies');
+        setOnceKey(`msn:season-70pct`);
+      }
+    } catch (e) {
+      // noop
+    }
+  },
   onSeasonXP(xp: number) { return this.safeProgress('s_earn2000', Math.max(0, Math.floor(xp || 0))); },
   onTop25Placement() { return this.safeProgress('s_top25_once'); },
-  onTypePerMonth() { return this.safeProgress('s_round_types_each_month'); },
 
   // New mission trackers
-  onDailyMissionCompleted() { return this.safeProgress('d_complete2'); },
+  async onDailyMissionCompleted() { 
+    await this.safeProgress('d_complete2');
+    // Track for seasonal 70% dailies mission
+    await this.onDailyCompletedSeasonal();
+  },
   onDailyXP(xp: number) { return this.safeProgress('d_earn50xp', Math.max(0, Math.floor(xp || 0))); },
   
   // Combo tracker: Call when XP is earned to track daily, monthly, and seasonal
