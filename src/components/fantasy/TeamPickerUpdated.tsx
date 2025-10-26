@@ -198,14 +198,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         match_volume: priceData.match_volume
       })) || [];
 
-      const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
-        id: priceData.team_id,
-        name: priceData.team_name,
-        type: 'amateur' as const,
-        price: priceData.price,
-        recent_win_rate: priceData.recent_win_rate,
-        abandon_rate: priceData.abandon_rate
-      })) || [];
+    const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
+      id: priceData.team_id,
+      name: priceData.team_name,
+      type: 'amateur' as const,
+      price: priceData.price,
+      recent_win_rate: priceData.recent_win_rate,
+      abandon_rate: priceData.abandon_rate,
+      match_volume: priceData.match_volume
+    })) || [];
 
       setProTeams(filteredProTeams);
       setAmateurTeams(filteredAmateurTeams);

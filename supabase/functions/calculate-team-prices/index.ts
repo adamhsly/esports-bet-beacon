@@ -136,22 +136,54 @@ serve(async (req) => {
       if (prevErr) console.error("get_faceit_teams_prev_window_stats error", prevErr);
       else console.log("prevStats count:", prevStats?.length || 0);
 
-      const { data: allFaceitTeams, error: allErr } = await (supabase as any).rpc(
+      const { data: currentFaceitTeams, error: currentErr } = await (supabase as any).rpc(
         "get_all_faceit_teams", 
         { start_date: startDate, end_date: endDate }
       );
-      if (allErr) console.error("get_all_faceit_teams error", allErr);
-      else console.log("allFaceitTeams count:", allFaceitTeams?.length || 0);
+      if (currentErr) console.error("get_all_faceit_teams error", currentErr);
+      else console.log("currentFaceitTeams count:", currentFaceitTeams?.length || 0);
 
-      const statsMap = new Map<string, any>();
-      (prevStats || []).forEach((s: any) => statsMap.set(s.team_id, s));
+      // Create unified map of ALL teams from both windows
+      const allTeamsMap = new Map<string, any>();
 
-      // Prepare batched amateur upsert
-      const amateurRows = (allFaceitTeams || []).map((t: any) => {
-        const s = statsMap.get(t.team_id);
-        if (!s) console.log(`No prev window stats for team ${t.team_id}`);
-        const abandon_rate = typeof s?.missed_pct === "number" ? Math.max(0, Math.min(100, Number(s.missed_pct))) / 100 : 0;
-        const match_volume = s?.matches_played || 0; // Use matches_played from stats
+      // Add current window teams
+      (currentFaceitTeams || []).forEach((t: any) => {
+        allTeamsMap.set(t.team_id, {
+          team_id: t.team_id,
+          team_name: t.team_name,
+          in_current_window: true,
+          in_prev_window: false,
+          matches_played: 0,
+          missed_pct: 0
+        });
+      });
+
+      // Add/update with previous window stats
+      (prevStats || []).forEach((s: any) => {
+        const existing = allTeamsMap.get(s.team_id);
+        if (existing) {
+          existing.in_prev_window = true;
+          existing.matches_played = s.matches_played;
+          existing.missed_pct = s.missed_pct;
+        } else {
+          // Team only in previous window
+          allTeamsMap.set(s.team_id, {
+            team_id: s.team_id,
+            team_name: s.team_name || `Team ${s.team_id}`,
+            in_current_window: false,
+            in_prev_window: true,
+            matches_played: s.matches_played,
+            missed_pct: s.missed_pct
+          });
+        }
+      });
+
+      console.log("Total unique amateur teams (both windows):", allTeamsMap.size);
+
+      // Prepare batched amateur upsert from ALL teams
+      const amateurRows = Array.from(allTeamsMap.values()).map((t: any) => {
+        const abandon_rate = typeof t.missed_pct === "number" ? Math.max(0, Math.min(100, Number(t.missed_pct))) / 100 : 0;
+        const match_volume = t.matches_played || 0;
         const recent_win_rate = 0.5;
         const base_score = recent_win_rate * 10 - abandon_rate * Number(ABANDON_PENALTY_MULTIPLIER);
         const raw_price = base_score * Number(AMATEUR_MULTIPLIER);
