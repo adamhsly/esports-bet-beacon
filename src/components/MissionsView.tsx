@@ -235,7 +235,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
                       "h-2 bg-[#0F1722]",
                       mission.completed 
                         ? "[&>div]:bg-green-500 [&>div]:shadow-lg [&>div]:shadow-green-500/30"
-                        : "[&>div]:bg-gradient-to-r [&>div]:from-neon-blue [&>div]:to-neon-purple [&>div]:shadow-lg [&>div]:shadow-neon-blue/50"
+                        : "[&>div]:bg-gradient-to-r [&>div]:from-yellow-500 [&>div]:to-yellow-400 [&>div]:shadow-lg [&>div]:shadow-yellow-400/50"
                     )}
                   />
                 </div>
