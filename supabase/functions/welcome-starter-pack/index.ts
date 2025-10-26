@@ -19,14 +19,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { user_id } = await req.json()
+    const body = await req.json()
 
-    if (!user_id) {
+    // Validate input
+    if (!body.user_id || typeof body.user_id !== 'string') {
       return new Response(
-        JSON.stringify({ success: false, error: 'User ID is required' }),
+        JSON.stringify({ success: false, error: 'User ID is required and must be a string' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(body.user_id)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid user_id format: must be a valid UUID' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+    
+    const { user_id } = body;
 
     console.log(`Processing welcome pack for user: ${user_id}`)
 

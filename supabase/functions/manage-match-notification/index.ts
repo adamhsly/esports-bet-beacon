@@ -47,7 +47,42 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const { matchId, matchStartTime, action }: NotificationRequest = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    if (!body.matchId || typeof body.matchId !== 'string' || body.matchId.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Invalid matchId' }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    
+    if (!body.action || !['subscribe', 'unsubscribe', 'check'].includes(body.action)) {
+      return new Response(JSON.stringify({ error: 'Invalid action' }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    
+    if (body.action !== 'check') {
+      if (!body.matchStartTime || typeof body.matchStartTime !== 'string') {
+        return new Response(JSON.stringify({ error: 'Invalid matchStartTime' }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      
+      // Validate timestamp format
+      const timestamp = new Date(body.matchStartTime);
+      if (isNaN(timestamp.getTime())) {
+        return new Response(JSON.stringify({ error: 'Invalid matchStartTime format' }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+    }
+    
+    const { matchId, matchStartTime, action }: NotificationRequest = body;
 
     if (action === 'check') {
       // Check if user has notification for this match

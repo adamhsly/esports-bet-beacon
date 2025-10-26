@@ -28,7 +28,22 @@ serve(async (req) => {
       }
     )
 
-    const { round_id, team_id } = await req.json()
+    const body = await req.json()
+    
+    // Validate input
+    if (!body.round_id || typeof body.round_id !== 'string') {
+      throw new Error('Invalid round_id: must be a valid UUID string')
+    }
+    if (!body.team_id || typeof body.team_id !== 'string') {
+      throw new Error('Invalid team_id: must be a non-empty string')
+    }
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(body.round_id)) {
+      throw new Error('Invalid round_id format: must be a valid UUID')
+    }
+    
+    const { round_id, team_id } = body;
     
     console.log('Setting star team:', { round_id, team_id });
 
