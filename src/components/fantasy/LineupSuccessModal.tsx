@@ -46,40 +46,59 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     ensureFocused();
     setIsGenerating(true);
 
+    const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
+    const text = `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`;
+
+    // Try native Web Share API with URL first (immediate, within user gesture)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My Fantasy Picks',
+          text: text,
+          url: shareUrl
+        });
+        
+        // Track missions on successful share
+        try {
+          const { MissionBus } = await import('@/lib/missionBus');
+          MissionBus.onShareLineup(roundId);
+          MissionBus.onShareThisWeek();
+          MissionBus.onM2_Share();
+        } catch (e) {
+          console.warn('Mission share tracking failed', e);
+        }
+        
+        toast.success('Shared!');
+        setIsGenerating(false);
+        
+        // Generate share card in background for future use
+        renderShareCard(roundId, userId).catch(console.warn);
+        return;
+      } catch (shareErr: any) {
+        if (shareErr?.name === 'AbortError') {
+          setIsGenerating(false);
+          return;
+        }
+        // Fall through to generate card and show custom sheet
+      }
+    }
+
+    // Fallback: Generate share card and show custom share sheet
     try {
       const result = await renderShareCard(roundId, userId);
       setShareData(result);
 
-      // Missions (non-blocking)
+      // Track missions
       try {
         const { MissionBus } = await import('@/lib/missionBus');
         MissionBus.onShareLineup(roundId);
         MissionBus.onShareThisWeek();
-        MissionBus.onM2_Share(); // Track monthly share mission
+        MissionBus.onM2_Share();
       } catch (e) {
         console.warn('Mission share tracking failed', e);
       }
 
-      // Native Web Share with file support
-      const file = new File([result.blob], 'lineup.png', { type: 'image/png' });
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: 'My Fantasy Picks',
-            text: `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`,
-            files: [file],
-            url: result.publicUrl
-          });
-          toast.success('Shared!');
-          return;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return; // user canceled
-          // Fall through to custom sheet
-          console.log('Native share failed, opening custom sheet:', shareErr);
-        }
-      }
-
-      // Custom share sheet (fallback)
+      // Show custom share sheet
       setShowShareSheet(true);
     } catch (err: any) {
       console.error('Share card generation failed:', err);

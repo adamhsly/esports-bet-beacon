@@ -403,12 +403,45 @@ const ShareButton: React.FC<{
 
   const handleShare = async () => {
     if (!userId) return;
-    setIsGenerating(true);
-
-    try {
-      const result = await renderShareCard(roundId, userId);
-      const roundName = `${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`;
-
+    
+    const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
+    const roundName = `${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`;
+    
+    // Try native Web Share API with URL first (immediate, within user gesture)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My Fantasy Picks',
+          text: `My ${roundName} picks - Check out my live progress!`,
+          url: shareUrl
+        });
+        
+        // Track missions on successful share
+        try {
+          const { MissionBus } = await import('@/lib/missionBus');
+          MissionBus.onShareLineup(roundId);
+          MissionBus.onShareThisWeek();
+        } catch (e) {
+          console.warn('Mission share tracking failed', e);
+        }
+        
+        toast.success('Shared!');
+        
+        // Generate share card in background for future use
+        renderShareCard(roundId, userId).catch(console.warn);
+        return;
+      } catch (shareError) {
+        if ((shareError as Error).name === 'AbortError') return; // user cancelled
+        // Fall through to copy fallback
+      }
+    }
+    
+    // Fallback: Copy link immediately (within user gesture window)
+    const linkCopied = await copyToClipboard(shareUrl);
+    
+    if (linkCopied) {
+      toast.success('Link copied to clipboard!');
+      
       // Track missions
       try {
         const { MissionBus } = await import('@/lib/missionBus');
@@ -417,35 +450,14 @@ const ShareButton: React.FC<{
       } catch (e) {
         console.warn('Mission share tracking failed', e);
       }
-
-      // Use Web Share API with file if available
-      const file = new File([result.blob], 'lineup.png', { type: 'image/png' });
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: 'My Fantasy Picks',
-            text: `My ${roundName} picks - Check out my live progress!`,
-            files: [file],
-            url: result.publicUrl
-          });
-          toast.success('Shared!');
-          return;
-        } catch (shareError) {
-          if ((shareError as Error).name === 'AbortError') return; // user cancelled
-          // fall through to copy fallback
-        }
-      }
-
-      // Fallback: copy link (still within the same click handler → user gesture)
-      const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
-      const ok = await copyToClipboard(shareUrl);
-      toast[ok ? 'success' : 'error'](ok ? 'Link copied to clipboard!' : 'Could not copy. Long-press/tap the link to copy.');
-
-    } catch (error) {
-      console.error('Share failed:', error);
-      toast.error("Couldn't generate share card, please try again.");
-    } finally {
-      setIsGenerating(false);
+      
+      // Generate share card in background
+      setIsGenerating(true);
+      renderShareCard(roundId, userId)
+        .catch(console.warn)
+        .finally(() => setIsGenerating(false));
+    } else {
+      toast.error('Could not copy. Long-press/tap the link to copy.');
     }
   };
 
