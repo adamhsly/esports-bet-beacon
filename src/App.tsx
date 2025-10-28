@@ -68,8 +68,10 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   const isMobile = useMobile();
   const location = useLocation();
   
-  // Don't show ProgressHudSticky on fantasy page since it has its own
+  // Don't show ProgressHudSticky on fantasy page or public lineup share pages
   const isFantasyPage = location.pathname === '/fantasy';
+  const isLineupSharePage = location.pathname.startsWith('/lineup/');
+  const showProgressHud = isMobile && !isFantasyPage && !isLineupSharePage;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -78,7 +80,7 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
           <Web3Provider>
             {children}
             {!isMobile && <StickyProfileHud onClick={openProfile} />}
-            {isMobile && !isFantasyPage && <ProgressHudSticky />}
+            {showProgressHud && <ProgressHudSticky />}
             <ProfileSheet isOpen={isOpen} onOpenChange={(open) => open ? openProfile() : closeProfile()} />
             <Toaster />
           </Web3Provider>
