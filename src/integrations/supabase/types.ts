@@ -3249,7 +3249,15 @@ export type Database = {
       }
       get_star_team_state: { Args: { p_round_id: string }; Returns: Json }
       get_team_stats: { Args: { team_id: string }; Returns: Json }
-      get_team_stats_optimized: { Args: { p_team_id: string }; Returns: Json }
+      get_team_stats_optimized: {
+        Args: { p_team_id: string }
+        Returns: {
+          recent_form: string
+          total_matches: number
+          tournament_wins: number
+          win_rate: number
+        }[]
+      }
       grant_bonus_credits: {
         Args: { p_amount: number; p_source: string; p_user: string }
         Returns: undefined
