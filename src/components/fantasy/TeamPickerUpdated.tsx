@@ -368,16 +368,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         await checkStarTeamPerformance(user.id, round.id, starTeamId);
       }
 
-      // Pre-generate share card in background (non-blocking)
-      try {
-        const { renderShareCard } = await import('@/utils/shareCardRenderer');
-        renderShareCard(round.id, user.id).catch((error) => {
-          console.warn('Share card generation failed (non-blocking):', error);
-        });
-      } catch (error) {
-        console.warn('Failed to import share card renderer:', error);
-      }
-
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Error submitting team:', error);
