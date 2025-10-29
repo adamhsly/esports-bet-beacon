@@ -3147,6 +3147,10 @@ export type Database = {
           team_name: string
         }[]
       }
+      get_faceit_teams_stats_batch: {
+        Args: { game_filter?: string; team_names: string[] }
+        Returns: Json
+      }
       get_head_to_head_optimized: {
         Args: {
           p_match_id: string
