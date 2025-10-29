@@ -46,47 +46,13 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     ensureFocused();
     setIsGenerating(true);
 
-    const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
-    const text = `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`;
-
-    // Try native Web Share API with URL first (immediate, within user gesture)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My Fantasy Picks',
-          text: text,
-          url: shareUrl
-        });
-        
-        // Track missions on successful share
-        try {
-          const { MissionBus } = await import('@/lib/missionBus');
-          MissionBus.onShareLineup(roundId);
-          MissionBus.onShareThisWeek();
-          MissionBus.onM2_Share();
-        } catch (e) {
-          console.warn('Mission share tracking failed', e);
-        }
-        
-        toast.success('Shared!');
-        setIsGenerating(false);
-        
-        // Generate share card in background for future use
-        renderShareCard(roundId, userId).catch(console.warn);
-        return;
-      } catch (shareErr: any) {
-        if (shareErr?.name === 'AbortError') {
-          setIsGenerating(false);
-          return;
-        }
-        // Fall through to generate card and show custom sheet
-      }
-    }
-
-    // Fallback: Generate share card and show custom share sheet
     try {
+      // Generate share card FIRST to get the direct image URL
       const result = await renderShareCard(roundId, userId);
       setShareData(result);
+
+      const shareUrl = result.publicUrl; // Direct image URL
+      const text = `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`;
 
       // Track missions
       try {
@@ -96,6 +62,27 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
         MissionBus.onM2_Share();
       } catch (e) {
         console.warn('Mission share tracking failed', e);
+      }
+
+      // Try native Web Share API with direct image URL
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'My Fantasy Picks',
+            text: text,
+            url: shareUrl
+          });
+          
+          toast.success('Shared!');
+          setIsGenerating(false);
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            setIsGenerating(false);
+            return;
+          }
+          // Fall through to show custom sheet
+        }
       }
 
       // Show custom share sheet
@@ -155,10 +142,10 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     if (!shareData) return;
     ensureFocused();
 
-    const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
+    const shareUrl = shareData.publicUrl; // Direct image URL
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('Link copied!');
+      toast.success('Image link copied!');
       try {
         const { MissionBus } = await import('@/lib/missionBus');
         MissionBus.onShareLineup(roundId);
@@ -175,7 +162,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     if (!shareData) return;
     ensureFocused();
 
-    const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
+    const shareUrl = shareData.publicUrl; // Direct image URL
     const text = `My ${roundName} picks${starTeamName ? ` — ⭐ ${starTeamName}` : ''}`;
 
     let url = '';
@@ -191,9 +178,9 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
         break;
       case 'discord':
         navigator.clipboard
-          .writeText(`${text}\n${shareUrl}\n\nImage: ${shareData.publicUrl}`)
-          .then(() => toast.success('Discord share info copied! Paste in Discord.'))
-          .catch(() => toast.error('Failed to copy Discord share info'));
+          .writeText(`${text}\n${shareUrl}`)
+          .then(() => toast.success('Image URL copied! Paste in Discord.'))
+          .catch(() => toast.error('Failed to copy'));
         return;
       case 'reddit':
         url = `https://reddit.com/submit?title=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
