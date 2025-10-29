@@ -180,11 +180,30 @@ serve(async (req) => {
 
       console.log("Total unique amateur teams (both windows):", allTeamsMap.size);
 
-      // Prepare batched amateur upsert from ALL teams
+      // Batch fetch win rates for all amateur teams
+      const teamNames = Array.from(allTeamsMap.values()).map(t => t.team_name);
+      const { data: batchStats, error: statsErr } = await (supabase as any).rpc(
+        'get_faceit_teams_stats_batch',
+        { team_names: teamNames, game_filter: null }
+      );
+      if (statsErr) console.error("get_faceit_teams_stats_batch error", statsErr);
+      console.log("Batch stats retrieved for teams:", batchStats?.length || 0);
+
+      // Create lookup map: team_name -> win_rate
+      const statsMap = new Map<string, number>();
+      ((batchStats as any[]) || []).forEach((stat: any) => {
+        statsMap.set(stat.team_name, stat.recent_win_rate_30d || stat.win_rate || 50);
+      });
+
+      // Prepare batched amateur upsert from ALL teams with actual win rates
       const amateurRows = Array.from(allTeamsMap.values()).map((t: any) => {
         const abandon_rate = typeof t.missed_pct === "number" ? Math.max(0, Math.min(100, Number(t.missed_pct))) / 100 : 0;
         const match_volume = t.matches_played || 0;
-        const recent_win_rate = 0.5;
+        
+        // GET ACTUAL WIN RATE from batch stats, fallback to 50
+        const win_rate_percent = statsMap.get(t.team_name) || 50;
+        const recent_win_rate = win_rate_percent / 100;
+        
         const base_score = recent_win_rate * 10 - abandon_rate * Number(ABANDON_PENALTY_MULTIPLIER);
         const raw_price = base_score * Number(AMATEUR_MULTIPLIER);
         const price = clamp(Math.round(raw_price), Number(MIN_PRICE), Number(MAX_PRICE));
