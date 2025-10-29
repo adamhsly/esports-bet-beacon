@@ -403,44 +403,15 @@ const ShareButton: React.FC<{
 
   const handleShare = async () => {
     if (!userId) return;
+    setIsGenerating(true);
     
-    const shareUrl = `${window.location.origin}/lineup/${roundId}/${userId}`;
     const roundName = `${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`;
     
-    // Try native Web Share API with URL first (immediate, within user gesture)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My Fantasy Picks',
-          text: `My ${roundName} picks - Check out my live progress!`,
-          url: shareUrl
-        });
-        
-        // Track missions on successful share
-        try {
-          const { MissionBus } = await import('@/lib/missionBus');
-          MissionBus.onShareLineup(roundId);
-          MissionBus.onShareThisWeek();
-        } catch (e) {
-          console.warn('Mission share tracking failed', e);
-        }
-        
-        toast.success('Shared!');
-        
-        // Generate share card in background for future use
-        renderShareCard(roundId, userId).catch(console.warn);
-        return;
-      } catch (shareError) {
-        if ((shareError as Error).name === 'AbortError') return; // user cancelled
-        // Fall through to copy fallback
-      }
-    }
-    
-    // Fallback: Copy link immediately (within user gesture window)
-    const linkCopied = await copyToClipboard(shareUrl);
-    
-    if (linkCopied) {
-      toast.success('Link copied to clipboard!');
+    try {
+      // Generate share card FIRST to get the direct image URL
+      const result = await renderShareCard(roundId, userId);
+      const shareUrl = result.publicUrl; // Direct image URL
+      const text = `My ${roundName} picks - Check out my live progress!`;
       
       // Track missions
       try {
@@ -451,13 +422,40 @@ const ShareButton: React.FC<{
         console.warn('Mission share tracking failed', e);
       }
       
-      // Generate share card in background
-      setIsGenerating(true);
-      renderShareCard(roundId, userId)
-        .catch(console.warn)
-        .finally(() => setIsGenerating(false));
-    } else {
-      toast.error('Could not copy. Long-press/tap the link to copy.');
+      // Try native Web Share API with direct image URL
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'My Fantasy Picks',
+            text: text,
+            url: shareUrl
+          });
+          
+          toast.success('Shared!');
+          setIsGenerating(false);
+          return;
+        } catch (shareError) {
+          if ((shareError as Error).name === 'AbortError') {
+            setIsGenerating(false);
+            return;
+          }
+          // Fall through to copy fallback
+        }
+      }
+      
+      // Fallback: Copy image URL
+      const linkCopied = await copyToClipboard(shareUrl);
+      
+      if (linkCopied) {
+        toast.success('Image link copied to clipboard!');
+      } else {
+        toast.error('Could not copy. Long-press/tap the link to copy.');
+      }
+    } catch (err: any) {
+      console.error('Share card generation failed:', err);
+      toast.error(`Failed to generate share card: ${err?.message ?? 'Unknown error'}`);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
