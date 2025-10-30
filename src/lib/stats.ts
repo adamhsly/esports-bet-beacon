@@ -28,7 +28,9 @@ export async function getTeamStats(teamId: string): Promise<TeamStatsData | null
   }
   if (!data) return null;
 
-  const row = data as DbTeamStats;
+  // Handle TABLE return type (array) from RPC
+  const row = (Array.isArray(data) ? data[0] : data) as DbTeamStats | undefined;
+  if (!row) return null;
 
   return {
     winRate: Number(row.win_rate ?? 0),
