@@ -3282,6 +3282,7 @@ export type Database = {
       }
       level_for_xp: { Args: { x: number }; Returns: number }
       next_daily_reset_utc: { Args: { ts?: string }; Returns: string }
+      next_monthly_reset_utc: { Args: { ts?: string }; Returns: string }
       next_weekly_reset_utc: { Args: { ts?: string }; Returns: string }
       panda_form_bulk: {
         Args: { team_ids: number[] }
