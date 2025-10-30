@@ -83,8 +83,9 @@ serve(async (req) => {
       // Parallel fetch of pro team stats
       const proStatsPromises = Array.from(proTeamMap.entries()).map(async ([teamId, info]) => {
         try {
-          const { data: stats, error: statsErr } = await (supabase as any).rpc("get_team_stats_optimized", { p_team_id: teamId });
+          const { data: statsData, error: statsErr } = await (supabase as any).rpc("get_team_stats_optimized", { p_team_id: teamId });
           if (statsErr) console.error("get_team_stats_optimized error", teamId, statsErr);
+          const stats = Array.isArray(statsData) ? statsData[0] : statsData;
           const recent_win_rate = stats?.win_rate ? Number(stats.win_rate) / 100 : 0.5;
           const base_score = (recent_win_rate * 10) + (info.match_volume * 2);
           const raw_price = base_score * Number(PRO_MULTIPLIER);
