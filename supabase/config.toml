@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.share-proxy]
 verify_jwt = false
+
+[functions.schedule-match-notifications]
+verify_jwt = false
+
+[functions.send-match-reminder]
+verify_jwt = false

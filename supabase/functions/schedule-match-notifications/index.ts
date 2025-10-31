@@ -85,14 +85,9 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
 
-        // Send reminder email
-        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-match-reminder`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
+        // Send reminder email using Supabase client
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-match-reminder', {
+          body: {
             userId: notification.user_id,
             matchId: notification.match_id,
             matchDetails: {
@@ -101,11 +96,11 @@ const handler = async (req: Request): Promise<Response> => {
               competition_name: matchData.competition_name,
             },
             userEmail: userData.user.email,
-          }),
+          },
         });
 
-        if (!emailResponse.ok) {
-          throw new Error(`Email service returned ${emailResponse.status}`);
+        if (emailError) {
+          throw new Error(`Email service error: ${emailError.message}`);
         }
 
         // Mark notification as sent
