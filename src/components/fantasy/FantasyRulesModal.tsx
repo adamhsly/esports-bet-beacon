@@ -132,6 +132,47 @@ export const FantasyRulesModal: React.FC<FantasyRulesModalProps> = ({
             </div>
           </section>
 
+          {/* Prize Structure */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="h-5 w-5 text-[#8B5CF6]" />
+              <h3 className="text-xl font-semibold">Prize Structure</h3>
+            </div>
+            <p className="text-gray-300 mb-4">Top 3 players in each round win bonus credits!</p>
+            <div className="grid gap-3">
+              <div className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 p-4 rounded-lg border border-yellow-500/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">🥇</span>
+                    <span className="font-semibold text-white text-lg">1st Place</span>
+                  </div>
+                  <span className="text-yellow-400 font-bold text-2xl">200 Credits</span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-gray-400/20 to-gray-500/10 p-4 rounded-lg border border-gray-400/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">🥈</span>
+                    <span className="font-semibold text-white text-lg">2nd Place</span>
+                  </div>
+                  <span className="text-gray-300 font-bold text-2xl">100 Credits</span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-orange-600/20 to-orange-700/10 p-4 rounded-lg border border-orange-600/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">🥉</span>
+                    <span className="font-semibold text-white text-lg">3rd Place</span>
+                  </div>
+                  <span className="text-orange-400 font-bold text-2xl">50 Credits</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-400 mt-3">
+              Winners are notified via email and receive a celebration modal on their next login!
+            </p>
+          </section>
+
           {/* Tips */}
           <section className="bg-[#8B5CF6]/10 p-4 rounded-lg border border-[#8B5CF6]/30">
             <h3 className="text-lg font-semibold mb-2 text-white">Pro Tips</h3>
