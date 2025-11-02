@@ -15,61 +15,53 @@ const corsHeaders = {
 
 type Team = { name: string; logo?: string };
 
-function normalizeTeams(primary: unknown, alt?: unknown): Team[] {
-  const source = Array.isArray(primary) ? primary : (Array.isArray(alt) ? alt : []);
-  if (!Array.isArray(source)) {
-    return [{ name: 'TBD' }, { name: 'TBD' }];
+function normalizeTeams(raw: unknown): Team[] {
+  if (Array.isArray(raw)) {
+    const mapped = raw.map((t: any) => {
+      if (t && typeof t === 'object') {
+        const name = String(t.name ?? t.team_name ?? t.slug ?? t.id ?? 'TBD');
+        const logo = t.logo ?? t.image_url ?? undefined;
+        return { name, logo };
+      }
+      return { name: String(t ?? 'TBD') };
+    });
+    while (mapped.length < 2) mapped.push({ name: 'TBD' });
+    return mapped.slice(0, 2);
   }
-  const mapped = source.map((t: any) => {
-    if (t && typeof t === 'object') {
-      // pandscore opponents can be like { opponent: { name, image_url } } or { name, image_url }
-      const obj = t.opponent ?? t;
-      const name = String(obj?.name ?? obj?.slug ?? obj?.id ?? 'TBD');
-      const logo = obj?.logo ?? obj?.image_url ?? undefined;
-      return { name, logo };
-    }
-    return { name: String(t ?? 'TBD') };
-  });
-  while (mapped.length < 2) mapped.push({ name: 'TBD' });
-  return mapped.slice(0, 2);
+  return [{ name: 'TBD' }, { name: 'TBD' }];
 }
 
-async function getPandascoreDetails(sb: ReturnType<typeof createClient>, matchId: string) {
-  // matchId looks like "pandascore_1262358" → numeric external id "1262358"
-  const extId = matchId.replace(/^pandascore_/, "");
+async function getPandascoreDetails(
+  sb: ReturnType<typeof createClient>,
+  prefixedId: string
+): Promise<{ teams: Team[]; competition_name: string | null; scheduled_at: string } | null> {
+  // prefixedId: "pandascore_1260535" -> "1260535"
+  const extId = prefixedId.replace(/^pandascore_/, "");
+  const extIdNum = Number(extId);
+  const isNumeric = !Number.isNaN(extIdNum);
 
-  // 1) Try by external_id (most common shape)
-  let { data, error } = await sb
+  // Query by match_id exactly as requested
+  // Try string first (works if column is text), then numeric (if column is integer)
+  let q = await sb
     .from('pandascore_matches')
-    .select(
-      // select broadly; we'll normalize in code
-      'teams, opponents, competition_name, tournament_name, league_name, scheduled_at, start_time, id, external_id'
-    )
-    .eq('external_id', extId)
+    .select('teams, competition_name, scheduled_at, match_id')
+    .eq('match_id', extId)
     .maybeSingle();
 
-  // 2) If not found, try id equal to the full prefixed id (some schemas store it that way)
-  if ((!data || error) && !data) {
-    const fallbackId = `pandascore_${extId}`;
-    const tryId = await sb
+  if ((!q.data || q.error) && isNumeric) {
+    q = await sb
       .from('pandascore_matches')
-      .select('teams, opponents, competition_name, tournament_name, league_name, scheduled_at, start_time, id, external_id')
-      .eq('id', fallbackId)
+      .select('teams, competition_name, scheduled_at, match_id')
+      .eq('match_id', extIdNum)
       .maybeSingle();
-    data = tryId.data;
-    error = tryId.error;
   }
 
-  if (!data || error) return null;
+  const { data } = q;
+  if (!data) return null;
 
-  const teams = normalizeTeams((data as any).teams, (data as any).opponents);
-  const competition =
-    (data as any).competition_name ??
-    (data as any).tournament_name ??
-    (data as any).league_name ??
-    null;
-
-  const whenRaw = (data as any).scheduled_at ?? (data as any).start_time;
+  const teams = normalizeTeams((data as any).teams);
+  const competition = (data as any).competition_name ?? null;
+  const whenRaw = (data as any).scheduled_at;
   const startISO = whenRaw ? new Date(whenRaw).toISOString() : new Date().toISOString();
 
   return {
@@ -87,14 +79,14 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log('🔄 Running scheduled match notifications check...');
 
-    // Get current time and the 15–16 minute window (unchanged)
+    // 15–16 minute window (unchanged)
     const now = new Date();
     const in15Minutes = new Date(now.getTime() + 15 * 60 * 1000);
     const in16Minutes = new Date(now.getTime() + 16 * 60 * 1000);
 
     console.log(`⏰ Checking for matches starting between ${in15Minutes.toISOString()} and ${in16Minutes.toISOString()}`);
 
-    // Get pending notifications for matches starting in 15-16 minutes (unchanged)
+    // Pending notifications in window (unchanged)
     const { data: pendingNotifications, error: notificationError } = await supabase
       .from('match_notifications')
       .select(`
@@ -126,32 +118,30 @@ const handler = async (req: Request): Promise<Response> => {
     let processed = 0;
     let errors = 0;
 
-    // Process each notification
     for (const notification of pendingNotifications) {
       try {
-        // Get user email from auth.users (service role used)
+        // User email (unchanged)
         const { data: userData, error: userError } = await supabase.auth.admin.getUserById(notification.user_id);
-
         if (userError || !userData.user?.email) {
           console.error(`❌ Failed to get user email for ${notification.user_id}:`, userError);
           errors++;
           continue;
         }
 
-        // --- Provider-aware details fetch ---
-        let matchDetails:
+        // Provider-aware fetch:
+        let details:
           | { teams: Team[]; competition_name: string | null; scheduled_at: string }
           | null = null;
 
         if (notification.match_id.startsWith('pandascore_')) {
-          matchDetails = await getPandascoreDetails(supabase, notification.match_id);
-          if (!matchDetails) {
+          details = await getPandascoreDetails(supabase, notification.match_id);
+          if (!details) {
             console.error(`❌ No pandascore match found for ${notification.match_id}`);
             errors++;
             continue;
           }
         } else {
-          // Faceit path (UNCHANGED, as requested)
+          // FACEIT path (UNCHANGED)
           const { data: matchData, error: matchError } = await supabase
             .from('faceit_matches')
             .select('teams, competition_name, scheduled_at')
@@ -164,23 +154,22 @@ const handler = async (req: Request): Promise<Response> => {
             continue;
           }
 
-          // Keep shape identical to previous call
-          matchDetails = {
+          details = {
             teams: normalizeTeams((matchData as any).teams),
             competition_name: (matchData as any).competition_name ?? null,
             scheduled_at: new Date((matchData as any).scheduled_at).toISOString(),
           };
         }
 
-        // Send reminder email using Supabase Functions (unchanged contract)
-        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-match-reminder', {
+        // Send reminder email (unchanged contract)
+        const { error: emailError } = await supabase.functions.invoke('send-match-reminder', {
           body: {
             userId: notification.user_id,
             matchId: notification.match_id,
             matchDetails: {
-              teams: matchDetails.teams,
-              startTime: matchDetails.scheduled_at,
-              competition_name: matchDetails.competition_name ?? 'Upcoming match',
+              teams: details.teams,
+              startTime: details.scheduled_at,
+              competition_name: details.competition_name ?? 'Upcoming match',
             },
             userEmail: userData.user.email,
           },
@@ -190,7 +179,7 @@ const handler = async (req: Request): Promise<Response> => {
           throw new Error(`Email service error: ${emailError.message}`);
         }
 
-        // Mark notification as sent (unchanged)
+        // Mark as sent (unchanged)
         const { error: updateError } = await supabase
           .from('match_notifications')
           .update({ notification_sent: true })
