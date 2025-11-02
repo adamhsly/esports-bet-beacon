@@ -65,17 +65,10 @@ const queryClient = new QueryClient({
   },
 });
 
-const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isOpen, openProfile, closeProfile } = useProfilePanel();
-  const isMobile = useMobile();
-  const location = useLocation();
+// Component that handles winner notifications - must be inside AuthProvider
+const WinnerNotificationHandler: React.FC = () => {
   const { unviewedWins, markAsViewed } = useRoundWinnerNotifications();
   const [currentWinnerIndex, setCurrentWinnerIndex] = React.useState(0);
-  
-  // Don't show ProgressHudSticky on fantasy page or public lineup share pages
-  const isFantasyPage = location.pathname === '/fantasy';
-  const isLineupSharePage = location.pathname.startsWith('/lineup/');
-  const showProgressHud = isMobile && !isFantasyPage && !isLineupSharePage;
 
   const handleCloseWinner = async () => {
     if (unviewedWins[currentWinnerIndex]) {
@@ -91,6 +84,24 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   return (
+    <RoundWinnerCelebrationModal
+      winner={unviewedWins[currentWinnerIndex] || null}
+      onClose={handleCloseWinner}
+    />
+  );
+};
+
+const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isOpen, openProfile, closeProfile } = useProfilePanel();
+  const isMobile = useMobile();
+  const location = useLocation();
+  
+  // Don't show ProgressHudSticky on fantasy page or public lineup share pages
+  const isFantasyPage = location.pathname === '/fantasy';
+  const isLineupSharePage = location.pathname.startsWith('/lineup/');
+  const showProgressHud = isMobile && !isFantasyPage && !isLineupSharePage;
+
+  return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
@@ -99,10 +110,7 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
             {!isMobile && <StickyProfileHud onClick={openProfile} />}
             {showProgressHud && <ProgressHudSticky />}
             <ProfileSheet isOpen={isOpen} onOpenChange={(open) => open ? openProfile() : closeProfile()} />
-            <RoundWinnerCelebrationModal
-              winner={unviewedWins[currentWinnerIndex] || null}
-              onClose={handleCloseWinner}
-            />
+            <WinnerNotificationHandler />
             <Toaster />
           </Web3Provider>
         </ToastProvider>
