@@ -1034,6 +1034,53 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_round_winners: {
+        Row: {
+          awarded_at: string | null
+          created_at: string | null
+          credits_awarded: number
+          finish_position: number
+          id: string
+          notification_sent: boolean | null
+          notification_viewed: boolean | null
+          round_id: string
+          total_score: number
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string | null
+          created_at?: string | null
+          credits_awarded: number
+          finish_position: number
+          id?: string
+          notification_sent?: boolean | null
+          notification_viewed?: boolean | null
+          round_id: string
+          total_score: number
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string | null
+          created_at?: string | null
+          credits_awarded?: number
+          finish_position?: number
+          id?: string
+          notification_sent?: boolean | null
+          notification_viewed?: boolean | null
+          round_id?: string
+          total_score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_round_winners_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fantasy_rounds: {
         Row: {
           created_at: string
@@ -2983,6 +3030,17 @@ export type Database = {
       allocate_round_extra: {
         Args: { p_amount: number; p_round: string }
         Returns: boolean
+      }
+      award_round_winners: {
+        Args: { p_round_id: string }
+        Returns: {
+          credits_awarded: number
+          finish_position: number
+          total_score: number
+          user_email: string
+          user_id: string
+          username: string
+        }[]
       }
       award_xp: { Args: { p_kind: string; p_ref_id?: string }; Returns: Json }
       backfill_pandascore_match_date_window: {

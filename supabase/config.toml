@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.send-match-reminder]
 verify_jwt = false
+
+[functions.award-fantasy-winners]
+verify_jwt = false
+
+[functions.process-finished-rounds]
+verify_jwt = false

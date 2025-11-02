@@ -37,6 +37,8 @@ import LegacyTermsRedirect from '@/components/redirects/LegacyTermsRedirect';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
 import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
+import { RoundWinnerCelebrationModal } from '@/components/RoundWinnerCelebrationModal';
+import { useRoundWinnerNotifications } from '@/hooks/useRoundWinnerNotifications';
 import { useMobile } from '@/hooks/useMobile';
 import { useLocation } from 'react-router-dom';
 import './App.css';
@@ -67,11 +69,26 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
   const isMobile = useMobile();
   const location = useLocation();
+  const { unviewedWins, markAsViewed } = useRoundWinnerNotifications();
+  const [currentWinnerIndex, setCurrentWinnerIndex] = React.useState(0);
   
   // Don't show ProgressHudSticky on fantasy page or public lineup share pages
   const isFantasyPage = location.pathname === '/fantasy';
   const isLineupSharePage = location.pathname.startsWith('/lineup/');
   const showProgressHud = isMobile && !isFantasyPage && !isLineupSharePage;
+
+  const handleCloseWinner = async () => {
+    if (unviewedWins[currentWinnerIndex]) {
+      await markAsViewed(unviewedWins[currentWinnerIndex].id);
+      
+      // Show next win if available
+      if (currentWinnerIndex < unviewedWins.length - 1) {
+        setCurrentWinnerIndex(prev => prev + 1);
+      } else {
+        setCurrentWinnerIndex(0);
+      }
+    }
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -82,6 +99,10 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
             {!isMobile && <StickyProfileHud onClick={openProfile} />}
             {showProgressHud && <ProgressHudSticky />}
             <ProfileSheet isOpen={isOpen} onOpenChange={(open) => open ? openProfile() : closeProfile()} />
+            <RoundWinnerCelebrationModal
+              winner={unviewedWins[currentWinnerIndex] || null}
+              onClose={handleCloseWinner}
+            />
             <Toaster />
           </Web3Provider>
         </ToastProvider>
