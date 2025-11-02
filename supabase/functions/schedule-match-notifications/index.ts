@@ -81,8 +81,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // 15–16 minute window (unchanged)
     const now = new Date();
-    const in15Minutes = new Date(now.getTime() + 15 * 60 * 1000);
-    const in16Minutes = new Date(now.getTime() + 16 * 60 * 1000);
+    const in15Minutes = new Date(now.getTime() + 12 * 60 * 1000);
+    const in16Minutes = new Date(now.getTime() + 18 * 60 * 1000);
 
     console.log(`⏰ Checking for matches starting between ${in15Minutes.toISOString()} and ${in16Minutes.toISOString()}`);
 
