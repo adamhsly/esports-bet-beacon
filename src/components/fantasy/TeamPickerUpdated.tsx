@@ -25,7 +25,7 @@ import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
-import { useProgress } from '@/hooks/useSupabaseData';
+
 
 interface FantasyRound {
   id: string;
@@ -68,7 +68,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const { user } = useAuth();
   const { progressMission } = useRPCActions();
   const { availableCredits, spendBonusCredits } = useBonusCredits();
-  const { progress } = useProgress();
   
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
@@ -334,10 +333,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         MissionBus.recordJoinTypeMonth(round.type); // s_round_types_each_month tracking
         MissionBus.onM2_JoinedType();
         
-        // Track consecutive day streak for Consistency mission
-        if (progress?.streak_count) {
-          MissionBus.onConsecutiveDayStreak(progress.streak_count);
-        }
+        // Award XP for lineup submission which will handle streak tracking
+        await progressMission('d_submit_lineup');
         
         if (selectedTeams.length >= 3) {
           MissionBus.onLineupHasThree();
@@ -349,17 +346,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         if (proCount >= 3) MissionBus.onLineupHasThreePros();
         if (starTeamId) MissionBus.onStarTeamChosen();
         MissionBus.onM1_SubmitLineup();
-
-        // Track consecutive day streak for mission
-        const { data: progressData } = await supabase
-          .from('user_progress')
-          .select('streak_count')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (progressData?.streak_count) {
-          MissionBus.onConsecutiveDayStreak(progressData.streak_count);
-        }
       } catch (missionError) {
         console.warn('Mission progression failed (non-blocking)', missionError);
       }
