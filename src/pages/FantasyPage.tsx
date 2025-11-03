@@ -36,7 +36,7 @@ const FantasyPage: React.FC = () => {
               <img 
                 src="/lovable-uploads/fantasy-banner.jpeg" 
                 alt="Build your dream roster of pro and amateur players" 
-                className="w-full rounded-xl mb-4"
+                className="w-3/4 mx-auto rounded-xl mb-4"
               />
               <button
                 onClick={() => setRulesModalOpen(true)}
