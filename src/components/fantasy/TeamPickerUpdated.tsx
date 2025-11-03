@@ -25,6 +25,7 @@ import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
+import { useProgress } from '@/hooks/useSupabaseData';
 
 interface FantasyRound {
   id: string;
@@ -67,6 +68,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const { user } = useAuth();
   const { progressMission } = useRPCActions();
   const { availableCredits, spendBonusCredits } = useBonusCredits();
+  const { progress } = useProgress();
   
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
@@ -331,6 +333,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         MissionBus.recordJoinType(round.type);
         MissionBus.recordJoinTypeMonth(round.type); // s_round_types_each_month tracking
         MissionBus.onM2_JoinedType();
+        
+        // Track consecutive day streak for Consistency mission
+        if (progress?.streak_count) {
+          MissionBus.onConsecutiveDayStreak(progress.streak_count);
+        }
+        
         if (selectedTeams.length >= 3) {
           MissionBus.onLineupHasThree();
         }
