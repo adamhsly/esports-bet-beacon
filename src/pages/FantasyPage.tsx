@@ -15,6 +15,8 @@ import { ProgressHudSidebar } from '@/components/fantasy/ProgressHudSidebar';
 import { useMobile } from '@/hooks/useMobile';
 import { FantasyRulesModal } from '@/components/fantasy/FantasyRulesModal';
 import { BookOpen } from 'lucide-react';
+import { useProfilePanel } from '@/components/ProfileSheet';
+import { ProfileSheet } from '@/components/ProfileSheet';
 
 
 const FantasyPage: React.FC = () => {
@@ -24,6 +26,7 @@ const FantasyPage: React.FC = () => {
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const { awardXP, progressMission } = useRPCActions();
   const isMobile = useMobile();
+  const { isOpen, openProfile, closeProfile } = useProfilePanel();
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
@@ -128,12 +131,15 @@ const FantasyPage: React.FC = () => {
         <ProgressHudSticky />
       ) : (
         <div className="fixed bottom-4 right-4 z-50">
-          <ProgressHudSidebar />
+          <ProgressHudSidebar onClick={openProfile} />
         </div>
       )}
 
       {/* Fantasy Rules Modal */}
       <FantasyRulesModal open={rulesModalOpen} onOpenChange={setRulesModalOpen} />
+      
+      {/* Profile Sheet */}
+      <ProfileSheet isOpen={isOpen} onOpenChange={closeProfile} />
     </div>
   );
 };

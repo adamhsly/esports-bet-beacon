@@ -3,9 +3,11 @@ import { Lock, CheckCircle, Flame } from 'lucide-react';
 import { useProgress, useMissions, useRewards, useEntitlement } from '@/hooks/useSupabaseData';
 interface ProgressHudSidebarProps {
   className?: string;
+  onClick?: () => void;
 }
 export const ProgressHudSidebar: React.FC<ProgressHudSidebarProps> = ({
-  className = ""
+  className = "",
+  onClick
 }) => {
   const {
     level,
@@ -60,8 +62,11 @@ export const ProgressHudSidebar: React.FC<ProgressHudSidebarProps> = ({
   const nextRewardLabel = nextReward?.reward_type || nextPremiumReward?.reward_type || "Max Level";
   
   return (
-    <div className={`bg-[#0d0d0f] border border-[rgba(255,215,0,0.35)] rounded-2xl p-4 space-y-3 max-w-[340px] ${className}`}
-         style={{ boxShadow: 'inset 0 0 12px rgba(255,215,0,0.1), 0 4px 20px rgba(255,215,0,0.25)' }}>
+    <div 
+      className={`bg-[#0d0d0f] border border-[rgba(255,215,0,0.35)] rounded-2xl p-4 space-y-3 max-w-[340px] ${onClick ? 'cursor-pointer hover:border-[rgba(255,215,0,0.5)] transition-colors' : ''} ${className}`}
+      style={{ boxShadow: 'inset 0 0 12px rgba(255,215,0,0.1), 0 4px 20px rgba(255,215,0,0.25)' }}
+      onClick={onClick}
+    >
       {/* Row 1: Level and XP */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
