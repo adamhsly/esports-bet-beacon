@@ -43,12 +43,9 @@ export const ProgressHudSidebar: React.FC<ProgressHudSidebarProps> = ({
       </div>;
   }
 
-  // Calculate XP for next level
-  const baseXPForLevel = 1000 + level * 100;
-  const currentLevelStart = level === 1 ? 0 : (level - 1) * 1000 + (level - 1) * (level - 2) / 2 * 100;
-  const currentLevelXP = xp - currentLevelStart;
-  const nextXp = baseXPForLevel;
-  const xpProgress = Math.min(currentLevelXP / nextXp * 100, 100);
+  // Calculate XP for next level (matches profile page and mobile)
+  const nextXp = Math.pow(level + 1, 2) * 100;
+  const xpProgress = Math.min((xp / nextXp) * 100, 100);
 
   // Mission counts
   const dailyCompleted = dailyMissions.filter(m => m.completed).length;
@@ -80,26 +77,26 @@ export const ProgressHudSidebar: React.FC<ProgressHudSidebarProps> = ({
             </div>
           )}
         </div>
-        <div className="text-sm text-[#f6e7b1] font-medium">
-          {Math.floor(currentLevelXP)}/{nextXp} XP
+        <div className="text-sm text-white font-gaming">
+          {xp}/{nextXp} XP
         </div>
       </div>
 
       {/* Row 2: XP Meter */}
       <div className="relative">
         <div 
-          className="h-3 bg-black/40 rounded-full shadow-inner overflow-hidden"
+          className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
           role="progressbar"
-          aria-valuenow={Math.floor(currentLevelXP)}
+          aria-valuenow={Math.floor(xp)}
           aria-valuemin={0}
           aria-valuemax={nextXp}
           aria-label="XP progress"
         >
           <div 
-            className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-[220ms] ease-out"
+            className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
             style={{ 
               width: `${xpProgress}%`,
-              boxShadow: '0 0 10px rgba(255,204,51,0.6), 0 0 16px rgba(255,153,0,0.4)'
+              boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
             }}
           />
         </div>
