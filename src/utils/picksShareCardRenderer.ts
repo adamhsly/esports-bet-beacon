@@ -132,8 +132,7 @@ async function fetchPicksShareData(roundId: string): Promise<PicksCardData> {
     ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`
     : 'Fantasy Round';
 
-  const baseUrl = (supabase as any).supabaseUrl;
-  const fnUrl = `${baseUrl}/functions/v1/fantasy-picks`;
+  const fnUrl = `/api/fantasy-picks`;
   const edgeRes = await fetch(fnUrl, {
     method: 'POST',
     headers: {
