@@ -2,7 +2,6 @@
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { getTeamLogoUrl, preloadImage } from '@/lib/resolveLogoUrl';
-import { proxifyAsset, proxifyAvatarUrl } from './assetProxyHelper'; // (kept in case you use elsewhere)
 
 type PickItem = {
   rank: number;
@@ -28,22 +27,19 @@ type PicksCardData = {
 };
 
 type PicksCardResult = {
-  publicUrl: string;
+  publicUrl: string; // pretty URL (/api/share/<roundId>/<userId>.png)
   blob: Blob;
 };
 
 const FRAME_WIDTH = 1080;
 const FRAME_HEIGHT = 1350;
-
-// Use your Next.js /public asset as a guaranteed, same-origin fallback.
 const PLACEHOLDER = '/placeholder-image.png';
 
-/** Ensure remote assets are same-origin via your public-image-proxy */
+// Ensure remote assets are same-origin via your public image proxy
 const ensureProxied = (u?: string | null) => {
   if (!u) return undefined;
   if (u.startsWith('data:') || u.startsWith('/assets/') || u.startsWith('/')) return u;
   if (u.includes('/functions/v1/public-image-proxy')) return u;
-
   if (/^https?:\/\//i.test(u)) {
     const base = (supabase as any).supabaseUrl ?? 'https://YOURPROJECT.supabase.co';
     const origin = new URL(base).origin;
@@ -52,7 +48,6 @@ const ensureProxied = (u?: string | null) => {
   return u;
 };
 
-/** Deterministic, parallel image preloader (faster & avoids arbitrary sleeps) */
 async function waitForAllImages(urls: string[]) {
   await Promise.all(
     urls.map(u => new Promise<void>((res) => {
@@ -65,8 +60,7 @@ async function waitForAllImages(urls: string[]) {
   );
 }
 
-// ---------- Public entry ----------
-export async function renderPicksShareCard(roundId: string): Promise<PicksCardResult> {
+export async function renderPicksShareCard(roundId: string, userId: string): Promise<PicksCardResult> {
   // Offscreen container
   const container = document.createElement('div');
   container.style.position = 'fixed';
@@ -82,10 +76,8 @@ export async function renderPicksShareCard(roundId: string): Promise<PicksCardRe
     const data = await fetchPicksShareData(roundId);
     await renderPicksCardHTML(container, data);
 
-    // Preload all assets deterministically before snapshot
-    const assetUrls = data.picks
-      .map(t => (t.image_url || t.logo_url || PLACEHOLDER))
-      .filter(Boolean) as string[];
+    // Deterministic preloading (faster + avoids arbitrary sleep)
+    const assetUrls = data.picks.map(t => (t.image_url || t.logo_url || PLACEHOLDER)).filter(Boolean) as string[];
     await waitForAllImages(assetUrls);
 
     const canvas = await html2canvas(container, {
@@ -101,8 +93,7 @@ export async function renderPicksShareCard(roundId: string): Promise<PicksCardRe
       onclone: (doc) => {
         const root = doc.querySelector('[data-share-root="true"]') as HTMLElement | null;
         if (root) {
-          const kids = Array.from(doc.body.children);
-          for (const k of kids) if (k !== root) k.remove();
+          Array.from(doc.body.children).forEach(k => { if (k !== root) k.remove(); });
           doc.body.style.background = '#0f172a';
         }
       }
@@ -112,14 +103,18 @@ export async function renderPicksShareCard(roundId: string): Promise<PicksCardRe
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob returned null'))), 'image/png', 1.0);
     });
 
-    const fileName = `fantasy-picks/${roundId}/${new Date().toISOString().slice(0,10)}.png`;
+    // IMPORTANT: save exactly where your public URL lives:
+    // shares/<roundId>/<userId>.png   (no "fantasy-picks" segment)
+    const fileName = `${roundId}/${userId}.png`;
+
     const { error: uploadError } = await supabase.storage
       .from('shares')
       .upload(fileName, blob, { upsert: true, contentType: 'image/png' });
     if (uploadError) throw uploadError;
 
-    const { data: pub } = supabase.storage.from('shares').getPublicUrl(fileName);
-    return { publicUrl: pub?.publicUrl!, blob };
+    // Return pretty Cloudflare route (it will redirect to the public Storage URL)
+    const prettyUrl = `/api/share/${roundId}/${userId}.png`;
+    return { publicUrl: prettyUrl, blob };
   } finally {
     try { container.parentNode && document.body.removeChild(container); } catch {}
   }
@@ -127,7 +122,6 @@ export async function renderPicksShareCard(roundId: string): Promise<PicksCardRe
 
 // ---------- Data ----------
 async function fetchPicksShareData(roundId: string): Promise<PicksCardData> {
-  // Round info (use type -> "Daily Round", etc.)
   const { data: round } = await supabase
     .from('fantasy_rounds')
     .select('id, type')
@@ -138,7 +132,6 @@ async function fetchPicksShareData(roundId: string): Promise<PicksCardData> {
     ? `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`
     : 'Fantasy Round';
 
-  // Fetch suggested picks from your Edge function
   const baseUrl = (supabase as any).supabaseUrl;
   const fnUrl = `${baseUrl}/functions/v1/fantasy-picks`;
   const edgeRes = await fetch(fnUrl, {
@@ -154,7 +147,6 @@ async function fetchPicksShareData(roundId: string): Promise<PicksCardData> {
   }
   const { picks } = await edgeRes.json();
 
-  // Resolve and proxy logos; guaranteed placeholder when missing
   const resolved = await Promise.all(
     (picks as PickItem[]).map(async (p) => {
       const raw = await getTeamLogoUrl({
@@ -179,40 +171,27 @@ async function fetchPicksShareData(roundId: string): Promise<PicksCardData> {
 
   const dateLabel = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  return {
-    roundId,
-    roundName,
-    dateLabel,
-    picks: resolved
-  };
+  return { roundId, roundName, dateLabel, picks: resolved };
 }
 
 // ---------- HTML ----------
 async function renderPicksCardHTML(container: HTMLElement, data: PicksCardData) {
   container.innerHTML = `
     <div style="
-      position: relative;
-      width: ${FRAME_WIDTH}px;
-      height: ${FRAME_HEIGHT}px;
+      position: relative; width: ${FRAME_WIDTH}px; height: ${FRAME_HEIGHT}px;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
-      color: #EAF2FF;
-      overflow: hidden;
+      color: #EAF2FF; overflow: hidden;
     ">
-      <!-- Website Logo -->
+      <!-- Logo -->
       <div style="position: absolute; right: 72px; top: 60px;">
-        <img 
-          src="/lovable-uploads/frags_and_fortunes_transparent.png" 
-          crossorigin="anonymous"
-          style="width: 140px; height: auto; object-fit: contain; opacity: 0.95;"
-        />
+        <img src="/lovable-uploads/frags_and_fortunes_transparent.png" crossorigin="anonymous"
+             style="width: 140px; height: auto; object-fit: contain; opacity: 0.95;" />
       </div>
 
       <!-- Centered Title Area -->
       <div style="
-        position:absolute; left:0; right:0;
-        top:210px;
-        text-align:center;
-        display:flex; flex-direction:column; align-items:center; gap:8px;
+        position:absolute; left:0; right:0; top:210px;
+        text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
       ">
         <div style="
           font-size:64px; font-weight:900; letter-spacing:.4px;
@@ -247,8 +226,8 @@ async function renderPicksCardHTML(container: HTMLElement, data: PicksCardData) 
 }
 
 function renderPickSlot(
-  team: {name:string; type:'pro'|'amateur'; image_url?:string; logo_url?:string; score:number},
-  rank:number
+  team: { name: string; type: 'pro'|'amateur'; image_url?: string; logo_url?: string; score: number; },
+  rank: number
 ) {
   const isAm = team.type === 'amateur';
   const border = isAm ? '#F97316' : '#8B5CF6';
@@ -258,40 +237,27 @@ function renderPickSlot(
 
   return `
     <div style="
-      position: relative;
-      width: 264px;
-      height: 264px;
-      background: rgba(255,255,255,0.08);
-      border: 3px solid ${border};
-      border-radius: 24px;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
-      overflow:hidden;
+      position: relative; width: 264px; height: 264px;
+      background: rgba(255,255,255,0.08); border: 3px solid ${border};
+      border-radius: 24px; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:12px; overflow:hidden;
     ">
       <div style="
-        position:absolute; top:12px; left:12px;
-        background:${chip}; color:#fff;
+        position:absolute; top:12px; left:12px; background:${chip}; color:#fff;
         font-size:12px; font-weight:900; letter-spacing:.2px;
-        height:24px; line-height:24px; padding:0 12px;
-        border-radius:9999px; white-space:nowrap; user-select:none;
-        transform: translateY(-1px);
-      ">
-        ${label}
-      </div>
+        height:24px; line-height:24px; padding:0 12px; border-radius:9999px;
+        white-space:nowrap; user-select:none; transform: translateY(-1px);
+      ">${label}</div>
 
       <div style="position:absolute; top:12px; right:14px; color:#EAF2FF; font-weight:900;">#${rank}</div>
 
-      <img 
-        src="${logo}" 
-        crossorigin="anonymous"
-        decoding="async" loading="eager"
-        style="width:120px; height:120px; object-fit:contain; border-radius:12px;"
-      />
+      <img src="${logo}" crossorigin="anonymous" decoding="async" loading="eager"
+           style="width:120px; height:120px; object-fit:contain; border-radius:12px;" />
 
       <div style="
         font-size:16px; font-weight:900; color:#EAF2FF; text-align:center;
-        max-width:240px; padding:0 8px;
-        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-        line-height:1.2; min-height:40px;
+        max-width:240px; padding:0 8px; display:-webkit-box; -webkit-line-clamp:2;
+        -webkit-box-orient:vertical; overflow:hidden; line-height:1.2; min-height:40px;
       ">
         ${team.name}
       </div>
