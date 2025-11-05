@@ -286,8 +286,7 @@ const AuthPage: React.FC = () => {
         <Card className="bg-theme-gray-medium border-theme-gray-light">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-gaming text-white">
-              Welcome to
-              <span className="text-theme-purple">FRAGS</span> <span className="text-yellow-400">&</span>{" "}
+              Welcome to <span className="text-theme-purple">FRAGS</span> <span className="text-yellow-400">&</span>{" "}
               <span className="text-white">FORTUNES</span>
             </CardTitle>
           </CardHeader>
