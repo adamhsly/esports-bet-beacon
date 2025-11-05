@@ -1,74 +1,75 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const AuthPage: React.FC = () => {
-  const [signInEmail, setSignInEmail] = useState('');
-  const [signInPassword, setSignInPassword] = useState('');
-  const [signUpEmail, setSignUpEmail] = useState('');
-  const [signUpPassword, setSignUpPassword] = useState('');
-  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
-  const [signUpUsername, setSignUpUsername] = useState('');
-  const [signUpFullName, setSignUpFullName] = useState('');
-  const [signUpDateOfBirth, setSignUpDateOfBirth] = useState('');
-  const [resetEmail, setResetEmail] = useState('');
+  const [signInEmail, setSignInEmail] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
+  const [signUpUsername, setSignUpUsername] = useState("");
+  const [signUpFullName, setSignUpFullName] = useState("");
+  const [signUpDateOfBirth, setSignUpDateOfBirth] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [signInError, setSignInError] = useState('');
-  const [signUpError, setSignUpError] = useState('');
-  const [resetError, setResetError] = useState('');
-  
+  const [signInError, setSignInError] = useState("");
+  const [signUpError, setSignUpError] = useState("");
+  const [resetError, setResetError] = useState("");
+
   // Marketing preferences and T&Cs
   const [marketingPreferences, setMarketingPreferences] = useState({
     product_updates: false,
-    event_notifications: false
+    event_notifications: false,
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
-  
+
   // Field validation states
   const [fieldErrors, setFieldErrors] = useState({
-    email: '',
-    username: '',
-    full_name: ''
+    email: "",
+    username: "",
+    full_name: "",
   });
   const [fieldValidation, setFieldValidation] = useState({
     email: null as boolean | null,
     username: null as boolean | null,
-    full_name: null as boolean | null
+    full_name: null as boolean | null,
   });
   const [checking, setChecking] = useState(false);
-  
+
   const { signIn, signUp, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = searchParams.get("redirect") || "/";
 
   useEffect(() => {
     // Check if we're on a password recovery flow
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       // Don't redirect if this is a recovery session
       // Recovery sessions shouldn't redirect users away from /reset-password
-      if (user && session && window.location.pathname !== '/reset-password') {
+      if (user && session && window.location.pathname !== "/reset-password") {
         navigate(redirectTo);
       }
     };
-    
+
     if (user) {
       checkSession();
     }
@@ -87,35 +88,35 @@ const AuthPage: React.FC = () => {
 
   const checkDuplicates = async () => {
     if (!signUpEmail && !signUpUsername && !signUpFullName) return;
-    
+
     setChecking(true);
     try {
-      const { data } = await supabase.functions.invoke('check-duplicates', {
+      const { data } = await supabase.functions.invoke("check-duplicates", {
         body: {
           email: signUpEmail || null,
           username: signUpUsername || null,
-          full_name: signUpFullName || null
-        }
+          full_name: signUpFullName || null,
+        },
       });
 
       if (data?.duplicates) {
         const newErrors = {
-          email: data.duplicates.email ? 'This email is already registered' : '',
-          username: data.duplicates.username ? 'This username is already taken' : '',
-          full_name: data.duplicates.full_name ? 'This name is already registered' : ''
+          email: data.duplicates.email ? "This email is already registered" : "",
+          username: data.duplicates.username ? "This username is already taken" : "",
+          full_name: data.duplicates.full_name ? "This name is already registered" : "",
         };
-        
+
         const newValidation = {
           email: signUpEmail ? !data.duplicates.email : null,
           username: signUpUsername ? !data.duplicates.username : null,
-          full_name: signUpFullName ? !data.duplicates.full_name : null
+          full_name: signUpFullName ? !data.duplicates.full_name : null,
         };
 
         setFieldErrors(newErrors);
         setFieldValidation(newValidation);
       }
     } catch (error) {
-      console.error('Error checking duplicates:', error);
+      console.error("Error checking duplicates:", error);
     } finally {
       setChecking(false);
     }
@@ -124,10 +125,10 @@ const AuthPage: React.FC = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setSignInError('');
+    setSignInError("");
 
     const { error } = await signIn(signInEmail, signInPassword);
-    
+
     if (error) {
       const errorMessage = error.message;
       setSignInError(errorMessage);
@@ -137,20 +138,20 @@ const AuthPage: React.FC = () => {
         variant: "destructive",
       });
     } else {
-      setSignInError('');
+      setSignInError("");
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
     }
-    
+
     setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignUpError('');
-    
+    setSignUpError("");
+
     // Validate T&Cs acceptance
     if (!termsAccepted) {
       const errorMessage = "You must accept the Terms & Conditions to create an account.";
@@ -164,7 +165,7 @@ const AuthPage: React.FC = () => {
     }
 
     // Check for field errors
-    const hasErrors = Object.values(fieldErrors).some(error => error !== '');
+    const hasErrors = Object.values(fieldErrors).some((error) => error !== "");
     if (hasErrors) {
       const errorMessage = "Please fix the highlighted errors before continuing.";
       setSignUpError(errorMessage);
@@ -175,7 +176,7 @@ const AuthPage: React.FC = () => {
       });
       return;
     }
-    
+
     if (signUpPassword !== signUpConfirmPassword) {
       const errorMessage = "Please make sure your passwords match.";
       setSignUpError(errorMessage);
@@ -205,9 +206,9 @@ const AuthPage: React.FC = () => {
       full_name: signUpFullName,
       date_of_birth: signUpDateOfBirth,
       marketing_preferences: JSON.stringify(marketingPreferences),
-      terms_accepted: termsAccepted
+      terms_accepted: termsAccepted,
     });
-    
+
     if (error) {
       const errorMessage = error.message;
       setSignUpError(errorMessage);
@@ -217,39 +218,39 @@ const AuthPage: React.FC = () => {
         variant: "destructive",
       });
     } else {
-      setSignUpError('');
+      setSignUpError("");
       toast({
         title: "Account created successfully!",
         description: "Welcome to EsportsHub! Please check your email to verify your account.",
       });
-      
+
       // Clear form and navigate to homepage
-      setSignUpEmail('');
-      setSignUpPassword('');
-      setSignUpConfirmPassword('');
-      setSignUpUsername('');
-      setSignUpFullName('');
-      setSignUpDateOfBirth('');
+      setSignUpEmail("");
+      setSignUpPassword("");
+      setSignUpConfirmPassword("");
+      setSignUpUsername("");
+      setSignUpFullName("");
+      setSignUpDateOfBirth("");
       setMarketingPreferences({
         product_updates: false,
-        event_notifications: false
+        event_notifications: false,
       });
       setTermsAccepted(false);
-      setFieldErrors({ email: '', username: '', full_name: '' });
+      setFieldErrors({ email: "", username: "", full_name: "" });
       setFieldValidation({ email: null, username: null, full_name: null });
-      navigate('/');
+      navigate("/");
     }
-    
+
     setLoading(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setResetError('');
+    setResetError("");
 
     const { error } = await resetPassword(resetEmail);
-    
+
     if (error) {
       const errorMessage = error.message;
       setResetError(errorMessage);
@@ -259,14 +260,14 @@ const AuthPage: React.FC = () => {
         variant: "destructive",
       });
     } else {
-      setResetError('');
+      setResetError("");
       toast({
         title: "Reset link sent!",
         description: "Please check your email for the password reset link.",
       });
       setResetEmailSent(true);
     }
-    
+
     setLoading(false);
   };
 
@@ -285,19 +286,21 @@ const AuthPage: React.FC = () => {
         <Card className="bg-theme-gray-medium border-theme-gray-light">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-gaming text-white">
-              Welcome to <span className="text-theme-purple">Frags and Fortunes</span>
+              Welcome to
+              <span className="text-theme-purple">FRAGS</span> <span className="text-yellow-400">&</span>{" "}
+              <span className="text-white">FORTUNES</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
-                <TabsTrigger 
-                  value="signin" 
+                <TabsTrigger
+                  value="signin"
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
                 >
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="signup"
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
                 >
@@ -329,7 +332,7 @@ const AuthPage: React.FC = () => {
                         placeholder="Enter your email"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="signin-password" className="text-gray-300">
                         <Lock className="inline w-4 h-4 mr-2" />
@@ -355,12 +358,12 @@ const AuthPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full bg-theme-purple hover:bg-theme-purple/90"
                       disabled={loading}
                     >
-                      {loading ? 'Signing in...' : 'Sign In'}
+                      {loading ? "Signing in..." : "Sign In"}
                     </Button>
                   </form>
                 ) : (
@@ -375,7 +378,7 @@ const AuthPage: React.FC = () => {
                       <h3 className="text-lg font-semibold text-white">Reset Password</h3>
                       <p className="text-sm text-gray-300">Enter your email to receive a reset link</p>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="reset-email" className="text-gray-300">
                         <Mail className="inline w-4 h-4 mr-2" />
@@ -393,21 +396,21 @@ const AuthPage: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button 
+                      <Button
                         type="button"
-                        variant="outline" 
+                        variant="outline"
                         onClick={() => setShowResetForm(false)}
                         className="flex-1 border-theme-gray-light text-gray-300 hover:text-white"
                         disabled={loading}
                       >
                         Back
                       </Button>
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         className="flex-1 bg-theme-purple hover:bg-theme-purple/90"
                         disabled={loading || resetEmailSent}
                       >
-                        {resetEmailSent ? 'Sent' : loading ? 'Sending...' : 'Send Reset Link'}
+                        {resetEmailSent ? "Sent" : loading ? "Sending..." : "Send Reset Link"}
                       </Button>
                     </div>
                   </form>
@@ -434,8 +437,11 @@ const AuthPage: React.FC = () => {
                         value={signUpFullName}
                         onChange={(e) => setSignUpFullName(e.target.value)}
                         className={`bg-theme-gray-dark border-theme-gray-light text-white pr-8 ${
-                          fieldErrors.full_name ? 'border-red-500' : 
-                          fieldValidation.full_name === true ? 'border-green-500' : ''
+                          fieldErrors.full_name
+                            ? "border-red-500"
+                            : fieldValidation.full_name === true
+                              ? "border-green-500"
+                              : ""
                         }`}
                         placeholder="Enter your full name"
                       />
@@ -449,9 +455,7 @@ const AuthPage: React.FC = () => {
                         <X className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
                       ) : null}
                     </div>
-                    {fieldErrors.full_name && (
-                      <p className="text-sm text-red-400">{fieldErrors.full_name}</p>
-                    )}
+                    {fieldErrors.full_name && <p className="text-sm text-red-400">{fieldErrors.full_name}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -466,8 +470,11 @@ const AuthPage: React.FC = () => {
                         value={signUpUsername}
                         onChange={(e) => setSignUpUsername(e.target.value)}
                         className={`bg-theme-gray-dark border-theme-gray-light text-white pr-8 ${
-                          fieldErrors.username ? 'border-red-500' : 
-                          fieldValidation.username === true ? 'border-green-500' : ''
+                          fieldErrors.username
+                            ? "border-red-500"
+                            : fieldValidation.username === true
+                              ? "border-green-500"
+                              : ""
                         }`}
                         placeholder="Choose a username"
                       />
@@ -481,11 +488,9 @@ const AuthPage: React.FC = () => {
                         <X className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
                       ) : null}
                     </div>
-                    {fieldErrors.username && (
-                      <p className="text-sm text-red-400">{fieldErrors.username}</p>
-                    )}
+                    {fieldErrors.username && <p className="text-sm text-red-400">{fieldErrors.username}</p>}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-email" className="text-gray-300">
                       <Mail className="inline w-4 h-4 mr-2" />
@@ -499,8 +504,11 @@ const AuthPage: React.FC = () => {
                         onChange={(e) => setSignUpEmail(e.target.value)}
                         required
                         className={`bg-theme-gray-dark border-theme-gray-light text-white pr-8 ${
-                          fieldErrors.email ? 'border-red-500' : 
-                          fieldValidation.email === true ? 'border-green-500' : ''
+                          fieldErrors.email
+                            ? "border-red-500"
+                            : fieldValidation.email === true
+                              ? "border-green-500"
+                              : ""
                         }`}
                         placeholder="Enter your email"
                       />
@@ -514,9 +522,7 @@ const AuthPage: React.FC = () => {
                         <X className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
                       ) : null}
                     </div>
-                    {fieldErrors.email && (
-                      <p className="text-sm text-red-400">{fieldErrors.email}</p>
-                    )}
+                    {fieldErrors.email && <p className="text-sm text-red-400">{fieldErrors.email}</p>}
                   </div>
 
                   {/* Date of Birth Field */}
@@ -531,11 +537,11 @@ const AuthPage: React.FC = () => {
                       value={signUpDateOfBirth}
                       onChange={(e) => setSignUpDateOfBirth(e.target.value)}
                       required
-                      max={new Date().toISOString().split('T')[0]}
+                      max={new Date().toISOString().split("T")[0]}
                       className="w-full bg-theme-gray-dark border-theme-gray-light text-white"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-password" className="text-gray-300">
                       <Lock className="inline w-4 h-4 mr-2" />
@@ -570,18 +576,16 @@ const AuthPage: React.FC = () => {
 
                   {/* Marketing Preferences */}
                   <div className="space-y-3">
-                    <Label className="text-gray-300 text-sm font-medium">
-                      Marketing Preferences (Optional)
-                    </Label>
+                    <Label className="text-gray-300 text-sm font-medium">Marketing Preferences (Optional)</Label>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="product-updates"
                           checked={marketingPreferences.product_updates}
-                          onCheckedChange={(checked) => 
-                            setMarketingPreferences(prev => ({
+                          onCheckedChange={(checked) =>
+                            setMarketingPreferences((prev) => ({
                               ...prev,
-                              product_updates: checked as boolean
+                              product_updates: checked as boolean,
                             }))
                           }
                           className="border-theme-gray-light data-[state=checked]:bg-theme-purple"
@@ -594,10 +598,10 @@ const AuthPage: React.FC = () => {
                         <Checkbox
                           id="event-notifications"
                           checked={marketingPreferences.event_notifications}
-                          onCheckedChange={(checked) => 
-                            setMarketingPreferences(prev => ({
+                          onCheckedChange={(checked) =>
+                            setMarketingPreferences((prev) => ({
                               ...prev,
-                              event_notifications: checked as boolean
+                              event_notifications: checked as boolean,
                             }))
                           }
                           className="border-theme-gray-light data-[state=checked]:bg-theme-purple"
@@ -620,12 +624,20 @@ const AuthPage: React.FC = () => {
                         required
                       />
                       <Label htmlFor="terms-accepted" className="text-sm text-gray-300 leading-relaxed">
-                        I agree to the{' '}
-                        <a href="/legal/terms" target="_blank" className="text-theme-purple hover:text-theme-purple/80 underline">
+                        I agree to the{" "}
+                        <a
+                          href="/legal/terms"
+                          target="_blank"
+                          className="text-theme-purple hover:text-theme-purple/80 underline"
+                        >
                           Terms & Conditions
-                        </a>
-                        {' '}and{' '}
-                        <a href="/legal/privacy" target="_blank" className="text-theme-purple hover:text-theme-purple/80 underline">
+                        </a>{" "}
+                        and{" "}
+                        <a
+                          href="/legal/privacy"
+                          target="_blank"
+                          className="text-theme-purple hover:text-theme-purple/80 underline"
+                        >
                           Privacy Policy
                         </a>
                         <span className="text-red-400 ml-1">*</span>
@@ -636,12 +648,12 @@ const AuthPage: React.FC = () => {
                     )}
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-theme-purple hover:bg-theme-purple/90"
-                    disabled={loading || !termsAccepted || Object.values(fieldErrors).some(error => error !== '')}
+                    disabled={loading || !termsAccepted || Object.values(fieldErrors).some((error) => error !== "")}
                   >
-                    {loading ? 'Creating account...' : 'Create Account'}
+                    {loading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>
