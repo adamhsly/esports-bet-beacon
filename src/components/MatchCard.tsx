@@ -81,8 +81,8 @@ let liveScore: { a: number; b: number } | null = null;
 let faceitWinner: 'faction1' | 'faction2' | null = null;
 
 if (source === 'professional' || (id && String(id).startsWith('pandascore_'))) {
-  // Professional matches use PandaScore scoring
-  if (isLive) {
+  // Professional matches use PandaScore scoring for both live and finished matches
+  if (isLive || isFinished) {
     liveScore = getPandaScoreLiveScore(rawData, teams);
   }
 } else if (source === 'amateur' || (id && String(id).startsWith('faceit_'))) {
