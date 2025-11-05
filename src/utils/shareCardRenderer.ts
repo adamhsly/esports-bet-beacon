@@ -440,7 +440,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         color: #EAF2FF;
         font-weight: 600;
       ">
-        Think you can beat me? Join the ${data.roundName} at fragsandfortunes.com
+        Think you can beat me? Join the ${data.roundName} at big win fragsandfortunes.com
       </div>
     </div>
   `;
