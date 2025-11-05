@@ -409,15 +409,15 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
         `).join('')}
       </div>
 
-      <!-- Round title -->
       <div style="
-        position: absolute; top: 480px; left: 0; width: 100%;
-        text-align: center; font-weight: 800; font-size: 28px; letter-spacing: .4px;
+        position: absolute; top: 460px; left: 0; width: 100%;
+        text-align: center; font-weight: 800; font-size: 36px; letter-spacing: .4px;
         color: #EAF2FF;
         text-shadow: 0 2px 8px rgba(0,0,0,.35);
       ">
         ${data.roundName}
       </div>
+
 
       <!-- Team Lineup -->
       <div style="position: absolute; left: 72px; top: 540px;">
@@ -459,6 +459,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
         height: 20px; padding: 0 10px; border-radius: 9999px;
         background:#F97316; color:#fff;
         font-size: 11px; font-weight: 800; letter-spacing:.2px; line-height:20px;
+        white-space: nowrap; overflow: hidden; text-align: center;
       ">
         +25% BONUS
       </div>
