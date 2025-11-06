@@ -74,7 +74,21 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   // 🔧 FIXED: Database status-based determination
   const normalizedStatus = status?.toLowerCase() || '';
   const isFinished = ['finished', 'completed', 'cancelled', 'aborted'].includes(normalizedStatus);
-const isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
+  
+  // Time-based live status determination (especially important for FACEIT matches)
+  let isLive = ['ongoing', 'running', 'live'].includes(normalizedStatus);
+
+  // For amateur matches, also check if match has started based on time
+  if (!isLive && source === 'amateur' && !isFinished) {
+    const now = new Date();
+    const matchStart = new Date(startTime);
+    const hasStarted = now >= matchStart;
+    
+    // If the match time has passed and it's not finished, treat it as live
+    if (hasStarted) {
+      isLive = true;
+    }
+  }
 
 // Calculate scores for both professional and amateur matches
 let liveScore: { a: number; b: number } | null = null;
