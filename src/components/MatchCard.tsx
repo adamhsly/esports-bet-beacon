@@ -218,12 +218,12 @@ if (source === 'professional' || (id && String(id).startsWith('pandascore_'))) {
   const getFinalScore = () => {
     if (!isFinished) return null;
     
-    // For FACEIT matches, try to get score from extracted data first
-    if (source === 'amateur' && liveScore) {
+    // For both amateur and professional matches, try to get score from extracted data first
+    if (liveScore) {
       return `${liveScore.a}-${liveScore.b}`;
     }
     
-    // Use the selective final_score field from database views
+    // Fall back to the selective final_score field from database views
     return match.final_score || null;
   };
 
