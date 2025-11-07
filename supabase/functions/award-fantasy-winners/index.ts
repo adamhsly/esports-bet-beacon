@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,8 +60,31 @@ serve(async (req) => {
 
       totalWinnersAwarded += winners.length;
 
-      // Email functionality removed - notifications handled in-app
-      console.log(`Winners awarded for round ${round.id}: ${winners.length} winners`);
+      // Send email notifications to winners
+      for (const winner of winners) {
+        try {
+          const emailSubject = getEmailSubject(winner.finish_position, round.type);
+          const emailHtml = generateWinnerEmail(winner, round);
+          
+          const { error: emailError } = await resend.emails.send({
+            from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+            to: [winner.user_email],
+            subject: emailSubject,
+            html: emailHtml,
+          });
+
+          if (emailError) {
+            console.error(`Failed to send email to ${winner.user_email}:`, emailError);
+          } else {
+            totalEmailsSent++;
+            console.log(`✅ Email sent to ${winner.username} (${winner.user_email})`);
+          }
+        } catch (emailError) {
+          console.error(`Error sending email to ${winner.user_email}:`, emailError);
+        }
+      }
+
+      console.log(`Winners awarded for round ${round.id}: ${winners.length} winners, ${totalEmailsSent} emails sent`);
     }
 
     return new Response(
