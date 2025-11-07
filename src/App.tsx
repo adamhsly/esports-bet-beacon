@@ -73,19 +73,19 @@ const WinnerNotificationHandler: React.FC = () => {
   const handleCloseWinner = async () => {
     if (unviewedWins[currentWinnerIndex]) {
       await markAsViewed(unviewedWins[currentWinnerIndex].id);
-      
-      // Show next win if available
-      if (currentWinnerIndex < unviewedWins.length - 1) {
-        setCurrentWinnerIndex(prev => prev + 1);
-      } else {
-        setCurrentWinnerIndex(0);
-      }
     }
   };
 
+  // Reset index when unviewedWins changes
+  React.useEffect(() => {
+    if (currentWinnerIndex >= unviewedWins.length) {
+      setCurrentWinnerIndex(0);
+    }
+  }, [unviewedWins.length, currentWinnerIndex]);
+
   return (
     <RoundWinnerCelebrationModal
-      winner={unviewedWins[currentWinnerIndex] || null}
+      winner={unviewedWins.length > 0 ? unviewedWins[currentWinnerIndex] : null}
       onClose={handleCloseWinner}
     />
   );

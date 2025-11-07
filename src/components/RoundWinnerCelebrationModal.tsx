@@ -33,8 +33,8 @@ export const RoundWinnerCelebrationModal = ({
 
   return (
     <Dialog open={!!winner} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white border-purple-500">
-        <div className="text-center space-y-6 py-8">
+      <DialogContent className="max-w-2xl max-h-screen overflow-y-auto bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white border-purple-500">
+        <div className="text-center space-y-3 sm:space-y-4 py-4 sm:py-6">
           {/* Confetti effect for 1st place */}
           {winner.finish_position === 1 && (
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -53,33 +53,33 @@ export const RoundWinnerCelebrationModal = ({
           )}
 
           {/* Medal Icon */}
-          <div className={`text-9xl ${getMedalColor(winner.finish_position)} animate-bounce`}>
+          <div className={`text-6xl sm:text-8xl md:text-9xl ${getMedalColor(winner.finish_position)} animate-bounce`}>
             {getMedalEmoji(winner.finish_position)}
           </div>
 
           {/* Congratulations Text */}
-          <div className="space-y-2">
-            <h2 className="text-4xl font-bold">Congratulations!</h2>
-            <p className="text-2xl">
+          <div className="space-y-1 sm:space-y-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Congratulations!</h2>
+            <p className="text-lg sm:text-xl md:text-2xl">
               You finished <span className="font-bold text-yellow-300">{getPositionText(winner.finish_position)}</span>
             </p>
-            <p className="text-lg text-purple-200">
+            <p className="text-sm sm:text-base md:text-lg text-purple-200">
               in the {roundTypeTitle} Fantasy Round
             </p>
           </div>
 
           {/* Credits Awarded */}
-          <div className="bg-gradient-to-r from-yellow-600 to-yellow-500 rounded-xl p-8 mx-8 transform hover:scale-105 transition-transform">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <Star className="w-8 h-8" />
-              <span className="text-xl">You've earned</span>
+          <div className="bg-gradient-to-r from-yellow-600 to-yellow-500 rounded-xl p-4 sm:p-6 mx-4 sm:mx-6 transform hover:scale-105 transition-transform">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+              <Star className="w-6 h-6 sm:w-8 sm:h-8" />
+              <span className="text-base sm:text-lg md:text-xl">You've earned</span>
             </div>
-            <div className="text-6xl font-bold my-4">{winner.credits_awarded}</div>
-            <div className="text-xl">Bonus Credits!</div>
+            <div className="text-4xl sm:text-5xl md:text-6xl font-bold my-2 sm:my-4">{winner.credits_awarded}</div>
+            <div className="text-base sm:text-lg md:text-xl">Bonus Credits!</div>
           </div>
 
           {/* Stats */}
-          <div className="bg-black/30 rounded-lg p-6 mx-8 space-y-3">
+          <div className="bg-black/30 rounded-lg p-4 sm:p-6 mx-4 sm:mx-6 space-y-2 sm:space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-purple-200">Final Score:</span>
               <Badge variant="secondary" className="text-lg px-4 py-1">
@@ -97,14 +97,15 @@ export const RoundWinnerCelebrationModal = ({
           {/* CTA Button */}
           <Button 
             onClick={onClose}
+            variant="default"
             size="lg"
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-12 py-6 text-xl mt-6"
+            className="w-full sm:w-auto px-8 sm:px-12 text-base sm:text-lg"
           >
-            <Trophy className="mr-2 w-6 h-6" />
+            <Trophy className="mr-2 w-5 h-5 sm:w-6 sm:h-6" />
             Claim Your Rewards!
           </Button>
 
-          <p className="text-sm text-purple-300 mt-4">
+          <p className="text-xs sm:text-sm text-purple-300">
             Use your bonus credits to enter more fantasy rounds!
           </p>
         </div>
