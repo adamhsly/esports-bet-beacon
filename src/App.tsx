@@ -68,24 +68,25 @@ const queryClient = new QueryClient({
 // Component that handles winner notifications - must be inside AuthProvider
 const WinnerNotificationHandler: React.FC = () => {
   const { unviewedWins, markAsViewed } = useRoundWinnerNotifications();
-  const [currentWinnerIndex, setCurrentWinnerIndex] = React.useState(0);
+  const [isClosing, setIsClosing] = React.useState(false);
 
   const handleCloseWinner = async () => {
-    if (unviewedWins[currentWinnerIndex]) {
-      await markAsViewed(unviewedWins[currentWinnerIndex].id);
+    if (unviewedWins.length > 0 && !isClosing) {
+      setIsClosing(true);
+      try {
+        // Wait for the database update to complete
+        await markAsViewed(unviewedWins[0].id);
+      } catch (error) {
+        console.error('Error marking winner as viewed:', error);
+      } finally {
+        setIsClosing(false);
+      }
     }
   };
 
-  // Reset index when unviewedWins changes
-  React.useEffect(() => {
-    if (currentWinnerIndex >= unviewedWins.length) {
-      setCurrentWinnerIndex(0);
-    }
-  }, [unviewedWins.length, currentWinnerIndex]);
-
   return (
     <RoundWinnerCelebrationModal
-      winner={unviewedWins.length > 0 ? unviewedWins[currentWinnerIndex] : null}
+      winner={unviewedWins.length > 0 && !isClosing ? unviewedWins[0] : null}
       onClose={handleCloseWinner}
     />
   );
