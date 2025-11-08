@@ -2685,6 +2685,7 @@ export type Database = {
       user_missions: {
         Row: {
           completed: boolean
+          completed_at: string | null
           mission_id: string
           progress: number
           reset_at: string | null
@@ -2693,6 +2694,7 @@ export type Database = {
         }
         Insert: {
           completed?: boolean
+          completed_at?: string | null
           mission_id: string
           progress?: number
           reset_at?: string | null
@@ -2701,6 +2703,7 @@ export type Database = {
         }
         Update: {
           completed?: boolean
+          completed_at?: string | null
           mission_id?: string
           progress?: number
           reset_at?: string | null
