@@ -22,14 +22,14 @@ serve(async (req) => {
 
     console.log('🏆 Starting fantasy round winner awards...');
 
-    // Find rounds that just finished (changed to 'finished' in last 10 minutes)
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    // Find rounds that finished in the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     
     const { data: recentlyFinishedRounds, error: roundsError } = await supabase
       .from('fantasy_rounds')
       .select('id, type, end_date')
       .eq('status', 'finished')
-      .gte('updated_at', tenMinutesAgo);
+      .gte('updated_at', twentyFourHoursAgo);
 
     if (roundsError) {
       console.error('Error fetching finished rounds:', roundsError);
@@ -44,8 +44,8 @@ serve(async (req) => {
     for (const round of recentlyFinishedRounds || []) {
       console.log(`Processing round ${round.id} (${round.type})`);
 
-      // Award winners and get results
-      const { data: winners, error: awardError } = await supabase
+      // Award winners (creates records if they don't exist, idempotent)
+      const { error: awardError } = await supabase
         .rpc('award_round_winners', { p_round_id: round.id });
 
       if (awardError) {
@@ -53,34 +53,81 @@ serve(async (req) => {
         continue;
       }
 
-      if (!winners || winners.length === 0) {
-        console.log(`No winners to award for round ${round.id}`);
+      // Query for winners who haven't received email notifications yet
+      const { data: unsentWinners, error: winnersError } = await supabase
+        .from('fantasy_round_winners')
+        .select(`
+          id,
+          user_id,
+          finish_position,
+          total_score,
+          credits_awarded,
+          profiles!inner(username, full_name)
+        `)
+        .eq('round_id', round.id)
+        .eq('notification_sent', false);
+
+      if (winnersError) {
+        console.error(`Error fetching unsent winners for round ${round.id}:`, winnersError);
         continue;
       }
 
-      totalWinnersAwarded += winners.length;
+      if (!unsentWinners || unsentWinners.length === 0) {
+        console.log(`No unsent notifications for round ${round.id}`);
+        continue;
+      }
+
+      console.log(`Found ${unsentWinners.length} unsent notifications for round ${round.id}`);
+      totalWinnersAwarded += unsentWinners.length;
 
       // Send email notifications to winners
-      for (const winner of winners) {
+      for (const winner of unsentWinners) {
         try {
+          // Get user email from auth.users
+          const { data: authUser } = await supabase.auth.admin.getUserById(winner.user_id);
+          const userEmail = authUser?.user?.email;
+
+          if (!userEmail) {
+            console.error(`No email found for winner ${winner.id}`);
+            continue;
+          }
+
+          const winnerData = {
+            finish_position: winner.finish_position,
+            total_score: winner.total_score,
+            credits_awarded: winner.credits_awarded,
+            username: winner.profiles?.username || winner.profiles?.full_name || 'Player',
+            user_email: userEmail
+          };
+
           const emailSubject = getEmailSubject(winner.finish_position, round.type);
-          const emailHtml = generateWinnerEmail(winner, round);
+          const emailHtml = generateWinnerEmail(winnerData, round);
           
           const { error: emailError } = await resend.emails.send({
             from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
-            to: [winner.user_email],
+            to: [userEmail],
             subject: emailSubject,
             html: emailHtml,
           });
 
           if (emailError) {
-            console.error(`Failed to send email to ${winner.user_email}:`, emailError);
+            console.error(`Failed to send email to ${userEmail}:`, emailError);
           } else {
-            totalEmailsSent++;
-            console.log(`✅ Email sent to ${winner.username} (${winner.user_email})`);
+            // Mark as sent ONLY after successful email delivery
+            const { error: updateError } = await supabase
+              .from('fantasy_round_winners')
+              .update({ notification_sent: true })
+              .eq('id', winner.id);
+
+            if (updateError) {
+              console.error(`Failed to mark notification as sent for winner ${winner.id}:`, updateError);
+            } else {
+              totalEmailsSent++;
+              console.log(`✅ Email sent to ${winnerData.username} (${userEmail})`);
+            }
           }
         } catch (emailError) {
-          console.error(`Error sending email to ${winner.user_email}:`, emailError);
+          console.error(`Error sending email for winner ${winner.id}:`, emailError);
         }
       }
 
