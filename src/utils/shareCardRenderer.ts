@@ -410,7 +410,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       </div>
 
       <div style="
-        position: absolute; top: 460px; left: 0; width: 100%;
+        position: absolute; top: 490px; left: 0; width: 100%;
         text-align: center; font-weight: 800; font-size: 36px; letter-spacing: .4px;
         color: #EAF2FF;
         text-shadow: 0 2px 8px rgba(0,0,0,.35);
@@ -454,7 +454,7 @@ function renderTeamSlot(team: any, isStarred: boolean) {
   const amateurBonusTag = isAmateur
     ? `
       <div style="
-        position: absolute; top: 10px; left: 10px;
+        position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
         display: inline-flex; align-items: center; justify-content: center;
         height: 20px; padding: 0 10px; border-radius: 9999px;
         background:#F97316; color:#fff;
