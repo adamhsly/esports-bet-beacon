@@ -3,8 +3,8 @@ name: Faceit → Supabase CS2 Sync
 on:
   schedule:
     # Run every 5 minutes (UTC timezone)
-    - cron: "*/10 * * * *"
-  workflow_dispatch:  # allows manual runs from Actions tab
+    - cron: "*/5 * * * *"
+  workflow_dispatch:  # allows manual runs from the Actions tab
 
 permissions:
   contents: read
@@ -37,7 +37,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: 🚀 Run Faceit → Supabase sync
+      - name: 🚀 Run Faceit → Supabase sync (CS2)
+        working-directory: supabase/functions
         run: |
           echo "Starting Faceit → Supabase CS2 sync..."
           python faceit_sync_cs2.py | tee faceit_sync.log
@@ -46,5 +47,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: faceit-sync-logs
-          path: faceit_sync.log
+          name: faceit-sync-cs2-logs
+          path: supabase/functions/faceit_sync.log
