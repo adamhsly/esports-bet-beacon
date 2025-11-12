@@ -576,15 +576,19 @@ export const fetchSupabaseFaceitAllMatches = async (): Promise<MatchInfo[]> => {
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
-      if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+      const matchAny = match as any;
+      
+      // Check if there's a direct best_of column (some tables may have this)
+      if (matchAny.best_of && typeof matchAny.best_of === 'number') {
+        bestOf = matchAny.best_of;
+      } else if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
         const rawData = match.raw_data as any;
-        if (rawData.best_of) {
+        if (typeof rawData.best_of === 'number') {
           bestOf = rawData.best_of;
         }
-      }
-      if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+      } else if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
         const faceitData = match.faceit_data as any;
-        if (faceitData.best_of) {
+        if (typeof faceitData.best_of === 'number') {
           bestOf = faceitData.best_of;
         }
       }
@@ -695,18 +699,23 @@ export const fetchSupabaseFaceitMatchesByDate = async (date: Date) => {
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
-      if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+      const matchAny = match as any;
+      
+      // Check if there's a direct best_of column (some tables may have this)
+      if (matchAny.best_of && typeof matchAny.best_of === 'number') {
+        bestOf = matchAny.best_of;
+      } else if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
         const rawData = match.raw_data as any;
-        if (rawData.best_of) {
+        if (typeof rawData.best_of === 'number') {
           bestOf = rawData.best_of;
         }
-      }
-      if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+      } else if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
         const faceitData = match.faceit_data as any;
-        if (faceitData.best_of) {
+        if (typeof faceitData.best_of === 'number') {
           bestOf = faceitData.best_of;
         }
       }
+
 
       // Extract results from raw_data if available
       let results = null;
@@ -812,18 +821,23 @@ export const fetchSupabaseFaceitFinishedMatches = async (limit: number = 10): Pr
       
       // Extract best_of from raw_data or faceit_data, fallback to 3
       let bestOf = 3;
-      if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
+      const matchAny = match as any;
+      
+      // Check if there's a direct best_of column (some tables may have this)
+      if (matchAny.best_of && typeof matchAny.best_of === 'number') {
+        bestOf = matchAny.best_of;
+      } else if (match.raw_data && typeof match.raw_data === 'object' && match.raw_data !== null) {
         const rawData = match.raw_data as any;
-        if (rawData.best_of) {
+        if (typeof rawData.best_of === 'number') {
           bestOf = rawData.best_of;
         }
-      }
-      if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
+      } else if (match.faceit_data && typeof match.faceit_data === 'object' && match.faceit_data !== null) {
         const faceitData = match.faceit_data as any;
-        if (faceitData.best_of) {
+        if (typeof faceitData.best_of === 'number') {
           bestOf = faceitData.best_of;
         }
       }
+
 
       // Extract results from raw_data if available
       let results = null;
