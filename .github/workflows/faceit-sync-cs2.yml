@@ -1,0 +1,50 @@
+name: Faceit → Supabase CS2 Sync
+
+on:
+  schedule:
+    # Run every 5 minutes (UTC timezone)
+    - cron: "*/10 * * * *"
+  workflow_dispatch:  # allows manual runs from Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: faceit-sync-cs2
+  cancel-in-progress: true  # prevents overlapping runs
+
+jobs:
+  run-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      FACEIT_API_KEY: ${{ secrets.FACEIT_API_KEY }}
+
+    steps:
+      - name: 🧾 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: ⚙️ Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: 🚀 Run Faceit → Supabase sync
+        run: |
+          echo "Starting Faceit → Supabase CS2 sync..."
+          python faceit_sync_cs2.py | tee faceit_sync.log
+
+      - name: 📦 Upload logs (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: faceit-sync-logs
+          path: faceit_sync.log
