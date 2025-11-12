@@ -36,3 +36,13 @@ export const SOURCE_FILTER_OPTIONS = [
   { label: 'Professional', value: 'professional' },
   { label: 'Amateur', value: 'amateur' },
 ];
+
+export const REGION_FILTER_OPTIONS = [
+  { label: 'All Regions', value: 'all' },
+  { label: 'Europe', value: 'Europe' },
+  { label: 'Asia', value: 'Asia' },
+  { label: 'North America', value: 'North America' },
+  { label: 'South America', value: 'South America' },
+  { label: 'Oceania', value: 'Oceania' },
+  { label: 'Middle East', value: 'Middle East' },
+];

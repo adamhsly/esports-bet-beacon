@@ -227,6 +227,7 @@ const Index = () => {
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("all");
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>("all");
+  const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>("all");
 
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
@@ -320,6 +321,14 @@ const Index = () => {
     if (selectedSourceFilter !== "all") {
       filtered = filtered.filter((match) => match.source === selectedSourceFilter);
     }
+
+    if (selectedRegionFilter !== "all") {
+      filtered = filtered.filter((match) => {
+        const region = match.rawData?.region;
+        return region === selectedRegionFilter || !region;
+      });
+    }
+
     return filtered;
   };
 
@@ -513,9 +522,11 @@ const Index = () => {
                   gameType={selectedGameType}
                   statusFilter={selectedStatusFilter}
                   sourceFilter={selectedSourceFilter}
+                  regionFilter={selectedRegionFilter}
                   onGameTypeChange={setSelectedGameType}
                   onStatusFilterChange={setSelectedStatusFilter}
                   onSourceFilterChange={setSelectedSourceFilter}
+                  onRegionFilterChange={setSelectedRegionFilter}
                 />
               </div>
             </div>

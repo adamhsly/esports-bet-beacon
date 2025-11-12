@@ -2871,6 +2871,7 @@ export type Database = {
           match_date: string | null
           match_id: string | null
           raw_data: Json | null
+          region: string | null
           source: string | null
           start_time: string | null
           status: string | null

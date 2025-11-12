@@ -1,24 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Clock, Trophy, Gamepad2 } from 'lucide-react';
+import { ChevronDown, Clock, Trophy, Gamepad2, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS, GameTypeOption } from '@/lib/gameTypes';
+import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS, REGION_FILTER_OPTIONS, GameTypeOption } from '@/lib/gameTypes';
 
 export interface FilterPillProps {
   gameType: string;
   statusFilter: string;
   sourceFilter: string;
+  regionFilter: string;
   onGameTypeChange: (value: string) => void;
   onStatusFilterChange: (value: string) => void;
   onSourceFilterChange: (value: string) => void;
+  onRegionFilterChange: (value: string) => void;
 }
 
 export const FilterPills: React.FC<FilterPillProps> = ({
   gameType,
   statusFilter,
   sourceFilter,
+  regionFilter,
   onGameTypeChange,
   onStatusFilterChange,
   onSourceFilterChange,
+  onRegionFilterChange,
 }) => {
   const [openPill, setOpenPill] = useState<string | null>(null);
   const pillRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -50,6 +54,9 @@ export const FilterPills: React.FC<FilterPillProps> = ({
       case 'source':
         onSourceFilterChange(value);
         break;
+      case 'region':
+        onRegionFilterChange(value);
+        break;
     }
     setOpenPill(null);
   };
@@ -62,6 +69,8 @@ export const FilterPills: React.FC<FilterPillProps> = ({
         return STATUS_FILTER_OPTIONS.find(opt => opt.value === statusFilter)?.label || 'All Matches';
       case 'source':
         return SOURCE_FILTER_OPTIONS.find(opt => opt.value === sourceFilter)?.label || 'All Sources';
+      case 'region':
+        return REGION_FILTER_OPTIONS.find(opt => opt.value === regionFilter)?.label || 'All Regions';
       default:
         return '';
     }
@@ -75,6 +84,8 @@ export const FilterPills: React.FC<FilterPillProps> = ({
         return <Clock className="h-3 w-3" />;
       case 'source':
         return <Trophy className="h-3 w-3" />;
+      case 'region':
+        return <Globe className="h-3 w-3" />;
       default:
         return null;
     }
@@ -88,6 +99,8 @@ export const FilterPills: React.FC<FilterPillProps> = ({
         return STATUS_FILTER_OPTIONS;
       case 'source':
         return SOURCE_FILTER_OPTIONS;
+      case 'region':
+        return REGION_FILTER_OPTIONS;
       default:
         return [];
     }
@@ -96,6 +109,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   const pillConfigs = [
     { id: 'status', label: 'Match Status' },
     { id: 'source', label: 'Competition Level' },
+    { id: 'region', label: 'Region' },
   ];
 
   return (
@@ -146,7 +160,8 @@ export const FilterPills: React.FC<FilterPillProps> = ({
                     (
                       (id === 'game' && gameType === option.value) ||
                       (id === 'status' && statusFilter === option.value) ||
-                      (id === 'source' && sourceFilter === option.value)
+                      (id === 'source' && sourceFilter === option.value) ||
+                      (id === 'region' && regionFilter === option.value)
                     ) && "bg-theme-purple text-white font-medium"
                   )}
                 >
