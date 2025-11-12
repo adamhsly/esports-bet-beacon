@@ -50,10 +50,16 @@ async function callProgress(code: string, inc: number) {
 
     const result = (data || {}) as { completed?: boolean; completedNow?: boolean; title?: string };
 
-    // Auto-chain weekly for daily completions
+    // Auto-chain weekly and daily double for daily completions
     if (code.startsWith('d_') && result.completed) {
       // Weekly: 5 dailies
       await (supabase.rpc as any)('progress_mission', { p_code: 'w_5_dailies', p_inc: 1 }).catch(() => {});
+      
+      // Daily double: complete 2 daily missions today
+      // Skip tracking d_complete2 itself to avoid infinite recursion
+      if (code !== 'd_complete2') {
+        await (supabase.rpc as any)('progress_mission', { p_code: 'd_complete2', p_inc: 1 }).catch(() => {});
+      }
     }
 
     // Optional subtle toast when a mission completes now
