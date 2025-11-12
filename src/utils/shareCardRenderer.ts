@@ -410,7 +410,7 @@ async function renderShareCardHTML(container: HTMLElement, data: ShareCardData) 
       </div>
 
       <div style="
-        position: absolute; top: 470px; left: 0; width: 100%;
+        position: absolute; top: 420px; left: 0; width: 100%;
         text-align: center; font-weight: 800; font-size: 36px; letter-spacing: .4px;
         color: #EAF2FF;
         text-shadow: 0 2px 8px rgba(0,0,0,.35);
