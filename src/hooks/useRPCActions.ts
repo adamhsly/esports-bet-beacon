@@ -112,6 +112,14 @@ export const useRPCActions = () => {
             MissionBus.onDailyMissionCompleted()
           );
         }
+
+        // Track awarded XP for daily XP mission (Quick grind)
+        const xpAmount = result.awarded_xp ?? 0;
+        if (xpAmount > 0) {
+          import('@/lib/missionBus').then(({ MissionBus }) => 
+            MissionBus.onXPEarned(xpAmount)
+          );
+        }
       }
 
       return result;
