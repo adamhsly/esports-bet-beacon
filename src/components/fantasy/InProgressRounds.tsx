@@ -13,7 +13,8 @@ import { useRoundStar } from '@/hooks/useRoundStar';
 import { RoundLeaderboard } from './RoundLeaderboard';
 import { renderShareCard } from '@/utils/shareCardRenderer';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
-import { copyToClipboard } from '@/utils/copy';
+import { ShareSheet } from './ShareSheet';
+import { useMobile } from '@/hooks/useMobile';
 
 interface InProgressRound {
   id: string;
@@ -400,6 +401,9 @@ const ShareButton: React.FC<{
   roundType: string;
 }> = ({ roundId, userId, roundType }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareData, setShareData] = useState<{ publicUrl: string; blob: Blob } | null>(null);
+  const isMobile = useMobile();
 
   const handleShare = async () => {
     if (!userId) return;
@@ -410,7 +414,9 @@ const ShareButton: React.FC<{
     try {
       // Generate share card FIRST to get the direct image URL
       const result = await renderShareCard(roundId, userId);
-      const shareUrl = result.publicUrl; // Direct image URL
+      setShareData(result);
+      
+      const shareUrl = result.publicUrl;
       const text = `My ${roundName} picks - Check out my live progress!`;
       
       // Track missions
@@ -439,18 +445,12 @@ const ShareButton: React.FC<{
             setIsGenerating(false);
             return;
           }
-          // Fall through to copy fallback
+          // Fall through to show custom share sheet
         }
       }
       
-      // Fallback: Copy image URL
-      const linkCopied = await copyToClipboard(shareUrl);
-      
-      if (linkCopied) {
-        toast.success('Image link copied to clipboard!');
-      } else {
-        toast.error('Could not copy. Long-press/tap the link to copy.');
-      }
+      // Show custom share sheet
+      setShowShareSheet(true);
     } catch (err: any) {
       console.error('Share card generation failed:', err);
       toast.error(`Failed to generate share card: ${err?.message ?? 'Unknown error'}`);
@@ -460,15 +460,26 @@ const ShareButton: React.FC<{
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleShare}
-      disabled={isGenerating || !userId}
-      className="h-8 px-2 text-gray-400 hover:text-white hover:bg-gray-700/50"
-    >
-      <Share2 className="h-4 w-4" />
-      {isGenerating && <span className="ml-1 text-xs">Sharing...</span>}
-    </Button>
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleShare}
+        disabled={isGenerating || !userId}
+        className="h-8 px-2 text-gray-400 hover:text-white hover:bg-gray-700/50"
+      >
+        <Share2 className="h-4 w-4" />
+        {isGenerating && <span className="ml-1 text-xs">Sharing...</span>}
+      </Button>
+
+      <ShareSheet
+        isOpen={showShareSheet}
+        onOpenChange={setShowShareSheet}
+        shareData={shareData}
+        roundName={`${roundType.charAt(0).toUpperCase() + roundType.slice(1)} Round`}
+        roundId={roundId}
+        isMobile={isMobile}
+      />
+    </>
   );
 };
