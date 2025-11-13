@@ -293,7 +293,12 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input placeholder="Search pro teams..." value={proSearch} onChange={e => setProSearch(e.target.value)} className="pl-10 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400" />
+                  <Input 
+                    placeholder="Search pro teams..." 
+                    value={proSearch} 
+                    onChange={e => setProSearch(e.target.value)} 
+                    className="pl-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none" 
+                  />
                 </div>
                 
                 <div className="flex gap-2">
@@ -345,7 +350,12 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input placeholder="Search amateur teams..." value={amSearch} onChange={e => setAmSearch(e.target.value)} className="pl-10 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400" />
+                  <Input 
+                    placeholder="Search amateur teams..." 
+                    value={amSearch} 
+                    onChange={e => setAmSearch(e.target.value)} 
+                    className="pl-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none" 
+                  />
                 </div>
                 
                 <div className="flex gap-2">
