@@ -1,7 +1,8 @@
 // src/pages/Index.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Loader2, Trophy } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
 
 import SearchableNavbar from "@/components/SearchableNavbar";
 import SEOContentBlock from "@/components/SEOContentBlock";
@@ -228,6 +229,8 @@ const Index = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("all");
   const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>("all");
   const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
@@ -287,7 +290,7 @@ const Index = () => {
     });
   };
 
-  const applyAllFilters = (matches: MatchInfo[]) => {
+  const applyAllFilters = useCallback((matches: MatchInfo[]) => {
     // Filter out BYE teams from amateur matches
     let filtered = matches.filter((m) => {
       if (m.source === "amateur") {
@@ -329,8 +332,26 @@ const Index = () => {
       });
     }
 
+    // Search filter - fuzzy matching on teams and tournaments
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter((match) => {
+        const team1Name = (match.teams?.[0]?.name || "").toLowerCase();
+        const team2Name = (match.teams?.[1]?.name || "").toLowerCase();
+        const tournamentName = (match.tournament || match.tournament_name || "").toLowerCase();
+        const leagueName = (match.league_name || "").toLowerCase();
+        
+        return (
+          team1Name.includes(query) ||
+          team2Name.includes(query) ||
+          tournamentName.includes(query) ||
+          leagueName.includes(query)
+        );
+      });
+    }
+
     return filtered;
-  };
+  }, [selectedGameType, selectedStatusFilter, selectedSourceFilter, selectedRegionFilter, debouncedSearchQuery]);
 
   /* --------------------- 📅 Calendar counts (±30d, server-filtered) --------------------- */
   useEffect(() => {
@@ -444,7 +465,7 @@ const Index = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedDate, selectedGameType, selectedStatusFilter, selectedSourceFilter]);
+  }, [selectedDate, selectedGameType, selectedStatusFilter, selectedSourceFilter, applyAllFilters]);
 
   /* --------------------- Grouping & metadata (same as before) --------------------- */
   const getTournamentMetadata = (matches: MatchInfo[]) => {
@@ -528,6 +549,8 @@ const Index = () => {
             onSourceFilterChange={setSelectedSourceFilter}
             onRegionFilterChange={setSelectedRegionFilter}
             hideRegionFilter={true}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
           />
               </div>
             </div>

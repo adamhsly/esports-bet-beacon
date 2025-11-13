@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Clock, Trophy, Gamepad2, Globe } from 'lucide-react';
+import { ChevronDown, Clock, Trophy, Gamepad2, Globe, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { GAME_TYPE_OPTIONS, STATUS_FILTER_OPTIONS, SOURCE_FILTER_OPTIONS, REGION_FILTER_OPTIONS, GameTypeOption } from '@/lib/gameTypes';
 
 export interface FilterPillProps {
@@ -13,6 +14,8 @@ export interface FilterPillProps {
   onSourceFilterChange: (value: string) => void;
   onRegionFilterChange: (value: string) => void;
   hideRegionFilter?: boolean;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 }
 
 export const FilterPills: React.FC<FilterPillProps> = ({
@@ -25,6 +28,8 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   onSourceFilterChange,
   onRegionFilterChange,
   hideRegionFilter = false,
+  searchQuery = '',
+  onSearchQueryChange,
 }) => {
   const [openPill, setOpenPill] = useState<string | null>(null);
   const pillRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -115,7 +120,19 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   ].filter(pill => !(hideRegionFilter && pill.id === 'region'));
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 items-center">
+      {onSearchQueryChange && (
+        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search teams or tournaments..."
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+      )}
       {pillConfigs.map(({ id, label }) => (
         <div
           key={id}
