@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
@@ -21,7 +22,9 @@ const AuthPage: React.FC = () => {
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   const [signUpUsername, setSignUpUsername] = useState("");
   const [signUpFullName, setSignUpFullName] = useState("");
-  const [signUpDateOfBirth, setSignUpDateOfBirth] = useState("");
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -55,6 +58,25 @@ const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+
+  // Generate dropdown options
+  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
+  const months = [
+    { value: "01", label: "Jan" },
+    { value: "02", label: "Feb" },
+    { value: "03", label: "Mar" },
+    { value: "04", label: "Apr" },
+    { value: "05", label: "May" },
+    { value: "06", label: "Jun" },
+    { value: "07", label: "Jul" },
+    { value: "08", label: "Aug" },
+    { value: "09", label: "Sep" },
+    { value: "10", label: "Oct" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dec" },
+  ];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
   useEffect(() => {
     // Check if we're on a password recovery flow
@@ -199,12 +221,40 @@ const AuthPage: React.FC = () => {
       return;
     }
 
+    // Validate date of birth
+    if (!dobDay || !dobMonth || !dobYear) {
+      const errorMessage = "Please select your complete date of birth";
+      setSignUpError(errorMessage);
+      toast({
+        title: "Date of birth required",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Combine date of birth into YYYY-MM-DD format
+    const dateOfBirth = `${dobYear}-${dobMonth}-${dobDay.padStart(2, '0')}`;
+
+    // Validate date is valid
+    const dobDate = new Date(dateOfBirth);
+    if (isNaN(dobDate.getTime())) {
+      const errorMessage = "Please enter a valid date of birth";
+      setSignUpError(errorMessage);
+      toast({
+        title: "Invalid date",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     const { error } = await signUp(signUpEmail, signUpPassword, {
       username: signUpUsername,
       full_name: signUpFullName,
-      date_of_birth: signUpDateOfBirth,
+      date_of_birth: dateOfBirth,
       marketing_preferences: JSON.stringify(marketingPreferences),
       terms_accepted: termsAccepted,
     });
@@ -230,7 +280,9 @@ const AuthPage: React.FC = () => {
       setSignUpConfirmPassword("");
       setSignUpUsername("");
       setSignUpFullName("");
-      setSignUpDateOfBirth("");
+      setDobDay("");
+      setDobMonth("");
+      setDobYear("");
       setMarketingPreferences({
         product_updates: false,
         event_notifications: false,
@@ -526,19 +578,50 @@ const AuthPage: React.FC = () => {
 
                   {/* Date of Birth Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="signup-dob" className="text-gray-300">
+                    <Label className="text-gray-300">
                       <User className="inline w-4 h-4 mr-2" />
                       Date of Birth
                     </Label>
-                    <Input
-                      id="signup-dob"
-                      type="date"
-                      value={signUpDateOfBirth}
-                      onChange={(e) => setSignUpDateOfBirth(e.target.value)}
-                      required
-                      max={new Date().toISOString().split("T")[0]}
-                      className="w-full bg-theme-gray-dark border-theme-gray-light text-white"
-                    />
+                    <div className="flex gap-2">
+                      <Select value={dobDay} onValueChange={setDobDay}>
+                        <SelectTrigger className="flex-1 bg-theme-gray-dark border-theme-gray-light text-white">
+                          <SelectValue placeholder="Day" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border z-50">
+                          {days.map((day) => (
+                            <SelectItem key={day} value={day}>
+                              {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={dobMonth} onValueChange={setDobMonth}>
+                        <SelectTrigger className="flex-1 bg-theme-gray-dark border-theme-gray-light text-white">
+                          <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border z-50">
+                          {months.map((month) => (
+                            <SelectItem key={month.value} value={month.value}>
+                              {month.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={dobYear} onValueChange={setDobYear}>
+                        <SelectTrigger className="flex-1 bg-theme-gray-dark border-theme-gray-light text-white">
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border z-50">
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
