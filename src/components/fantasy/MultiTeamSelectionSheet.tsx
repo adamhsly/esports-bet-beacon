@@ -245,7 +245,22 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 Base: 50 + Bonus: {totalBudget - 50} credits
               </div>
             )}
-            <Progress value={tempBudgetSpent / totalBudget * 100} className="w-full h-2" />
+            <div 
+              className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden w-full"
+              role="progressbar"
+              aria-valuenow={tempBudgetSpent}
+              aria-valuemin={0}
+              aria-valuemax={totalBudget}
+              aria-label="Budget progress"
+            >
+              <div 
+                className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
+                style={{ 
+                  width: `${Math.min(100, (tempBudgetSpent / totalBudget * 100))}%`,
+                  boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
+                }}
+              />
+            </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Teams Selected:</span>
               <span className={`font-medium ${tempSelectedTeams.length > 5 ? 'text-red-400' : 'text-blue-400'}`}>
