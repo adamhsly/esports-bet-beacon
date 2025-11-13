@@ -30,6 +30,7 @@ interface Team {
   recent_win_rate?: number;
   match_volume?: number;
   abandon_rate?: number;
+  region?: string;
 }
 interface MultiTeamSelectionSheetProps {
   isOpen: boolean;
@@ -70,6 +71,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Amateur team filters
   const [amSearch, setAmSearch] = useState('');
   const [selectedGameAm, setSelectedGameAm] = useState<string>('all');
+  const [selectedRegionAm, setSelectedRegionAm] = useState<string>('all');
   const [minMatchesPrev, setMinMatchesPrev] = useState<number>(0);
   const [maxMissedPct, setMaxMissedPct] = useState<number>(100);
   const [hasLogoOnlyAm, setHasLogoOnlyAm] = useState<boolean>(false);
@@ -106,6 +108,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Get unique games and price ranges
   const proGames = useMemo(() => Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], [proTeams]);
   const amateurGames = useMemo(() => Array.from(new Set(amateurTeams.map(t => t.esport_type).filter(Boolean))) as string[], [amateurTeams]);
+  const amateurRegions = useMemo(() => Array.from(new Set(amateurTeams.map(t => t.region).filter(Boolean))) as string[], [amateurTeams]);
 
   // Calculate price ranges
   const proPrices = useMemo(() => proTeams.map(t => t.price ?? 0), [proTeams]);
@@ -143,6 +146,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     return amateurTeams.filter(t => {
       const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
       const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
+      const regionMatch = selectedRegionAm === 'all' || (t.region ?? '') === selectedRegionAm;
       const matchVolume = t.match_volume ?? 0;
       const matchesMatch = matchVolume >= minMatchesPrev;
       const missed = t.missed_pct ?? 100;
@@ -156,9 +160,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches;
       const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits;
       const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate;
-      return nameMatch && gameMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
+      return nameMatch && gameMatch && regionMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
-  }, [amateurTeams, debouncedAmSearch, selectedGameAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
+  }, [amateurTeams, debouncedAmSearch, selectedGameAm, selectedRegionAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
   const handleTeamToggle = (team: Team) => {
     const isCurrentlySelected = tempSelectedTeams.find(t => t.id === team.id);
     if (isCurrentlySelected) {
@@ -334,9 +338,19 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     <SelectTrigger className="bg-gray-800/50 border-gray-700/50 text-white flex-1">
                       <SelectValue placeholder="All Games" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                      <SelectItem value="all" className="text-white">All Games</SelectItem>
-                      {amateurGames.map(game => <SelectItem key={game} value={game} className="text-white">{game}</SelectItem>)}
+                    <SelectContent className="bg-popover border-border z-50">
+                      <SelectItem value="all">All Games</SelectItem>
+                      {amateurGames.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={selectedRegionAm} onValueChange={setSelectedRegionAm}>
+                    <SelectTrigger className="bg-gray-800/50 border-gray-700/50 text-white flex-1">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border z-50">
+                      <SelectItem value="all">All Regions</SelectItem>
+                      {amateurRegions.map(region => <SelectItem key={region} value={region}>{region}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   
