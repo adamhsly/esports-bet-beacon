@@ -565,6 +565,34 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       {/* Selected Teams Widget */}
       <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
+      {/* Submit Button */}
+      <div className="flex justify-center">
+        <Button onClick={async () => {
+        if (!user) {
+          setShowAuthModal(true);
+          setPendingSubmission(true);
+          return;
+        }
+        if (selectedTeams.length !== 5) {
+          toast.error('Please select exactly 5 teams');
+          return;
+        }
+        // Validate budget with automatic bonus credits
+        const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
+        if (bonusCreditsNeeded > availableBonusCredits) {
+          toast.error(`Need ${bonusCreditsNeeded} bonus credits but you only have ${availableBonusCredits} available.`);
+          return;
+        }
+        if (!starTeamId) {
+          setShowNoStarModal(true);
+          return;
+        }
+        await submitTeams();
+      }} disabled={selectedTeams.length !== 5 || submitting} className="w-full max-w-md h-14 text-lg font-semibold bg-theme-purple hover:bg-theme-purple/90">
+          {submitting ? 'Submitting...' : 'Submit Team'}
+        </Button>
+      </div>
+
       {/* Star Team Summary */}
       {selectedTeams.length > 0 && <div className="bg-muted/30 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between">
@@ -593,34 +621,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             </TooltipProvider>
           </div>
         </div>}
-
-      {/* Submit Button */}
-      <div className="flex justify-center">
-        <Button onClick={async () => {
-        if (!user) {
-          setShowAuthModal(true);
-          setPendingSubmission(true);
-          return;
-        }
-        if (selectedTeams.length !== 5) {
-          toast.error('Please select exactly 5 teams');
-          return;
-        }
-        // Validate budget with automatic bonus credits
-        const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
-        if (bonusCreditsNeeded > availableBonusCredits) {
-          toast.error(`Need ${bonusCreditsNeeded} bonus credits but you only have ${availableBonusCredits} available.`);
-          return;
-        }
-        if (!starTeamId) {
-          setShowNoStarModal(true);
-          return;
-        }
-        await submitTeams();
-      }} disabled={selectedTeams.length !== 5 || submitting} className="min-w-[120px] bg-theme-purple hover:bg-theme-purple/90">
-          {submitting ? 'Submitting...' : 'Submit Team'}
-        </Button>
-      </div>
 
       {/* Bonus Credits Info - Auto-deducted */}
       {availableBonusCredits > 0 && (
