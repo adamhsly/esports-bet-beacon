@@ -12,6 +12,7 @@ export interface FilterPillProps {
   onStatusFilterChange: (value: string) => void;
   onSourceFilterChange: (value: string) => void;
   onRegionFilterChange: (value: string) => void;
+  hideRegionFilter?: boolean;
 }
 
 export const FilterPills: React.FC<FilterPillProps> = ({
@@ -23,6 +24,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   onStatusFilterChange,
   onSourceFilterChange,
   onRegionFilterChange,
+  hideRegionFilter = false,
 }) => {
   const [openPill, setOpenPill] = useState<string | null>(null);
   const pillRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -110,7 +112,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
     { id: 'status', label: 'Match Status' },
     { id: 'source', label: 'Competition Level' },
     { id: 'region', label: 'Region' },
-  ];
+  ].filter(pill => !(hideRegionFilter && pill.id === 'region'));
 
   return (
     <div className="flex flex-wrap gap-2">

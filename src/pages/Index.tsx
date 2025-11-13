@@ -518,16 +518,17 @@ const Index = () => {
             {/* FILTER PILLS */}
             <div className="mx-2 md:mx-4">
               <div className="flex flex-wrap items-center gap-2 mb-6 px-4 py-1">
-                <FilterPills
-                  gameType={selectedGameType}
-                  statusFilter={selectedStatusFilter}
-                  sourceFilter={selectedSourceFilter}
-                  regionFilter={selectedRegionFilter}
-                  onGameTypeChange={setSelectedGameType}
-                  onStatusFilterChange={setSelectedStatusFilter}
-                  onSourceFilterChange={setSelectedSourceFilter}
-                  onRegionFilterChange={setSelectedRegionFilter}
-                />
+          <FilterPills
+            gameType={selectedGameType}
+            statusFilter={selectedStatusFilter}
+            sourceFilter={selectedSourceFilter}
+            regionFilter={selectedRegionFilter}
+            onGameTypeChange={setSelectedGameType}
+            onStatusFilterChange={setSelectedStatusFilter}
+            onSourceFilterChange={setSelectedSourceFilter}
+            onRegionFilterChange={setSelectedRegionFilter}
+            hideRegionFilter={true}
+          />
               </div>
             </div>
 
