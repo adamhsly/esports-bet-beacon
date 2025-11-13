@@ -122,22 +122,25 @@ export const FilterPills: React.FC<FilterPillProps> = ({
   return (
     <div className="flex flex-wrap gap-2 items-center">
       {onSearchQueryChange && (
-        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+        <div className="relative w-full sm:flex-1 min-w-[200px] max-w-full sm:max-w-[500px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search teams or tournaments..."
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
-            className="pl-9 h-10"
+            className="pl-9 h-10 text-white"
           />
         </div>
       )}
-      {pillConfigs.map(({ id, label }) => (
+      {pillConfigs.map(({ id, label }, index) => (
         <div
           key={id}
           ref={(el) => (pillRefs.current[id] = el)}
-          className="relative"
+          className={cn(
+            "relative",
+            id === 'status' && "w-full sm:w-auto order-1 sm:order-none"
+          )}
         >
           <button
             onClick={() => handlePillClick(id)}
