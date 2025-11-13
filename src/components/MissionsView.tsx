@@ -179,7 +179,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
       className={cn(
         "bg-gradient-to-r border transition-all duration-300",
         mission.completed
-          ? "from-green-500/10 to-green-600/10 border-green-400/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]"
+          ? "from-[#0F1420] to-[#1A1F26] border-2 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.2)]"
           : "from-[#0F1420] to-[#1A1F26] border-white/[0.06] hover:border-neon-blue/30"
       )}
     >
