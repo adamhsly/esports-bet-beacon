@@ -451,21 +451,6 @@ function renderTeamSlot(team: any, isStarred: boolean) {
   const borderColor = isAmateur ? '#F97316' : '#8B5CF6';
   const safeLogoUrl = team.image_url || team.logo_url || getPlaceholderLogo(team.name);
 
-  const amateurBonusTag = isAmateur
-    ? `
-      <div style="
-        position: absolute; top: 10px; left: 10px;
-        display: inline-flex; align-items: center; justify-content: center;
-        height: 22px; padding: 0 10px; border-radius: 9999px;
-        background:#F97316; color:#fff;
-        font-size: 11px; font-weight: 800; letter-spacing:.2px;
-        white-space: nowrap; overflow: hidden; text-align: center;
-      ">
-        +25% BONUS
-      </div>
-    `
-    : '';
-
   const starTag = isStarred
     ? `<div style="position:absolute; top:10px; right:10px; font-size:24px; filter: drop-shadow(0 0 8px #F5C042);">⭐</div>`
     : '';
@@ -486,7 +471,6 @@ function renderTeamSlot(team: any, isStarred: boolean) {
       justify-content: center;
       gap: 12px;
     ">
-      ${amateurBonusTag}
       ${starTag}
 
       <img 
