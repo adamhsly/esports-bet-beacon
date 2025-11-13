@@ -151,17 +151,17 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
 
       <div className="space-y-4 py-4">
         <div className="space-y-2">
-          <Button onClick={handleSaveImage} className="w-full justify-start" variant="outline">
+          <Button onClick={handleSaveImage} className="w-full justify-start text-white" variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Save Image
           </Button>
 
-          <Button onClick={handleCopyImage} className="w-full justify-start" variant="outline">
+          <Button onClick={handleCopyImage} className="w-full justify-start text-white" variant="outline">
             <Copy className="mr-2 h-4 w-4" />
             Copy Image
           </Button>
 
-          <Button onClick={handleCopyLink} className="w-full justify-start" variant="outline">
+          <Button onClick={handleCopyLink} className="w-full justify-start text-white" variant="outline">
             <ExternalLink className="mr-2 h-4 w-4" />
             Copy Link
           </Button>
@@ -173,7 +173,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={() => openSocialShare('twitter')}
-              className="w-full justify-start"
+              className="w-full justify-start text-white"
               variant="outline"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -182,7 +182,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
 
             <Button
               onClick={() => openSocialShare('facebook')}
-              className="w-full justify-start"
+              className="w-full justify-start text-white"
               variant="outline"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -191,7 +191,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
 
             <Button
               onClick={() => openSocialShare('reddit')}
-              className="w-full justify-start"
+              className="w-full justify-start text-white"
               variant="outline"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -200,7 +200,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
 
             <Button
               onClick={() => openSocialShare('discord')}
-              className="w-full justify-start"
+              className="w-full justify-start text-white"
               variant="outline"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -209,7 +209,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
 
             <Button
               onClick={() => openSocialShare('whatsapp')}
-              className="w-full justify-start"
+              className="w-full justify-start text-white"
               variant="outline"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -218,7 +218,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({
 
             <Button
               onClick={() => openSocialShare('telegram')}
-              className="w-full justify-start"
+              className="w-full justify-start text-white"
               variant="outline"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
