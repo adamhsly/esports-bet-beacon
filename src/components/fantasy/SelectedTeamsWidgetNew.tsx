@@ -270,10 +270,22 @@ export const SelectedTeamsWidgetNew: React.FC<SelectedTeamsWidgetProps> = ({
             </div>
           </div>
         </div>
-        <Progress 
-          value={Math.min(100, Math.round(budgetSpent / actualTotalBudget * 100))} 
-          className="h-3 bg-glass-secondary/30 rounded-full overflow-hidden" 
-        />
+        <div 
+          className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
+          role="progressbar"
+          aria-valuenow={budgetSpent}
+          aria-valuemin={0}
+          aria-valuemax={actualTotalBudget}
+          aria-label="Budget progress"
+        >
+          <div 
+            className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
+            style={{ 
+              width: `${Math.min(100, Math.round(budgetSpent / actualTotalBudget * 100))}%`,
+              boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
+            }}
+          />
+        </div>
         <div className="flex justify-between text-xs text-glass-muted mt-1">
           <span>0</span>
           <span>{actualTotalBudget}</span>
