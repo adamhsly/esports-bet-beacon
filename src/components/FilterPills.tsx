@@ -137,10 +137,7 @@ export const FilterPills: React.FC<FilterPillProps> = ({
         <div
           key={id}
           ref={(el) => (pillRefs.current[id] = el)}
-          className={cn(
-            "relative",
-            id === 'status' && "w-full sm:w-auto order-1 sm:order-none"
-          )}
+          className="relative"
         >
           <button
             onClick={() => handlePillClick(id)}
