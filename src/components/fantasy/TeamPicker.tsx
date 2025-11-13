@@ -39,6 +39,7 @@ interface Team {
   logo_url?: string;
   esport_type?: string;
   slug?: string; // optional slug for pro teams
+  region?: string; // Amateur teams region
   // Amateur metrics (previous fantasy window)
   matches_prev_window?: number;
   missed_pct?: number;
@@ -265,6 +266,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           type: 'amateur',
           logo_url: t.logo_url || undefined,
           esport_type: t.game,
+          region: t.region || undefined,
           matches_prev_window: s?.played_matches ?? 0,
           missed_pct: typeof s?.missed_pct === 'number' ? Number(s.missed_pct) : undefined,
           total_scheduled: s?.total_scheduled ?? undefined,
