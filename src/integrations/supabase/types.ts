@@ -3128,6 +3128,7 @@ export type Database = {
         Returns: {
           game: string
           logo_url: string
+          region: string
           team_id: string
           team_name: string
         }[]

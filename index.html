@@ -53,61 +53,102 @@
     })(window, document, 'https://snippet.maze.co/maze-universal-loader.js', '35c8fd0b-1c6a-40ed-af10-1bce9d01656f');
     </script>
 
-    <!-- Amplitude Analytics -->
-    <script type="text/plain" data-cookieyes="analytics" src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
-    <script type="text/plain" data-cookieyes="analytics" src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz"></script>
-    <script type="text/plain" data-cookieyes="analytics">
-      window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
-      window.amplitude.init('dd8a94425d4256791b4c2390d88fe968', {"autocapture":{"elementInteractions":true}});
-    </script>
-
     <!-- Cookie Consent Manager -->
     <script>
       // Function to load analytics scripts when consent is given
       function loadAnalyticsScripts() {
-        // Get all blocked analytics scripts
-        const analyticsScripts = document.querySelectorAll('script[type="text/plain"][data-cookieyes="analytics"]');
+        console.log('Loading analytics scripts...');
         
-        analyticsScripts.forEach(function(script) {
-          // Create new script element
-          const newScript = document.createElement('script');
-          
-          // Copy attributes
-          if (script.src) {
+        // Load Google Analytics
+        const gtagScripts = document.querySelectorAll('script[type="text/plain"][data-cookieyes="analytics"]');
+        gtagScripts.forEach(function(script) {
+          if (script.src && script.src.includes('googletagmanager')) {
+            const newScript = document.createElement('script');
             newScript.src = script.src;
-          }
-          if (script.async) {
             newScript.async = true;
-          }
-          
-          // Copy inline content
-          if (script.innerHTML) {
+            document.head.appendChild(newScript);
+          } else if (script.innerHTML && script.innerHTML.includes('gtag')) {
+            const newScript = document.createElement('script');
             newScript.innerHTML = script.innerHTML;
+            document.head.appendChild(newScript);
           }
-          
-          // Replace the blocked script
-          script.parentNode.replaceChild(newScript, script);
         });
+
+        // Load Maze
+        const mazeScripts = document.querySelectorAll('script[type="text/plain"][data-cookieyes="analytics"]');
+        mazeScripts.forEach(function(script) {
+          if (script.innerHTML && script.innerHTML.includes('maze')) {
+            const newScript = document.createElement('script');
+            newScript.innerHTML = script.innerHTML;
+            document.head.appendChild(newScript);
+          }
+        });
+
+        // Load Amplitude with sequential loading
+        console.log('Loading Amplitude analytics-browser...');
+        const amplitudeScript = document.createElement('script');
+        amplitudeScript.src = 'https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz';
+        amplitudeScript.onload = function() {
+          console.log('Amplitude analytics-browser loaded, loading session-replay plugin...');
+          
+          const sessionReplayScript = document.createElement('script');
+          sessionReplayScript.src = 'https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz';
+          sessionReplayScript.onload = function() {
+            console.log('Session replay plugin loaded, initializing Amplitude...');
+            
+            // Initialize Amplitude
+            if (window.amplitude && window.sessionReplay) {
+              try {
+                window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
+                window.amplitude.init('dd8a94425d4256791b4c2390d88fe968', {"autocapture":{"elementInteractions":true}});
+                console.log('Amplitude initialized successfully!');
+              } catch (error) {
+                console.error('Error initializing Amplitude:', error);
+              }
+            } else {
+              console.error('Amplitude or sessionReplay not available');
+            }
+          };
+          sessionReplayScript.onerror = function() {
+            console.error('Failed to load session replay plugin');
+          };
+          document.head.appendChild(sessionReplayScript);
+        };
+        amplitudeScript.onerror = function() {
+          console.error('Failed to load Amplitude analytics-browser');
+        };
+        document.head.appendChild(amplitudeScript);
       }
 
       // Listen for consent updates
       document.addEventListener('cookieyes_consent_update', function(eventData) {
+        console.log('CookieYes consent updated:', eventData.detail);
         const consent = eventData.detail;
         
         if (consent && consent.accepted && consent.accepted.includes('analytics')) {
+          console.log('Analytics consent granted, loading scripts...');
           loadAnalyticsScripts();
         }
       });
 
       // Check for existing consent on page load
       window.addEventListener('load', function() {
-        // CookieYes sets a cookie with consent preferences
-        if (typeof cookieyes !== 'undefined' && cookieyes.getConsent) {
-          const consent = cookieyes.getConsent();
-          if (consent && consent.analytics) {
-            loadAnalyticsScripts();
+        setTimeout(function() {
+          // Check if CookieYes cookie exists and has analytics consent
+          const cookieValue = document.cookie.split('; ').find(row => row.startsWith('cookieyes-consent='));
+          if (cookieValue) {
+            try {
+              const consent = JSON.parse(decodeURIComponent(cookieValue.split('=')[1]));
+              console.log('Existing consent found:', consent);
+              if (consent.analytics === 'yes') {
+                console.log('Analytics already consented, loading scripts...');
+                loadAnalyticsScripts();
+              }
+            } catch (error) {
+              console.error('Error parsing consent cookie:', error);
+            }
           }
-        }
+        }, 500); // Small delay to ensure CookieYes has initialized
       });
     </script>
 
