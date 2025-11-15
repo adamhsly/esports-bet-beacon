@@ -123,13 +123,13 @@ export const FilterPills: React.FC<FilterPillProps> = ({
     <div className="flex flex-wrap gap-2 items-center">
       {onSearchQueryChange && (
         <div className="relative w-full sm:flex-1 min-w-[200px] max-w-full sm:max-w-[500px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
             placeholder="Search teams or tournaments..."
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
-            className="pl-9 h-10 text-white"
+            className="pl-9 h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
           />
         </div>
       )}
