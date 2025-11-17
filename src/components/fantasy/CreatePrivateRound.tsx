@@ -101,7 +101,7 @@ export const CreatePrivateRound: React.FC = () => {
                 <Button
                   size="lg"
                   onClick={() => navigate(`/fantasy?roundId=${createdRound.id}`)}
-                  className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
+                  className="w-full"
                 >
                   Go to Team Selection
                 </Button>
@@ -173,7 +173,7 @@ export const CreatePrivateRound: React.FC = () => {
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
+                className="w-full"
                 size="lg"
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
