@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Copy, Check, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,9 @@ export const CreatePrivateRound: React.FC = () => {
     round_name: '',
     start_date: '',
     end_date: '',
+    budget_cap: 50,
+    game_source: 'both',
+    game_type: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,6 +42,11 @@ export const CreatePrivateRound: React.FC = () => {
 
     if (endDate <= new Date()) {
       toast.error('End date must be in the future');
+      return;
+    }
+
+    if (formData.budget_cap && (formData.budget_cap < 30 || formData.budget_cap > 200)) {
+      toast.error('Budget cap must be between 30 and 200');
       return;
     }
 
@@ -180,6 +189,57 @@ export const CreatePrivateRound: React.FC = () => {
                     className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
                   />
                 </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="budget-cap" className="text-white">Budget Cap</Label>
+                  <Input
+                    id="budget-cap"
+                    type="number"
+                    min="30"
+                    max="200"
+                    placeholder="50"
+                    value={formData.budget_cap || ''}
+                    onChange={(e) => setFormData({ ...formData, budget_cap: parseInt(e.target.value) || undefined })}
+                    disabled={loading}
+                    className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
+                  />
+                  <p className="text-xs text-gray-400">Range: 30-200 (default: 50)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="game-source" className="text-white">Match Source</Label>
+                  <Select
+                    value={formData.game_source || 'both'}
+                    onValueChange={(value: 'pro' | 'amateur' | 'both') => setFormData({ ...formData, game_source: value })}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms]">
+                      <SelectValue placeholder="Select match type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1B1F28] border-white/10">
+                      <SelectItem value="both" className="text-white hover:bg-white/10">Both (Pro & Amateur)</SelectItem>
+                      <SelectItem value="pro" className="text-white hover:bg-white/10">Professional Only</SelectItem>
+                      <SelectItem value="amateur" className="text-white hover:bg-white/10">Amateur Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-400">Choose match types to include</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="game-type" className="text-white">Game Type (Optional)</Label>
+                <Input
+                  id="game-type"
+                  type="text"
+                  placeholder="e.g., cs2, lol, dota2"
+                  value={formData.game_type || ''}
+                  onChange={(e) => setFormData({ ...formData, game_type: e.target.value })}
+                  disabled={loading}
+                  className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
+                />
+                <p className="text-xs text-gray-400">Leave empty for all game types</p>
               </div>
 
               <Button 
