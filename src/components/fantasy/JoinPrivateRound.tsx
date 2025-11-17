@@ -45,7 +45,7 @@ export const JoinPrivateRound: React.FC<JoinPrivateRoundProps> = ({ onCancel }) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="join-code">Private Round Code</Label>
+        <Label htmlFor="join-code" className="text-white">Private Round Code</Label>
         <Input
           id="join-code"
           type="text"
@@ -53,7 +53,7 @@ export const JoinPrivateRound: React.FC<JoinPrivateRoundProps> = ({ onCancel }) 
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           maxLength={8}
-          className="uppercase font-mono text-lg tracking-wider"
+          className="uppercase font-mono text-lg tracking-wider text-white placeholder:text-white/50"
           disabled={loading}
         />
       </div>
@@ -73,6 +73,7 @@ export const JoinPrivateRound: React.FC<JoinPrivateRoundProps> = ({ onCancel }) 
             variant="outline" 
             onClick={onCancel}
             disabled={loading}
+            className="text-white border-white/20 hover:bg-white/10"
           >
             Cancel
           </Button>
