@@ -31,6 +31,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
         .from('fantasy_rounds')
         .select('*')
         .eq('status', 'open')
+        .eq('is_private', false) // Only fetch public rounds
         .order('start_date', { ascending: true });
 
       if (error) throw error;
@@ -115,6 +116,35 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
             </CardContent>
           </Card>
         ))}
+
+        {/* Private Round Card */}
+        <Card 
+          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+          onClick={() => window.location.href = '/fantasy/private'}
+        >
+          <CardContent className="p-4">
+            {/* Private Round Logo */}
+            <div className="flex justify-center mb-3">
+              <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                <img
+                  src="/lovable-uploads/private_round.png"
+                  alt="Private round"
+                  className="w-24 h-24 object-contain"
+                />
+              </div>
+            </div>
+            
+            {/* Private Round Info */}
+            <div className="text-center mb-3">
+              <p className="text-sm text-purple-300 font-medium">Play your way</p>
+            </div>
+
+            {/* Private Round Button */}
+            <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2">
+              Private round
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <AuthModal 
