@@ -4,8 +4,9 @@ export interface PrivateRoundConfig {
   round_name: string;
   start_date: string;
   end_date: string;
-  budget?: number;
+  budget_cap?: number;
   game_type?: string;
+  game_source?: 'pro' | 'amateur' | 'both';
 }
 
 export interface CreateRoundResponse {
