@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Plus } from 'lucide-react';
+import { Lock, Plus, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { JoinPrivateRound } from './JoinPrivateRound';
 
@@ -12,6 +12,15 @@ export const PrivateRoundHub: React.FC = () => {
   return (
     <div className="mx-2 md:mx-4 my-8">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Button
+            onClick={() => navigate('/fantasy')}
+            className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
+          >
+            <Home className="h-4 w-4" />
+            Fantasy
+          </Button>
+        </div>
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-3 text-foreground">Private Rounds</h1>
           <p className="text-muted-foreground text-lg">
