@@ -22,7 +22,7 @@ export const PrivateRoundHub: React.FC = () => {
           </Button>
         </div>
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-3 text-foreground">Private Rounds</h1>
+          <h1 className="text-4xl font-bold mb-3 text-primary">Private Rounds</h1>
           <p className="text-muted-foreground text-lg">
             Create exclusive rounds or join with an invite code
           </p>
