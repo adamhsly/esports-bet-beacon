@@ -1084,8 +1084,13 @@ export type Database = {
       fantasy_rounds: {
         Row: {
           created_at: string
+          created_by: string | null
           end_date: string
           id: string
+          is_private: boolean
+          join_code: string | null
+          max_participants: number | null
+          round_name: string | null
           start_date: string
           status: string
           type: string
@@ -1093,8 +1098,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           end_date: string
           id?: string
+          is_private?: boolean
+          join_code?: string | null
+          max_participants?: number | null
+          round_name?: string | null
           start_date: string
           status?: string
           type: string
@@ -1102,8 +1112,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           end_date?: string
           id?: string
+          is_private?: boolean
+          join_code?: string | null
+          max_participants?: number | null
+          round_name?: string | null
           start_date?: string
           status?: string
           type?: string
