@@ -53,7 +53,7 @@ export const JoinPrivateRound: React.FC<JoinPrivateRoundProps> = ({ onCancel }) 
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           maxLength={8}
-          className="uppercase font-mono text-lg tracking-wider text-white placeholder:text-white/50"
+          className="uppercase font-mono text-lg tracking-wider h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
           disabled={loading}
         />
       </div>
