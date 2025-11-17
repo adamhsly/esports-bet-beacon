@@ -46,7 +46,7 @@ export const PrivateRoundHub: React.FC = () => {
               {!showJoinForm ? (
                 <Button 
                   onClick={() => setShowJoinForm(true)}
-                  className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
+                  className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
                   size="lg"
                 >
                   Enter Code
@@ -73,7 +73,7 @@ export const PrivateRoundHub: React.FC = () => {
             <CardContent>
               <Button 
                 onClick={() => navigate('/fantasy/private/create')}
-                className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
+                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
                 size="lg"
               >
                 Create Private Round
