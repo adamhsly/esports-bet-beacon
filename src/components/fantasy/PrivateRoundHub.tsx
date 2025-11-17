@@ -10,66 +10,68 @@ export const PrivateRoundHub: React.FC = () => {
   const [showJoinForm, setShowJoinForm] = useState(false);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-3">Private Rounds</h1>
-        <p className="text-muted-foreground text-lg">
-          Create exclusive rounds or join with an invite code
-        </p>
-      </div>
+    <div className="mx-2 md:mx-4 my-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-3 text-foreground">Private Rounds</h1>
+          <p className="text-muted-foreground text-lg">
+            Create exclusive rounds or join with an invite code
+          </p>
+        </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Join Round Card */}
-        <Card className="border-border/50 bg-card hover:border-primary/30 transition-all duration-300">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Lock className="h-6 w-6 text-primary" />
+        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          {/* Join Round Card */}
+          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#7a5cff]/30 hover:translate-y-[-2px]">
+            <CardHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-3 rounded-lg bg-[#7a5cff]/10">
+                  <Lock className="h-6 w-6 text-[#7a5cff]" />
+                </div>
+                <CardTitle className="text-foreground">Join Round</CardTitle>
               </div>
-              <CardTitle>Join Round</CardTitle>
-            </div>
-            <CardDescription>
-              Have an invite code? Join an exclusive round
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!showJoinForm ? (
+              <CardDescription>
+                Have an invite code? Join an exclusive round
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!showJoinForm ? (
+                <Button 
+                  onClick={() => setShowJoinForm(true)}
+                  className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
+                  size="lg"
+                >
+                  Enter Code
+                </Button>
+              ) : (
+                <JoinPrivateRound onCancel={() => setShowJoinForm(false)} />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Create Round Card */}
+          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#7a5cff]/30 hover:translate-y-[-2px]">
+            <CardHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-3 rounded-lg bg-[#7a5cff]/10">
+                  <Plus className="h-6 w-6 text-[#7a5cff]" />
+                </div>
+                <CardTitle className="text-foreground">Create Round</CardTitle>
+              </div>
+              <CardDescription>
+                Set up a custom round with your own rules
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <Button 
-                onClick={() => setShowJoinForm(true)}
-                className="w-full"
+                onClick={() => navigate('/fantasy/private/create')}
+                className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
                 size="lg"
               >
-                Enter Code
+                Create Private Round
               </Button>
-            ) : (
-              <JoinPrivateRound onCancel={() => setShowJoinForm(false)} />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Create Round Card */}
-        <Card className="border-border/50 bg-card hover:border-primary/30 transition-all duration-300">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Plus className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Create Round</CardTitle>
-            </div>
-            <CardDescription>
-              Set up a custom round with your own rules
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => navigate('/fantasy/private/create')}
-              className="w-full"
-              size="lg"
-            >
-              Create Private Round
-            </Button>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
