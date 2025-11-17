@@ -1083,9 +1083,12 @@ export type Database = {
       }
       fantasy_rounds: {
         Row: {
+          budget_cap: number | null
           created_at: string
           created_by: string | null
           end_date: string
+          game_source: string | null
+          game_type: string | null
           id: string
           is_private: boolean
           join_code: string | null
@@ -1097,9 +1100,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          budget_cap?: number | null
           created_at?: string
           created_by?: string | null
           end_date: string
+          game_source?: string | null
+          game_type?: string | null
           id?: string
           is_private?: boolean
           join_code?: string | null
@@ -1111,9 +1117,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          budget_cap?: number | null
           created_at?: string
           created_by?: string | null
           end_date?: string
+          game_source?: string | null
+          game_type?: string | null
           id?: string
           is_private?: boolean
           join_code?: string | null

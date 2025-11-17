@@ -9,8 +9,9 @@ interface CreateRoundRequest {
   round_name: string;
   start_date: string;
   end_date: string;
-  budget?: number;
+  budget_cap?: number;
   game_type?: string;
+  game_source?: 'pro' | 'amateur' | 'both';
 }
 
 function generateJoinCode(): string {
@@ -63,6 +64,30 @@ Deno.serve(async (req) => {
     if (!body.round_name || !body.start_date || !body.end_date) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate budget_cap
+    const budgetCap = body.budget_cap || 50;
+    if (budgetCap < 30 || budgetCap > 200) {
+      return new Response(
+        JSON.stringify({ error: 'Budget must be between 30 and 200 credits' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate game_source
+    const gameSource = body.game_source || 'both';
+    if (!['pro', 'amateur', 'both'].includes(gameSource)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid game source' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -134,6 +159,9 @@ Deno.serve(async (req) => {
         join_code: joinCode,
         created_by: user.id,
         status: 'open',
+        budget_cap: budgetCap,
+        game_source: gameSource,
+        game_type: body.game_type || null,
       })
       .select()
       .single();
