@@ -101,7 +101,7 @@ export const CreatePrivateRound: React.FC = () => {
                     size="icon"
                     variant="outline"
                     onClick={copyCode}
-                    className="h-10 w-10"
+                    className="h-10 w-10 text-white"
                   >
                     {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                   </Button>
@@ -120,7 +120,7 @@ export const CreatePrivateRound: React.FC = () => {
                   size="lg"
                   variant="outline"
                   onClick={() => navigate('/fantasy')}
-                  className="w-full"
+                  className="w-full text-white"
                 >
                   Back to Rounds
                 </Button>
