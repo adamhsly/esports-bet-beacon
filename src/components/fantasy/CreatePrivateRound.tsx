@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Loader2, Copy, Check, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { createPrivateRound, PrivateRoundConfig } from '@/lib/privateRoundApi';
+import { GAME_TYPE_OPTIONS } from '@/lib/gameTypes';
 
 export const CreatePrivateRound: React.FC = () => {
   const navigate = useNavigate();
@@ -192,18 +194,18 @@ export const CreatePrivateRound: React.FC = () => {
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="budget-cap" className="text-white">Budget Cap</Label>
-                  <Input
-                    id="budget-cap"
-                    type="number"
-                    min="30"
-                    max="200"
-                    placeholder="50"
-                    value={formData.budget_cap || ''}
-                    onChange={(e) => setFormData({ ...formData, budget_cap: parseInt(e.target.value) || undefined })}
+                <div className="space-y-3">
+                  <Label className="text-white text-sm">
+                    Budget Cap: {formData.budget_cap || 50}
+                  </Label>
+                  <Slider
+                    value={[formData.budget_cap || 50]}
+                    onValueChange={(value) => setFormData({ ...formData, budget_cap: value[0] })}
+                    min={30}
+                    max={200}
+                    step={5}
                     disabled={loading}
-                    className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
+                    className="w-full [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-gray-600"
                   />
                   <p className="text-xs text-gray-400">Range: 30-200 (default: 50)</p>
                 </div>
@@ -230,16 +232,27 @@ export const CreatePrivateRound: React.FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="game-type" className="text-white">Game Type (Optional)</Label>
-                <Input
-                  id="game-type"
-                  type="text"
-                  placeholder="e.g., cs2, lol, dota2"
-                  value={formData.game_type || ''}
-                  onChange={(e) => setFormData({ ...formData, game_type: e.target.value })}
+                <Select
+                  value={formData.game_type || 'all'}
+                  onValueChange={(value) => setFormData({ ...formData, game_type: value === 'all' ? '' : value })}
                   disabled={loading}
-                  className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
-                />
-                <p className="text-xs text-gray-400">Leave empty for all game types</p>
+                >
+                  <SelectTrigger className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms]">
+                    <SelectValue placeholder="Select game type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1B1F28] border-white/10 max-h-[300px]">
+                    {GAME_TYPE_OPTIONS.map((option) => (
+                      <SelectItem 
+                        key={option.value} 
+                        value={option.value} 
+                        className="text-white hover:bg-white/10"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-400">Leave as "All Games" for all game types</p>
               </div>
 
               <Button 
