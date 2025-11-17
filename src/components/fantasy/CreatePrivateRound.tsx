@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Copy, Check } from 'lucide-react';
+import { Loader2, Copy, Check, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { createPrivateRound, PrivateRoundConfig } from '@/lib/privateRoundApi';
@@ -124,6 +124,15 @@ export const CreatePrivateRound: React.FC = () => {
   return (
     <div className="mx-2 md:mx-4 my-8">
       <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <Button
+            onClick={() => navigate('/fantasy')}
+            className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
+          >
+            <Home className="h-4 w-4" />
+            Fantasy
+          </Button>
+        </div>
         <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg">
           <CardHeader>
             <CardTitle className="text-foreground">Create Private Round</CardTitle>
