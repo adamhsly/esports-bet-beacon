@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,11 @@ import { FantasyRulesModal } from '@/components/fantasy/FantasyRulesModal';
 import { BookOpen } from 'lucide-react';
 import { useProfilePanel } from '@/components/ProfileSheet';
 import { ProfileSheet } from '@/components/ProfileSheet';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const FantasyPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -27,6 +30,33 @@ const FantasyPage: React.FC = () => {
   const { awardXP, progressMission } = useRPCActions();
   const isMobile = useMobile();
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
+
+  // Handle roundId from URL parameters
+  useEffect(() => {
+    const roundId = searchParams.get('roundId');
+    if (roundId && !selectedRound) {
+      // Fetch the round details and select it
+      const fetchRound = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('fantasy_rounds')
+            .select('*')
+            .eq('id', roundId)
+            .single();
+          
+          if (data && !error) {
+            setSelectedRound(data);
+            // Clear the URL parameter after selecting
+            searchParams.delete('roundId');
+            setSearchParams(searchParams);
+          }
+        } catch (err) {
+          console.error('Error fetching round:', err);
+        }
+      };
+      fetchRound();
+    }
+  }, [searchParams, selectedRound, setSearchParams]);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
