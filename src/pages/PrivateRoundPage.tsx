@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
+import { Button } from '@/components/ui/button';
 
 export const PrivateRoundPage: React.FC = () => {
   const { user, loading } = useAuth();
@@ -30,12 +31,12 @@ export const PrivateRoundPage: React.FC = () => {
           <p className="text-muted-foreground mb-6">
             Please sign in to access private rounds
           </p>
-          <button
+          <Button
             onClick={() => setShowAuthModal(true)}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+            size="lg"
           >
             Sign In
-          </button>
+          </Button>
         </div>
         <Footer />
         <AuthModal
