@@ -72,113 +72,117 @@ export const CreatePrivateRound: React.FC = () => {
 
   if (createdRound) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Card className="border-primary/20 bg-gradient-to-b from-card to-card/50">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl">🎉 Round Created!</CardTitle>
-            <CardDescription>Share this code with players to invite them</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-muted/50 p-6 rounded-lg text-center">
-              <Label className="text-sm text-muted-foreground mb-2 block">Join Code</Label>
-              <div className="flex items-center justify-center gap-3">
-                <code className="text-4xl font-mono font-bold tracking-wider">
-                  {createdRound.join_code}
-                </code>
+      <div className="mx-2 md:mx-4 my-8">
+        <div className="max-w-2xl mx-auto">
+          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl text-foreground">🎉 Round Created!</CardTitle>
+              <CardDescription>Share this code with players to invite them</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-white/[0.04] p-6 rounded-lg text-center border border-white/[0.05]">
+                <Label className="text-sm text-muted-foreground mb-2 block">Join Code</Label>
+                <div className="flex items-center justify-center gap-3">
+                  <code className="text-4xl font-mono font-bold tracking-wider text-foreground">
+                    {createdRound.join_code}
+                  </code>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={copyCode}
+                    className="h-10 w-10"
+                  >
+                    {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={copyCode}
-                  className="h-10 w-10"
+                  size="lg"
+                  onClick={() => navigate(`/fantasy?roundId=${createdRound.id}`)}
+                  className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
                 >
-                  {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                  Go to Team Selection
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate('/fantasy')}
+                  className="w-full"
+                >
+                  Back to Rounds
                 </Button>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Button
-                size="lg"
-                onClick={() => navigate(`/fantasy?roundId=${createdRound.id}`)}
-                className="w-full"
-              >
-                Go to Team Selection
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/fantasy')}
-                className="w-full"
-              >
-                Back to Rounds
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create Private Round</CardTitle>
-          <CardDescription>Set up a custom round with your own schedule</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="round-name">Round Name *</Label>
-              <Input
-                id="round-name"
-                type="text"
-                placeholder="e.g., Weekend Warriors League"
-                value={formData.round_name}
-                onChange={(e) => setFormData({ ...formData, round_name: e.target.value })}
+    <div className="mx-2 md:mx-4 my-8">
+      <div className="max-w-2xl mx-auto">
+        <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-foreground">Create Private Round</CardTitle>
+            <CardDescription>Set up a custom round with your own schedule</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="round-name">Round Name *</Label>
+                <Input
+                  id="round-name"
+                  type="text"
+                  placeholder="e.g., Weekend Warriors League"
+                  value={formData.round_name}
+                  onChange={(e) => setFormData({ ...formData, round_name: e.target.value })}
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">Start Date & Time *</Label>
+                  <Input
+                    id="start-date"
+                    type="datetime-local"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">End Date & Time *</Label>
+                  <Input
+                    id="end-date"
+                    type="datetime-local"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
                 disabled={loading}
-                required
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-date">Start Date & Time *</Label>
-                <Input
-                  id="start-date"
-                  type="datetime-local"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="end-date">End Date & Time *</Label>
-                <Input
-                  id="end-date"
-                  type="datetime-local"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  disabled={loading}
-                  required
-                />
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Round
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                className="w-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] hover:from-[#6b4de6] hover:to-[#7f5ff0] text-white font-medium shadow-[0_0_12px_rgba(122,92,255,0.3)]"
+                size="lg"
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Round
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
