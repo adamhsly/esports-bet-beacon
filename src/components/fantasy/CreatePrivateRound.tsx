@@ -76,14 +76,14 @@ export const CreatePrivateRound: React.FC = () => {
         <div className="max-w-2xl mx-auto">
           <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg">
             <CardHeader className="text-center">
-              <CardTitle className="text-3xl text-foreground">🎉 Round Created!</CardTitle>
-              <CardDescription>Share this code with players to invite them</CardDescription>
+              <CardTitle className="text-3xl text-white">🎉 Round Created!</CardTitle>
+              <CardDescription className="text-white">Share this code with players to invite them</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-white/[0.04] p-6 rounded-lg text-center border border-white/[0.05]">
-                <Label className="text-sm text-muted-foreground mb-2 block">Join Code</Label>
+                <Label className="text-sm text-white mb-2 block">Join Code</Label>
                 <div className="flex items-center justify-center gap-3">
-                  <code className="text-4xl font-mono font-bold tracking-wider text-foreground">
+                  <code className="text-4xl font-mono font-bold tracking-wider text-white">
                     {createdRound.join_code}
                   </code>
                   <Button
@@ -135,13 +135,13 @@ export const CreatePrivateRound: React.FC = () => {
         </div>
         <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg">
           <CardHeader>
-            <CardTitle className="text-foreground">Create Private Round</CardTitle>
-            <CardDescription>Set up a custom round with your own schedule</CardDescription>
+            <CardTitle className="text-white">Create Private Round</CardTitle>
+            <CardDescription className="text-white">Set up a custom round with your own schedule</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="round-name">Round Name *</Label>
+                <Label htmlFor="round-name" className="text-white">Round Name *</Label>
                 <Input
                   id="round-name"
                   type="text"
@@ -150,12 +150,13 @@ export const CreatePrivateRound: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, round_name: e.target.value })}
                   disabled={loading}
                   required
+                  className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
                 />
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Start Date & Time *</Label>
+                  <Label htmlFor="start-date" className="text-white">Start Date & Time *</Label>
                   <Input
                     id="start-date"
                     type="datetime-local"
@@ -163,11 +164,12 @@ export const CreatePrivateRound: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                     disabled={loading}
                     required
+                    className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="end-date">End Date & Time *</Label>
+                  <Label htmlFor="end-date" className="text-white">End Date & Time *</Label>
                   <Input
                     id="end-date"
                     type="datetime-local"
@@ -175,6 +177,7 @@ export const CreatePrivateRound: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                     disabled={loading}
                     required
+                    className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white placeholder-gray-400 border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms] before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none"
                   />
                 </div>
               </div>
