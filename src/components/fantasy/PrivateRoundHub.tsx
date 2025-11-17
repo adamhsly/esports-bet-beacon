@@ -23,7 +23,7 @@ export const PrivateRoundHub: React.FC = () => {
         </div>
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-3 text-[#7a5cff]">Private Rounds</h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-white text-lg">
             Create exclusive rounds or join with an invite code
           </p>
         </div>
@@ -36,9 +36,9 @@ export const PrivateRoundHub: React.FC = () => {
                 <div className="p-3 rounded-lg bg-[#7a5cff]/10">
                   <Lock className="h-6 w-6 text-[#7a5cff]" />
                 </div>
-                <CardTitle className="text-foreground">Join Round</CardTitle>
+                <CardTitle className="text-white">Join Round</CardTitle>
               </div>
-              <CardDescription>
+              <CardDescription className="text-white">
                 Have an invite code? Join an exclusive round
               </CardDescription>
             </CardHeader>
@@ -64,9 +64,9 @@ export const PrivateRoundHub: React.FC = () => {
                 <div className="p-3 rounded-lg bg-[#7a5cff]/10">
                   <Plus className="h-6 w-6 text-[#7a5cff]" />
                 </div>
-                <CardTitle className="text-foreground">Create Round</CardTitle>
+                <CardTitle className="text-white">Create Round</CardTitle>
               </div>
-              <CardDescription>
+              <CardDescription className="text-white">
                 Set up a custom round with your own rules
               </CardDescription>
             </CardHeader>
