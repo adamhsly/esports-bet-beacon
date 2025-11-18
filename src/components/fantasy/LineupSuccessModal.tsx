@@ -120,7 +120,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
               onOpenChange(false);
             }}
             variant="outline"
-            className="w-full"
+            className="w-full text-white"
           >
             <TrendingUp className="mr-2 h-4 w-4" />
             Check Progress
