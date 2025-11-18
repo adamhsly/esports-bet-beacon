@@ -18,13 +18,15 @@ import { useMobile } from '@/hooks/useMobile';
 
 interface InProgressRound {
   id: string;
-  type: 'daily' | 'weekly' | 'monthly';
+  type: 'daily' | 'weekly' | 'monthly' | 'private';
   start_date: string;
   end_date: string;
   total_score: number;
   team_picks: any[];
   bench_team: any;
   scores: FantasyScore[];
+  is_private: boolean;
+  round_name: string | null;
 }
 
 interface FantasyScore {
@@ -95,12 +97,14 @@ export const InProgressRounds: React.FC = () => {
 
           return {
             id: pick.round_id,
-            type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
+            type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly' | 'private',
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
             total_score: pick.total_score,
             team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
+            is_private: pick.fantasy_rounds.is_private || false,
+            round_name: pick.fantasy_rounds.round_name || null,
             scores: (scores || []).map((score) => ({
               ...score,
               team_type: score.team_type as 'pro' | 'amateur'
@@ -187,7 +191,7 @@ export const InProgressRounds: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                    {round.type} Round
+                    {round.is_private && round.round_name ? round.round_name : `${round.type} Round`}
                   </CardTitle>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-400">
