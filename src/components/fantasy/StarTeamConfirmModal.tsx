@@ -48,6 +48,7 @@ export const StarTeamConfirmModal: React.FC<StarTeamConfirmModalProps> = ({
           </Button>
           <Button
             onClick={onConfirm}
+            className="text-white"
           >
             {confirmText}
           </Button>
