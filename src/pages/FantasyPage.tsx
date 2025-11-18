@@ -95,36 +95,38 @@ const FantasyPage: React.FC = () => {
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="flex bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-[10px] p-1.5 gap-1.5 max-w-md mx-auto">
-                  <TabsTrigger
-                    value="join"
-                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Join a Round
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="in-progress"
-                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
-                  >
-                    <Clock className="h-4 w-4" />
-                    In Progress
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="finished"
-                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
-                  >
-                    <Trophy className="h-4 w-4" />
-                    Finished
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="my-private"
-                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
-                  >
-                    <Users className="h-4 w-4" />
-                    My Private Rounds
-                  </TabsTrigger>
-                </TabsList>
+                <div className="w-full overflow-x-auto scrollbar-hide">
+                  <TabsList className="inline-flex bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-[10px] p-1.5 gap-1.5 min-w-full md:w-auto md:mx-auto">
+                    <TabsTrigger
+                      value="join"
+                      className="flex-1 min-w-[120px] whitespace-nowrap text-center py-2.5 px-4 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Join a Round
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="in-progress"
+                      className="flex-1 min-w-[120px] whitespace-nowrap text-center py-2.5 px-4 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
+                    >
+                      <Clock className="h-4 w-4" />
+                      In Progress
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="finished"
+                      className="flex-1 min-w-[120px] whitespace-nowrap text-center py-2.5 px-4 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
+                    >
+                      <Trophy className="h-4 w-4" />
+                      Finished
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="my-private"
+                      className="flex-1 min-w-[120px] whitespace-nowrap text-center py-2.5 px-4 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      My Private Rounds
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
                 <TabsContent value="join">
                   {loading ? (
