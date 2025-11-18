@@ -9,7 +9,8 @@ import { RoundSelector } from '@/components/fantasy/RoundSelector';
 import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPicker';
-import { Calendar, Clock, Trophy, Home } from 'lucide-react';
+import { MyPrivateRounds } from '@/components/fantasy/MyPrivateRounds';
+import { Calendar, Clock, Trophy, Home, Users } from 'lucide-react';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
 import { ProgressHudSidebar } from '@/components/fantasy/ProgressHudSidebar';
@@ -116,6 +117,13 @@ const FantasyPage: React.FC = () => {
                     <Trophy className="h-4 w-4" />
                     Finished
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="my-private"
+                    className="flex-1 text-center py-2.5 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    My Private Rounds
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="join">
@@ -138,6 +146,12 @@ const FantasyPage: React.FC = () => {
                 <TabsContent value="finished">
                   <ProtectedRoute>
                     <FinishedRounds />
+                  </ProtectedRoute>
+                </TabsContent>
+
+                <TabsContent value="my-private">
+                  <ProtectedRoute>
+                    <MyPrivateRounds onSelectRound={setSelectedRound} />
                   </ProtectedRoute>
                 </TabsContent>
               </Tabs>
