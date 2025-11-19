@@ -124,7 +124,6 @@ export const MyPrivateRounds: React.FC<MyPrivateRoundsProps> = ({ onSelectRound 
         </p>
         <Button
           onClick={() => navigate('/create-private-round')}
-          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
         >
           Create Your First Private Round
         </Button>
@@ -193,12 +192,10 @@ export const MyPrivateRounds: React.FC<MyPrivateRoundsProps> = ({ onSelectRound 
                   </div>
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={(e) => handleCopyCode(round.join_code!, e)}
-                    className="bg-slate-700 hover:bg-slate-600 border-slate-600"
                   >
                     {copiedCode === round.join_code ? (
-                      <Check className="h-4 w-4 text-green-400" />
+                      <Check className="h-4 w-4" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -209,10 +206,10 @@ export const MyPrivateRounds: React.FC<MyPrivateRoundsProps> = ({ onSelectRound 
 
             {/* Action Button */}
             <Button
-              className="w-full bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6D28D9] text-white font-medium shadow-lg"
+              className="w-full"
               onClick={(e) => handleViewRound(round, e)}
             >
-              <Eye className="h-4 w-4 mr-2" />
+              <Eye className="h-4 w-4" />
               View Round
             </Button>
           </CardContent>
