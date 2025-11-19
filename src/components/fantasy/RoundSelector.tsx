@@ -136,7 +136,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
             
             {/* Private Round Info */}
             <div className="text-center mb-3">
-              <p className="text-sm text-purple-300 font-medium">Create a private round - Play your way</p>
+              <p className="text-sm text-purple-300 font-medium">Private round - Play your way</p>
             </div>
 
             {/* Private Round Button */}
