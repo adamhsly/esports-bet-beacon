@@ -136,7 +136,7 @@ export const MyPrivateRounds: React.FC<MyPrivateRoundsProps> = ({ onSelectRound 
       {rounds.map((round) => (
         <Card 
           key={round.id} 
-          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+          className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250 rounded-lg overflow-hidden cursor-pointer"
           onClick={(e) => handleViewRound(round, e)}
         >
           <CardContent className="p-5">
@@ -146,7 +146,7 @@ export const MyPrivateRounds: React.FC<MyPrivateRoundsProps> = ({ onSelectRound 
             </div>
 
             {/* Round Name */}
-            <h3 className="text-lg font-semibold text-white mb-3">
+            <h3 className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold mb-3">
               {round.round_name || 'Private Round'}
             </h3>
             
