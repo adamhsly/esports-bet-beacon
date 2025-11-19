@@ -1,0 +1,17 @@
+name: Update Fantasy Round Status
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # Allow manual triggering for testing
+
+jobs:
+  update-round-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger update-fantasy-round-status function
+        run: |
+          curl -X POST https://zcjzeafelunqxmxzznos.supabase.co/functions/v1/update-fantasy-round-status \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_FUNCTION_SECRET }}" \
+          -H "Content-Type: application/json"
