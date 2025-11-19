@@ -53,7 +53,7 @@ const AuthPage: React.FC = () => {
   });
   const [checking, setChecking] = useState(false);
 
-  const { signIn, signUp, resetPassword, user } = useAuth();
+  const { signIn, signUp, resetPassword, user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -79,23 +79,10 @@ const AuthPage: React.FC = () => {
   const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
   useEffect(() => {
-    // Check if we're on a password recovery flow
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      // Don't redirect if this is a recovery session
-      // Recovery sessions shouldn't redirect users away from /reset-password
-      if (user && session && window.location.pathname !== "/reset-password") {
-        navigate(redirectTo);
-      }
-    };
-
-    if (user) {
-      checkSession();
+    if (user && !authLoading) {
+      navigate(redirectTo);
     }
-  }, [user, navigate, redirectTo]);
+  }, [user, authLoading, navigate, redirectTo]);
 
   // Real-time duplicate checking with debounce
   useEffect(() => {
