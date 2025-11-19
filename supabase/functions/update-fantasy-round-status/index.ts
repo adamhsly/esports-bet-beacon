@@ -29,12 +29,12 @@ serve(async (req) => {
     }
 
     const roundsUpdated = data || 0;
-    console.log(`✅ Updated ${roundsUpdated} fantasy rounds to finished status`);
+    console.log(`✅ Updated ${roundsUpdated} fantasy rounds to closed status`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Updated ${roundsUpdated} rounds to finished status`,
+        message: `Updated ${roundsUpdated} rounds to closed status`,
         rounds_updated: roundsUpdated
       }),
       { 
