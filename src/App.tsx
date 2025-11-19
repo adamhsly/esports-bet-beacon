@@ -29,6 +29,7 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
 import PremiumSuccessPage from '@/pages/PremiumSuccessPage';
 import PremiumCancelPage from '@/pages/PremiumCancelPage';
+import WelcomePage from '@/pages/WelcomePage';
 import NotFound from '@/pages/NotFound';
 import LegalPage from '@/pages/LegalPage';
 import PrivacyPage from '@/pages/PrivacyPage';
@@ -128,6 +129,7 @@ function App() {
       <QueryClientWrapper>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/esports/:gameType" element={<EsportPage />} />
           <Route path="/tournaments" element={<TournamentsPage />} />
           <Route path="/tournament/:tournamentId" element={<TournamentDetailPage />} />

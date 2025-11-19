@@ -1,8 +1,9 @@
 // src/pages/Index.tsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Loader2, Trophy } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useAuth } from "@/contexts/AuthContext";
 
 import SearchableNavbar from "@/components/SearchableNavbar";
 import SEOContentBlock from "@/components/SEOContentBlock";
@@ -224,6 +225,9 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
    Component
 -------------------------------------------- */
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("all");
@@ -231,6 +235,13 @@ const Index = () => {
   const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Redirect unauthenticated users to welcome page
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/welcome');
+    }
+  }, [user, loading, navigate]);
 
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
