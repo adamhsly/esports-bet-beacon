@@ -97,7 +97,7 @@ const WelcomePage = () => {
                   <div className="w-48 h-48 md:w-72 md:h-72 flex-shrink-0">
                     <img src={pickTeamsImg} alt="Pick Your Teams" className="w-full h-full object-contain rounded-lg" />
                   </div>
-                  <div className="flex-1 min-w-0 text-center">
+                  <div className="text-center">
                     <h3 className="text-lg md:text-2xl font-bold text-white mb-2">Pick Your Teams</h3>
                     <p className="text-sm md:text-base text-white/90">Choose from both pro AND upcoming amateur teams</p>
                   </div>
@@ -112,7 +112,7 @@ const WelcomePage = () => {
                   <div className="w-48 h-48 md:w-72 md:h-72 flex-shrink-0 md:order-2">
                     <img src={scorePointsImg} alt="Score Points" className="w-full h-full object-contain rounded-lg" />
                   </div>
-                  <div className="flex-1 min-w-0 text-center md:order-1">
+                  <div className="text-center md:order-1">
                     <h3 className="text-lg md:text-2xl font-bold text-white mb-2">Score Points</h3>
                     <p className="text-sm md:text-base text-white/90">Teams earn points from real match results.</p>
                   </div>
@@ -127,7 +127,7 @@ const WelcomePage = () => {
                   <div className="w-48 h-48 md:w-72 md:h-72 flex-shrink-0">
                     <img src={winPrizesImg} alt="Win Rewards" className="w-full h-full object-contain rounded-lg" />
                   </div>
-                  <div className="flex-1 min-w-0 text-center">
+                  <div className="text-center">
                     <h3 className="text-lg md:text-2xl font-bold text-white mb-2">Win Rewards</h3>
                     <p className="text-sm md:text-base text-white/90">Climb the leaderboard to win prizes.</p>
                   </div>
