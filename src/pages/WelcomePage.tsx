@@ -55,14 +55,14 @@ const WelcomePage = () => {
 
         <div className="container mx-auto px-4 relative z-10 text-center">
           <img 
-            src="/lovable-uploads/logo.svg" 
+            src="/lovable-uploads/frags_and_fortunes_transparent.png" 
             alt="Frags & Fortunes" 
             className="h-16 md:h-20 mx-auto mb-8"
           />
           <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
-            <span className="bg-gradient-to-r from-purple-500 via-yellow-400 to-white bg-clip-text text-transparent">
-              Pick'ems meets Fantasy Esports!!!
-            </span>
+            <span className="text-purple-500">Pick'ems meets </span>
+            <span className="text-yellow-400">Fantasy </span>
+            <span className="text-white">Esports!!!</span>
           </h1>
 
           <p className="text-2xl md:text-3xl text-muted-foreground mb-4">Pick teams. Score points. Win prizes.</p>
