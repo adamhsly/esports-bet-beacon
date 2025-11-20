@@ -57,9 +57,9 @@ const WelcomePage = () => {
           <img 
             src="/lovable-uploads/frags_and_fortunes_transparent.png" 
             alt="Frags & Fortunes" 
-            className="h-16 md:h-20 mx-auto mb-8"
+            className="h-32 md:h-48 mx-auto mb-8"
           />
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
             <span className="text-purple-500">Pick'ems meets </span>
             <span className="text-yellow-400">Fantasy </span>
             <span className="text-white">Esports!!!</span>
