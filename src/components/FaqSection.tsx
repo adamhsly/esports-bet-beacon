@@ -48,7 +48,7 @@ const FaqSection = () => {
                   {faq.question}
                 </span>
               </AccordionTrigger>
-              <AccordionContent className="px-4 md:px-6 pb-4 text-xs md:text-sm text-muted-foreground leading-relaxed">
+              <AccordionContent className="px-4 md:px-6 pb-4 text-xs md:text-sm text-white leading-relaxed">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>
