@@ -87,47 +87,47 @@ const WelcomePage = () => {
             How It Works
           </h2>
 
-          <div className="max-w-6xl mx-auto space-y-12 md:space-y-16">
+          <div className="max-w-6xl mx-auto space-y-6 md:space-y-12">
             {/* Card 1 - Pick Teams (Image Left) */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-                  <div className="order-2 md:order-1">
-                    <img src={pickTeamsImg} alt="Pick Your Teams" className="w-full h-full object-cover" />
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20">
+              <CardContent className="p-4 md:p-8">
+                <div className="flex items-center gap-4 md:gap-8">
+                  <div className="w-20 h-20 md:w-32 md:h-32 flex-shrink-0">
+                    <img src={pickTeamsImg} alt="Pick Your Teams" className="w-full h-full object-contain rounded-lg" />
                   </div>
-                  <div className="order-1 md:order-2 p-8 md:p-12 flex flex-col justify-center">
-                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Pick Your Teams</h3>
-                    <p className="text-lg text-muted-foreground">Choose from both pro AND upcoming amateur teams</p>
+                  <div className="flex-1">
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground mb-2">Pick Your Teams</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">Choose from both pro AND upcoming amateur teams</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Card 2 - Score Points (Image Right) */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-                  <div className="p-8 md:p-12 flex flex-col justify-center">
-                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Score Points</h3>
-                    <p className="text-lg text-muted-foreground">Teams earn points from real match results.</p>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20">
+              <CardContent className="p-4 md:p-8">
+                <div className="flex items-center gap-4 md:gap-8">
+                  <div className="flex-1">
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground mb-2">Score Points</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">Teams earn points from real match results.</p>
                   </div>
-                  <div>
-                    <img src={scorePointsImg} alt="Score Points" className="w-full h-full object-cover" />
+                  <div className="w-20 h-20 md:w-32 md:h-32 flex-shrink-0">
+                    <img src={scorePointsImg} alt="Score Points" className="w-full h-full object-contain rounded-lg" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Card 3 - Win Rewards (Image Left) */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-                  <div className="order-2 md:order-1">
-                    <img src={winPrizesImg} alt="Win Rewards" className="w-full h-full object-cover" />
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20">
+              <CardContent className="p-4 md:p-8">
+                <div className="flex items-center gap-4 md:gap-8">
+                  <div className="w-20 h-20 md:w-32 md:h-32 flex-shrink-0">
+                    <img src={winPrizesImg} alt="Win Rewards" className="w-full h-full object-contain rounded-lg" />
                   </div>
-                  <div className="order-1 md:order-2 p-8 md:p-12 flex flex-col justify-center">
-                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Win Rewards</h3>
-                    <p className="text-lg text-muted-foreground">Climb the leaderboard to win prizes.</p>
+                  <div className="flex-1">
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground mb-2">Win Rewards</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">Climb the leaderboard to win prizes.</p>
                   </div>
                 </div>
               </CardContent>
