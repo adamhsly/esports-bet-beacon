@@ -15,6 +15,11 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const AuthPage: React.FC = () => {
+  // Mark welcome page as seen when auth page is accessed
+  useEffect(() => {
+    localStorage.setItem('hasSeenWelcome', 'true');
+  }, []);
+  
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");

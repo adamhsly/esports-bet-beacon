@@ -11,12 +11,16 @@ const SearchableNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, loading } = useAuth();
   
+  const handleNavigationClick = () => {
+    localStorage.setItem('hasSeenWelcome', 'true');
+  };
+  
   return (
     <nav className="bg-theme-gray-dark border-b border-theme-gray-medium sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3 md:space-x-6">
-          <Link to="/" className="flex items-center h-full">
+          <Link to="/" className="flex items-center h-full" onClick={handleNavigationClick}>
             <img 
               src="/lovable-uploads/frags_and_fortunes_transparent.png"
               alt="Frags & Fortunes"
@@ -26,10 +30,10 @@ const SearchableNavbar: React.FC = () => {
             </Link>
             
             <div className="flex space-x-2 md:space-x-4 text-sm md:text-base">
-              <Link to="/" className="text-gray-300 hover:text-white">
+              <Link to="/" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
                 Matches
               </Link>
-              <Link to="/fantasy" className="text-gray-300 hover:text-white">
+              <Link to="/fantasy" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
                 Fantasy
               </Link>
             </div>
@@ -68,11 +72,11 @@ const SearchableNavbar: React.FC = () => {
               ) : (
                 <>
                   <Button asChild variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
-                    <Link to="/auth">Sign In</Link>
+                    <Link to="/auth" onClick={handleNavigationClick}>Sign In</Link>
                   </Button>
                   
                   <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
-                    <Link to="/auth">Sign Up</Link>
+                    <Link to="/auth" onClick={handleNavigationClick}>Sign Up</Link>
                   </Button>
                   
                   <WalletConnector />
@@ -88,7 +92,7 @@ const SearchableNavbar: React.FC = () => {
                 <UserMenu />
               ) : (
                 <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
-                  <Link to="/auth">Login</Link>
+                  <Link to="/auth" onClick={handleNavigationClick}>Login</Link>
                 </Button>
               )
             )}
