@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import pickTeamsImg from "@/assets/welcome/pick-teams.png";
 import scorePointsImg from "@/assets/welcome/score-points.png";
 import winPrizesImg from "@/assets/welcome/win-prizes.png";
+import globalLeaderboardImg from "@/assets/welcome/global-leaderboard-shield.png";
+import privateLeaderboardImg from "@/assets/welcome/private-leaderboard-shield.png";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
@@ -132,6 +134,39 @@ const WelcomePage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Leaderboards Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-6 md:mt-12">
+              {/* Global Leaderboards Card */}
+              <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30 hover:border-green-500/60 transition-all hover:shadow-lg hover:shadow-green-500/20">
+                <CardContent className="p-4 md:p-8">
+                  <div className="flex flex-col items-center justify-center gap-4 text-center">
+                    <div className="w-40 h-40 md:w-56 md:h-56 flex-shrink-0">
+                      <img src={globalLeaderboardImg} alt="Global Leaderboards" className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Global Leaderboards</h3>
+                      <p className="text-sm md:text-base text-white/90">Compete against the best fantasy esports players by climbing the season and tournament leaderboards</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Private Leaderboards Card */}
+              <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-pink-500/30 hover:border-pink-500/60 transition-all hover:shadow-lg hover:shadow-pink-500/20">
+                <CardContent className="p-4 md:p-8">
+                  <div className="flex flex-col items-center justify-center gap-4 text-center">
+                    <div className="w-40 h-40 md:w-56 md:h-56 flex-shrink-0">
+                      <img src={privateLeaderboardImg} alt="Private Leaderboards" className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Private Leaderboards</h3>
+                      <p className="text-sm md:text-base text-white/90">Invite your friends and have fun while competing in private fantasy leaderboards</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
