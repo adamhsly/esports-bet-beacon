@@ -236,9 +236,10 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Redirect unauthenticated users to welcome page
+  // Redirect unauthenticated users to welcome page (only if they haven't seen it)
   useEffect(() => {
-    if (!loading && !user) {
+    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
+    if (!loading && !user && !hasSeenWelcome) {
       navigate('/welcome');
     }
   }, [user, loading, navigate]);
