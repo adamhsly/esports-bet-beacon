@@ -54,6 +54,11 @@ const WelcomePage = () => {
         </div>
 
         <div className="container mx-auto px-4 relative z-10 text-center">
+          <img 
+            src="/lovable-uploads/logo.svg" 
+            alt="Frags & Fortunes" 
+            className="h-16 md:h-20 mx-auto mb-8"
+          />
           <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
             <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-yellow-400 bg-clip-text text-transparent">
               Pick'ems meets Fantasy Esports!!!
