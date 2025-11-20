@@ -5,7 +5,9 @@ import SearchableNavbar from "@/components/SearchableNavbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, TrendingUp, Trophy } from "lucide-react";
+import pickTeamsImg from "@/assets/welcome/pick-teams.png";
+import scorePointsImg from "@/assets/welcome/score-points.png";
+import winPrizesImg from "@/assets/welcome/win-prizes.png";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
@@ -85,43 +87,49 @@ const WelcomePage = () => {
             How It Works
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1 - Pick Teams */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20">
-              <CardContent className="p-8 text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-500/20 to-purple-500/20 border-2 border-purple-500/50">
-                    <Shield className="w-10 h-10 text-purple-400" />
+          <div className="max-w-6xl mx-auto space-y-12 md:space-y-16">
+            {/* Card 1 - Pick Teams (Image Left) */}
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                  <div className="order-2 md:order-1">
+                    <img src={pickTeamsImg} alt="Pick Your Teams" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="order-1 md:order-2 p-8 md:p-12 flex flex-col justify-center">
+                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Pick Your Teams</h3>
+                    <p className="text-lg text-muted-foreground">Choose from both pro AND upcoming amateur teams</p>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-4">Pick Your Teams</h3>
-                <p className="text-muted-foreground">Choose from both pro AND upcoming amateur teams</p>
               </CardContent>
             </Card>
 
-            {/* Card 2 - Score Points */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20">
-              <CardContent className="p-8 text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-2 border-blue-500/50">
-                    <TrendingUp className="w-10 h-10 text-blue-400" />
+            {/* Card 2 - Score Points (Image Right) */}
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                  <div className="p-8 md:p-12 flex flex-col justify-center">
+                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Score Points</h3>
+                    <p className="text-lg text-muted-foreground">Teams earn points from real match results.</p>
+                  </div>
+                  <div>
+                    <img src={scorePointsImg} alt="Score Points" className="w-full h-full object-cover" />
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-4">Score Points</h3>
-                <p className="text-muted-foreground">Teams earn points from real match results.</p>
               </CardContent>
             </Card>
 
-            {/* Card 3 - Win Rewards */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20">
-              <CardContent className="p-8 text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50">
-                    <Trophy className="w-10 h-10 text-yellow-400" />
+            {/* Card 3 - Win Rewards (Image Left) */}
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                  <div className="order-2 md:order-1">
+                    <img src={winPrizesImg} alt="Win Rewards" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="order-1 md:order-2 p-8 md:p-12 flex flex-col justify-center">
+                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Win Rewards</h3>
+                    <p className="text-lg text-muted-foreground">Climb the leaderboard to win prizes.</p>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-4">Win Rewards</h3>
-                <p className="text-muted-foreground">Climb the leaderboard to win prizes.</p>
               </CardContent>
             </Card>
           </div>
