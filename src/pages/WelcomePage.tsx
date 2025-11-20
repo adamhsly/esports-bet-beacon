@@ -65,9 +65,7 @@ const WelcomePage = () => {
             <span className="text-white">Esports!!!</span>
           </h1>
 
-          <p className="text-2xl md:text-3xl text-muted-foreground mb-4">Pick teams. Score points. Win prizes.</p>
-
-          <p className="text-lg text-purple-400 mb-10 font-semibold">Pro + Amateur Matches</p>
+          <p className="text-lg md:text-xl text-muted-foreground mb-10">Pick Your Favourite Pro & Amateur teams. Score points when they win. The most points collect prizes.</p>
 
           <Link to="/auth">
             <Button
