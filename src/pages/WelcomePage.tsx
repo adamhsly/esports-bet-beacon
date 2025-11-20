@@ -14,9 +14,10 @@ const WelcomePage = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users to matches page
+  // Redirect authenticated users or users who have dismissed welcome page
   useEffect(() => {
-    if (!loading && user) {
+    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
+    if (!loading && (user || hasSeenWelcome)) {
       navigate("/");
     }
   }, [user, loading, navigate]);
