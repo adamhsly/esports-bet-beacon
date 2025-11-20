@@ -3,13 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import SearchableNavbar from "@/components/SearchableNavbar";
 import Footer from "@/components/Footer";
+import FaqSection from "@/components/FaqSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import pickTeamsImg from "@/assets/welcome/pick-teams.png";
 import scorePointsImg from "@/assets/welcome/score-points.png";
 import winPrizesImg from "@/assets/welcome/win-prizes.png";
-import globalLeaderboardImg from "@/assets/welcome/global-leaderboard-shield.png";
-import privateLeaderboardImg from "@/assets/welcome/private-leaderboard-shield.png";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
@@ -150,46 +149,8 @@ const WelcomePage = () => {
         </div>
       </section>
 
-      {/* Why Frags & Fortunes Section */}
-      <section className="py-8 md:py-20 reveal-on-scroll overflow-hidden">
-        <div className="container mx-auto px-3 max-w-full">
-          <h2 className="text-2xl md:text-5xl font-bold text-center mb-8 md:mb-16 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight px-2 break-words">
-            Why Frags & Fortunes?
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
-            {/* Global Leaderboards */}
-            <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20">
-              <CardContent className="p-2 md:p-6 text-center">
-                <div className="w-24 h-24 md:w-48 md:h-48 mx-auto mb-4">
-                  <img 
-                    src={globalLeaderboardImg} 
-                    alt="Global Leaderboards" 
-                    className="w-full h-full object-contain drop-shadow-2xl"
-                  />
-                </div>
-                <h3 className="text-lg md:text-2xl font-bold mb-2 md:mb-3 text-purple-400 leading-tight break-words">Global Leaderboards</h3>
-                <p className="text-xs md:text-base text-muted-foreground break-words">Compete against players worldwide for top rankings and prestige.</p>
-              </CardContent>
-            </Card>
-
-            {/* Private Leagues */}
-            <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20">
-              <CardContent className="p-2 md:p-6 text-center">
-                <div className="w-24 h-24 md:w-48 md:h-48 mx-auto mb-4">
-                  <img 
-                    src={privateLeaderboardImg} 
-                    alt="Private Leagues" 
-                    className="w-full h-full object-contain drop-shadow-2xl"
-                  />
-                </div>
-                <h3 className="text-lg md:text-2xl font-bold mb-2 md:mb-3 text-blue-400 leading-tight break-words">Private Leagues</h3>
-                <p className="text-xs md:text-base text-muted-foreground break-words">Create exclusive leagues with friends and battle for bragging rights.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* FAQ Section */}
+      <FaqSection />
 
       {/* Final CTA Section */}
       <section className="py-8 md:py-32 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-background reveal-on-scroll overflow-hidden">
