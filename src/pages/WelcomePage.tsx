@@ -47,7 +47,7 @@ const WelcomePage = () => {
       <SearchableNavbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 md:py-32 reveal-on-scroll">
+      <section className="relative overflow-hidden py-12 md:py-32 reveal-on-scroll">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-blue-900/10 to-background" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.15),transparent_50%)]" />
@@ -57,20 +57,20 @@ const WelcomePage = () => {
           <img 
             src="/lovable-uploads/frags_and_fortunes_transparent.png" 
             alt="Frags & Fortunes" 
-            className="h-32 md:h-48 mx-auto mb-8"
+            className="h-24 md:h-48 mx-auto mb-6 md:mb-8 max-w-full"
           />
-          <h1 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight px-2">
             <span className="text-purple-500">Pick'ems meets </span>
             <span className="text-yellow-400">Fantasy </span>
             <span className="text-white">Esports!!!</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground mb-10">Pick Your Favourite Pro & Amateur teams. Score points when they win. The most points collect prizes.</p>
+          <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 px-4 max-w-3xl mx-auto">Pick Your Favourite Pro & Amateur teams. Score points when they win. The most points collect prizes.</p>
 
           <Link to="/auth">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-6 px-12 rounded-xl text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-xl text-lg md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
             >
               Start Playing
             </Button>
@@ -79,9 +79,9 @@ const WelcomePage = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-gradient-to-br from-[#0B0F14] to-[#12161C] reveal-on-scroll">
+      <section className="py-12 md:py-20 bg-gradient-to-br from-[#0B0F14] to-[#12161C] reveal-on-scroll">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-10 md:mb-16 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             How It Works
           </h2>
 
@@ -129,9 +129,9 @@ const WelcomePage = () => {
       </section>
 
       {/* Why Frags & Fortunes Section */}
-      <section className="py-20 reveal-on-scroll">
+      <section className="py-12 md:py-20 reveal-on-scroll">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-10 md:mb-16 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             Why Frags & Fortunes?
           </h2>
 
@@ -174,16 +174,16 @@ const WelcomePage = () => {
       </section>
 
       {/* Bottom CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-purple-900/20 to-blue-900/20 reveal-on-scroll">
+      <section className="py-12 md:py-20 bg-gradient-to-br from-purple-900/20 to-blue-900/20 reveal-on-scroll">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 text-foreground">Ready to dominate?</h2>
-          <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 md:mb-8 text-foreground">Ready to dominate?</h2>
+          <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto px-4">
             Join thousands of players competing in daily, weekly, and monthly fantasy esports tournaments.
           </p>
           <Link to="/auth">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-6 px-12 rounded-xl text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-xl text-lg md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
             >
               Create Your Free Account
             </Button>
