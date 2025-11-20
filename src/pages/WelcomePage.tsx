@@ -91,8 +91,8 @@ const WelcomePage = () => {
             {/* Card 1 - Pick Teams (Image Left) */}
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20">
               <CardContent className="p-4 md:p-8">
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-                  <div className="w-36 h-36 md:w-60 md:h-60 flex-shrink-0">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                  <div className="w-48 h-48 md:w-72 md:h-72 flex-shrink-0">
                     <img src={pickTeamsImg} alt="Pick Your Teams" className="w-full h-full object-contain rounded-lg" />
                   </div>
                   <div className="flex-1 min-w-0 text-center md:text-left">
@@ -106,8 +106,8 @@ const WelcomePage = () => {
             {/* Card 2 - Score Points (Image Right) */}
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20">
               <CardContent className="p-4 md:p-8">
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-                  <div className="w-36 h-36 md:w-60 md:h-60 flex-shrink-0 md:order-2">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                  <div className="w-48 h-48 md:w-72 md:h-72 flex-shrink-0 md:order-2">
                     <img src={scorePointsImg} alt="Score Points" className="w-full h-full object-contain rounded-lg" />
                   </div>
                   <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
@@ -121,8 +121,8 @@ const WelcomePage = () => {
             {/* Card 3 - Win Rewards (Image Left) */}
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20">
               <CardContent className="p-4 md:p-8">
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-                  <div className="w-36 h-36 md:w-60 md:h-60 flex-shrink-0">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                  <div className="w-48 h-48 md:w-72 md:h-72 flex-shrink-0">
                     <img src={winPrizesImg} alt="Win Rewards" className="w-full h-full object-contain rounded-lg" />
                   </div>
                   <div className="flex-1 min-w-0 text-center md:text-left">
