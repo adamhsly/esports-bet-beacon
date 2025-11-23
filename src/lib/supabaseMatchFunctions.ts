@@ -157,8 +157,8 @@ export async function getMatchesForDate({
   if (source !== 'all') query = query.eq('source', source);
   if (esportType !== 'all') {
     // Special handling for Counter-Strike to match both amateur (cs2) and pro (Counter-Strike, csgo)
-    if (esportType.toLowerCase() === 'counter-strike') {
-      query = query.or('esport_type.ilike.%cs2%,esport_type.ilike.%Counter-Strike%,esport_type.ilike.%csgo%,esport_type.ilike.%cs:%');
+    if (esportType === 'cs-all-variants') {
+      query = query.or('esport_type.ilike.%cs2%,esport_type.ilike.%Counter-Strike%,esport_type.ilike.%csgo%');
     } else {
       query = query.ilike('esport_type', `%${esportType}%`);
     }
