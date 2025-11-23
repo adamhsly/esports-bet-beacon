@@ -41,9 +41,9 @@ const SearchableNavbar: React.FC = () => {
           
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <a
-              href="https://discord.gg/hNPFaP9bV"
-              target="_blank"
+              <a
+                href="https://discord.gg/SbcRthSER"
+                target="_blank"
               rel="noopener noreferrer"
               className="text-gray-300 hover:text-[#5865F2] transition-colors duration-200"
               title="Join our Discord community"
