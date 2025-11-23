@@ -55,7 +55,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="https://discord.gg/hNPFaP9bV"
+                  href="https://discord.gg/SbcRthSER"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-[#5865F2] transition-colors duration-200 text-sm cursor-pointer flex items-center justify-center gap-2"
