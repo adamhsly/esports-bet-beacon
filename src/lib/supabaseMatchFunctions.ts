@@ -8,8 +8,11 @@ import { MatchCountBreakdown } from '@/utils/matchCountUtils';
 /* -------------------------------------------------------------------------- */
 interface MatchCountRow {
   match_date: string;                 // 'YYYY-MM-DD'
-  source: 'faceit' | 'pandascore' | 'amateur' | 'professional';
-  match_count: number;
+  total_count: number;
+  professional_count: number;
+  amateur_count: number;
+  live_count: number;
+  upcoming_count: number;
 }
 
 interface MatchCardsDayRow {
@@ -86,8 +89,8 @@ export async function getDayCountsFiltered(opts: {
   endLocal.setDate(endLocal.getDate() + windowDays);
 
   const { data, error } = await supabase.rpc('daily_match_counts_filtered', {
-    p_from_date: ymd(startLocal),
-    p_to_date: ymd(endLocal),
+    p_target_date: base.toISOString(),
+    p_window_days: windowDays,
     p_source: source,
     p_esport_type: esportType ?? 'all',
     p_status: status,
@@ -95,8 +98,8 @@ export async function getDayCountsFiltered(opts: {
 
   if (error) {
     console.error('❌ getDayCountsFiltered error:', error, {
-      from: ymd(startLocal),
-      to: ymd(endLocal),
+      targetDate: base.toISOString(),
+      windowDays,
       source,
       esportType,
       status,
@@ -105,18 +108,7 @@ export async function getDayCountsFiltered(opts: {
   }
 
   const rows = Array.isArray(data) ? (data as MatchCountRow[]) : [];
-  // normalize source labels to 'amateur'/'professional'
-  return rows
-    .map((r) => ({
-      ...r,
-      source:
-        r.source === 'faceit' ? 'amateur' :
-        r.source === 'pandascore' ? 'professional' :
-        (r.source as any),
-    }))
-    .sort((a, b) =>
-      a.match_date === b.match_date ? a.source.localeCompare(b.source) : (a.match_date < b.match_date ? -1 : 1),
-    );
+  return rows.sort((a, b) => (a.match_date < b.match_date ? -1 : 1));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -232,7 +224,7 @@ export async function getMatchesForDate({
 /* -------------------------------------------------------------------------- */
 
 // Unfiltered calendar counts (materialized view). Kept for reference.
-export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<MatchCountRow[]> {
+export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<any[]> {
   const base = new Date(targetDate);
   base.setHours(0, 0, 0, 0);
 
@@ -256,7 +248,7 @@ export async function getDayCounts(targetDate: Date, windowDays = 7): Promise<Ma
     throw error;
   }
 
-  const rows = (data || []) as MatchCountRow[];
+  const rows = (data || []) as any[];
   return rows.sort((a, b) =>
     a.match_date === b.match_date ? a.source.localeCompare(b.source) : (a.match_date < b.match_date ? -1 : 1),
   );
