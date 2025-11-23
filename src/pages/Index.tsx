@@ -48,8 +48,9 @@ const getPandaScoreStatusCategory = (status: string): "live" | "upcoming" | "fin
 -------------------------------------------- */
 const mapGameTypeToQuery = (v: string): string => {
   const key = (v || "all").toLowerCase();
-  // Counter-Strike: use "cs" to match cs2, csgo, Counter-Strike via substring matching
-  if (key === "counter-strike") return "cs";
+  // Counter-Strike: use "counter-strike" for better matching across both sources
+  // This ensures we match both "cs2" (Faceit) and "Counter-Strike"/"csgo" (PandaScore)
+  if (key === "counter-strike") return "counter-strike";
   
   const map: Record<string, string> = {
     all: "all",
