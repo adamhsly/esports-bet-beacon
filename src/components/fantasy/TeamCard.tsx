@@ -35,6 +35,7 @@ interface TeamCardProps {
   variant?: 'selection' | 'progress';
   fantasyPoints?: number;
   onStatsClick?: (team: Team) => void;
+  onShowPerformance?: (teamId: string, teamName: string, teamType: 'pro' | 'amateur') => void;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -50,7 +51,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   budgetRemaining = 0,
   variant = 'progress',
   fantasyPoints = 0,
-  onStatsClick
+  onStatsClick,
+  onShowPerformance
 }) => {
   const isAmateur = team.type === 'amateur';
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
@@ -153,7 +155,15 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   }
 
   // Progress variant (enhanced with selection styling)
-  return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={onClick}>
+  const handleCardClick = () => {
+    if (onShowPerformance && variant === 'progress') {
+      onShowPerformance(team.id, team.name, team.type);
+    } else {
+      onClick();
+    }
+  };
+
+  return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={handleCardClick}>
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           {/* Team Logo */}

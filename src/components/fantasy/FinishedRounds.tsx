@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { TeamCard } from './TeamCard';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { RoundLeaderboard } from './RoundLeaderboard';
+import { TeamPerformanceModal } from './TeamPerformanceModal';
 
 interface FinishedRound {
   id: string;
@@ -256,8 +257,18 @@ export const FinishedRounds: React.FC = () => {
 
 // Helper component for rendering teams in finished rounds (no star functionality)
 const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
+  const { user } = useAuth();
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<{ id: string; name: string; type: 'pro' | 'amateur' } | null>(null);
+
+  const handleShowPerformance = (teamId: string, teamName: string, teamType: 'pro' | 'amateur') => {
+    setSelectedTeam({ id: teamId, name: teamName, type: teamType });
+    setShowPerformanceModal(true);
+  };
+
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <>
+      <div className="grid gap-3 md:grid-cols-2">
       {round.scores.length > 0 ? (
         // Show scored teams
         round.scores.map((score) => {
@@ -277,6 +288,7 @@ const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
             showStarToggle={false} // No star functionality for finished rounds
             variant="progress"
             fantasyPoints={score.current_score}
+            onShowPerformance={handleShowPerformance}
           />
            );
         })
@@ -290,9 +302,24 @@ const FinishedTeamsList: React.FC<{ round: FinishedRound }> = ({ round }) => {
             onClick={() => {}}
             showStarToggle={false} // No star functionality for finished rounds
             variant="progress"
+            onShowPerformance={handleShowPerformance}
           />
         ))
       )}
-    </div>
+      </div>
+
+      {/* Team Performance Modal */}
+      {selectedTeam && user && (
+        <TeamPerformanceModal
+          open={showPerformanceModal}
+          onOpenChange={setShowPerformanceModal}
+          teamId={selectedTeam.id}
+          teamName={selectedTeam.name}
+          teamType={selectedTeam.type}
+          roundId={round.id}
+          userId={user.id}
+        />
+      )}
+    </>
   );
 };
