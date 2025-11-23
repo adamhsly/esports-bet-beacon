@@ -3111,20 +3111,38 @@ export type Database = {
         Args: { p_email: string; p_full_name: string; p_username: string }
         Returns: Json
       }
-      daily_match_counts_filtered: {
-        Args: {
-          p_esport_type?: string
-          p_from_date: string
-          p_source?: string
-          p_status?: string
-          p_to_date: string
-        }
-        Returns: {
-          match_count: number
-          match_date: string
-          source: string
-        }[]
-      }
+      daily_match_counts_filtered:
+        | {
+            Args: {
+              p_esport_type?: string
+              p_from_date: string
+              p_source?: string
+              p_status?: string
+              p_to_date: string
+            }
+            Returns: {
+              match_count: number
+              match_date: string
+              source: string
+            }[]
+          }
+        | {
+            Args: {
+              p_esport_type?: string
+              p_source?: string
+              p_status?: string
+              p_target_date: string
+              p_window_days?: number
+            }
+            Returns: {
+              amateur_count: number
+              live_count: number
+              match_date: string
+              professional_count: number
+              total_count: number
+              upcoming_count: number
+            }[]
+          }
       faceit_form_bulk: {
         Args: { game?: string; team_names: string[] }
         Returns: {
