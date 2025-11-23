@@ -380,23 +380,28 @@ const Index = () => {
           esportType: esportQuery, // substring/equal match on server
         });
 
-        // rows: [{ match_date, source ('amateur'|'professional'), match_count }]
+        // rows: [{ match_date, total_count, professional_count, amateur_count, live_count, upcoming_count }]
         const breakdown: Record<string, MatchCountBreakdown> = {};
         const totals: Record<string, number> = {};
 
         for (const r of rows as any[]) {
           const day = String(r.match_date);
-          const cnt = Number(r.match_count || 0);
-          const src = String(r.source || "").toLowerCase();
+          
+          const professional = Number(r.professional_count || 0);
+          const amateur = Number(r.amateur_count || 0);
+          const live = Number(r.live_count || 0);
+          const upcoming = Number(r.upcoming_count || 0);
+          const total = professional + amateur;
 
-          breakdown[day] ??= { total: 0, professional: 0, amateur: 0, live: 0, upcoming: 0 };
-
-          if (src === "professional") breakdown[day].professional += cnt;
-          if (src === "amateur") breakdown[day].amateur += cnt;
-          breakdown[day].total += cnt; // server already applied filters, so total = sum returned
+          breakdown[day] = {
+            total,
+            professional,
+            amateur,
+            live,
+            upcoming,
+          };
+          totals[day] = total;
         }
-
-        for (const [day, b] of Object.entries(breakdown)) totals[day] = b.total;
 
         if (!cancelled) {
           setDetailedMatchCounts(breakdown);
