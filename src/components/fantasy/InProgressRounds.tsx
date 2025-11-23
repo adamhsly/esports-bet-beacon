@@ -15,6 +15,7 @@ import { renderShareCard } from '@/utils/shareCardRenderer';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { ShareSheet } from './ShareSheet';
 import { useMobile } from '@/hooks/useMobile';
+import { TeamPerformanceModal } from './TeamPerformanceModal';
 
 interface InProgressRound {
   id: string;
@@ -291,9 +292,12 @@ export const InProgressRounds: React.FC = () => {
 
 // Helper component for rendering teams in progress rounds
 const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) => {
+  const { user } = useAuth();
   const { starTeamId, changeUsed, canChange, setStarTeam } = useRoundStar(round.id);
   const [showStarModal, setShowStarModal] = useState(false);
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<{ id: string; name: string; type: 'pro' | 'amateur' } | null>(null);
 
   const handleStarToggle = (teamId: string) => {
     if (!canChange) return;
@@ -323,6 +327,11 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
       const team = round.team_picks.find((t) => t.id === starTeamId);
       return team?.name || 'Unknown';
     }
+  };
+
+  const handleShowPerformance = (teamId: string, teamName: string, teamType: 'pro' | 'amateur') => {
+    setSelectedTeam({ id: teamId, name: teamName, type: teamType });
+    setShowPerformanceModal(true);
   };
 
   return (
@@ -363,6 +372,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
                 disabledReason={!canChange ? 'Star change used' : null}
                 variant="progress"
                 fantasyPoints={score.current_score}
+                onShowPerformance={handleShowPerformance}
               />
             ))
           : round.team_picks.map((team, index) => (
@@ -376,6 +386,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
                 onToggleStar={() => handleStarToggle(team.id)}
                 disabledReason={!canChange ? 'Star change used' : null}
                 variant="progress"
+                onShowPerformance={handleShowPerformance}
               />
             ))}
       </div>
@@ -394,6 +405,19 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
         confirmText="Confirm Change"
         cancelText="Cancel"
       />
+
+      {/* Team Performance Modal */}
+      {selectedTeam && user && (
+        <TeamPerformanceModal
+          open={showPerformanceModal}
+          onOpenChange={setShowPerformanceModal}
+          teamId={selectedTeam.id}
+          teamName={selectedTeam.name}
+          teamType={selectedTeam.type}
+          roundId={round.id}
+          userId={user.id}
+        />
+      )}
     </>
   );
 };
