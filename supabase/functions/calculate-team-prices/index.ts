@@ -28,11 +28,11 @@ serve(async (req) => {
       ABANDON_PENALTY_MULTIPLIER = 5,
     } = body || {};
 
-    let rounds: Array<{ id: string; type: string; start_date: string; end_date: string }>;
+    let rounds: Array<{ id: string; type: string; start_date: string; end_date: string; is_private?: boolean }>;
     if (round_id) {
       const { data, error } = await supabase
         .from("fantasy_rounds")
-        .select("id, type, start_date, end_date")
+        .select("id, type, start_date, end_date, is_private")
         .eq("id", round_id)
         .maybeSingle();
       if (error) throw error;
@@ -40,7 +40,7 @@ serve(async (req) => {
     } else {
       const { data, error } = await supabase
         .from("fantasy_rounds")
-        .select("id, type, start_date, end_date")
+        .select("id, type, start_date, end_date, is_private")
         .in("status", ["open", "active"]);
       if (error) throw error;
       rounds = (data || []) as any;
@@ -123,12 +123,26 @@ serve(async (req) => {
       // 2) AMATEUR TEAMS - Using match_date for much faster lookups
       const start = new Date(r.start_date);
       const end = new Date(r.end_date);
-      const prevEnd = start;
-      const prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
+      
+      let prevStart: Date;
+      let prevEnd: Date;
+      
+      // For private rounds, use 3-month lookback
+      if (r.is_private || r.type === 'private') {
+        // 3 months = 90 days
+        prevEnd = start;
+        prevStart = new Date(start.getTime() - (90 * 24 * 60 * 60 * 1000));
+        console.log("Using 3-month lookback for private round amateur pricing");
+      } else {
+        // For daily/weekly/monthly: use mirror window (existing logic)
+        prevEnd = start;
+        prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
+        console.log("Using mirror window for public round amateur pricing");
+      }
       
       const prevStartDate = prevStart.toISOString().split('T')[0];
       const prevEndDate = prevEnd.toISOString().split('T')[0];
-      console.log("Amateur window", { round_id: r.id, prevStartDate, prevEndDate });
+      console.log("Amateur window", { round_id: r.id, is_private: r.is_private, type: r.type, prevStartDate, prevEndDate });
 
       const { data: prevStats, error: prevErr } = await (supabase as any).rpc(
         "get_faceit_teams_prev_window_stats",
