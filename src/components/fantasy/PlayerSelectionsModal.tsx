@@ -88,21 +88,36 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
           return;
         }
 
-        // Enhance scores with team logos from team_picks jsonb
-        const enhancedScores = (scores || []).map(score => {
-          // Find the team in the picks data to get logo_url
-          const teamInPicks = picks.team_picks && Array.isArray(picks.team_picks) 
-            ? picks.team_picks.find((t: any) => t.id === score.team_id)
-            : null;
+        // Check if we have scores, otherwise fall back to team_picks
+        if (!scores || scores.length === 0) {
+          // No scores found - use team_picks directly (common for test users)
+          const picksFromTeamData = (picks.team_picks || []).map((t: any) => ({
+            team_id: t.id || t.team_id,
+            team_name: t.name || t.team_name,
+            team_type: t.type || t.team_type,
+            current_score: 0,
+            logo_url: t.logo_url || null
+          }));
           
-          return {
-            ...score,
-            logo_url: teamInPicks?.logo_url || null
-          };
-        });
+          setTeamPicks(picksFromTeamData);
+          setStarTeamId(picks.star_team_id || null);
+        } else {
+          // Enhance scores with team logos from team_picks jsonb (backwards compatible)
+          const enhancedScores = scores.map(score => {
+            // Find the team in the picks data to get logo_url (check both old and new formats)
+            const teamInPicks = picks.team_picks && Array.isArray(picks.team_picks) 
+              ? picks.team_picks.find((t: any) => t.id === score.team_id || t.team_id === score.team_id)
+              : null;
+            
+            return {
+              ...score,
+              logo_url: teamInPicks?.logo_url || teamInPicks?.team_logo || null
+            };
+          });
 
-        setTeamPicks(enhancedScores);
-        setStarTeamId(picks.star_team_id || null);
+          setTeamPicks(enhancedScores);
+          setStarTeamId(picks.star_team_id || null);
+        }
       }
     } catch (error) {
       console.error('Error in fetchPlayerSelections:', error);
