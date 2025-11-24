@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -102,6 +102,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   });
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
+  const debouncedAdvancedFilters = useDebounce(advancedFilters, 300);
 
   // Initialize temp selection with current selection when sheet opens
   useEffect(() => {
@@ -133,29 +134,38 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     setPriceRangeAm([0, maxAmateurPrice]);
   }, [maxAmateurPrice]);
 
-  // Filter teams
-  const filteredProTeams = useMemo(() => {
+  // Step 1: Base filtered teams (search, game, region)
+  const baseFilteredProTeams = useMemo(() => {
     return proTeams.filter(t => {
       const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
+      return nameMatch && gameMatch;
+    });
+  }, [proTeams, debouncedProSearch, selectedGamePro]);
+
+  const baseFilteredAmateurTeams = useMemo(() => {
+    return amateurTeams.filter(t => {
+      const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
+      const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
+      const regionMatch = selectedRegionAm === 'all' || (t.region ?? '') === selectedRegionAm;
+      return nameMatch && gameMatch && regionMatch;
+    });
+  }, [amateurTeams, debouncedAmSearch, selectedGameAm, selectedRegionAm]);
+
+  // Step 2: Budget and basic filters
+  const budgetFilteredProTeams = useMemo(() => {
+    return baseFilteredProTeams.filter(t => {
       const matches = t.match_volume ?? 0;
       const matchesMatch = matches >= minMatchesPro;
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
+      return matchesMatch && logoMatch && budgetMatch && priceMatch;
+    });
+  }, [baseFilteredProTeams, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams]);
 
-      // Advanced filters
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.pro.matches;
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.pro.credits;
-      const winRateMatch = (t.recent_win_rate ?? 0) <= advancedFilters.pro.winRate;
-      return nameMatch && gameMatch && matchesMatch && logoMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && winRateMatch;
-    }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-  }, [proTeams, debouncedProSearch, selectedGamePro, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, advancedFilters.pro]);
-  const filteredAmateurTeams = useMemo(() => {
-    return amateurTeams.filter(t => {
-      const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
-      const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
-      const regionMatch = selectedRegionAm === 'all' || (t.region ?? '') === selectedRegionAm;
+  const budgetFilteredAmateurTeams = useMemo(() => {
+    return baseFilteredAmateurTeams.filter(t => {
       const matchVolume = t.match_volume ?? 0;
       const matchesMatch = matchVolume >= minMatchesPrev;
       const missed = t.missed_pct ?? 100;
@@ -164,14 +174,28 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchVolume > 0;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
+      return matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch;
+    });
+  }, [baseFilteredAmateurTeams, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams]);
 
-      // Advanced filters
-      const matchVolumeMatch = (t.match_volume ?? 0) <= advancedFilters.amateur.matches;
-      const creditsMatch = (t.price ?? 0) <= advancedFilters.amateur.credits;
-      const abandonRateMatch = (t.abandon_rate ?? 0) <= advancedFilters.amateur.abandonRate;
-      return nameMatch && gameMatch && regionMatch && matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch && matchVolumeMatch && creditsMatch && abandonRateMatch;
+  // Step 3: Advanced filters (debounced)
+  const filteredProTeams = useMemo(() => {
+    return budgetFilteredProTeams.filter(t => {
+      const matchVolumeMatch = (t.match_volume ?? 0) <= debouncedAdvancedFilters.pro.matches;
+      const creditsMatch = (t.price ?? 0) <= debouncedAdvancedFilters.pro.credits;
+      const winRateMatch = (t.recent_win_rate ?? 0) <= debouncedAdvancedFilters.pro.winRate;
+      return matchVolumeMatch && creditsMatch && winRateMatch;
+    }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+  }, [budgetFilteredProTeams, debouncedAdvancedFilters.pro]);
+
+  const filteredAmateurTeams = useMemo(() => {
+    return budgetFilteredAmateurTeams.filter(t => {
+      const matchVolumeMatch = (t.match_volume ?? 0) <= debouncedAdvancedFilters.amateur.matches;
+      const creditsMatch = (t.price ?? 0) <= debouncedAdvancedFilters.amateur.credits;
+      const abandonRateMatch = (t.abandon_rate ?? 0) <= debouncedAdvancedFilters.amateur.abandonRate;
+      return matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
-  }, [amateurTeams, debouncedAmSearch, selectedGameAm, selectedRegionAm, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, advancedFilters.amateur]);
+  }, [budgetFilteredAmateurTeams, debouncedAdvancedFilters.amateur]);
   const handleTeamToggle = (team: Team) => {
     const isCurrentlySelected = tempSelectedTeams.find(t => t.id === team.id);
     if (isCurrentlySelected) {
@@ -326,12 +350,12 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-4">
-                  
-                  
-                </div>
-                
-                
+              </div>
+              
+              {/* Pro Teams Pricing Explanation */}
+              <div className="text-xs italic text-gray-400 mb-3 px-1">
+                Match count shows games scheduled during this round's period. 
+                Credits are based on recent win rate and match volume.
               </div>
               
               {/* Pro Team List */}
