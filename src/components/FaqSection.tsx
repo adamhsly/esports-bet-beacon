@@ -36,7 +36,7 @@ const FaqSection = () => {
   return (
     <section className="py-8 md:py-20 reveal-on-scroll overflow-hidden bg-gradient-to-b from-background to-[#1F2937]">
       <div className="container mx-auto px-3 max-w-4xl">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 leading-tight">
+        <h2 className="text-2xl md:text-5xl font-bold text-center mb-8 md:mb-16 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent leading-tight px-2 break-words">
           Frequently Asked Questions
         </h2>
         <Accordion type="single" collapsible className="space-y-4">
