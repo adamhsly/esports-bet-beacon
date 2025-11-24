@@ -29,10 +29,11 @@ import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 
 interface FantasyRound {
   id: string;
-  type: 'daily' | 'weekly' | 'monthly';
+  type: 'daily' | 'weekly' | 'monthly' | 'private';
   start_date: string;
   end_date: string;
   status: 'open' | 'active' | 'finished';
+  is_private?: boolean;
 }
 
 interface Team {
@@ -587,7 +588,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         selectedTeams={selectedTeams} 
         onTeamsUpdate={handleTeamsUpdate} 
         budgetRemaining={budgetRemaining} 
-        totalBudget={totalBudget} 
+        totalBudget={totalBudget}
+        round={round}
       />
     </div>
   );

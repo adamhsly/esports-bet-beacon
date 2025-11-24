@@ -92,7 +92,7 @@ export const MissionBus = {
   },
 
   // Track joined types for same-day detection (daily + weekly)
-  recordJoinType(type: 'daily' | 'weekly' | 'monthly') {
+  recordJoinType(type: 'daily' | 'weekly' | 'monthly' | 'private') {
     try {
       const key = `msn:joined-types:${todayStr()}`;
       const raw = localStorage.getItem(key);
@@ -113,7 +113,7 @@ export const MissionBus = {
   },
 
   // Track joined types per month for seasonal mission
-  recordJoinTypeMonth(type: 'daily' | 'weekly' | 'monthly') {
+  recordJoinTypeMonth(type: 'daily' | 'weekly' | 'monthly' | 'private') {
     try {
       const key = `msn:month-types:${monthStr()}`;
       const raw = localStorage.getItem(key);

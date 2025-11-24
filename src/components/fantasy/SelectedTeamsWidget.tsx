@@ -21,7 +21,7 @@ interface SelectedTeamsWidgetProps {
   salaryCapacity: number;
   bonusCreditsUsed?: number;
   totalBudget?: number;
-  roundType: 'daily' | 'weekly' | 'monthly';
+  roundType: 'daily' | 'weekly' | 'monthly' | 'private';
   onRemoveTeam?: (index: number) => void;
   proTeams?: Team[];
   amateurTeams?: Team[];

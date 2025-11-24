@@ -41,6 +41,14 @@ interface MultiTeamSelectionSheetProps {
   onTeamsUpdate: (teams: Team[]) => void;
   budgetRemaining: number;
   totalBudget: number;
+  round: {
+    id: string;
+    type: 'daily' | 'weekly' | 'monthly' | 'private';
+    start_date: string;
+    end_date: string;
+    status: 'open' | 'active' | 'finished';
+    is_private?: boolean;
+  };
 }
 export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = ({
   isOpen,
@@ -50,7 +58,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   selectedTeams,
   onTeamsUpdate,
   budgetRemaining,
-  totalBudget
+  totalBudget,
+  round
 }) => {
   const [activeTab, setActiveTab] = useState<'pro' | 'amateur'>('pro');
   const [tempSelectedTeams, setTempSelectedTeams] = useState<Team[]>([]);
@@ -396,6 +405,21 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   <Checkbox id="am-matches" checked={hasPrevMatchesOnlyAm} onCheckedChange={checked => setHasPrevMatchesOnlyAm(checked === true)} />
                   <Label htmlFor="am-matches" className="text-gray-300 text-sm">Has matches last window</Label>
                 </div>
+              </div>
+              
+              {/* Amateur Teams Pricing Explanation */}
+              <div className="text-xs italic text-gray-400 mb-3 px-1">
+                {round.is_private || round.type === 'private' ? (
+                  <>
+                    Match count shows games played in the last 3 months before this round. 
+                    Credits are based on win rate and abandon rate during that period.
+                  </>
+                ) : (
+                  <>
+                    Match count shows games played in the previous {round.type} period. 
+                    Credits are based on win rate and abandon rate from that timeframe.
+                  </>
+                )}
               </div>
               
               {/* Amateur Team List */}

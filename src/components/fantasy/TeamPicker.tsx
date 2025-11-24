@@ -26,10 +26,11 @@ import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 interface FantasyRound {
   id: string;
-  type: 'daily' | 'weekly' | 'monthly';
+  type: 'daily' | 'weekly' | 'monthly' | 'private';
   start_date: string;
   end_date: string;
   status: 'open' | 'active' | 'finished';
+  is_private?: boolean;
 }
 interface Team {
   id: string;
@@ -686,6 +687,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} onSuccess={handleAuthSuccess} />
       
       {/* Multi Team Selection Sheet */}
-      <MultiTeamSelectionSheet isOpen={showTeamSelectionSheet} onClose={() => setShowTeamSelectionSheet(false)} proTeams={proTeams} amateurTeams={amateurTeams} selectedTeams={selectedTeams} onTeamsUpdate={handleTeamsUpdate} budgetRemaining={budgetRemaining} totalBudget={totalBudget} />
+      <MultiTeamSelectionSheet isOpen={showTeamSelectionSheet} onClose={() => setShowTeamSelectionSheet(false)} proTeams={proTeams} amateurTeams={amateurTeams} selectedTeams={selectedTeams} onTeamsUpdate={handleTeamsUpdate} budgetRemaining={budgetRemaining} totalBudget={totalBudget} round={round} />
     </div>;
 };
