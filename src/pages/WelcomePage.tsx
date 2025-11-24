@@ -157,8 +157,10 @@ const WelcomePage = () => {
       <section className="py-8 md:py-32 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-background reveal-on-scroll overflow-hidden">
         <div className="container mx-auto px-3 text-center max-w-full">
           <h2 className="text-2xl md:text-5xl font-bold mb-4 md:mb-6 leading-tight px-2 break-words">
-            <span className="text-purple-500">Ready to Dominate</span>{" "}
-            <span className="text-yellow-400">the Leaderboards?</span>
+            <span className="text-purple-500">Ready to </span>
+            <span className="text-yellow-400">Dominate </span>
+            <span className="text-yellow-400">the </span>
+            <span className="text-white">Leaderboards?</span>
           </h2>
           <p className="text-sm md:text-xl text-muted-foreground mb-6 md:mb-10 px-2 max-w-2xl mx-auto break-words">Join Frags & Fortunes today and start your journey to victory!</p>
           <Link to="/auth">
