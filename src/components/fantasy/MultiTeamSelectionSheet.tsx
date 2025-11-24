@@ -84,7 +84,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [minMatchesPrev, setMinMatchesPrev] = useState<number>(0);
   const [maxMissedPct, setMaxMissedPct] = useState<number>(100);
   const [hasLogoOnlyAm, setHasLogoOnlyAm] = useState<boolean>(false);
-  const [hasPrevMatchesOnlyAm, setHasPrevMatchesOnlyAm] = useState<boolean>(false);
   const [priceRangeAm, setPriceRangeAm] = useState<number[]>([0, 100]);
 
   // Advanced filters state
@@ -171,12 +170,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const missed = t.missed_pct ?? 100;
       const missedMatch = missed <= maxMissedPct;
       const logoMatch = !hasLogoOnlyAm || !!t.logo_url;
-      const prevPlayedMatch = !hasPrevMatchesOnlyAm || matchVolume > 0;
       const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
-      return matchesMatch && missedMatch && logoMatch && prevPlayedMatch && budgetMatch && priceMatch;
+      return matchesMatch && missedMatch && logoMatch && budgetMatch && priceMatch;
     });
-  }, [baseFilteredAmateurTeams, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, hasPrevMatchesOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams]);
+  }, [baseFilteredAmateurTeams, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams]);
 
   // Step 3: Advanced filters (debounced)
   const filteredProTeams = useMemo(() => {
@@ -423,11 +421,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                     <Label className="text-gray-300 text-sm">Min Matches: {minMatchesPrev}</Label>
                     <Slider value={[minMatchesPrev]} onValueChange={([value]) => setMinMatchesPrev(value)} max={20} step={1} />
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="am-matches" checked={hasPrevMatchesOnlyAm} onCheckedChange={checked => setHasPrevMatchesOnlyAm(checked === true)} />
-                  <Label htmlFor="am-matches" className="text-gray-300 text-sm">Has matches last window</Label>
                 </div>
               </div>
               
