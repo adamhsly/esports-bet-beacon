@@ -20,6 +20,8 @@ import { BookOpen } from 'lucide-react';
 import { useProfilePanel } from '@/components/ProfileSheet';
 import { ProfileSheet } from '@/components/ProfileSheet';
 import { supabase } from '@/integrations/supabase/client';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 
 
 const FantasyPage: React.FC = () => {
@@ -31,6 +33,25 @@ const FantasyPage: React.FC = () => {
   const { awardXP, progressMission } = useRPCActions();
   const isMobile = useMobile();
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
+
+  const banners = [
+    {
+      src: '/lovable-uploads/fantasy-banner.jpeg',
+      alt: 'Build your dream roster of pro and amateur players'
+    },
+    {
+      src: '/lovable-uploads/Fantasybannerhomepage.png',
+      alt: 'Join fantasy esports tournaments'
+    },
+    {
+      src: '/lovable-uploads/Fantasybannerhomepage2.png',
+      alt: 'Compete for prizes and glory'
+    }
+  ];
+
+  const plugin = React.useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true })
+  );
 
   // Handle roundId from URL parameters
   useEffect(() => {
@@ -67,14 +88,27 @@ const FantasyPage: React.FC = () => {
         <div className="mx-2 md:mx-4 my-8">
           {!selectedRound && (
             <div className="mb-8 max-w-4xl mx-auto">
-              <img 
-                src="/lovable-uploads/fantasy-banner.jpeg" 
-                alt="Build your dream roster of pro and amateur players" 
-                className="w-3/4 mx-auto rounded-xl mb-4"
-              />
+              <Carousel
+                plugins={[plugin.current]}
+                className="w-3/4 mx-auto"
+                onMouseEnter={plugin.current.stop}
+                onMouseLeave={plugin.current.reset}
+              >
+                <CarouselContent>
+                  {banners.map((banner, index) => (
+                    <CarouselItem key={index}>
+                      <img 
+                        src={banner.src}
+                        alt={banner.alt}
+                        className="w-full rounded-xl"
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
               <button
                 onClick={() => setRulesModalOpen(true)}
-                className="inline-flex items-center gap-1.5 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors mt-2"
+                className="inline-flex items-center gap-1.5 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors mt-4"
               >
                 <BookOpen className="h-4 w-4" />
                 View Rules & Scoring
