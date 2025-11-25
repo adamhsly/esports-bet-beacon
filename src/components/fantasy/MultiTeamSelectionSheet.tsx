@@ -49,6 +49,8 @@ interface MultiTeamSelectionSheetProps {
     status: 'open' | 'active' | 'finished';
     is_private?: boolean;
   };
+  swapMode?: boolean;
+  swappingTeamBudget?: number;
 }
 export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = ({
   isOpen,
@@ -59,7 +61,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   onTeamsUpdate,
   budgetRemaining,
   totalBudget,
-  round
+  round,
+  swapMode = false,
+  swappingTeamBudget
 }) => {
   const [activeTab, setActiveTab] = useState<'pro' | 'amateur'>('pro');
   const [tempSelectedTeams, setTempSelectedTeams] = useState<Team[]>([]);
@@ -157,11 +161,13 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const matches = t.match_volume ?? 0;
       const matchesMatch = matches >= minMatchesPro;
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
-      const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
+      const budgetMatch = swapMode 
+        ? (t.price ?? 0) <= (swappingTeamBudget ?? 0)
+        : ((t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id));
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
       return matchesMatch && logoMatch && budgetMatch && priceMatch;
     });
-  }, [baseFilteredProTeams, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams]);
+  }, [baseFilteredProTeams, minMatchesPro, hasLogoOnlyPro, tempBudgetRemaining, priceRangePro, tempSelectedTeams, swapMode, swappingTeamBudget]);
 
   const budgetFilteredAmateurTeams = useMemo(() => {
     return baseFilteredAmateurTeams.filter(t => {
@@ -170,11 +176,13 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const missed = t.missed_pct ?? 100;
       const missedMatch = missed <= maxMissedPct;
       const logoMatch = !hasLogoOnlyAm || !!t.logo_url;
-      const budgetMatch = (t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id);
+      const budgetMatch = swapMode 
+        ? (t.price ?? 0) <= (swappingTeamBudget ?? 0)
+        : ((t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id));
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
       return matchesMatch && missedMatch && logoMatch && budgetMatch && priceMatch;
     });
-  }, [baseFilteredAmateurTeams, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams]);
+  }, [baseFilteredAmateurTeams, minMatchesPrev, maxMissedPct, hasLogoOnlyAm, tempBudgetRemaining, priceRangeAm, tempSelectedTeams, swapMode, swappingTeamBudget]);
 
   // Step 3: Advanced filters (debounced)
   const filteredProTeams = useMemo(() => {
@@ -195,6 +203,12 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
   }, [budgetFilteredAmateurTeams, debouncedAdvancedFilters.amateur]);
   const handleTeamToggle = (team: Team) => {
+    if (swapMode) {
+      // In swap mode, only allow selecting one team
+      setTempSelectedTeams([team]);
+      return;
+    }
+    
     const isCurrentlySelected = tempSelectedTeams.find(t => t.id === team.id);
     if (isCurrentlySelected) {
       // Remove team
@@ -243,17 +257,21 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       setAmSearch('');
     }
   }, [isOpen]);
-  const canSubmit = tempSelectedTeams.length <= 5 && tempBudgetSpent <= totalBudget;
+  const canSubmit = swapMode 
+    ? tempSelectedTeams.length === 1 
+    : (tempSelectedTeams.length <= 5 && tempBudgetSpent <= totalBudget);
   return <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-2xl bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-l border-gray-700/50">
         <SheetHeader className="border-b border-gray-700/50 pb-6">
           <div className="flex items-center justify-between">
             <div>
               <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                Select Your Teams
+                {swapMode ? 'Select Replacement Team' : 'Select Your Teams'}
               </SheetTitle>
               <p className="text-gray-400 text-sm mt-1">
-                Choose up to 5 teams within your budget
+                {swapMode 
+                  ? `Choose a replacement team with budget ${swappingTeamBudget ?? 0} credits or less`
+                  : 'Choose up to 5 teams within your budget'}
               </p>
             </div>
             <SheetClose asChild>
@@ -467,7 +485,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit} className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed">
-              Confirm Selection ({tempSelectedTeams.length}/5)
+              {swapMode ? 'Confirm Swap' : `Confirm Selection (${tempSelectedTeams.length}/5)`}
             </Button>
           </div>
           

@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.generate-welcome-assets]
 verify_jwt = false
+
+[functions.set-team-swap]
+verify_jwt = true

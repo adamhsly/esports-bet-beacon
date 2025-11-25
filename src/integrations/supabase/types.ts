@@ -1034,6 +1034,53 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_round_team_swaps: {
+        Row: {
+          created_at: string
+          id: string
+          new_team_id: string
+          old_team_id: string
+          points_at_swap: number
+          round_id: string
+          swap_used: boolean
+          swapped_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_team_id: string
+          old_team_id: string
+          points_at_swap?: number
+          round_id: string
+          swap_used?: boolean
+          swapped_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_team_id?: string
+          old_team_id?: string
+          points_at_swap?: number
+          round_id?: string
+          swap_used?: boolean
+          swapped_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_round_team_swaps_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fantasy_round_winners: {
         Row: {
           awarded_at: string | null
@@ -3363,6 +3410,7 @@ export type Database = {
           win_rate: number
         }[]
       }
+      get_team_swap_state: { Args: { p_round_id: string }; Returns: Json }
       grant_bonus_credits: {
         Args: { p_amount: number; p_source: string; p_user: string }
         Returns: undefined
@@ -3432,6 +3480,15 @@ export type Database = {
       }
       set_star_team: {
         Args: { p_round_id: string; p_team_id: string }
+        Returns: Json
+      }
+      set_team_swap: {
+        Args: {
+          p_new_team_id: string
+          p_old_team_id: string
+          p_points_at_swap: number
+          p_round_id: string
+        }
         Returns: Json
       }
       spend_bonus_credits:

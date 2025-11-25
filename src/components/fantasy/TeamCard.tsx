@@ -36,6 +36,8 @@ interface TeamCardProps {
   fantasyPoints?: number;
   onStatsClick?: (team: Team) => void;
   onShowPerformance?: (teamId: string, teamName: string, teamType: 'pro' | 'amateur') => void;
+  onSwapTeam?: () => void;
+  showSwapButton?: boolean;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -52,7 +54,9 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   variant = 'progress',
   fantasyPoints = 0,
   onStatsClick,
-  onShowPerformance
+  onShowPerformance,
+  onSwapTeam,
+  showSwapButton = false
 }) => {
   const isAmateur = team.type === 'amateur';
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
@@ -185,12 +189,27 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             </div>
           </div>
           
-          {/* Fantasy Points */}
-          <div className="text-right">
-            <div className="font-bold text-sm text-blue-400">
-              {fantasyPoints}
+          {/* Fantasy Points and Swap Button */}
+          <div className="flex items-center gap-2">
+            {showSwapButton && onSwapTeam && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSwapTeam();
+                }}
+                className="h-8 px-3 text-xs border-primary/50 text-primary hover:bg-primary/10"
+              >
+                Swap
+              </Button>
+            )}
+            <div className="text-right">
+              <div className="font-bold text-sm text-blue-400">
+                {fantasyPoints}
+              </div>
+              <div className="text-xs text-gray-400">pts</div>
             </div>
-            <div className="text-xs text-gray-400">pts</div>
           </div>
         </div>
         

@@ -10,12 +10,15 @@ import { toast } from 'sonner';
 import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { useRoundStar } from '@/hooks/useRoundStar';
+import { useRoundTeamSwap } from '@/hooks/useRoundTeamSwap';
 import { RoundLeaderboard } from './RoundLeaderboard';
 import { renderShareCard } from '@/utils/shareCardRenderer';
 import { getEnhancedTeamLogoUrl } from '@/utils/teamLogoUtils';
 import { ShareSheet } from './ShareSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { TeamPerformanceModal } from './TeamPerformanceModal';
+import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
+import { TeamSwapConfirmModal } from './TeamSwapConfirmModal';
 
 interface InProgressRound {
   id: string;
@@ -294,10 +297,19 @@ export const InProgressRounds: React.FC = () => {
 const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) => {
   const { user } = useAuth();
   const { starTeamId, changeUsed, canChange, setStarTeam } = useRoundStar(round.id);
+  const { swapUsed, canSwap, oldTeamId, newTeamId, pointsAtSwap, swapTeam } = useRoundTeamSwap(round.id);
   const [showStarModal, setShowStarModal] = useState(false);
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; name: string; type: 'pro' | 'amateur' } | null>(null);
+  
+  // Swap state
+  const [showSwapSheet, setShowSwapSheet] = useState(false);
+  const [swappingTeam, setSwappingTeam] = useState<{ id: string; name: string; type: 'pro' | 'amateur'; price: number; currentPoints: number } | null>(null);
+  const [showSwapConfirmModal, setShowSwapConfirmModal] = useState(false);
+  const [selectedNewTeam, setSelectedNewTeam] = useState<any>(null);
+  const [proTeams, setProTeams] = useState<any[]>([]);
+  const [amateurTeams, setAmateurTeams] = useState<any[]>([]);
 
   const handleStarToggle = (teamId: string) => {
     if (!canChange) return;
@@ -316,6 +328,97 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
     }
     setShowStarModal(false);
     setPendingTeamId(null);
+  };
+
+  const handleSwapTeam = async (teamId: string, teamName: string, teamType: 'pro' | 'amateur') => {
+    if (!canSwap || swapUsed) {
+      toast.error('Team swap already used for this round');
+      return;
+    }
+
+    // Get current score for the team
+    const currentScore = round.scores.find(s => s.team_id === teamId)?.current_score || 0;
+    
+    // Get team price
+    const { data: priceData } = await supabase
+      .from('fantasy_team_prices')
+      .select('price')
+      .eq('round_id', round.id)
+      .eq('team_id', teamId)
+      .single();
+    
+    const teamPrice = priceData?.price || 0;
+    
+    setSwappingTeam({
+      id: teamId,
+      name: teamName,
+      type: teamType,
+      price: teamPrice,
+      currentPoints: currentScore
+    });
+    
+    // Fetch available teams for swapping
+    await fetchSwapTeams(teamPrice);
+    setShowSwapSheet(true);
+  };
+
+  const fetchSwapTeams = async (maxBudget: number) => {
+    const { data: prices } = await supabase
+      .from('fantasy_team_prices')
+      .select('*')
+      .eq('round_id', round.id)
+      .lte('price', maxBudget);
+    
+    if (prices) {
+      const pro = prices.filter(p => p.team_type === 'pro');
+      const amateur = prices.filter(p => p.team_type === 'amateur');
+      setProTeams(pro.map(p => ({ 
+        id: p.team_id, 
+        name: p.team_name, 
+        type: 'pro' as const,
+        price: p.price,
+        recent_win_rate: p.recent_win_rate,
+        match_volume: p.match_volume
+      })));
+      setAmateurTeams(amateur.map(p => ({ 
+        id: p.team_id, 
+        name: p.team_name, 
+        type: 'amateur' as const,
+        price: p.price,
+        abandon_rate: p.abandon_rate,
+        match_volume: p.match_volume
+      })));
+    }
+  };
+
+  const handleTeamSelection = (teams: any[]) => {
+    if (teams.length === 1) {
+      setSelectedNewTeam(teams[0]);
+      setShowSwapSheet(false);
+      setShowSwapConfirmModal(true);
+    }
+  };
+
+  const handleConfirmSwap = async () => {
+    if (!swappingTeam || !selectedNewTeam) return;
+
+    const result = await swapTeam(
+      swappingTeam.id,
+      selectedNewTeam.id,
+      swappingTeam.currentPoints
+    );
+
+    if (result.success) {
+      toast.success('Team swapped successfully!');
+      // Refresh the page to show updated teams
+      window.location.reload();
+    } else {
+      toast.error(result.error || 'Failed to swap team');
+    }
+
+    setShowSwapConfirmModal(false);
+    setSwappingTeam(null);
+    setSelectedNewTeam(null);
   };
 
   const getStarTeamName = () => {
@@ -353,28 +456,54 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
         </div>
       </div>
 
+      {/* Team Swap Status */}
+      <div className="mb-4 p-3 rounded-lg bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50">
+        <div className="flex items-center gap-2 text-sm">
+          <Trophy className={`h-4 w-4 ${swapUsed ? 'text-gray-400' : 'text-blue-400'}`} />
+          <span className="text-gray-300">
+            Team Swap: <span className="text-white font-medium">{swapUsed ? 'Used' : 'Available'}</span> •
+            Swaps left: <span className="text-white font-medium">{swapUsed ? '0/1' : '1/1'}</span>
+          </span>
+          {swapUsed && oldTeamId && newTeamId && (
+            <div className="flex items-center gap-1 ml-2">
+              <Lock className="h-3 w-3 text-orange-400" />
+              <span className="text-xs text-orange-400">
+                Swapped (preserved {pointsAtSwap} pts)
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-2">
         {round.scores.length > 0
-          ? round.scores.map((score) => (
-              <TeamCard
-                key={score.team_id}
-                team={{
-                  id: score.team_id,
-                  name: score.team_name,
-                  type: score.team_type,
-                  logo_url: round.team_picks.find((team) => team.id === score.team_id)?.logo_url || ''
-                }}
-                isSelected={true}
-                onClick={() => {}}
-                showStarToggle={true}
-                isStarred={starTeamId === score.team_id}
-                onToggleStar={() => handleStarToggle(score.team_id)}
-                disabledReason={!canChange ? 'Star change used' : null}
-                variant="progress"
-                fantasyPoints={score.current_score}
-                onShowPerformance={handleShowPerformance}
-              />
-            ))
+          ? round.scores.map((score) => {
+              const isSwappedOut = swapUsed && oldTeamId === score.team_id;
+              const isSwappedIn = swapUsed && newTeamId === score.team_id;
+              
+              return (
+                <TeamCard
+                  key={score.team_id}
+                  team={{
+                    id: score.team_id,
+                    name: score.team_name,
+                    type: score.team_type,
+                    logo_url: round.team_picks.find((team) => team.id === score.team_id)?.logo_url || ''
+                  }}
+                  isSelected={true}
+                  onClick={() => {}}
+                  showStarToggle={true}
+                  isStarred={starTeamId === score.team_id}
+                  onToggleStar={() => handleStarToggle(score.team_id)}
+                  disabledReason={!canChange ? 'Star change used' : null}
+                  variant="progress"
+                  fantasyPoints={score.current_score}
+                  onShowPerformance={handleShowPerformance}
+                  showSwapButton={canSwap && !swapUsed && !isSwappedOut}
+                  onSwapTeam={() => handleSwapTeam(score.team_id, score.team_name, score.team_type)}
+                />
+              );
+            })
           : round.team_picks.map((team, index) => (
               <TeamCard
                 key={team.id || index}
@@ -387,6 +516,8 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
                 disabledReason={!canChange ? 'Star change used' : null}
                 variant="progress"
                 onShowPerformance={handleShowPerformance}
+                showSwapButton={canSwap && !swapUsed}
+                onSwapTeam={() => handleSwapTeam(team.id, team.name, team.type)}
               />
             ))}
       </div>
@@ -416,6 +547,57 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
           teamType={selectedTeam.type}
           roundId={round.id}
           userId={user.id}
+        />
+      )}
+
+      {/* Team Swap Selection Sheet */}
+      {showSwapSheet && (
+        <MultiTeamSelectionSheet
+          isOpen={showSwapSheet}
+          onClose={() => {
+            setShowSwapSheet(false);
+            setSwappingTeam(null);
+          }}
+          proTeams={proTeams}
+          amateurTeams={amateurTeams}
+          selectedTeams={[]}
+          onTeamsUpdate={handleTeamSelection}
+          budgetRemaining={swappingTeam?.price || 0}
+          totalBudget={50}
+          round={{
+            id: round.id,
+            type: round.type,
+            start_date: round.start_date,
+            end_date: round.end_date,
+            status: 'active',
+            is_private: round.is_private
+          }}
+          swapMode={true}
+          swappingTeamBudget={swappingTeam?.price}
+        />
+      )}
+
+      {/* Team Swap Confirm Modal */}
+      {showSwapConfirmModal && swappingTeam && selectedNewTeam && (
+        <TeamSwapConfirmModal
+          isOpen={showSwapConfirmModal}
+          onClose={() => {
+            setShowSwapConfirmModal(false);
+            setSelectedNewTeam(null);
+          }}
+          onConfirm={handleConfirmSwap}
+          oldTeam={{
+            id: swappingTeam.id,
+            name: swappingTeam.name,
+            type: swappingTeam.type,
+            currentPoints: swappingTeam.currentPoints
+          }}
+          newTeam={{
+            id: selectedNewTeam.id,
+            name: selectedNewTeam.name,
+            type: selectedNewTeam.type,
+            price: selectedNewTeam.price
+          }}
         />
       )}
     </>
