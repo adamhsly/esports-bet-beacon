@@ -116,7 +116,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
   // Calculate budget for temp selection
   const tempBudgetSpent = useMemo(() => tempSelectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [tempSelectedTeams]);
-  const tempBudgetRemaining = Math.max(0, totalBudget - tempBudgetSpent);
+  const effectiveTotalBudget = swapMode ? (swappingTeamBudget ?? totalBudget) : totalBudget;
+  const tempBudgetRemaining = Math.max(0, effectiveTotalBudget - tempBudgetSpent);
 
   // Get unique games and price ranges
   const proGames = useMemo(() => Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], [proTeams]);
@@ -259,7 +260,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   }, [isOpen]);
   const canSubmit = swapMode 
     ? tempSelectedTeams.length === 1 
-    : (tempSelectedTeams.length <= 5 && tempBudgetSpent <= totalBudget);
+    : (tempSelectedTeams.length <= 5 && tempBudgetSpent <= effectiveTotalBudget);
   return <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-2xl bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-l border-gray-700/50">
         <SheetHeader className="border-b border-gray-700/50 pb-6">
@@ -285,13 +286,13 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
           <div className="space-y-3 mt-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Budget:</span>
-              <span className={`font-medium ${tempBudgetSpent > totalBudget ? 'text-red-400' : 'text-green-400'}`}>
-                {tempBudgetSpent} / {totalBudget} credits
+              <span className={`font-medium ${tempBudgetSpent > effectiveTotalBudget ? 'text-red-400' : 'text-green-400'}`}>
+                {tempBudgetSpent} / {effectiveTotalBudget} credits
               </span>
             </div>
-            {totalBudget > 50 && (
+            {effectiveTotalBudget > 50 && !swapMode && (
               <div className="text-xs text-orange-400">
-                Base: 50 + Bonus: {totalBudget - 50} credits
+                Base: 50 + Bonus: {effectiveTotalBudget - 50} credits
               </div>
             )}
             <div 
@@ -489,9 +490,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
             </Button>
           </div>
           
-          {!canSubmit && <div className="text-center text-red-400 text-sm">
+          {!canSubmit && !swapMode && <div className="text-center text-red-400 text-sm">
               {tempSelectedTeams.length > 5 && "Too many teams selected"}
-              {tempBudgetSpent > totalBudget && "Budget exceeded"}
+              {tempBudgetSpent > effectiveTotalBudget && "Budget exceeded"}
             </div>}
         </div>
 

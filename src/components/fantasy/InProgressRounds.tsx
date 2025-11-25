@@ -358,11 +358,11 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
     });
     
     // Fetch available teams for swapping
-    await fetchSwapTeams(teamPrice);
+    await fetchSwapTeams(teamPrice, teamId);
     setShowSwapSheet(true);
   };
 
-  const fetchSwapTeams = async (maxBudget: number) => {
+  const fetchSwapTeams = async (maxBudget: number, excludeTeamId?: string) => {
     const { data: prices } = await supabase
       .from('fantasy_team_prices')
       .select('*')
@@ -370,8 +370,13 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
       .lte('price', maxBudget);
     
     if (prices) {
-      const pro = prices.filter(p => p.team_type === 'pro');
-      const amateur = prices.filter(p => p.team_type === 'amateur');
+      const filtered = excludeTeamId
+        ? prices.filter((p) => p.team_id !== excludeTeamId)
+        : prices;
+
+      const pro = filtered.filter(p => p.team_type === 'pro');
+      const amateur = filtered.filter(p => p.team_type === 'amateur');
+
       setProTeams(pro.map(p => ({ 
         id: p.team_id, 
         name: p.team_name, 
@@ -556,7 +561,6 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
           isOpen={showSwapSheet}
           onClose={() => {
             setShowSwapSheet(false);
-            setSwappingTeam(null);
           }}
           proTeams={proTeams}
           amateurTeams={amateurTeams}
