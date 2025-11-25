@@ -121,7 +121,7 @@ export const PandaScorePlayerRoster: React.FC<PandaScorePlayerRosterProps> = ({
       <p>No player data available for {teamName}</p>
       {hasOtherTeamData && <p className="text-xs text-gray-500 mt-1">Player data may not be available for all teams</p>}
     </div>;
-  const renderDataStatus = (teamName: string, playerCount: number) => {};
+  const renderDataStatus = (teamName: string, playerCount: number) => null;
   const hasTeam1Data = (team1Players?.length || 0) > 0;
   const hasTeam2Data = (team2Players?.length || 0) > 0;
   const hasAnyData = hasTeam1Data || hasTeam2Data;
