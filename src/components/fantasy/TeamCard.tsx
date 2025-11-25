@@ -199,7 +199,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                   e.stopPropagation();
                   onSwapTeam();
                 }}
-                className="h-8 px-3 text-xs border-primary/50 text-primary hover:bg-primary/10"
+                className="h-8 px-3 text-xs border-primary/50 text-white hover:bg-primary/10"
               >
                 Swap
               </Button>
