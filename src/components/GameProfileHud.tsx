@@ -32,7 +32,7 @@ import {
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProgress } from '@/hooks/useSupabaseData';
+import { useProgress, useEntitlement } from '@/hooks/useSupabaseData';
 import MissionsView from '@/components/MissionsView';
 
 interface ProfilePageProps {
@@ -62,9 +62,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const premiumTrackRef = useRef<HTMLDivElement>(null);
   const { profile, loading: profileLoading } = useProfile();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
-  
-  // Import and use useEntitlement hook
-  const { useEntitlement } = require('@/hooks/useSupabaseData');
   const { premiumActive: isPremium } = useEntitlement();
   const { free, premium } = useLevelRewardsTrack(level, isPremium);
 
