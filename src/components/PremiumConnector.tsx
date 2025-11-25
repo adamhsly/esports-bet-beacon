@@ -29,9 +29,24 @@ const PremiumConnector: React.FC<PremiumConnectorProps> = ({
     await startPremiumCheckout();
   };
 
-  // Only show for logged-in users who are not premium yet
-  if (!isAuthenticated || premiumActive) {
+  // Don't show anything if not authenticated
+  if (!isAuthenticated) {
     return null;
+  }
+
+  // Show Premium badge if user has premium
+  if (premiumActive) {
+    return (
+      <Button 
+        variant={variant} 
+        size={size} 
+        className={`bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)] cursor-default ${className}`}
+        disabled
+      >
+        <Crown className="w-4 h-4 mr-2" />
+        {children || 'Premium'}
+      </Button>
+    );
   }
 
   return (

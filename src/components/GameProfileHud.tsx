@@ -63,8 +63,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
   const { profile, loading: profileLoading } = useProfile();
   const { xp, level, streak_count, loading: progressLoading } = useProgress();
   
-  // Determine if premium is active - check profile subscription or entitlement
-  const isPremium = false; // TODO: Connect to actual premium status
+  // Import and use useEntitlement hook
+  const { useEntitlement } = require('@/hooks/useSupabaseData');
+  const { premiumActive: isPremium } = useEntitlement();
   const { free, premium } = useLevelRewardsTrack(level, isPremium);
 
   const loading = progressLoading || profileLoading;
@@ -221,7 +222,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-gaming text-[#EAF2FF]">Rewards</h2>
-              {!isPremium && (
+              {isPremium ? (
+                <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-gaming text-sm px-4 py-2 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Premium
+                </Badge>
+              ) : (
                 <Button 
                   onClick={onUnlockPremium}
                   className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]"
@@ -282,7 +288,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                 <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 font-gaming text-sm px-3 py-1">
                   PREMIUM
                 </Badge>
-                {!isPremium && (
+                {isPremium ? (
+                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-gaming text-xs px-3 py-1 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Active
+                  </Badge>
+                ) : (
                   <Button 
                     onClick={onUnlockPremium}
                     size="sm"
