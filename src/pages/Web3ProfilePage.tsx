@@ -14,11 +14,13 @@ const Web3ProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <SearchableNavbar />
-      <div className="flex-grow">
-        <ProfilePage 
-          variant="page"
-          onUnlockPremium={startPremiumCheckout}
-        />
+      <div className="flex-grow flex justify-center">
+        <div className="w-full max-w-[820px]">
+          <ProfilePage 
+            variant="page"
+            onUnlockPremium={startPremiumCheckout}
+          />
+        </div>
       </div>
       <Footer />
     </div>
