@@ -57,8 +57,8 @@ export const TeamSwapConfirmModal: React.FC<TeamSwapConfirmModalProps> = ({
           <div className="flex items-center gap-4">
             <Card className={`flex-1 p-4 ${
               isOldTeamAmateur 
-                ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' 
-                : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'
+                ? 'bg-orange-500/20 border border-orange-400/30' 
+                : 'bg-purple-500/20 border border-purple-400/30'
             }`}>
               <div className="space-y-2">
                 <div className="text-sm text-white/70">Swapping Out</div>
@@ -80,8 +80,8 @@ export const TeamSwapConfirmModal: React.FC<TeamSwapConfirmModalProps> = ({
 
             <Card className={`flex-1 p-4 ${
               isNewTeamAmateur 
-                ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' 
-                : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'
+                ? 'bg-orange-500/20 border border-orange-400/30' 
+                : 'bg-purple-500/20 border border-purple-400/30'
             }`}>
               <div className="space-y-2">
                 <div className="text-sm text-white/70">Swapping In</div>
@@ -120,7 +120,7 @@ export const TeamSwapConfirmModal: React.FC<TeamSwapConfirmModalProps> = ({
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose} className="text-white">Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-primary hover:bg-primary/90">
             Confirm Swap
           </AlertDialogAction>
