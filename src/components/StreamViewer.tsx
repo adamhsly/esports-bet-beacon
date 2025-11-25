@@ -105,8 +105,8 @@ export const StreamViewer: React.FC<StreamViewerProps> = ({
         </div>
       )}
 
-      {/* Responsive aspect ratio for video */}
-      <div className="relative w-full overflow-hidden mb-2 rounded aspect-w-16 aspect-h-9 bg-black">
+      {/* Responsive aspect ratio for video - 30% taller on desktop */}
+      <div className="relative w-full overflow-hidden mb-2 rounded bg-black h-[56.25vw] md:h-[73.125vw] max-h-[450px] md:max-h-[585px]">
         <iframe
           src={getEmbedUrlWithParent(streams[selected])}
           allowFullScreen
