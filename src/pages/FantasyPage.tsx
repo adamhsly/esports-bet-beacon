@@ -90,7 +90,7 @@ const FantasyPage: React.FC = () => {
             <div className="mb-8 max-w-4xl mx-auto">
               <Carousel
                 plugins={[plugin.current]}
-                className="w-3/4 mx-auto"
+                className="w-full md:w-3/4 mx-auto"
               >
                 <CarouselContent>
                   {banners.map((banner, index) => (
