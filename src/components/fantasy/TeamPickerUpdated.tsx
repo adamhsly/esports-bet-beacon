@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info, Plus } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info, Plus, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -79,6 +79,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
+
+  // Price calculation status tracking
+  const [priceStatus, setPriceStatus] = useState<'loading' | 'calculating' | 'ready' | 'error'>('loading');
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 5;
+  const RETRY_INTERVAL = 2000; // 2 seconds
 
   // Bonus Credits State
   const [useBonusCreditsState, setUseBonusCreditsState] = useState(false);
@@ -160,9 +166,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
   };
 
-  const fetchAvailableTeams = async () => {
+  const fetchAvailableTeams = async (isRetry = false) => {
     try {
       setLoading(true);
+      setPriceStatus(isRetry ? 'calculating' : 'loading');
+      
       const { data: proData, error: proError } = await supabase
         .from('fantasy_team_prices')
         .select('*')
@@ -200,23 +208,79 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         match_volume: priceData.match_volume
       })) || [];
 
-    const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
-      id: priceData.team_id,
-      name: priceData.team_name,
-      type: 'amateur' as const,
-      price: priceData.price,
-      recent_win_rate: priceData.recent_win_rate,
-      abandon_rate: priceData.abandon_rate,
-      match_volume: priceData.match_volume
-    })) || [];
+      const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
+        id: priceData.team_id,
+        name: priceData.team_name,
+        type: 'amateur' as const,
+        price: priceData.price,
+        recent_win_rate: priceData.recent_win_rate,
+        abandon_rate: priceData.abandon_rate,
+        match_volume: priceData.match_volume
+      })) || [];
 
+      // Check if we got any teams
+      const totalTeams = filteredProTeams.length + filteredAmateurTeams.length;
+      
+      if (totalTeams === 0 && retryCount < MAX_RETRIES) {
+        console.log(`No teams found, attempt ${retryCount + 1}/${MAX_RETRIES}`);
+        
+        // Trigger price calculation on first empty result
+        if (retryCount === 0) {
+          console.log('Triggering price calculation for round:', round.id);
+          setPriceStatus('calculating');
+          
+          try {
+            const { error: calcError } = await supabase.functions.invoke('calculate-team-prices', {
+              body: { 
+                round_id: round.id,
+                PRO_MULTIPLIER: 1.2,
+                AMATEUR_MULTIPLIER: 0.9,
+                MIN_PRICE: 5,
+                MAX_PRICE: 20,
+                ABANDON_PENALTY_MULTIPLIER: 5
+              }
+            });
+            
+            if (calcError) {
+              console.error('Error invoking price calculation:', calcError);
+            } else {
+              console.log('Price calculation triggered successfully');
+            }
+          } catch (invokeError) {
+            console.error('Failed to invoke price calculation:', invokeError);
+          }
+        }
+        
+        // Schedule retry
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          fetchAvailableTeams(true);
+        }, RETRY_INTERVAL);
+        return;
+      }
+
+      // Successfully got teams or exhausted retries
       setProTeams(filteredProTeams);
       setAmateurTeams(filteredAmateurTeams);
+      setPriceStatus(totalTeams > 0 ? 'ready' : 'error');
       setLoading(false);
+      
+      if (totalTeams > 0) {
+        console.log(`Loaded ${filteredProTeams.length} pro teams and ${filteredAmateurTeams.length} amateur teams`);
+      } else if (retryCount >= MAX_RETRIES) {
+        console.error('Failed to load teams after maximum retries');
+      }
     } catch (error) {
       console.error('Error fetching teams:', error);
+      setPriceStatus('error');
       setLoading(false);
     }
+  };
+
+  const handleManualRefresh = () => {
+    console.log('Manual refresh triggered');
+    setRetryCount(0);
+    fetchAvailableTeams(false);
   };
 
   const handleTeamSelect = (team: Team) => {
@@ -400,7 +464,35 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     return (
       <div className="text-center py-12">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Loading available teams...</p>
+        {priceStatus === 'calculating' ? (
+          <div className="space-y-3">
+            <p className="text-muted-foreground font-medium">Setting up team prices for this round...</p>
+            <p className="text-sm text-muted-foreground">This may take a few moments. (Attempt {retryCount + 1}/{MAX_RETRIES})</p>
+          </div>
+        ) : (
+          <p className="text-muted-foreground">Loading available teams...</p>
+        )}
+      </div>
+    );
+  }
+
+  // Show error state with retry button if loading failed
+  if (priceStatus === 'error' && proTeams.length === 0 && amateurTeams.length === 0) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
+        <div className="space-y-2">
+          <p className="text-lg font-medium text-foreground">Unable to load team prices</p>
+          <p className="text-sm text-muted-foreground">Team prices couldn't be calculated for this round.</p>
+        </div>
+        <Button 
+          onClick={handleManualRefresh}
+          className="mx-auto"
+          variant="default"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry Loading Teams
+        </Button>
       </div>
     );
   }
