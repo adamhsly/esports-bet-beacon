@@ -50,7 +50,7 @@ const FantasyPage: React.FC = () => {
   ];
 
   const plugin = React.useRef(
-    Autoplay({ delay: 3000, stopOnInteraction: true })
+    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
   );
 
   // Handle roundId from URL parameters
@@ -91,8 +91,6 @@ const FantasyPage: React.FC = () => {
               <Carousel
                 plugins={[plugin.current]}
                 className="w-3/4 mx-auto"
-                onMouseEnter={plugin.current.stop}
-                onMouseLeave={plugin.current.reset}
               >
                 <CarouselContent>
                   {banners.map((banner, index) => (
