@@ -36,21 +36,21 @@ const FantasyPage: React.FC = () => {
 
   const banners = [
     {
-      src: '/lovable-uploads/fantasy-banner.jpeg',
-      alt: 'Build your dream roster of pro and amateur players'
+      src: '/lovable-uploads/build_roster_banner.png',
+      alt: 'Draft your ultimate roster - Pick teams and win prizes'
     },
     {
-      src: '/lovable-uploads/Fantasybannerhomepage.png',
-      alt: 'Join fantasy esports tournaments'
+      src: '/lovable-uploads/team_swap_banner.png',
+      alt: 'Use your in-round team swap and star team change wisely'
     },
     {
-      src: '/lovable-uploads/Fantasybannerhomepage2.png',
-      alt: 'Compete for prizes and glory'
+      src: '/lovable-uploads/monthlyroundprize.png',
+      alt: '£100 Steam voucher for 1st place in December Monthly Round'
     }
   ];
 
   const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
+    Autoplay({ delay: 3000, stopOnInteraction: true })
   );
 
   // Handle roundId from URL parameters
