@@ -589,8 +589,8 @@ const Index = () => {
               <div className="max-w-4xl mx-auto">
                 <Link to="/fantasy" className="block hover:opacity-90 transition-opacity">
                   <img
-                    src="/lovable-uploads/Fantasybannerhomepage.png"
-                    alt="Build Your Dream Team - Fantasy Arena"
+                    src="/lovable-uploads/play_now_banner.png"
+                    alt="Play Now - Pick your teams, score points, win prizes"
                     className="w-full max-w-xl h-auto rounded-lg cursor-pointer mx-auto"
                   />
                 </Link>
