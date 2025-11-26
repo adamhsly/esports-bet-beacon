@@ -225,7 +225,7 @@ export const InProgressRounds: React.FC = () => {
                     Team Performance
                   </h4>
 
-                  <InProgressTeamsList round={round} />
+                  <InProgressTeamsList round={round} onRefresh={fetchInProgressRounds} />
                 </div>
 
                 {/* Leaderboard */}
@@ -294,10 +294,10 @@ export const InProgressRounds: React.FC = () => {
 };
 
 // Helper component for rendering teams in progress rounds
-const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) => {
+const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => Promise<void> }> = ({ round, onRefresh }) => {
   const { user } = useAuth();
   const { starTeamId, changeUsed, canChange, setStarTeam } = useRoundStar(round.id);
-  const { swapUsed, canSwap, oldTeamId, newTeamId, pointsAtSwap, swapTeam } = useRoundTeamSwap(round.id);
+  const { swapUsed, canSwap, oldTeamId, newTeamId, pointsAtSwap, swapTeam, refresh } = useRoundTeamSwap(round.id);
   const [showStarModal, setShowStarModal] = useState(false);
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
@@ -415,8 +415,9 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound }> = ({ round }) =>
 
     if (result.success) {
       toast.success('Team swapped successfully!');
-      // Refresh the page to show updated teams
-      window.location.reload();
+      // Refresh data to show updated teams
+      await refresh();
+      await onRefresh();
     } else {
       toast.error(result.error || 'Failed to swap team');
     }
