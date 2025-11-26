@@ -38,6 +38,7 @@ interface TeamCardProps {
   onShowPerformance?: (teamId: string, teamName: string, teamType: 'pro' | 'amateur') => void;
   onSwapTeam?: () => void;
   showSwapButton?: boolean;
+  isSwappedIn?: boolean;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -56,7 +57,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   onStatsClick,
   onShowPerformance,
   onSwapTeam,
-  showSwapButton = false
+  showSwapButton = false,
+  isSwappedIn = false
 }) => {
   const isAmateur = team.type === 'amateur';
   const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
@@ -167,7 +169,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     }
   };
 
-  return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={handleCardClick}>
+  return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSwappedIn ? 'ring-2 ring-cyan-400 bg-cyan-500/10 shadow-lg shadow-cyan-400/20' : isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={handleCardClick}>
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           {/* Team Logo */}
@@ -186,6 +188,9 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                   +25% Bonus
                 </Badge>}
               {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
+              {isSwappedIn && <Badge className="text-xs bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-cyan-400/50">
+                  Swapped In
+                </Badge>}
             </div>
           </div>
           
@@ -217,6 +222,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
         {isStarred && isSelected && <div className="mt-2 pt-2 border-t border-gray-600/50">
             <div className="text-xs text-[#F5C042] font-medium">
               DOUBLE POINTS
+            </div>
+          </div>}
+        
+        {/* Swapped In Label */}
+        {isSwappedIn && <div className="mt-2 pt-2 border-t border-gray-600/50">
+            <div className="text-xs text-cyan-400 font-medium">
+              SWAPPED TEAM
             </div>
           </div>}
       </CardContent>
