@@ -20,10 +20,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create Supabase client with user's JWT token to maintain auth context
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
+        global: {
+          headers: { Authorization: authHeader }
+        },
         auth: {
           persistSession: false,
           autoRefreshToken: false
