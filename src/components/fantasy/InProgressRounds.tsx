@@ -508,6 +508,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
                   showSwapButton={canSwap && !swapUsed && !isSwappedOut}
                   onSwapTeam={() => handleSwapTeam(score.team_id, score.team_name, score.team_type)}
                   isSwappedIn={isSwappedIn}
+                  isSwappedOut={isSwappedOut}
                 />
               );
             })
