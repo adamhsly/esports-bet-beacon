@@ -22,14 +22,12 @@ serve(async (req) => {
 
     console.log('🏆 Starting fantasy round winner awards...');
 
-    // Find rounds that finished in the last 24 hours
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    
+    // Find rounds that have closed (ended) but haven't been processed yet
     const { data: recentlyFinishedRounds, error: roundsError } = await supabase
       .from('fantasy_rounds')
-      .select('id, type, end_date')
-      .eq('status', 'finished')
-      .gte('updated_at', twentyFourHoursAgo);
+      .select('id, type, end_date, round_name')
+      .eq('status', 'closed')
+      .lte('end_date', new Date().toISOString());
 
     if (roundsError) {
       console.error('Error fetching finished rounds:', roundsError);
@@ -131,7 +129,19 @@ serve(async (req) => {
         }
       }
 
-      console.log(`Winners awarded for round ${round.id}: ${winners.length} winners, ${totalEmailsSent} emails sent`);
+      console.log(`Winners processed for round ${round.id}: ${unsentWinners.length} winners`);
+
+      // Mark round as 'finished' after successfully processing winners
+      const { error: statusError } = await supabase
+        .from('fantasy_rounds')
+        .update({ status: 'finished', updated_at: new Date().toISOString() })
+        .eq('id', round.id);
+
+      if (statusError) {
+        console.error(`Failed to mark round ${round.id} as finished:`, statusError);
+      } else {
+        console.log(`✅ Round ${round.id} marked as finished`);
+      }
     }
 
     return new Response(
