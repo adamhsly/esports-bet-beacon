@@ -14,8 +14,11 @@ serve(async (req) => {
 
   try {
     const { team_id, team_type, round_id, user_id } = await req.json();
+    
+    console.log("get-team-match-breakdown called with:", { team_id, team_type, round_id, user_id });
 
     if (!team_id || !team_type || !round_id || !user_id) {
+      console.error("Missing required parameters:", { team_id, team_type, round_id, user_id });
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -41,6 +44,8 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Round dates:", { start_date: round.start_date, end_date: round.end_date });
 
     // Check if this is the user's star team
     const { data: starTeam } = await supabase
@@ -185,6 +190,8 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      
+      console.log(`Found ${amateurMatches?.length || 0} amateur matches in date range`);
 
       // Filter matches where team participated (team_id is stored as lowercase team name)
       const teamMatches = (amateurMatches || []).filter((match) => {
@@ -193,6 +200,14 @@ serve(async (req) => {
         const searchId = team_id.toLowerCase();
         return f1Name === searchId || f2Name === searchId;
       });
+      
+      console.log(`Filtered to ${teamMatches.length} matches for team "${team_id}"`);
+      if (teamMatches.length > 0) {
+        console.log("Sample match faction names:", teamMatches.slice(0, 2).map(m => ({
+          faction1: m.faction1_name,
+          faction2: m.faction2_name
+        })));
+      }
 
       // Process matches
       matches = teamMatches.map((match) => {
