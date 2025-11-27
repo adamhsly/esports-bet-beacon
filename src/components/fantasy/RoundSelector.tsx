@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar } from 'lucide-react';
+import { Calendar, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import AuthModal from '@/components/AuthModal';
+
+// Prize structure for each round type
+const PRIZE_STRUCTURE = {
+  daily: { first: 200, second: 100, third: 50 },
+  weekly: { first: 200, second: 100, third: 50 },
+  monthly: { first: 200, second: 100, third: 50 },
+};
 
 interface Round {
   id: string;
@@ -95,6 +102,28 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
                 </div>
               </div>
               
+              {/* Prize Pool */}
+              <div className="mb-3">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Trophy className="h-3.5 w-3.5 text-yellow-400" />
+                  <span className="text-xs font-medium text-yellow-400">Prizes</span>
+                </div>
+                <div className="flex justify-center gap-2 text-xs">
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-yellow-400">🥇</span>
+                    <span className="text-gray-300">{PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.first || 200}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-gray-400">🥈</span>
+                    <span className="text-gray-300">{PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.second || 100}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-orange-400">🥉</span>
+                    <span className="text-gray-300">{PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.third || 50}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Round Info */}
               <div className="text-center mb-3">
                 <div className="space-y-1 text-xs text-gray-400">
