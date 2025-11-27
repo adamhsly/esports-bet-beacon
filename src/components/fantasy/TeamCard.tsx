@@ -200,7 +200,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           </div>
           
           {/* Fantasy Points and Swap Button */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {showSwapButton && onSwapTeam && (
               <Button
                 variant="outline"
@@ -209,7 +209,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                   e.stopPropagation();
                   onSwapTeam();
                 }}
-                className="h-8 px-3 text-xs border-primary/50 text-white hover:bg-primary/10"
+                className="h-8 px-3 text-xs border-primary/50 text-white bg-gray-800 hover:bg-primary hover:text-white"
               >
                 Swap
               </Button>
