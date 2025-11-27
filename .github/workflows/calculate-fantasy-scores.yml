@@ -1,0 +1,17 @@
+name: Calculate Fantasy Scores
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
+
+jobs:
+  calculate-scores:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger calculate-fantasy-scores function
+        run: |
+          curl -X POST https://zcjzeafelunqxmxzznos.supabase.co/functions/v1/calculate-fantasy-scores \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_FUNCTION_SECRET }}" \
+          -H "Content-Type: application/json" \
+          -d '{}'
