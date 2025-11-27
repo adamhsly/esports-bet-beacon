@@ -107,7 +107,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <Trophy className="h-3.5 w-3.5 text-yellow-400" />
                   <span className="text-xs font-medium text-yellow-400">
-                    {PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.type === 'steam' ? 'Steam Vouchers' : 'Prizes'}
+                    {PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
                   </span>
                 </div>
                 <div className="flex justify-center gap-2 text-xs">
