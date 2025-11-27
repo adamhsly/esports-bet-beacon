@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.set-team-swap]
 verify_jwt = true
+
+[functions.get-team-match-breakdown]
+verify_jwt = false
