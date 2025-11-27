@@ -199,27 +199,12 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             </div>
           </div>
           
-          {/* Fantasy Points and Swap Button */}
-          <div className="flex items-center gap-2 shrink-0">
-            {showSwapButton && onSwapTeam && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSwapTeam();
-                }}
-                className="h-8 px-3 text-xs border-primary/50 text-white bg-gray-800 hover:bg-primary hover:text-white"
-              >
-                Swap
-              </Button>
-            )}
-            <div className="text-right">
-              <div className="font-bold text-sm text-blue-400">
-                {fantasyPoints}
-              </div>
-              <div className="text-xs text-gray-400">pts</div>
+          {/* Fantasy Points */}
+          <div className="text-right shrink-0">
+            <div className="font-bold text-sm text-blue-400">
+              {fantasyPoints}
             </div>
+            <div className="text-xs text-gray-400">pts</div>
           </div>
         </div>
         
@@ -245,6 +230,20 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           </div>}
       </CardContent>
       
+      {/* Swap Button - positioned at top */}
+      {showSwapButton && onSwapTeam && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSwapTeam();
+          }}
+          className="absolute top-1 right-8 h-6 px-2 text-xs border-primary/50 text-white bg-gray-800 hover:bg-primary hover:text-white"
+        >
+          Swap
+        </Button>
+      )}
       <StarButton />
     </Card>;
 };
