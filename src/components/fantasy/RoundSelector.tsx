@@ -87,10 +87,10 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
         {rounds.map((round) => (
           <Card 
             key={round.id} 
-            className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+            className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden h-full"
             onClick={() => handleJoinRound(round)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-4 h-full flex flex-col">
               {/* Round Logo */}
               <div className="flex justify-center mb-3">
                 <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
@@ -141,7 +141,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
               </div>
 
               {/* Join Button */}
-              <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2">
+              <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2 mt-auto">
                 Join Round
               </Button>
             </CardContent>
@@ -150,10 +150,10 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
 
         {/* Private Round Card */}
         <Card 
-          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden h-full"
           onClick={() => window.location.href = '/fantasy/private'}
         >
-          <CardContent className="p-4">
+          <CardContent className="p-4 h-full flex flex-col justify-center">
             {/* Private Round Logo */}
             <div className="flex justify-center mb-3">
               <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
