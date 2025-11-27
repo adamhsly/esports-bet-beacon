@@ -1,7 +1,9 @@
 // src/pages/Index.tsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2, Trophy } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -235,6 +237,25 @@ const Index = () => {
   const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const fantasyBanners = [
+    {
+      src: '/lovable-uploads/build_roster_banner.png',
+      alt: 'Draft your ultimate roster - Pick teams and win prizes'
+    },
+    {
+      src: '/lovable-uploads/team_swap_banner.png',
+      alt: 'Use your in-round team swap and star team change wisely'
+    },
+    {
+      src: '/lovable-uploads/monthlyroundprize.png',
+      alt: '£100 Steam voucher for 1st place in December Monthly Round'
+    }
+  ];
+
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
 
   // Redirect unauthenticated users to welcome page (only if they haven't seen it)
   useEffect(() => {
@@ -584,15 +605,26 @@ const Index = () => {
               </div>
             )}
 
-            {/* Fantasy Banner */}
+            {/* Fantasy Banner Carousel */}
             <div className="mx-2 md:mx-4 mb-8">
               <div className="max-w-4xl mx-auto">
                 <Link to="/fantasy" className="block hover:opacity-90 transition-opacity">
-                  <img
-                    src="/lovable-uploads/play_now_banner.png"
-                    alt="Play Now - Pick your teams, score points, win prizes"
-                    className="w-full max-w-xl h-auto rounded-lg cursor-pointer mx-auto"
-                  />
+                  <Carousel
+                    plugins={[autoplayPlugin.current]}
+                    className="w-full md:w-3/4 mx-auto"
+                  >
+                    <CarouselContent>
+                      {fantasyBanners.map((banner, index) => (
+                        <CarouselItem key={index}>
+                          <img 
+                            src={banner.src}
+                            alt={banner.alt}
+                            className="w-full rounded-xl"
+                          />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
                 </Link>
               </div>
             </div>
