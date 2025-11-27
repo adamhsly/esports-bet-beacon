@@ -125,11 +125,15 @@ serve(async (req) => {
             tournamentName.toLowerCase().includes("final") ||
             tournamentName.toLowerCase().includes("cup"));
 
-        // Calculate points
+        // Calculate points - map wins always count, match win bonus only for wins
         let points = 0;
+        
+        // Map wins always count (3 pts each)
+        points += teamScore * basePoints.mapWin;
+        
+        // Match win bonus (10 pts) only for wins
         if (result === "win") {
           points += basePoints.matchWin;
-          points += teamScore * basePoints.mapWin; // Map wins
         }
         if (isCleanSweep) {
           points += basePoints.cleanSweep;
@@ -220,11 +224,15 @@ serve(async (req) => {
           result === "win" &&
           match.competition_type === "championship";
 
-        // Calculate points
+        // Calculate points - map wins always count, match win bonus only for wins
         let points = 0;
+        
+        // Map wins always count (3 pts each * amateur multiplier)
+        points += teamScore * basePoints.mapWin * amateurMultiplier;
+        
+        // Match win bonus only for wins
         if (result === "win") {
           points += basePoints.matchWin * amateurMultiplier;
-          points += teamScore * basePoints.mapWin * amateurMultiplier;
         }
         if (isCleanSweep) {
           points += basePoints.cleanSweep * amateurMultiplier;
