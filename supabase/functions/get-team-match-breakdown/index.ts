@@ -53,11 +53,12 @@ serve(async (req) => {
     const isStarTeam = starTeam?.star_team_id === team_id;
 
     // Scoring config
+    // Must match calculate-fantasy-scores scoring system
     const basePoints = {
       matchWin: 10,
-      mapWin: 5,
-      cleanSweep: 15,
-      tournamentWin: 50,
+      mapWin: 3,
+      cleanSweep: 5,
+      tournamentWin: 25,
     };
     const amateurMultiplier = 1.25;
     const starMultiplier = isStarTeam ? 2 : 1;
