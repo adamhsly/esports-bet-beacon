@@ -109,9 +109,18 @@ serve(async (req) => {
           result = "loss";
         }
 
-        // Calculate score
-        const teamScore = teamData?.score || 0;
-        const opponentScore = opponentData?.score || 0;
+        // Extract scores from raw_data.results array
+        const rawResults = match.raw_data?.results as any[];
+        let teamScore = 0;
+        let opponentScore = 0;
+        
+        if (Array.isArray(rawResults)) {
+          const teamResult = rawResults.find((r: any) => r?.team_id?.toString() === team_id);
+          const opponentResult = rawResults.find((r: any) => r?.team_id?.toString() !== team_id);
+          teamScore = teamResult?.score || 0;
+          opponentScore = opponentResult?.score || 0;
+        }
+        
         const scoreString = `${teamScore}-${opponentScore}`;
 
         // Check for clean sweep (2-0 in BO3, 3-0 in BO5)
