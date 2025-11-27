@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info, Plus } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, AlertTriangle, CheckCircle, Star, Info, Plus, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -76,6 +76,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
+  
+  // Retry logic for team price calculation
+  const [priceStatus, setPriceStatus] = useState<'loading' | 'calculating' | 'ready' | 'error'>('loading');
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 5;
+  const RETRY_INTERVAL = 2000; // 2 seconds
 
   // Star Team functionality
   const [starTeamId, setStarTeamId] = useState<string | null>(null);
@@ -151,9 +157,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       console.error('Error checking existing submission:', error);
     }
   };
-  const fetchAvailableTeams = async () => {
+  const fetchAvailableTeams = async (isRetry: boolean = false) => {
     try {
-      setLoading(true);
+      if (isRetry) {
+        setPriceStatus('calculating');
+      } else {
+        setLoading(true);
+        setPriceStatus('loading');
+      }
 
       // Fetch pro teams from Pandascore matches within round period
       const {
@@ -285,14 +296,69 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         if (aMiss !== bMiss) return aMiss - bMiss;
         return a.name.localeCompare(b.name);
       });
+      
+      // Check if teams are empty and prices might not be calculated yet
+      const hasProTeams = proTeamDataWithPrice.length > 0;
+      const hasAmateurTeams = amateurTeamData.length > 0;
+      const hasPrices = priceRows.length > 0;
+      
+      if (!hasPrices && retryCount < MAX_RETRIES) {
+        console.log(`[TeamPicker] No prices found (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        
+        // On first retry, trigger the calculate-team-prices edge function
+        if (retryCount === 0) {
+          console.log('[TeamPicker] Triggering calculate-team-prices edge function...');
+          try {
+            const { error: calcError } = await supabase.functions.invoke('calculate-team-prices', {
+              body: { round_id: round.id }
+            });
+            if (calcError) {
+              console.error('[TeamPicker] Error triggering price calculation:', calcError);
+            } else {
+              console.log('[TeamPicker] Price calculation triggered successfully');
+            }
+          } catch (err) {
+            console.error('[TeamPicker] Failed to invoke calculate-team-prices:', err);
+          }
+        }
+        
+        // Schedule retry
+        setPriceStatus('calculating');
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          fetchAvailableTeams(true);
+        }, RETRY_INTERVAL);
+        return;
+      }
+      
+      // Update state with fetched teams
       setProTeams(proTeamDataWithPrice);
       setAmateurTeams(amateurTeamData);
+      setPriceStatus('ready');
+      setRetryCount(0);
     } catch (error) {
       console.error('Error fetching teams:', error);
-      toast.error('Failed to load available teams');
+      
+      // Only show error if we've exhausted retries
+      if (retryCount >= MAX_RETRIES) {
+        toast.error('Failed to load available teams');
+        setPriceStatus('error');
+      } else {
+        // Retry on error
+        setPriceStatus('calculating');
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          fetchAvailableTeams(true);
+        }, RETRY_INTERVAL);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleManualRefresh = () => {
+    setRetryCount(0);
+    fetchAvailableTeams(false);
   };
 
   // Realtime: Update prices dynamically if they change
@@ -557,9 +623,29 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   if (loading) {
     return <div className="text-center py-12">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Loading available teams...</p>
+        <p className="text-muted-foreground">
+          {priceStatus === 'calculating' 
+            ? `Setting up team prices for this round... (attempt ${retryCount}/${MAX_RETRIES})`
+            : 'Loading available teams...'}
+        </p>
       </div>;
   }
+  
+  // Error state with retry button
+  if (priceStatus === 'error' && proTeams.length === 0 && amateurTeams.length === 0) {
+    return <div className="text-center py-12">
+        <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Failed to Load Teams</h3>
+        <p className="text-muted-foreground mb-4">
+          Unable to calculate team prices. This may be a temporary issue.
+        </p>
+        <Button onClick={handleManualRefresh} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry Loading Teams
+        </Button>
+      </div>;
+  }
+  
   return <div className="space-y-6">
       
 
