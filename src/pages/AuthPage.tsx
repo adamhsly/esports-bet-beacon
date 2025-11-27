@@ -329,7 +329,7 @@ const AuthPage: React.FC = () => {
         </div>
 
         <Card className="bg-theme-gray-medium border-theme-gray-light">
-          <CardHeader className="p-0">
+          <CardHeader className="p-0 pb-4">
             <img 
               src={loginBanner} 
               alt="Win Prizes - 1st Place £100, 2nd Place £30, 3rd Place £5 in the free to play fantasy monthly round" 
