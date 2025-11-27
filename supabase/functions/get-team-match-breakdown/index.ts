@@ -68,14 +68,14 @@ serve(async (req) => {
 
     // Fetch matches based on team type
     if (team_type === "pro") {
-      // Query PandaScore matches
+      // Query PandaScore matches using start_time for proper timestamp comparison
       const { data: proMatches, error: proError } = await supabase
         .from("pandascore_matches")
         .select("*")
-        .gte("match_date", round.start_date.split("T")[0])
-        .lte("match_date", round.end_date.split("T")[0])
+        .gte("start_time", round.start_date)
+        .lte("start_time", round.end_date)
         .eq("status", "finished")
-        .order("match_date", { ascending: false });
+        .order("start_time", { ascending: false });
 
       if (proError) {
         console.error("Pro matches error:", proError);
@@ -169,14 +169,14 @@ serve(async (req) => {
         };
       });
     } else {
-      // Query FACEIT matches
+      // Query FACEIT matches using started_at for proper timestamp comparison (matches DB function)
       const { data: amateurMatches, error: amateurError } = await supabase
         .from("faceit_matches")
         .select("*")
-        .gte("match_date", round.start_date.split("T")[0])
-        .lte("match_date", round.end_date.split("T")[0])
+        .gte("started_at", round.start_date)
+        .lte("started_at", round.end_date)
         .eq("is_finished", true)
-        .order("match_date", { ascending: false });
+        .order("started_at", { ascending: false });
 
       if (amateurError) {
         console.error("Amateur matches error:", amateurError);
