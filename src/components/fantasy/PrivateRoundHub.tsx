@@ -30,7 +30,7 @@ export const PrivateRoundHub: React.FC = () => {
 
         <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {/* Join Round Card */}
-          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#7a5cff]/30 hover:translate-y-[-2px]">
+          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#7a5cff]/30 hover:translate-y-[-2px] h-full flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-3 rounded-lg bg-[#7a5cff]/10">
@@ -42,7 +42,7 @@ export const PrivateRoundHub: React.FC = () => {
                 Have an invite code? Join an exclusive round
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="mt-auto">
               {!showJoinForm ? (
                 <Button 
                   onClick={() => setShowJoinForm(true)}
@@ -58,7 +58,7 @@ export const PrivateRoundHub: React.FC = () => {
           </Card>
 
           {/* Create Round Card */}
-          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#7a5cff]/30 hover:translate-y-[-2px]">
+          <Card className="relative overflow-hidden border-white/[0.08] bg-gradient-to-br from-[#1e1e2a]/90 to-[#2a2a3a]/90 backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#7a5cff]/30 hover:translate-y-[-2px] h-full flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-3 rounded-lg bg-[#7a5cff]/10">
@@ -70,7 +70,7 @@ export const PrivateRoundHub: React.FC = () => {
                 Set up a custom round with your own rules
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="mt-auto">
               <Button 
                 onClick={() => navigate('/fantasy/private/create')}
                 className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
