@@ -168,8 +168,19 @@ function getEmailSubject(position: number, roundType: string): string {
   const medals = ['🥇', '🥈', '🥉'];
   const places = ['1st Place', '2nd Place', '3rd Place'];
   
+  if (roundType === 'monthly') {
+    return `${medals[position - 1]} You won a Steam Voucher! ${places[position - 1]} in the ${roundTypeTitle} Fantasy Round!`;
+  }
+  
   return `${medals[position - 1]} You finished ${places[position - 1]} in the ${roundTypeTitle} Fantasy Round!`;
 }
+
+// Monthly Steam voucher prizes
+const MONTHLY_STEAM_PRIZES: Record<number, string> = {
+  1: '£100',
+  2: '£30',
+  3: '£5',
+};
 
 function generateWinnerEmail(winner: any, round: any): string {
   const medals = ['🥇', '🥈', '🥉'];
@@ -178,6 +189,35 @@ function generateWinnerEmail(winner: any, round: any): string {
   
   const position = winner.finish_position - 1;
   const roundTypeTitle = round.type.charAt(0).toUpperCase() + round.type.slice(1);
+  const isMonthlyRound = round.type === 'monthly';
+  const steamPrize = MONTHLY_STEAM_PRIZES[winner.finish_position];
+
+  const prizeSection = isMonthlyRound ? `
+          <div class="prize-box">
+            <p style="margin: 0; font-size: 20px;">You've won a</p>
+            <div class="prize-amount">${steamPrize}</div>
+            <p style="margin: 0; font-size: 20px;">Steam Voucher!</p>
+          </div>
+          
+          <div style="background: #EBF8FF; border: 2px solid #63B3ED; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
+            <p style="margin: 0; color: #2B6CB0; font-size: 16px;">
+              🎮 <strong>We'll be in contact shortly to process your Steam voucher prize!</strong>
+            </p>
+            <p style="margin: 10px 0 0 0; color: #4A5568; font-size: 14px;">
+              Please keep an eye on your inbox for further details.
+            </p>
+          </div>
+  ` : `
+          <div class="prize-box">
+            <p style="margin: 0; font-size: 20px;">You've earned</p>
+            <div class="prize-amount">${winner.credits_awarded}</div>
+            <p style="margin: 0; font-size: 20px;">Bonus Credits!</p>
+          </div>
+  `;
+
+  const closingText = isMonthlyRound 
+    ? `Check your inbox for details about your Steam voucher prize!`
+    : `Use your bonus credits to enter more fantasy rounds and climb the leaderboard!`;
 
   return `
     <!DOCTYPE html>
@@ -208,11 +248,7 @@ function generateWinnerEmail(winner: any, round: any): string {
         <div class="content">
           <p style="font-size: 18px;">Amazing job in the <strong>${roundTypeTitle} Fantasy Round</strong>!</p>
           
-          <div class="prize-box">
-            <p style="margin: 0; font-size: 20px;">You've earned</p>
-            <div class="prize-amount">${winner.credits_awarded}</div>
-            <p style="margin: 0; font-size: 20px;">Bonus Credits!</p>
-          </div>
+          ${prizeSection}
           
           <div class="stats">
             <div class="stat-row">
@@ -228,12 +264,12 @@ function generateWinnerEmail(winner: any, round: any): string {
               <span>${roundTypeTitle}</span>
             </div>
             <div class="stat-row" style="border-bottom: none;">
-              <span><strong>Credits Awarded:</strong></span>
-              <span>${winner.credits_awarded} Credits</span>
+              <span><strong>Prize:</strong></span>
+              <span>${isMonthlyRound ? steamPrize + ' Steam Voucher' : winner.credits_awarded + ' Credits'}</span>
             </div>
           </div>
           
-          <p>Use your bonus credits to enter more fantasy rounds and climb the leaderboard!</p>
+          <p>${closingText}</p>
           
           <center>
             <a href="https://fragsandfortunes.com/fantasy" class="cta-button">View Leaderboard</a>

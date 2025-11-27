@@ -4,6 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Sparkles, Star } from "lucide-react";
 import { RoundWinner } from "@/hooks/useRoundWinnerNotifications";
 
+// Monthly Steam voucher prizes
+const MONTHLY_STEAM_PRIZES: Record<number, string> = {
+  1: '£100',
+  2: '£30',
+  3: '£5',
+};
+
 interface RoundWinnerCelebrationModalProps {
   winner: RoundWinner | null;
   onClose: () => void;
@@ -30,6 +37,9 @@ export const RoundWinnerCelebrationModal = ({
   const roundTypeTitle = winner.round_type 
     ? winner.round_type.charAt(0).toUpperCase() + winner.round_type.slice(1)
     : 'Fantasy';
+
+  const isMonthlyRound = winner.round_type === 'monthly';
+  const steamPrize = MONTHLY_STEAM_PRIZES[winner.finish_position];
 
   return (
     <Dialog open={!!winner} onOpenChange={onClose}>
@@ -68,15 +78,33 @@ export const RoundWinnerCelebrationModal = ({
             </p>
           </div>
 
-          {/* Credits Awarded */}
+          {/* Prize Awarded */}
           <div className="bg-gradient-to-r from-yellow-600 to-yellow-500 rounded-xl p-4 sm:p-6 mx-4 sm:mx-6 transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-center gap-2 sm:gap-3 mb-1 sm:mb-2">
               <Star className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-base sm:text-lg md:text-xl">You've earned</span>
+              <span className="text-base sm:text-lg md:text-xl">You've won</span>
             </div>
-            <div className="text-4xl sm:text-5xl md:text-6xl font-bold my-2 sm:my-4">{winner.credits_awarded}</div>
-            <div className="text-base sm:text-lg md:text-xl">Bonus Credits!</div>
+            {isMonthlyRound ? (
+              <>
+                <div className="text-4xl sm:text-5xl md:text-6xl font-bold my-2 sm:my-4">{steamPrize}</div>
+                <div className="text-base sm:text-lg md:text-xl">Steam Voucher!</div>
+              </>
+            ) : (
+              <>
+                <div className="text-4xl sm:text-5xl md:text-6xl font-bold my-2 sm:my-4">{winner.credits_awarded}</div>
+                <div className="text-base sm:text-lg md:text-xl">Bonus Credits!</div>
+              </>
+            )}
           </div>
+          
+          {/* Contact notice for monthly rounds */}
+          {isMonthlyRound && (
+            <div className="bg-blue-500/20 border border-blue-400/50 rounded-lg p-3 sm:p-4 mx-4 sm:mx-6 text-sm sm:text-base">
+              <p className="text-blue-100">
+                🎮 We'll be in contact shortly to process your Steam voucher prize!
+              </p>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="bg-black/30 rounded-lg p-4 sm:p-6 mx-4 sm:mx-6 space-y-2 sm:space-y-3">
@@ -106,7 +134,10 @@ export const RoundWinnerCelebrationModal = ({
           </Button>
 
           <p className="text-xs sm:text-sm text-purple-300">
-            Use your bonus credits to enter more fantasy rounds!
+            {isMonthlyRound 
+              ? "Check your email for details about your Steam voucher prize!"
+              : "Use your bonus credits to enter more fantasy rounds!"
+            }
           </p>
         </div>
       </DialogContent>
