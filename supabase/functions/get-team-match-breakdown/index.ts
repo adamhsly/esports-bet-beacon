@@ -186,14 +186,19 @@ serve(async (req) => {
         );
       }
 
-      // Filter matches where team participated
+      // Filter matches where team participated (team_id is stored as lowercase team name)
       const teamMatches = (amateurMatches || []).filter((match) => {
-        return match.faction1_id === team_id || match.faction2_id === team_id;
+        const f1Name = (match.faction1_name || "").toLowerCase();
+        const f2Name = (match.faction2_name || "").toLowerCase();
+        const searchId = team_id.toLowerCase();
+        return f1Name === searchId || f2Name === searchId;
       });
 
       // Process matches
       matches = teamMatches.map((match) => {
-        const isTeam1 = match.faction1_id === team_id;
+        const f1Name = (match.faction1_name || "").toLowerCase();
+        const searchId = team_id.toLowerCase();
+        const isTeam1 = f1Name === searchId;
         const teamName = isTeam1 ? match.faction1_name : match.faction2_name;
         const opponentName = isTeam1 ? match.faction2_name : match.faction1_name;
 
