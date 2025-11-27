@@ -388,7 +388,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                  )}
                                  {frame.track === 'premium' && (
                                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
-                                     Premium
+                                     Season Pass
                                    </Badge>
                                  )}
                               </div>
@@ -494,7 +494,7 @@ export const AvatarConfiguration: React.FC<AvatarConfigurationProps> = ({
                                  )}
                                  {border.track === 'premium' && (
                                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 text-xs ml-1">
-                                     Premium
+                                     Season Pass
                                    </Badge>
                                  )}
                               </div>

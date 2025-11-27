@@ -44,7 +44,7 @@ const PremiumConnector: React.FC<PremiumConnectorProps> = ({
         disabled
       >
         <Crown className="w-4 h-4 mr-2" />
-        {children || 'Premium'}
+        {children || 'Season Pass'}
       </Button>
     );
   }
@@ -63,31 +63,31 @@ const PremiumConnector: React.FC<PremiumConnectorProps> = ({
           ) : (
             <Crown className="w-4 h-4 mr-2" />
           )}
-          {children || 'Unlock Premium'}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white font-gaming text-xl">
-            <Crown className="w-6 h-6 text-neon-gold" />
-            Get Premium Pass
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-neon-gold to-neon-orange rounded-full flex items-center justify-center mx-auto mb-4 animate-premium-glow">
-              <Crown className="w-8 h-8 text-white" />
-            </div>
-            <p className="text-muted-foreground">
-              Unlock exclusive features and premium rewards
-            </p>
+        {children || 'Unlock Season Pass'}
+      </Button>
+    </DialogTrigger>
+    <DialogContent className="sm:max-w-md bg-gradient-to-br from-engagement-card to-engagement-bg-end border-engagement-border">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2 text-white font-gaming text-xl">
+          <Crown className="w-6 h-6 text-neon-gold" />
+          Get Season Pass
+        </DialogTitle>
+      </DialogHeader>
+      <div className="space-y-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-neon-gold to-neon-orange rounded-full flex items-center justify-center mx-auto mb-4 animate-premium-glow">
+            <Crown className="w-8 h-8 text-white" />
           </div>
+          <p className="text-muted-foreground">
+            Unlock exclusive features and season pass rewards
+          </p>
+        </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-neon-gold/10 rounded-lg border border-neon-gold/20">
-              <CheckCircle className="w-5 h-5 text-neon-gold flex-shrink-0" />
-              <span className="text-white font-gaming">Premium Reward Track</span>
-            </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-neon-gold/10 rounded-lg border border-neon-gold/20">
+            <CheckCircle className="w-5 h-5 text-neon-gold flex-shrink-0" />
+            <span className="text-white font-gaming">Season Pass Reward Track</span>
+          </div>
             <div className="flex items-center gap-3 p-3 bg-neon-gold/10 rounded-lg border border-neon-gold/20">
               <CheckCircle className="w-5 h-5 text-neon-gold flex-shrink-0" />
               <span className="text-white font-gaming">Exclusive Card Packs</span>

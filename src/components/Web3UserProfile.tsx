@@ -204,7 +204,7 @@ const Web3UserProfile: React.FC = () => {
                 {profile?.premium_pass ? (
                   <Badge className="bg-neon-gold/20 text-neon-gold border-neon-gold/30 animate-premium-glow font-gaming">
                     <Crown className="w-4 h-4 mr-2" />
-                    Premium Active
+                    Season Pass Active
                   </Badge>
                 ) : (
                   <PremiumConnector size="sm" />
@@ -358,7 +358,7 @@ const Web3UserProfile: React.FC = () => {
                     <Progress value={45} className="h-2 mt-2 bg-engagement-bg-start [&>div]:bg-neon-blue" />
                   </div>
 
-                  {/* Premium Track */}
+                  {/* Season Pass Track */}
                   <div className={`p-4 rounded-lg border ${profile?.premium_pass ? 'bg-neon-gold/10 border-neon-gold/20 animate-premium-glow' : 'bg-muted/10 border-muted/20'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ const Web3UserProfile: React.FC = () => {
                           <Lock className="w-4 h-4 text-muted-foreground" />
                         )}
                         <span className={`font-gaming ${profile?.premium_pass ? 'text-neon-gold' : 'text-muted-foreground'}`}>
-                          Premium Rewards
+                          Season Pass Rewards
                         </span>
                       </div>
                       <Badge className={`${profile?.premium_pass ? 'bg-neon-gold/20 text-neon-gold border-neon-gold/30' : 'bg-muted/20 text-muted-foreground border-muted/30'} font-gaming`}>

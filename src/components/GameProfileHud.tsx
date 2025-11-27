@@ -222,7 +222,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               {isPremium ? (
                 <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-gaming text-sm px-4 py-2 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
                   <Crown className="w-4 h-4 mr-2" />
-                  Premium
+                  Season Pass
                 </Badge>
               ) : (
                 <Button 
@@ -230,7 +230,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                   className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-gaming text-sm px-4 py-2 rounded-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]"
                 >
                   <Flame className="w-4 h-4 mr-2" />
-                  Unlock Premium
+                  Unlock Season Pass
                 </Button>
               )}
             </div>
@@ -279,11 +279,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
               </div>
             </div>
 
-            {/* PREMIUM Track */}
+            {/* SEASON PASS Track */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-400/30 font-gaming text-sm px-3 py-1">
-                  PREMIUM
+                  SEASON PASS
                 </Badge>
                 {isPremium ? (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-gaming text-xs px-3 py-1 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
@@ -296,7 +296,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
                     size="sm"
                     className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 text-yellow-400 border border-yellow-400/30 font-gaming text-xs px-2 py-1"
                   >
-                    Unlock Premium
+                    Unlock Season Pass
                   </Button>
                 )}
               </div>
