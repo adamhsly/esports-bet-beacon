@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import loginBanner from '@/assets/login-banner.png';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -263,10 +264,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-theme-gray-medium border-theme-gray-light max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-gaming text-white text-center">
-            Welcome to <span className="text-theme-purple">EsportsHub</span>
-          </DialogTitle>
+        <DialogHeader className="p-0">
+          <img 
+            src={loginBanner} 
+            alt="Win Prizes - 1st Place £100, 2nd Place £30, 3rd Place £5 in the free to play fantasy monthly round" 
+            className="w-full h-auto rounded-t-lg"
+          />
         </DialogHeader>
         
         <Tabs defaultValue="signin" className="space-y-4">
