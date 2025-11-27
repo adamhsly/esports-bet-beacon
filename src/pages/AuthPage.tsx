@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import loginBanner from "@/assets/login-banner.png";
 
 const AuthPage: React.FC = () => {
   // Mark welcome page as seen when auth page is accessed
@@ -328,11 +329,12 @@ const AuthPage: React.FC = () => {
         </div>
 
         <Card className="bg-theme-gray-medium border-theme-gray-light">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-gaming text-white">
-              Welcome to <span className="text-theme-purple">FRAGS</span> <span className="text-yellow-400">&</span>{" "}
-              <span className="text-white">FORTUNES</span>
-            </CardTitle>
+          <CardHeader className="p-0">
+            <img 
+              src={loginBanner} 
+              alt="Win Prizes - 1st Place £100, 2nd Place £30, 3rd Place £5 in the free to play fantasy monthly round" 
+              className="w-full h-auto rounded-t-lg"
+            />
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="space-y-4">
