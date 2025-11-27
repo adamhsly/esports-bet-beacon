@@ -38,7 +38,7 @@ const PremiumCancelPage: React.FC = () => {
 
             <div className="p-4 bg-neon-blue/10 rounded-lg border border-neon-blue/20">
               <p className="text-neon-blue font-gaming text-center">
-                Premium features are always available when you're ready to upgrade!
+                Season Pass features are always available when you're ready to upgrade!
               </p>
             </div>
 

@@ -73,11 +73,11 @@ const PremiumSuccessPage: React.FC = () => {
               </div>
             </div>
             <CardTitle className="text-3xl font-gaming text-white mb-2">
-              Welcome to Premium!
+              Welcome to Season Pass!
             </CardTitle>
             <Badge className="bg-neon-gold/20 text-neon-gold border-neon-gold/30 animate-premium-glow font-gaming">
               <Crown className="w-4 h-4 mr-2" />
-              Premium Active
+              Season Pass Active
             </Badge>
           </CardHeader>
           
@@ -95,7 +95,7 @@ const PremiumSuccessPage: React.FC = () => {
             <div className="grid gap-3">
               <div className="flex items-center gap-3 p-3 bg-neon-gold/10 rounded-lg border border-neon-gold/20">
                 <CheckCircle className="w-5 h-5 text-neon-gold" />
-                <span className="text-white font-gaming">Premium Reward Track Unlocked</span>
+                <span className="text-white font-gaming">Season Pass Reward Track Unlocked</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-neon-gold/10 rounded-lg border border-neon-gold/20">
                 <CheckCircle className="w-5 h-5 text-neon-gold" />

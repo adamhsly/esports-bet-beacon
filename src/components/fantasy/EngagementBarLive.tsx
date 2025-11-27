@@ -349,7 +349,7 @@ export const EngagementBarLive: React.FC = () => {
                           "text-sm font-gaming",
                           premiumActive ? "text-neon-gold animate-premium-glow" : "text-muted-foreground"
                         )}>
-                          Premium
+                          Season Pass
                         </span>
                       </div>
                       <span className={cn(

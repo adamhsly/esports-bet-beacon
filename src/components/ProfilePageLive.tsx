@@ -148,7 +148,7 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                 {premiumActive ? (
                   <Badge className="bg-neon-gold/20 text-neon-gold border-neon-gold/30 animate-premium-glow font-gaming">
                     <Crown className="w-4 h-4 mr-2" />
-                    Premium Active
+                    Season Pass Active
                   </Badge>
                 ) : (
                   <Button 
@@ -157,7 +157,7 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                     onClick={onUnlockPremium}
                   >
                     <Crown className="w-4 h-4 mr-2" />
-                    Unlock Premium
+                    Unlock Season Pass
                   </Button>
                 )}
               </div>
@@ -329,7 +329,7 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
                     <div className="p-4 bg-gradient-to-r from-neon-gold/10 to-neon-orange/10 rounded-lg border border-neon-gold/20">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-gaming text-neon-gold">Unlock Premium Track</h3>
+                          <h3 className="font-gaming text-neon-gold">Unlock Season Pass Track</h3>
                           <p className="text-sm text-neon-gold/80">Get access to exclusive rewards and bonuses</p>
                         </div>
                         <Button 
