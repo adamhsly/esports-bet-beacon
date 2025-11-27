@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.calculate-team-prices]
 verify_jwt = false
 
+[functions.calculate-fantasy-scores]
+verify_jwt = false
+
 [functions.public-image-proxy]
 verify_jwt = false
 
