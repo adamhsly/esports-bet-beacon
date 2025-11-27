@@ -240,6 +240,10 @@ const Index = () => {
 
   const fantasyBanners = [
     {
+      src: '/lovable-uploads/play_now_hero_banner.png',
+      alt: 'Play Now - Pick your teams, score points, win prizes'
+    },
+    {
       src: '/lovable-uploads/build_roster_banner.png',
       alt: 'Draft your ultimate roster - Pick teams and win prizes'
     },
