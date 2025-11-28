@@ -30,6 +30,63 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // First, try to get pre-calculated breakdown from the database
+    const { data: storedBreakdowns, error: storedError } = await supabase
+      .from("fantasy_team_match_breakdown")
+      .select("*")
+      .eq("round_id", round_id)
+      .eq("user_id", user_id)
+      .eq("team_id", team_id)
+      .order("match_date", { ascending: false });
+
+    if (!storedError && storedBreakdowns && storedBreakdowns.length > 0) {
+      console.log(`Found ${storedBreakdowns.length} stored breakdowns, returning cached data`);
+      
+      // Get team name from first breakdown
+      const teamName = storedBreakdowns[0].team_name || "Unknown Team";
+      const isStarTeam = storedBreakdowns[0].is_star_team || false;
+
+      // Calculate summary stats from stored data
+      const totalPoints = storedBreakdowns.reduce((sum, m) => sum + (m.points_earned || 0), 0);
+      const matchWins = storedBreakdowns.filter(m => m.result === "win").length;
+      const mapWins = storedBreakdowns.reduce((sum, m) => sum + (m.map_wins || 0), 0);
+      const cleanSweeps = storedBreakdowns.filter(m => m.is_clean_sweep).length;
+      const tournamentsWon = storedBreakdowns.filter(m => m.is_tournament_win).length;
+
+      // Transform to expected response format
+      const matches = storedBreakdowns.map(b => ({
+        match_id: b.match_id,
+        match_date: b.match_date,
+        opponent_name: b.opponent_name || "Unknown",
+        opponent_logo: b.opponent_logo,
+        result: b.result,
+        score: b.score,
+        points_earned: b.points_earned,
+        match_type: b.team_type,
+        tournament_name: b.tournament_name || "",
+        is_clean_sweep: b.is_clean_sweep,
+        is_tournament_win: b.is_tournament_win,
+      }));
+
+      return new Response(JSON.stringify({
+        team_name: teamName,
+        team_type,
+        total_points: totalPoints,
+        is_star_team: isStarTeam,
+        match_wins: matchWins,
+        map_wins: mapWins,
+        clean_sweeps: cleanSweeps,
+        tournaments_won: tournamentsWon,
+        matches,
+        source: "cached",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fallback: Calculate on-the-fly if no stored data
+    console.log("No stored breakdowns found, calculating on-the-fly");
+
     // Get round dates
     const { data: round, error: roundError } = await supabase
       .from("fantasy_rounds")
@@ -57,13 +114,12 @@ serve(async (req) => {
 
     const isStarTeam = starTeam?.star_team_id === team_id;
 
-    // Scoring config
-    // Must match calculate-fantasy-scores scoring system
+    // Scoring config - must match calculate-fantasy-scores scoring system
     const basePoints = {
       matchWin: 10,
       mapWin: 3,
       cleanSweep: 5,
-      tournamentWin: 20, // Changed from 25 to match rules
+      tournamentWin: 20,
     };
     const amateurMultiplier = 1.25;
     const starMultiplier = isStarTeam ? 2 : 1;
@@ -307,6 +363,7 @@ serve(async (req) => {
       clean_sweeps: cleanSweeps,
       tournaments_won: tournamentsWon,
       matches,
+      source: "calculated",
     };
 
     return new Response(JSON.stringify(response), {
