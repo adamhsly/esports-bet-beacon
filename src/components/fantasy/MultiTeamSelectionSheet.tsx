@@ -79,7 +79,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [selectedGamePro, setSelectedGamePro] = useState<string>('all');
   const [minMatchesPro, setMinMatchesPro] = useState<number>(0);
   const [hasLogoOnlyPro, setHasLogoOnlyPro] = useState<boolean>(false);
-  const [priceRangePro, setPriceRangePro] = useState<number[]>([0, 100]);
+  const [priceRangePro, setPriceRangePro] = useState<number[]>([0, 1000]);
 
   // Amateur team filters
   const [amSearch, setAmSearch] = useState('');
@@ -88,7 +88,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [minMatchesPrev, setMinMatchesPrev] = useState<number>(0);
   const [maxMissedPct, setMaxMissedPct] = useState<number>(100);
   const [hasLogoOnlyAm, setHasLogoOnlyAm] = useState<boolean>(false);
-  const [priceRangeAm, setPriceRangeAm] = useState<number[]>([0, 100]);
+  const [priceRangeAm, setPriceRangeAm] = useState<number[]>([0, 1000]);
 
   // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
@@ -130,12 +130,16 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const maxProPrice = useMemo(() => Math.max(...proPrices, 0), [proPrices]);
   const maxAmateurPrice = useMemo(() => Math.max(...amateurPrices, 0), [amateurPrices]);
 
-  // Update price ranges when teams change
+  // Update price ranges when teams change - only if valid prices loaded
   useEffect(() => {
-    setPriceRangePro([0, maxProPrice]);
+    if (maxProPrice > 0) {
+      setPriceRangePro([0, maxProPrice]);
+    }
   }, [maxProPrice]);
   useEffect(() => {
-    setPriceRangeAm([0, maxAmateurPrice]);
+    if (maxAmateurPrice > 0) {
+      setPriceRangeAm([0, maxAmateurPrice]);
+    }
   }, [maxAmateurPrice]);
 
   // Step 1: Base filtered teams (search, game, region)
