@@ -63,7 +63,7 @@ serve(async (req) => {
       matchWin: 10,
       mapWin: 3,
       cleanSweep: 5,
-      tournamentWin: 25,
+      tournamentWin: 20, // Changed from 25 to match rules
     };
     const amateurMultiplier = 1.25;
     const starMultiplier = isStarTeam ? 2 : 1;
@@ -245,20 +245,23 @@ serve(async (req) => {
         // Calculate points - map wins always count, match win bonus only for wins
         let points = 0;
         
-        // Map wins always count (3 pts each * amateur multiplier)
-        points += teamScore * basePoints.mapWin * amateurMultiplier;
+        // Map wins always count (3 pts each)
+        points += teamScore * basePoints.mapWin;
         
         // Match win bonus only for wins
         if (result === "win") {
-          points += basePoints.matchWin * amateurMultiplier;
+          points += basePoints.matchWin;
         }
         if (isCleanSweep) {
-          points += basePoints.cleanSweep * amateurMultiplier;
+          points += basePoints.cleanSweep;
         }
         if (isTournamentWin) {
-          points += basePoints.tournamentWin * amateurMultiplier;
+          points += basePoints.tournamentWin;
         }
 
+        // Apply amateur multiplier to total (same as calculate-fantasy-scores)
+        points = Math.floor(points * amateurMultiplier);
+        
         // Apply star multiplier
         points = points * starMultiplier;
 
