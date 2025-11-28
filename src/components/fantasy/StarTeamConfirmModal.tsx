@@ -43,6 +43,7 @@ export const StarTeamConfirmModal: React.FC<StarTeamConfirmModalProps> = ({
           <Button
             variant="outline"
             onClick={onCancel}
+            className="text-white"
           >
             {cancelText}
           </Button>
