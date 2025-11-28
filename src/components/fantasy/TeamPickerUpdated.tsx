@@ -10,13 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '@/components/AuthModal';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Progress } from '@/components/ui/progress';
-import { SelectedTeamsWidgetNew } from './SelectedTeamsWidgetNew';
+import { SelectedTeamsWidget } from './SelectedTeamsWidget';
 import { TeamCard } from './TeamCard';
 import { StarTeamConfirmModal } from './StarTeamConfirmModal';
 import { LineupSuccessModal } from './LineupSuccessModal';
@@ -68,7 +64,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 }) => {
   const { user } = useAuth();
   const { progressMission } = useRPCActions();
-  const { availableCredits, spendBonusCredits } = useBonusCredits();
+  const { availableCredits: availableBonusCredits, spendBonusCredits } = useBonusCredits();
   
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
@@ -86,10 +82,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const MAX_RETRIES = 5;
   const RETRY_INTERVAL = 2000; // 2 seconds
 
-  // Bonus Credits State
-  const [useBonusCreditsState, setUseBonusCreditsState] = useState(false);
-  const [bonusCreditsAmount, setBonusCreditsAmount] = useState(0);
-
   // Star Team functionality
   const [starTeamId, setStarTeamId] = useState<string | null>(null);
   const [showNoStarModal, setShowNoStarModal] = useState(false);
@@ -97,9 +89,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
   const { setStarTeam } = useRoundStar(round.id);
 
-  // Salary cap and budget calculations
+  // Salary cap and budget calculations - automatic bonus credits
   const SALARY_CAP = 50;
-  const totalBudget = SALARY_CAP + (useBonusCreditsState ? bonusCreditsAmount : 0);
+  const totalBudget = SALARY_CAP + availableBonusCredits;
   const budgetSpent = useMemo(() => selectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [selectedTeams]);
   const budgetRemaining = Math.max(0, totalBudget - budgetSpent);
 
@@ -349,11 +341,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     try {
       setSubmitting(true);
 
-      // Spend bonus credits if being used
-      if (useBonusCreditsState && bonusCreditsAmount > 0) {
-        const bonusSpent = await spendBonusCredits(round.id, bonusCreditsAmount);
-        if (!bonusSpent) {
-          throw new Error('Failed to spend bonus credits');
+      // Automatically calculate and spend bonus credits if needed
+      const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
+      if (bonusCreditsNeeded > 0) {
+        const { data, error } = await supabase.rpc('spend_bonus_credits', {
+          p_user: user.id,
+          p_round: round.id,
+          p_base_amount: Math.min(budgetSpent, SALARY_CAP),
+          p_bonus_amount: bonusCreditsNeeded
+        });
+
+        if (error || !data) {
+          console.error('Failed to spend bonus credits:', error);
+          throw new Error(`Failed to auto-spend ${bonusCreditsNeeded} bonus credits. Please check your available balance.`);
         }
       }
 
@@ -417,23 +417,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         console.warn('Mission progression failed (non-blocking)', missionError);
       }
 
-      // Show success message
-      toast.success(
-        useBonusCreditsState 
-          ? `Lineup saved with ${(bonusCreditsAmount).toFixed(1)} bonus credits used!`
-          : 'Teams submitted successfully!'
-      );
+      // Show success modal
+      setShowSuccessModal(true);
 
       // Check for star team performance mission (w_star_top)
       if (starTeamId) {
         await checkStarTeamPerformance(user.id, round.id, starTeamId);
       }
-
-      setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Error submitting team:', error);
       if (error.code === '23505') {
         toast.error('You have already submitted a team for this round');
+      } else if (error.message?.includes('bonus credits')) {
+        toast.error(error.message);
       } else {
         toast.error('Failed to submit team');
       }
@@ -502,119 +498,23 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   return (
     <div className="space-y-6">
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidgetNew 
+      <SelectedTeamsWidget 
         selectedTeams={selectedTeams} 
         benchTeam={benchTeam} 
         budgetSpent={budgetSpent} 
         budgetRemaining={budgetRemaining} 
         salaryCapacity={SALARY_CAP}
-        bonusCreditsUsed={useBonusCreditsState ? bonusCreditsAmount : 0}
+        bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)}
         totalBudget={totalBudget}
         roundType={round.type} 
         onRemoveTeam={handleRemoveTeam} 
         proTeams={proTeams} 
         amateurTeams={amateurTeams} 
-        onOpenMultiTeamSelector={() => {
-          if (loading) {
-            console.log('Sheet blocked - still loading');
-            return;
-          }
-          console.log('Opening sheet with proTeams:', proTeams.length, 'first price:', proTeams[0]?.price);
-          setShowTeamSelectionSheet(true);
-        }} 
+        onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} 
         onTeamSelect={handleTeamSelect} 
         starTeamId={starTeamId} 
         onToggleStar={handleToggleStar} 
       />
-
-      {/* Bonus Credits Section */}
-      {availableCredits > 0 && (
-        <div className="bg-glass-card backdrop-blur-glass border border-glass-border rounded-xl p-4 shadow-glass">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-glass-text">
-              💎 Bonus Credits Available
-            </h3>
-            <span className="text-glass-accent font-bold">
-              {availableCredits.toFixed(1)}
-            </span>
-          </div>
-          <p className="text-sm text-glass-muted mb-4">
-            Use your earned credits to boost your budget for this round (one-time use).
-          </p>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <Checkbox
-                id="useBonusCredits"
-                checked={useBonusCreditsState}
-                onCheckedChange={(checked) => {
-                  setUseBonusCreditsState(!!checked);
-                  if (!checked) {
-                    setBonusCreditsAmount(0);
-                  } else {
-                    setBonusCreditsAmount(Math.min(availableCredits, 15));
-                  }
-                }}
-              />
-              <Label htmlFor="useBonusCredits" className="text-sm font-medium text-glass-text">
-                Use bonus credits for this round
-              </Label>
-            </div>
-            {useBonusCreditsState && (
-              <div>
-                <Label className="block text-sm font-medium text-glass-text mb-2">
-                  Amount to use (max {availableCredits.toFixed(1)}):
-                </Label>
-                <Slider
-                  value={[bonusCreditsAmount]}
-                  onValueChange={(values) => setBonusCreditsAmount(values[0])}
-                  max={availableCredits}
-                  min={0}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="text-center text-sm text-glass-accent font-medium mt-1">
-                  {bonusCreditsAmount.toFixed(1)}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Star Team Summary */}
-      {selectedTeams.length > 0 && (
-        <div className="bg-glass-card backdrop-blur-glass border border-glass-border rounded-xl p-4 shadow-glass">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Star className={`h-5 w-5 ${starTeamId ? 'text-glass-accent fill-current' : 'text-glass-muted'}`} />
-              <div>
-                <div className="font-medium text-glass-text">
-                  {getStarredTeamName() ? (
-                    <>Star Team: <span className="text-glass-accent">{getStarredTeamName()}</span> (Double Points)</>
-                  ) : (
-                    'No Star Team selected'
-                  )}
-                </div>
-                <div className="text-sm text-glass-muted">
-                  Your Star Team scores double points this round. Choose wisely!
-                </div>
-              </div>
-            </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-glass-muted hover:text-glass-text">
-                    <Info className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Your Star Team scores double points. You can change it once after the round starts.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      )}
 
       {/* Submit Button */}
       <div className="flex justify-center">
@@ -629,6 +529,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               toast.error('Please select exactly 5 teams');
               return;
             }
+            // Validate budget with bonus credits
+            const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
+            if (bonusCreditsNeeded > availableBonusCredits) {
+              toast.error(`Need ${bonusCreditsNeeded} bonus credits but you only have ${availableBonusCredits} available.`);
+              return;
+            }
             if (!starTeamId) {
               setShowNoStarModal(true);
               return;
@@ -636,11 +542,80 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             await submitTeams();
           }} 
           disabled={selectedTeams.length !== 5 || submitting} 
-          className="min-w-[120px] bg-glass-primary hover:bg-glass-primary/80 text-white backdrop-blur-sm"
+          className="w-full max-w-md h-14 text-lg font-semibold bg-theme-purple hover:bg-theme-purple/90"
         >
           {submitting ? 'Submitting...' : 'Submit Team'}
         </Button>
       </div>
+
+      {/* Star Team Summary */}
+      {selectedTeams.length > 0 && (
+        <div className="bg-muted/30 rounded-lg p-4 border border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Star className={`h-5 w-5 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
+              <div>
+                <div className="font-medium">
+                  {getStarredTeamName() ? (
+                    <>Star Team: <span className="text-[#F5C042]">{getStarredTeamName()}</span> (Double Points)</>
+                  ) : (
+                    'No Star Team selected'
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Your Star Team scores double points this round. Choose wisely!
+                </div>
+              </div>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      )}
+
+      {/* Bonus Credits Info - Auto-deducted */}
+      {availableBonusCredits > 0 && (
+        <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-orange-300">Bonus Credits Available</h3>
+                  <p className="text-sm text-orange-400">
+                    {availableBonusCredits > 0 
+                      ? `${availableBonusCredits} credits earned from XP rewards`
+                      : 'No bonus credits available'
+                    }
+                  </p>
+                </div>
+              </div>
+              {budgetSpent > SALARY_CAP && (
+                <div className="text-right">
+                  <p className="text-sm text-orange-300 font-medium">
+                    Auto-deducting: {budgetSpent - SALARY_CAP} credits
+                  </p>
+                  <p className="text-xs text-orange-400">
+                    Required for your current selection
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modals */}
       <StarTeamConfirmModal 
