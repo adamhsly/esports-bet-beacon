@@ -73,9 +73,32 @@ serve(async (req) => {
 
       console.log(`👥 Found ${picks?.length || 0} picks for round ${round.id}${userFilter ? ` (filtered by ${userFilter})` : ''}`);
 
+      // Fetch all star teams for this round in one query
+      const { data: starTeamsData, error: starTeamsError } = await supabase
+        .from('fantasy_round_star_teams')
+        .select('user_id, star_team_id')
+        .eq('round_id', round.id);
+
+      if (starTeamsError) {
+        console.error(`⚠️ Error fetching star teams for round ${round.id}:`, starTeamsError);
+      }
+
+      // Create a map of user_id -> star_team_id for quick lookup
+      const starTeamMap = new Map<string, string>();
+      for (const st of starTeamsData || []) {
+        starTeamMap.set(st.user_id, st.star_team_id);
+      }
+      console.log(`⭐ Found ${starTeamMap.size} star team selections for round ${round.id}`);
+
       for (const pick of picks || []) {
         const teamPicks = Array.isArray(pick.team_picks) ? pick.team_picks : [];
         console.log(`🎮 Processing picks for user ${pick.user_id} with ${teamPicks.length} teams`);
+
+        // Get this user's star team
+        const userStarTeamId = starTeamMap.get(pick.user_id);
+        if (userStarTeamId) {
+          console.log(`⭐ User ${pick.user_id} has star team: ${userStarTeamId}`);
+        }
 
         // Prepare team data for batch calculation
         const teamData = teamPicks
@@ -109,6 +132,10 @@ serve(async (req) => {
         // Upsert all scores for this user's picks
         const scoresToUpsert = (teamScores || []).map((score: any) => {
           const teamType = teamData.find(t => t.team_id === score.team_id)?.team_type || 'pro';
+          
+          // Check if this is the user's star team
+          const isStarTeam = userStarTeamId === score.team_id;
+          
           const totalScore = calculateTotalScore({
             team_id: score.team_id,
             team_name: score.team_name,
@@ -118,7 +145,11 @@ serve(async (req) => {
             tournaments_won: score.tournaments_won || 0,
             clean_sweeps: score.clean_sweeps,
             matches_played: score.matches_played
-          });
+          }, isStarTeam);
+
+          if (isStarTeam) {
+            console.log(`⭐ Applied 2x star team multiplier to ${score.team_name}: base score doubled`);
+          }
 
           return {
             round_id: round.id,
@@ -197,25 +228,29 @@ serve(async (req) => {
   }
 });
 
-// Removed calculateTeamScore - now handled by database RPC function
-
-function calculateTotalScore(teamScore: TeamScore): number {
+function calculateTotalScore(teamScore: TeamScore, isStarTeam: boolean = false): number {
   // Scoring system: 
   // - Match win: 10 points
   // - Map win: 3 points  
   // - Clean sweep bonus: 5 points
   // - Tournament win: 20 points (matches rules modal)
   // - Amateur team bonus: +25% to total score
+  // - Star team: 2x multiplier (applied after amateur bonus)
 
   let score = 0;
   score += teamScore.match_wins * 10;
   score += teamScore.map_wins * 3;
   score += teamScore.clean_sweeps * 5;
-  score += teamScore.tournaments_won * 20; // Changed from 25 to match rules
+  score += teamScore.tournaments_won * 20;
 
-  // Apply amateur bonus
+  // Apply amateur bonus first
   if (teamScore.team_type === 'amateur') {
     score = Math.floor(score * 1.25);
+  }
+
+  // Apply star team 2x multiplier
+  if (isStarTeam) {
+    score = score * 2;
   }
 
   return score;
