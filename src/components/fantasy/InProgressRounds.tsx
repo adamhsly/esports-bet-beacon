@@ -56,30 +56,10 @@ export const InProgressRounds: React.FC = () => {
     }
   }, [user]);
 
-  const calculateScores = async () => {
-    try {
-      console.log('🎯 Triggering fantasy score calculation...');
-      const { error } = await supabase.functions.invoke('calculate-fantasy-scores', {
-        body: { user_id: user?.id }
-      });
-      if (error) {
-        console.error('Error calculating scores:', error);
-        toast.error('Failed to calculate scores');
-      } else {
-        console.log('✅ Score calculation triggered successfully');
-        toast.success('Scores updated!');
-      }
-    } catch (error) {
-      console.error('Error invoking score calculation:', error);
-      toast.error('Failed to trigger score calculation');
-    }
-  };
-
   const fetchInProgressRounds = async () => {
     if (!user) return;
     try {
       console.log('Fetching in-progress rounds for user:', user.id);
-      await calculateScores();
 
       const { data: picks, error: picksError } = await supabase
         .from('fantasy_round_picks')
