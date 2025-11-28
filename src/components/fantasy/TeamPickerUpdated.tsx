@@ -190,17 +190,33 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       if (proError) throw proError;
       if (amateurError) throw amateurError;
 
-      // Map fantasy_team_prices data to Team interface
-      console.log('Pro team raw data sample:', proData?.slice(0, 3));
+      // Fetch logos for pro teams from pandascore_teams
+      const proTeamIds = proData?.map((p: any) => p.team_id) || [];
+      let logoMap = new Map<string, string>();
+      
+      if (proTeamIds.length > 0) {
+        const { data: teamsWithLogos } = await supabase
+          .from('pandascore_teams')
+          .select('team_id, logo_url')
+          .in('team_id', proTeamIds);
+        
+        teamsWithLogos?.forEach((t: any) => {
+          if (t.logo_url) {
+            logoMap.set(String(t.team_id), t.logo_url);
+          }
+        });
+      }
+
+      // Map fantasy_team_prices data to Team interface with logos
       const filteredProTeams = proData?.map((priceData: any) => ({
         id: priceData.team_id,
         name: priceData.team_name,
         type: 'pro' as const,
         price: priceData.price,
         recent_win_rate: priceData.recent_win_rate,
-        match_volume: priceData.match_volume
+        match_volume: priceData.match_volume,
+        logo_url: logoMap.get(String(priceData.team_id))
       })) || [];
-      console.log('Mapped pro teams sample:', filteredProTeams.slice(0, 3));
 
       const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
         id: priceData.team_id,
