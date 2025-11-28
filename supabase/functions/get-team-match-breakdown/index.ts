@@ -106,11 +106,12 @@ serve(async (req) => {
           team_name = teamData.opponent.name;
         }
 
-        // Determine result
+        // Determine result - use string comparison for winner_id
         let result = "tie";
-        if (match.winner_id === team_id) {
+        const winnerId = match.winner_id?.toString();
+        if (winnerId === team_id) {
           result = "win";
-        } else if (match.winner_id && match.winner_id !== team_id) {
+        } else if (winnerId && winnerId !== team_id) {
           result = "loss";
         }
 
@@ -131,13 +132,18 @@ serve(async (req) => {
         // Check for clean sweep (2-0 in BO3, 3-0 in BO5)
         const isCleanSweep = result === "win" && opponentScore === 0 && teamScore >= 2;
 
-        // Check for tournament win (tournament/championship in name)
-        const tournamentName = match.tournament_name || match.league_name || "";
+        // Check for tournament win - check BOTH tournament_name AND league_name (same as DB function)
+        const tournamentNameLower = (match.tournament_name || "").toLowerCase();
+        const leagueNameLower = (match.league_name || "").toLowerCase();
         const isTournamentWin =
           result === "win" &&
-          (tournamentName.toLowerCase().includes("championship") ||
-            tournamentName.toLowerCase().includes("final") ||
-            tournamentName.toLowerCase().includes("cup"));
+          (tournamentNameLower.includes("championship") ||
+            tournamentNameLower.includes("final") ||
+            tournamentNameLower.includes("cup") ||
+            tournamentNameLower.includes("major") ||
+            leagueNameLower.includes("championship") ||
+            leagueNameLower.includes("major") ||
+            leagueNameLower.includes("final"));
 
         // Calculate points - map wins always count, match win bonus only for wins
         let points = 0;
@@ -168,7 +174,7 @@ serve(async (req) => {
           score: scoreString,
           points_earned: Math.round(points),
           match_type: "pro" as const,
-          tournament_name: tournamentName,
+          tournament_name: match.tournament_name || match.league_name || "",
           is_clean_sweep: isCleanSweep,
           is_tournament_win: isTournamentWin,
         };
