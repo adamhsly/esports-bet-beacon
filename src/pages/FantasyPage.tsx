@@ -8,7 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { RoundSelector } from '@/components/fantasy/RoundSelector';
 import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
-import { TeamPicker } from '@/components/fantasy/TeamPicker';
+import { TeamPicker } from '@/components/fantasy/TeamPickerUpdated';
 import { MyPrivateRounds } from '@/components/fantasy/MyPrivateRounds';
 import { Calendar, Clock, Trophy, Home, Users } from 'lucide-react';
 import { useRPCActions } from '@/hooks/useRPCActions';
