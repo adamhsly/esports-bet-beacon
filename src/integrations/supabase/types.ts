@@ -1182,6 +1182,92 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_team_match_breakdown: {
+        Row: {
+          amateur_bonus_applied: boolean | null
+          created_at: string | null
+          id: string
+          is_clean_sweep: boolean | null
+          is_star_team: boolean | null
+          is_tournament_win: boolean | null
+          map_losses: number | null
+          map_wins: number | null
+          match_date: string | null
+          match_id: string
+          opponent_logo: string | null
+          opponent_name: string | null
+          points_earned: number | null
+          result: string | null
+          round_id: string
+          score: string | null
+          star_multiplier_applied: boolean | null
+          team_id: string
+          team_name: string
+          team_type: string
+          tournament_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amateur_bonus_applied?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_clean_sweep?: boolean | null
+          is_star_team?: boolean | null
+          is_tournament_win?: boolean | null
+          map_losses?: number | null
+          map_wins?: number | null
+          match_date?: string | null
+          match_id: string
+          opponent_logo?: string | null
+          opponent_name?: string | null
+          points_earned?: number | null
+          result?: string | null
+          round_id: string
+          score?: string | null
+          star_multiplier_applied?: boolean | null
+          team_id: string
+          team_name: string
+          team_type?: string
+          tournament_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amateur_bonus_applied?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_clean_sweep?: boolean | null
+          is_star_team?: boolean | null
+          is_tournament_win?: boolean | null
+          map_losses?: number | null
+          map_wins?: number | null
+          match_date?: string | null
+          match_id?: string
+          opponent_logo?: string | null
+          opponent_name?: string | null
+          points_earned?: number | null
+          result?: string | null
+          round_id?: string
+          score?: string | null
+          star_multiplier_applied?: boolean | null
+          team_id?: string
+          team_name?: string
+          team_type?: string
+          tournament_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_team_match_breakdown_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fantasy_team_prices: {
         Row: {
           abandon_rate: number | null
