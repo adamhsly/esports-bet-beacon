@@ -3143,17 +3143,31 @@ export type Database = {
             }
             Returns: number
           }
-      calculate_fantasy_scores_batch: {
-        Args: { end_date: string; start_date: string; team_data: Json }
-        Returns: {
-          clean_sweeps: number
-          map_wins: number
-          match_wins: number
-          matches_played: number
-          team_id: string
-          team_name: string
-        }[]
-      }
+      calculate_fantasy_scores_batch:
+        | {
+            Args: { p_round_id: string; p_user_id: string }
+            Returns: {
+              clean_sweeps: number
+              map_wins: number
+              match_wins: number
+              matches_played: number
+              team_id: string
+              team_name: string
+              team_type: string
+              tournaments_won: number
+            }[]
+          }
+        | {
+            Args: { end_date: string; start_date: string; team_data: Json }
+            Returns: {
+              clean_sweeps: number
+              map_wins: number
+              match_wins: number
+              matches_played: number
+              team_id: string
+              team_name: string
+            }[]
+          }
       check_registration_duplicates: {
         Args: { p_email: string; p_full_name: string; p_username: string }
         Returns: Json

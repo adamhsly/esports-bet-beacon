@@ -115,7 +115,7 @@ serve(async (req) => {
             team_type: teamType as 'pro' | 'amateur',
             match_wins: score.match_wins,
             map_wins: score.map_wins,
-            tournaments_won: 0,
+            tournaments_won: score.tournaments_won || 0,
             clean_sweeps: score.clean_sweeps,
             matches_played: score.matches_played
           });
@@ -129,7 +129,7 @@ serve(async (req) => {
             current_score: totalScore,
             match_wins: score.match_wins,
             map_wins: score.map_wins,
-            tournaments_won: 0,
+            tournaments_won: score.tournaments_won || 0,
             clean_sweeps: score.clean_sweeps,
             matches_played: score.matches_played,
             last_updated: new Date().toISOString()
