@@ -199,6 +199,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       if (amateurError) throw amateurError;
 
       // Map fantasy_team_prices data to Team interface
+      console.log('Pro team raw data sample:', proData?.slice(0, 3));
       const filteredProTeams = proData?.map((priceData: any) => ({
         id: priceData.team_id,
         name: priceData.team_name,
@@ -207,6 +208,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         recent_win_rate: priceData.recent_win_rate,
         match_volume: priceData.match_volume
       })) || [];
+      console.log('Mapped pro teams sample:', filteredProTeams.slice(0, 3));
 
       const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
         id: priceData.team_id,
@@ -513,9 +515,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         proTeams={proTeams} 
         amateurTeams={amateurTeams} 
         onOpenMultiTeamSelector={() => {
-          if (!loading && priceStatus === 'ready') {
-            setShowTeamSelectionSheet(true);
+          if (loading) {
+            console.log('Sheet blocked - still loading');
+            return;
           }
+          console.log('Opening sheet with proTeams:', proTeams.length, 'first price:', proTeams[0]?.price);
+          setShowTeamSelectionSheet(true);
         }} 
         onTeamSelect={handleTeamSelect} 
         starTeamId={starTeamId} 

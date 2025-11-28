@@ -65,6 +65,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   swapMode = false,
   swappingTeamBudget
 }) => {
+  // Debug logging - check incoming proTeams data
+  useEffect(() => {
+    if (isOpen && proTeams.length > 0) {
+      console.log('🔍 MultiTeamSelectionSheet - proTeams sample:', proTeams.slice(0, 3));
+      console.log('🔍 First pro team price:', proTeams[0]?.price);
+    }
+  }, [isOpen, proTeams]);
+
   const [activeTab, setActiveTab] = useState<'pro' | 'amateur'>('pro');
   const [tempSelectedTeams, setTempSelectedTeams] = useState<Team[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
