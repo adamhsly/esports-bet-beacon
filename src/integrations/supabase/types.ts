@@ -3166,6 +3166,7 @@ export type Database = {
               matches_played: number
               team_id: string
               team_name: string
+              team_type: string
               tournaments_won: number
             }[]
           }
