@@ -204,14 +204,14 @@ function calculateTotalScore(teamScore: TeamScore): number {
   // - Match win: 10 points
   // - Map win: 3 points  
   // - Clean sweep bonus: 5 points
-  // - Tournament win: 25 points
+  // - Tournament win: 20 points (matches rules modal)
   // - Amateur team bonus: +25% to total score
 
   let score = 0;
   score += teamScore.match_wins * 10;
   score += teamScore.map_wins * 3;
   score += teamScore.clean_sweeps * 5;
-  score += teamScore.tournaments_won * 25;
+  score += teamScore.tournaments_won * 20; // Changed from 25 to match rules
 
   // Apply amateur bonus
   if (teamScore.team_type === 'amateur') {
