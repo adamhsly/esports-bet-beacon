@@ -175,12 +175,17 @@ serve(async (req) => {
       });
     } else {
       // Query FACEIT matches using started_at for proper timestamp comparison (matches DB function)
-      const { data: amateurMatches, error: amateurError } = await supabase
+      // Filter by team name directly in the query to avoid Supabase's 1000 row default limit
+      const teamNameLower = team_id.toLowerCase();
+      console.log(`Querying amateur matches for team "${teamNameLower}" between ${round.start_date} and ${round.end_date}`);
+      
+      const { data: teamMatches, error: amateurError } = await supabase
         .from("faceit_matches")
         .select("*")
         .gte("started_at", round.start_date)
         .lte("started_at", round.end_date)
         .eq("is_finished", true)
+        .or(`faction1_name.ilike.${teamNameLower},faction2_name.ilike.${teamNameLower}`)
         .order("started_at", { ascending: false });
 
       if (amateurError) {
@@ -191,26 +196,10 @@ serve(async (req) => {
         );
       }
       
-      console.log(`Found ${amateurMatches?.length || 0} amateur matches in date range`);
-
-      // Filter matches where team participated (team_id is stored as lowercase team name)
-      const teamMatches = (amateurMatches || []).filter((match) => {
-        const f1Name = (match.faction1_name || "").toLowerCase();
-        const f2Name = (match.faction2_name || "").toLowerCase();
-        const searchId = team_id.toLowerCase();
-        return f1Name === searchId || f2Name === searchId;
-      });
-      
-      console.log(`Filtered to ${teamMatches.length} matches for team "${team_id}"`);
-      if (teamMatches.length > 0) {
-        console.log("Sample match faction names:", teamMatches.slice(0, 2).map(m => ({
-          faction1: m.faction1_name,
-          faction2: m.faction2_name
-        })));
-      }
+      console.log(`Found ${teamMatches?.length || 0} matches for team "${team_id}"`);
 
       // Process matches
-      matches = teamMatches.map((match) => {
+      matches = (teamMatches || []).map((match) => {
         const f1Name = (match.faction1_name || "").toLowerCase();
         const searchId = team_id.toLowerCase();
         const isTeam1 = f1Name === searchId;
