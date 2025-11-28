@@ -512,7 +512,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         onRemoveTeam={handleRemoveTeam} 
         proTeams={proTeams} 
         amateurTeams={amateurTeams} 
-        onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} 
+        onOpenMultiTeamSelector={() => {
+          if (!loading && priceStatus === 'ready') {
+            setShowTeamSelectionSheet(true);
+          }
+        }} 
         onTeamSelect={handleTeamSelect} 
         starTeamId={starTeamId} 
         onToggleStar={handleToggleStar} 
