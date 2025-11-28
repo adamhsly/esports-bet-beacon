@@ -129,8 +129,9 @@ serve(async (req) => {
         
         const scoreString = `${teamScore}-${opponentScore}`;
 
-        // Check for clean sweep (2-0 in BO3, 3-0 in BO5)
-        const isCleanSweep = result === "win" && opponentScore === 0 && teamScore >= 2;
+        // Check for clean sweep (2-0 in BO3, 3-0 in BO5) - exclude BO1 matches
+        const numberOfGames = match.number_of_games || 1;
+        const isCleanSweep = result === "win" && opponentScore === 0 && teamScore >= 2 && numberOfGames >= 2;
 
         // Check for tournament win - check BOTH tournament_name AND league_name (same as DB function)
         const tournamentNameLower = (match.tournament_name || "").toLowerCase();
