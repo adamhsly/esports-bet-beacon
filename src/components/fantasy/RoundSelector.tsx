@@ -11,7 +11,7 @@ import AuthModal from '@/components/AuthModal';
 const PRIZE_STRUCTURE = {
   daily: { first: '200', second: '100', third: '50', type: 'credits' },
   weekly: { first: '200', second: '100', third: '50', type: 'credits' },
-  monthly: { first: '£100', second: '£30', third: '£5', type: 'steam' },
+  monthly: { first: '£100', second: '£25', third: '£5', type: 'steam' },
 };
 
 interface Round {
