@@ -85,14 +85,71 @@ const RoundCard: React.FC<{
       className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
       onClick={onClick}
     >
-      <CardContent className="p-4 flex items-center gap-4">
+      {/* Mobile Layout */}
+      <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
+        {/* Title - Top Centered */}
+        <h3 className="text-lg font-semibold text-white capitalize">{round.type} Round</h3>
+        
+        {/* Round Logo */}
+        <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
+          <img
+            src={getRoundImage(round.type)}
+            alt={`${round.type} round`}
+            className="w-20 h-20 object-contain"
+          />
+        </div>
+        
+        {/* Prize Pool - Larger */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1 mb-2">
+            <Trophy className="h-4 w-4 text-yellow-400" />
+            <span className="text-sm font-medium text-yellow-400">
+              {prizeInfo?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
+            </span>
+          </div>
+          <div className="flex items-center justify-center gap-4 text-base font-medium">
+            <span className="flex items-center gap-1">
+              <span className="text-yellow-400">🥇</span>
+              <span className="text-gray-200">{prizeInfo?.first}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-gray-400">🥈</span>
+              <span className="text-gray-200">{prizeInfo?.second}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-orange-400">🥉</span>
+              <span className="text-gray-200">{prizeInfo?.third}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Dates - Single Row */}
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {/* Join Button - Bottom Centered */}
+        <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2 mt-1">
+          Join Round
+        </Button>
+      </CardContent>
+
+      {/* Desktop Layout */}
+      <CardContent className="p-4 hidden md:flex items-center gap-4">
         {/* Round Logo */}
         <div className="flex-shrink-0">
           <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
             <img
               src={getRoundImage(round.type)}
               alt={`${round.type} round`}
-              className="w-16 h-16 md:w-20 md:h-20 object-contain"
+              className="w-20 h-20 object-contain"
             />
           </div>
         </div>
