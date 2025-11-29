@@ -142,6 +142,7 @@ const RoundCard: React.FC<{
               <span className="text-gray-200">{prizeInfo?.third}</span>
             </span>
           </div>
+          <p className="text-sm text-green-400 font-medium mt-2">Free to play</p>
         </div>
 
         {/* Dates - Single Row */}
@@ -178,7 +179,7 @@ const RoundCard: React.FC<{
         {/* Round Info */}
         <div className="flex-1 min-w-0">
           {/* Prize Pool */}
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-1">
             <Trophy className="h-6 w-6 text-yellow-400 flex-shrink-0" />
             <span className="text-base font-semibold text-yellow-400">
               {prizeInfo?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
@@ -197,6 +198,7 @@ const RoundCard: React.FC<{
                 <span className="text-gray-200">{prizeInfo?.third}</span>
               </span>
             </div>
+            <span className="text-sm text-green-400 font-medium">Free to play</span>
           </div>
 
           {/* Dates */}
