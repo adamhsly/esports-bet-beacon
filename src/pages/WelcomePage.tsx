@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import pickTeamsImg from "@/assets/welcome/pick-teams.png";
 import scorePointsImg from "@/assets/welcome/score-points.png";
 import winPrizesImg from "@/assets/welcome/win-prizes.png";
+import welcomeBanner from "@/assets/welcome-banner.png";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
@@ -80,6 +81,17 @@ const WelcomePage = () => {
             </Button>
           </Link>
         </div>
+      </section>
+
+      {/* Fantasy Banner */}
+      <section className="w-full reveal-on-scroll">
+        <Link to="/fantasy" className="block w-full">
+          <img 
+            src={welcomeBanner} 
+            alt="$100 Steam voucher - Free to play - Join the round now!" 
+            className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+          />
+        </Link>
       </section>
 
       {/* How It Works Section */}
