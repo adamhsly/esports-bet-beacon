@@ -190,33 +190,38 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       if (proError) throw proError;
       if (amateurError) throw amateurError;
 
-      // Fetch logos for pro teams from pandascore_teams
+      // Fetch logos and esport_type for pro teams from pandascore_teams
       const proTeamIds = proData?.map((p: any) => p.team_id) || [];
-      let logoMap = new Map<string, string>();
+      let teamInfoMap = new Map<string, { logo_url?: string; esport_type?: string }>();
       
       if (proTeamIds.length > 0) {
-        const { data: teamsWithLogos } = await supabase
+        const { data: teamsWithInfo } = await supabase
           .from('pandascore_teams')
-          .select('team_id, logo_url')
+          .select('team_id, logo_url, esport_type')
           .in('team_id', proTeamIds);
         
-        teamsWithLogos?.forEach((t: any) => {
-          if (t.logo_url) {
-            logoMap.set(String(t.team_id), t.logo_url);
-          }
+        teamsWithInfo?.forEach((t: any) => {
+          teamInfoMap.set(String(t.team_id), {
+            logo_url: t.logo_url,
+            esport_type: t.esport_type
+          });
         });
       }
 
-      // Map fantasy_team_prices data to Team interface with logos
-      const filteredProTeams = proData?.map((priceData: any) => ({
-        id: priceData.team_id,
-        name: priceData.team_name,
-        type: 'pro' as const,
-        price: priceData.price,
-        recent_win_rate: priceData.recent_win_rate,
-        match_volume: priceData.match_volume,
-        logo_url: logoMap.get(String(priceData.team_id))
-      })) || [];
+      // Map fantasy_team_prices data to Team interface with logos and esport_type
+      const filteredProTeams = proData?.map((priceData: any) => {
+        const teamInfo = teamInfoMap.get(String(priceData.team_id));
+        return {
+          id: priceData.team_id,
+          name: priceData.team_name,
+          type: 'pro' as const,
+          price: priceData.price,
+          recent_win_rate: priceData.recent_win_rate,
+          match_volume: priceData.match_volume,
+          logo_url: teamInfo?.logo_url,
+          esport_type: teamInfo?.esport_type
+        };
+      }) || [];
 
       const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
         id: priceData.team_id,
@@ -225,7 +230,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         price: priceData.price,
         recent_win_rate: priceData.recent_win_rate,
         abandon_rate: priceData.abandon_rate,
-        match_volume: priceData.match_volume
+        match_volume: priceData.match_volume,
+        esport_type: 'cs2' // All amateur teams are from FACEIT CS2
       })) || [];
 
       // Check if we got any teams
