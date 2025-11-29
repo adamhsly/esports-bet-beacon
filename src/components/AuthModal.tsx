@@ -267,7 +267,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         <DialogHeader className="p-0">
           <img 
             src={loginBanner} 
-            alt="Win Prizes - 1st Place £100, 2nd Place £30, 3rd Place £5 in the free to play fantasy monthly round" 
+            alt="Win Prizes - 1st Place £100, 2nd Place £25, 3rd Place £5 in the free to play fantasy monthly round" 
             className="w-full h-auto rounded-t-lg"
           />
         </DialogHeader>
