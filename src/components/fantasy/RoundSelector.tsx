@@ -198,8 +198,10 @@ const RoundCard: React.FC<{
                 <span className="text-gray-200">{prizeInfo?.third}</span>
               </span>
             </div>
-            <span className="text-sm text-green-400 font-medium">Free to play</span>
           </div>
+
+          {/* Free to play */}
+          <p className="text-sm text-green-400 font-medium mb-1">Free to play</p>
 
           {/* Dates */}
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
