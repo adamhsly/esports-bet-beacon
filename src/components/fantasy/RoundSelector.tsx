@@ -201,7 +201,7 @@ const RoundCard: React.FC<{
           </div>
 
           {/* Free to play */}
-          <p className="text-sm text-green-400 font-medium mb-1">Free to play</p>
+          <p className="text-sm text-green-400 font-medium mb-1 text-left">Free to play</p>
 
           {/* Dates */}
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
