@@ -111,9 +111,6 @@ const RoundCard: React.FC<{
     >
       {/* Mobile Layout */}
       <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
-        {/* Title - Top Centered */}
-        <h3 className="text-lg font-semibold text-white capitalize">{round.type} Round</h3>
-        
         {/* Round Logo */}
         <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
           <img
@@ -180,8 +177,6 @@ const RoundCard: React.FC<{
         
         {/* Round Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-white mb-1 capitalize">{round.type} Round</h3>
-          
           {/* Prize Pool */}
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="h-3.5 w-3.5 text-yellow-400 flex-shrink-0" />
