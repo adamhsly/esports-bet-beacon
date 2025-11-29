@@ -650,8 +650,18 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       <LineupSuccessModal 
         open={showSuccessModal} 
-        onOpenChange={setShowSuccessModal} 
-        roundId={round.id} 
+        onOpenChange={(open) => {
+          setShowSuccessModal(open);
+          if (!open) {
+            onBack();
+            setTimeout(() => {
+              if (onNavigateToInProgress) {
+                onNavigateToInProgress();
+              }
+            }, 100);
+          }
+        }} 
+        roundId={round.id}
         roundName={`${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`} 
         userId={user?.id || ''} 
         starTeamName={getStarredTeamName()} 
