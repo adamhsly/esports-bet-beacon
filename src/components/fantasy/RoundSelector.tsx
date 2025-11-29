@@ -109,6 +109,15 @@ const RoundCard: React.FC<{
       className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
       onClick={onClick}
     >
+      {/* Status Pill */}
+      {round.status === 'in_progress' && (
+        <div className="absolute top-2 right-2 z-10">
+          <span className="px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30 rounded-full">
+            In Progress
+          </span>
+        </div>
+      )}
+
       {/* Mobile Layout */}
       <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
         {/* Round Logo */}
