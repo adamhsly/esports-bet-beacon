@@ -49,14 +49,38 @@ const RoundCard: React.FC<{
         className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
         onClick={onClick}
       >
-        <CardContent className="p-4 flex items-center gap-4">
+        {/* Mobile Layout */}
+        <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
+          {/* Title - Top Centered */}
+          <h3 className="text-lg font-semibold text-white">Private Round</h3>
+          
+          {/* Private Round Logo */}
+          <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+            <img
+              src={getRoundImage('private')}
+              alt="Private round"
+              className="w-20 h-20 object-contain"
+            />
+          </div>
+          
+          {/* Description */}
+          <p className="text-sm text-purple-300 text-center">Play your way - Create or join private leagues</p>
+
+          {/* Button - Bottom Centered */}
+          <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2 mt-1">
+            Enter
+          </Button>
+        </CardContent>
+
+        {/* Desktop Layout */}
+        <CardContent className="p-4 hidden md:flex items-center gap-4">
           {/* Private Round Logo */}
           <div className="flex-shrink-0">
             <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
               <img
                 src={getRoundImage('private')}
                 alt="Private round"
-                className="w-16 h-16 md:w-20 md:h-20 object-contain"
+                className="w-20 h-20 object-contain"
               />
             </div>
           </div>
