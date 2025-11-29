@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,129 @@ interface Round {
   status: 'open' | 'in_progress' | 'finished';
 }
 
+const SectionHeading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h2 className="text-xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+    {children}
+  </h2>
+);
+
+const RoundCard: React.FC<{ 
+  round?: Round; 
+  type: 'daily' | 'weekly' | 'monthly' | 'private';
+  onClick: () => void;
+}> = ({ round, type, onClick }) => {
+  const getRoundImage = (roundType: string) => {
+    switch (roundType) {
+      case 'daily': return 'lovable-uploads/daily_round.png';
+      case 'weekly': return 'lovable-uploads/weekly_round.png';
+      case 'monthly': return 'lovable-uploads/monthly_round.png';
+      case 'private': return '/lovable-uploads/private_round.png';
+      default: return '/images/rounds/default.jpg';
+    }
+  };
+
+  if (type === 'private') {
+    return (
+      <Card 
+        className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+        onClick={onClick}
+      >
+        <CardContent className="p-4 flex items-center gap-4">
+          {/* Private Round Logo */}
+          <div className="flex-shrink-0">
+            <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+              <img
+                src={getRoundImage('private')}
+                alt="Private round"
+                className="w-16 h-16 md:w-20 md:h-20 object-contain"
+              />
+            </div>
+          </div>
+          
+          {/* Private Round Info */}
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white mb-1">Private Round</h3>
+            <p className="text-sm text-purple-300">Play your way - Create or join private leagues</p>
+          </div>
+
+          {/* Private Round Button */}
+          <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm px-6">
+            Enter
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!round) return null;
+
+  const prizeInfo = PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE];
+
+  return (
+    <Card 
+      className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
+      onClick={onClick}
+    >
+      <CardContent className="p-4 flex items-center gap-4">
+        {/* Round Logo */}
+        <div className="flex-shrink-0">
+          <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
+            <img
+              src={getRoundImage(round.type)}
+              alt={`${round.type} round`}
+              className="w-16 h-16 md:w-20 md:h-20 object-contain"
+            />
+          </div>
+        </div>
+        
+        {/* Round Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold text-white mb-1 capitalize">{round.type} Round</h3>
+          
+          {/* Prize Pool */}
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="h-3.5 w-3.5 text-yellow-400 flex-shrink-0" />
+            <span className="text-xs font-medium text-yellow-400">
+              {prizeInfo?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
+            </span>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="flex items-center gap-0.5">
+                <span className="text-yellow-400">🥇</span>
+                <span className="text-gray-300">{prizeInfo?.first}</span>
+              </span>
+              <span className="flex items-center gap-0.5">
+                <span className="text-gray-400">🥈</span>
+                <span className="text-gray-300">{prizeInfo?.second}</span>
+              </span>
+              <span className="flex items-center gap-0.5">
+                <span className="text-orange-400">🥉</span>
+                <span className="text-gray-300">{prizeInfo?.third}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Join Button */}
+        <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm px-6 flex-shrink-0">
+          Join Round
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJoinRound?: (round: Round) => void }> = ({ onNavigateToInProgress, onJoinRound }) => {
   const { user } = useAuth();
   const [rounds, setRounds] = useState<Round[]>([]);
@@ -38,7 +161,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
         .from('fantasy_rounds')
         .select('*')
         .eq('status', 'open')
-        .eq('is_private', false) // Only fetch public rounds
+        .eq('is_private', false)
         .order('start_date', { ascending: true });
 
       if (error) throw error;
@@ -51,15 +174,6 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
     }
   };
 
-  const getRoundImage = (type: string) => {
-    switch (type) {
-      case 'daily': return 'lovable-uploads/daily_round.png';
-      case 'weekly': return 'lovable-uploads/weekly_round.png';
-      case 'monthly': return 'lovable-uploads/monthly_round.png';
-      default: return '/images/rounds/default.jpg';
-    }
-  };
-
   const handleJoinRound = (round: Round) => {
     if (!user) {
       setShowAuthModal(true);
@@ -67,6 +181,15 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
     }
     onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.();
   };
+
+  const handlePrivateRound = () => {
+    window.location.href = '/fantasy/private';
+  };
+
+  // Categorize rounds by type
+  const monthlyRounds = rounds.filter(r => r.type === 'monthly');
+  const dailyRounds = rounds.filter(r => r.type === 'daily');
+  const weeklyRounds = rounds.filter(r => r.type === 'weekly');
 
   if (loading) {
     return (
@@ -77,105 +200,64 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
     );
   }
 
-  if (!rounds.length) {
-    return <p className="text-center text-muted-foreground">No open rounds available.</p>;
-  }
-
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-        {rounds.map((round) => (
-          <Card 
-            key={round.id} 
-            className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden h-full"
-            onClick={() => handleJoinRound(round)}
-          >
-            <CardContent className="p-4 h-full flex flex-col">
-              {/* Round Logo */}
-              <div className="flex justify-center mb-3">
-                <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
-                  <img
-                    src={getRoundImage(round.type)}
-                    alt={`${round.type} round`}
-                    className="w-24 h-24 object-contain"
-                  />
-                </div>
-              </div>
-              
-              {/* Prize Pool */}
-              <div className="mb-3">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <Trophy className="h-3.5 w-3.5 text-yellow-400" />
-                  <span className="text-xs font-medium text-yellow-400">
-                    {PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
-                  </span>
-                </div>
-                <div className="flex justify-center gap-2 text-xs">
-                  <div className="flex items-center gap-0.5">
-                    <span className="text-yellow-400">🥇</span>
-                    <span className="text-gray-300">{PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.first || '200'}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <span className="text-gray-400">🥈</span>
-                    <span className="text-gray-300">{PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.second || '100'}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <span className="text-orange-400">🥉</span>
-                    <span className="text-gray-300">{PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE]?.third || '50'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Round Info */}
-              <div className="text-center mb-3">
-                <div className="space-y-1 text-xs text-gray-400">
-                  <div className="flex items-center justify-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Join Button */}
-              <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2 mt-auto">
-                Join Round
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Private Round Card */}
-        <Card 
-          className="relative cursor-pointer transition-all duration-250 hover:scale-[1.02] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden h-full"
-          onClick={() => window.location.href = '/fantasy/private'}
-        >
-          <CardContent className="p-4 h-full flex flex-col justify-center">
-            {/* Private Round Logo */}
-            <div className="flex justify-center mb-3">
-              <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
-                <img
-                  src="/lovable-uploads/private_round.png"
-                  alt="Private round"
-                  className="w-24 h-24 object-contain"
+      <div className="space-y-8">
+        {/* Win Vouchers Section - Monthly */}
+        <section>
+          <SectionHeading>Win Vouchers</SectionHeading>
+          <div className="space-y-3">
+            {monthlyRounds.length > 0 ? (
+              monthlyRounds.map((round) => (
+                <RoundCard 
+                  key={round.id} 
+                  round={round} 
+                  type={round.type}
+                  onClick={() => handleJoinRound(round)} 
                 />
-              </div>
-            </div>
-            
-            {/* Private Round Info */}
-            <div className="text-center mb-3">
-              <p className="text-sm text-purple-300 font-medium">Private round - Play your way</p>
-            </div>
+              ))
+            ) : (
+              <p className="text-muted-foreground text-sm">No monthly rounds available.</p>
+            )}
+          </div>
+        </section>
 
-            {/* Private Round Button */}
-            <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2">
-              Private round
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Quick Fire Section - Daily & Weekly */}
+        <section>
+          <SectionHeading>Quick Fire</SectionHeading>
+          <div className="space-y-3">
+            {dailyRounds.map((round) => (
+              <RoundCard 
+                key={round.id} 
+                round={round} 
+                type={round.type}
+                onClick={() => handleJoinRound(round)} 
+              />
+            ))}
+            {weeklyRounds.map((round) => (
+              <RoundCard 
+                key={round.id} 
+                round={round} 
+                type={round.type}
+                onClick={() => handleJoinRound(round)} 
+              />
+            ))}
+            {dailyRounds.length === 0 && weeklyRounds.length === 0 && (
+              <p className="text-muted-foreground text-sm">No daily or weekly rounds available.</p>
+            )}
+          </div>
+        </section>
+
+        {/* Private Leagues Section */}
+        <section>
+          <SectionHeading>Private Leagues</SectionHeading>
+          <div className="space-y-3">
+            <RoundCard 
+              type="private"
+              onClick={handlePrivateRound} 
+            />
+          </div>
+        </section>
       </div>
 
       <AuthModal 
