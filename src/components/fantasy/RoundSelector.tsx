@@ -122,13 +122,13 @@ const RoundCard: React.FC<{
         
         {/* Prize Pool - Larger */}
         <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-2">
-            <Trophy className="h-4 w-4 text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-400">
+          <div className="flex items-center justify-center gap-1.5 mb-2">
+            <Trophy className="h-5 w-5 text-yellow-400" />
+            <span className="text-base font-semibold text-yellow-400">
               {prizeInfo?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
             </span>
           </div>
-          <div className="flex items-center justify-center gap-4 text-base font-medium">
+          <div className="flex items-center justify-center gap-4 text-lg font-semibold">
             <span className="flex items-center gap-1">
               <span className="text-yellow-400">🥇</span>
               <span className="text-gray-200">{prizeInfo?.first}</span>
@@ -178,21 +178,21 @@ const RoundCard: React.FC<{
         {/* Round Info */}
         <div className="flex-1 min-w-0">
           {/* Prize Pool */}
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="h-3.5 w-3.5 text-yellow-400 flex-shrink-0" />
-            <span className="text-xs font-medium text-yellow-400">
+          <div className="flex items-center gap-3 mb-2">
+            <Trophy className="h-5 w-5 text-yellow-400 flex-shrink-0" />
+            <span className="text-sm font-semibold text-yellow-400">
               {prizeInfo?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
             </span>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="flex items-center gap-0.5">
+            <div className="flex items-center gap-3 text-sm font-medium">
+              <span className="flex items-center gap-1">
                 <span className="text-yellow-400">🥇</span>
                 <span className="text-gray-300">{prizeInfo?.first}</span>
               </span>
-              <span className="flex items-center gap-0.5">
+              <span className="flex items-center gap-1">
                 <span className="text-gray-400">🥈</span>
                 <span className="text-gray-300">{prizeInfo?.second}</span>
               </span>
-              <span className="flex items-center gap-0.5">
+              <span className="flex items-center gap-1">
                 <span className="text-orange-400">🥉</span>
                 <span className="text-gray-300">{prizeInfo?.third}</span>
               </span>
