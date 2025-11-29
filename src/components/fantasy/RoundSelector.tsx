@@ -179,22 +179,22 @@ const RoundCard: React.FC<{
         <div className="flex-1 min-w-0">
           {/* Prize Pool */}
           <div className="flex items-center gap-3 mb-2">
-            <Trophy className="h-5 w-5 text-yellow-400 flex-shrink-0" />
-            <span className="text-sm font-semibold text-yellow-400">
+            <Trophy className="h-6 w-6 text-yellow-400 flex-shrink-0" />
+            <span className="text-base font-semibold text-yellow-400">
               {prizeInfo?.type === 'steam' ? 'Steam Vouchers' : 'Credits'}
             </span>
-            <div className="flex items-center gap-3 text-sm font-medium">
+            <div className="flex items-center gap-4 text-base font-semibold">
               <span className="flex items-center gap-1">
                 <span className="text-yellow-400">🥇</span>
-                <span className="text-gray-300">{prizeInfo?.first}</span>
+                <span className="text-gray-200">{prizeInfo?.first}</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="text-gray-400">🥈</span>
-                <span className="text-gray-300">{prizeInfo?.second}</span>
+                <span className="text-gray-200">{prizeInfo?.second}</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="text-orange-400">🥉</span>
-                <span className="text-gray-300">{prizeInfo?.third}</span>
+                <span className="text-gray-200">{prizeInfo?.third}</span>
               </span>
             </div>
           </div>
