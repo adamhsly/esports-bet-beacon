@@ -220,7 +220,7 @@ export const FantasyRulesModal: React.FC<FantasyRulesModalProps> = ({
                       <span className="text-2xl">🥈</span>
                       <span className="font-semibold text-white">2nd Place</span>
                     </div>
-                    <span className="text-purple-300 font-bold text-xl">£30 Steam Voucher</span>
+                    <span className="text-purple-300 font-bold text-xl">£25 Steam Voucher</span>
                   </div>
                 </div>
                 <div className="bg-gradient-to-r from-purple-500/20 to-blue-600/10 p-3 rounded-lg border border-purple-300/50">

@@ -7,7 +7,7 @@ import { RoundWinner } from "@/hooks/useRoundWinnerNotifications";
 // Monthly Steam voucher prizes
 const MONTHLY_STEAM_PRIZES: Record<number, string> = {
   1: '£100',
-  2: '£30',
+  2: '£25',
   3: '£5',
 };
 
