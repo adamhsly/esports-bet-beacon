@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Trophy } from 'lucide-react';
+import { Calendar, Trophy, Ticket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import AuthModal from '@/components/AuthModal';
+import { usePaidRoundCheckout } from '@/hooks/usePaidRoundCheckout';
 
 // Prize structure for each round type
 const PRIZE_STRUCTURE = {
   daily: { first: '200', second: '100', third: '50', type: 'credits' },
   weekly: { first: '200', second: '100', third: '50', type: 'credits' },
   monthly: { first: '£100', second: '£25', third: '£5', type: 'steam' },
+  paid_monthly: { first: '£100', second: '£25', third: '£5', type: 'steam' },
 };
 
 interface Round {
@@ -20,6 +22,9 @@ interface Round {
   start_date: string;
   end_date: string;
   status: 'open' | 'in_progress' | 'finished';
+  is_paid?: boolean;
+  entry_fee?: number;
+  round_name?: string;
 }
 
 const SectionHeading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -28,11 +33,19 @@ const SectionHeading: React.FC<{ children: React.ReactNode }> = ({ children }) =
   </h2>
 );
 
+// Format entry fee from pence to pounds
+const formatEntryFee = (feePence: number) => {
+  return `£${(feePence / 100).toFixed(feePence % 100 === 0 ? 0 : 2)}`;
+};
+
 const RoundCard: React.FC<{ 
   round?: Round; 
   type: 'daily' | 'weekly' | 'monthly' | 'private';
   onClick: () => void;
-}> = ({ round, type, onClick }) => {
+  onPaidEntry?: () => void;
+  isPaidCheckoutLoading?: boolean;
+  userEntryCount?: number;
+}> = ({ round, type, onClick, onPaidEntry, isPaidCheckoutLoading, userEntryCount = 0 }) => {
   const getRoundImage = (roundType: string) => {
     switch (roundType) {
       case 'daily': return 'lovable-uploads/daily_round.png';
@@ -51,10 +64,7 @@ const RoundCard: React.FC<{
       >
         {/* Mobile Layout */}
         <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
-          {/* Title - Top Centered */}
           <h3 className="text-lg font-semibold text-white">Private Round</h3>
-          
-          {/* Private Round Logo */}
           <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
             <img
               src={getRoundImage('private')}
@@ -62,11 +72,7 @@ const RoundCard: React.FC<{
               className="w-20 h-20 object-contain"
             />
           </div>
-          
-          {/* Description */}
           <p className="text-sm text-purple-300 text-center">Play your way - Create or join private leagues</p>
-
-          {/* Button - Bottom Centered */}
           <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2 mt-1">
             Enter
           </Button>
@@ -74,7 +80,6 @@ const RoundCard: React.FC<{
 
         {/* Desktop Layout */}
         <CardContent className="p-4 hidden md:flex items-center gap-4">
-          {/* Private Round Logo */}
           <div className="flex-shrink-0">
             <div className="relative p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
               <img
@@ -84,14 +89,10 @@ const RoundCard: React.FC<{
               />
             </div>
           </div>
-          
-          {/* Private Round Info */}
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-white mb-1">Private Round</h3>
             <p className="text-sm text-purple-300">Play your way - Create or join private leagues</p>
           </div>
-
-          {/* Private Round Button */}
           <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm px-6">
             Enter
           </Button>
@@ -102,7 +103,9 @@ const RoundCard: React.FC<{
 
   if (!round) return null;
 
-  const prizeInfo = PRIZE_STRUCTURE[round.type as keyof typeof PRIZE_STRUCTURE];
+  const isPaid = round.is_paid && round.entry_fee;
+  const prizeKey = isPaid ? 'paid_monthly' : round.type;
+  const prizeInfo = PRIZE_STRUCTURE[prizeKey as keyof typeof PRIZE_STRUCTURE];
 
   const isInProgress = () => {
     const now = new Date();
@@ -111,23 +114,40 @@ const RoundCard: React.FC<{
     return now >= start && now <= end;
   };
 
+  const handleClick = () => {
+    if (isPaid && onPaidEntry) {
+      onPaidEntry();
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <Card 
-      className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 hover:ring-gray-400/30 bg-slate-700 border-gray-700/50 overflow-hidden"
-      onClick={onClick}
+      className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 overflow-hidden ${
+        isPaid 
+          ? 'bg-gradient-to-br from-amber-900/30 to-slate-700 border-amber-500/30 hover:ring-amber-400/30' 
+          : 'bg-slate-700 border-gray-700/50 hover:ring-gray-400/30'
+      }`}
+      onClick={handleClick}
     >
-      {/* Status Pill */}
-      {isInProgress() && (
-        <div className="absolute top-2 right-2 z-10">
+      {/* Status Pills */}
+      <div className="absolute top-2 right-2 z-10 flex gap-2">
+        {isPaid && (
+          <span className="px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full flex items-center gap-1">
+            <Ticket className="h-3 w-3" />
+            {formatEntryFee(round.entry_fee!)} Entry
+          </span>
+        )}
+        {isInProgress() && (
           <span className="px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30 rounded-full">
             In Progress
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Mobile Layout */}
       <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
-        {/* Round Logo */}
         <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
           <img
             src={getRoundImage(round.type)}
@@ -136,7 +156,6 @@ const RoundCard: React.FC<{
           />
         </div>
         
-        {/* Prize Pool - Larger */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <Trophy className="h-5 w-5 text-yellow-400" />
@@ -158,10 +177,16 @@ const RoundCard: React.FC<{
               <span className="text-gray-200">{prizeInfo?.third}</span>
             </span>
           </div>
-          <p className="text-sm text-green-400 font-medium mt-2">Free to play</p>
+          {isPaid ? (
+            <p className="text-sm text-amber-400 font-medium mt-2">
+              {formatEntryFee(round.entry_fee!)} to enter
+              {userEntryCount > 0 && <span className="text-muted-foreground"> • {userEntryCount} {userEntryCount === 1 ? 'entry' : 'entries'}</span>}
+            </p>
+          ) : (
+            <p className="text-sm text-green-400 font-medium mt-2">Free to play</p>
+          )}
         </div>
 
-        {/* Dates - Single Row */}
         <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
@@ -173,15 +198,20 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        {/* Join Button - Bottom Centered */}
-        <Button className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm py-2 mt-1">
-          Join Round
+        <Button 
+          className={`w-full font-medium text-sm py-2 mt-1 ${
+            isPaid 
+              ? 'bg-amber-500 hover:bg-amber-600 text-black' 
+              : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'
+          }`}
+          disabled={isPaidCheckoutLoading}
+        >
+          {isPaidCheckoutLoading ? 'Loading...' : isPaid ? (userEntryCount > 0 ? 'Enter Again' : 'Pay to Enter') : 'Join Round'}
         </Button>
       </CardContent>
 
       {/* Desktop Layout */}
       <CardContent className="p-4 hidden md:flex items-center gap-4">
-        {/* Round Logo */}
         <div className="flex-shrink-0">
           <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
             <img
@@ -192,9 +222,7 @@ const RoundCard: React.FC<{
           </div>
         </div>
         
-        {/* Round Info */}
         <div className="flex-1 min-w-0">
-          {/* Prize Pool */}
           <div className="flex items-center gap-3 mb-1">
             <Trophy className="h-6 w-6 text-yellow-400 flex-shrink-0" />
             <span className="text-base font-semibold text-yellow-400">
@@ -216,10 +244,15 @@ const RoundCard: React.FC<{
             </div>
           </div>
 
-          {/* Free to play */}
-          <p className="text-sm text-green-400 font-medium mb-1 text-left">Free to play</p>
+          {isPaid ? (
+            <p className="text-sm text-amber-400 font-medium mb-1 text-left">
+              {formatEntryFee(round.entry_fee!)} to enter
+              {userEntryCount > 0 && <span className="text-muted-foreground"> • You have {userEntryCount} {userEntryCount === 1 ? 'entry' : 'entries'}</span>}
+            </p>
+          ) : (
+            <p className="text-sm text-green-400 font-medium mb-1 text-left">Free to play</p>
+          )}
 
-          {/* Dates */}
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
@@ -232,9 +265,15 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        {/* Join Button */}
-        <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm px-6 flex-shrink-0">
-          Join Round
+        <Button 
+          className={`font-medium text-sm px-6 flex-shrink-0 ${
+            isPaid 
+              ? 'bg-amber-500 hover:bg-amber-600 text-black' 
+              : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'
+          }`}
+          disabled={isPaidCheckoutLoading}
+        >
+          {isPaidCheckoutLoading ? 'Loading...' : isPaid ? (userEntryCount > 0 ? 'Enter Again' : 'Pay to Enter') : 'Join Round'}
         </Button>
       </CardContent>
     </Card>
@@ -246,10 +285,18 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [userEntryCounts, setUserEntryCounts] = useState<Record<string, number>>({});
+  const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
 
   useEffect(() => {
     fetchOpenRounds();
   }, []);
+
+  useEffect(() => {
+    if (user && rounds.length > 0) {
+      fetchUserEntryCounts();
+    }
+  }, [user, rounds]);
 
   const fetchOpenRounds = async () => {
     try {
@@ -270,12 +317,46 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
     }
   };
 
+  const fetchUserEntryCounts = async () => {
+    if (!user) return;
+
+    const paidRoundIds = rounds.filter(r => r.is_paid).map(r => r.id);
+    if (paidRoundIds.length === 0) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('round_entries')
+        .select('round_id')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .in('round_id', paidRoundIds);
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      (data || []).forEach(entry => {
+        counts[entry.round_id] = (counts[entry.round_id] || 0) + 1;
+      });
+      setUserEntryCounts(counts);
+    } catch (err) {
+      console.error('Error fetching entry counts:', err);
+    }
+  };
+
   const handleJoinRound = (round: Round) => {
     if (!user) {
       setShowAuthModal(true);
       return;
     }
     onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.();
+  };
+
+  const handlePaidEntry = (round: Round) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    initiateCheckout(round.id);
   };
 
   const handlePrivateRound = () => {
@@ -286,6 +367,10 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   const monthlyRounds = rounds.filter(r => r.type === 'monthly');
   const dailyRounds = rounds.filter(r => r.type === 'daily');
   const weeklyRounds = rounds.filter(r => r.type === 'weekly');
+
+  // Separate free and paid monthly rounds
+  const freeMonthlyRounds = monthlyRounds.filter(r => !r.is_paid);
+  const paidMonthlyRounds = monthlyRounds.filter(r => r.is_paid);
 
   if (loading) {
     return (
@@ -299,20 +384,32 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
   return (
     <>
       <div className="space-y-8">
-        {/* Win Vouchers Section - Monthly */}
+        {/* Win Vouchers Section - Monthly (Free + Paid) */}
         <section>
           <SectionHeading>Win Vouchers</SectionHeading>
           <div className="space-y-3">
-            {monthlyRounds.length > 0 ? (
-              monthlyRounds.map((round) => (
-                <RoundCard 
-                  key={round.id} 
-                  round={round} 
-                  type={round.type}
-                  onClick={() => handleJoinRound(round)} 
-                />
-              ))
-            ) : (
+            {/* Paid rounds first (premium positioning) */}
+            {paidMonthlyRounds.map((round) => (
+              <RoundCard 
+                key={round.id} 
+                round={round} 
+                type={round.type}
+                onClick={() => handleJoinRound(round)}
+                onPaidEntry={() => handlePaidEntry(round)}
+                isPaidCheckoutLoading={checkoutLoading}
+                userEntryCount={userEntryCounts[round.id] || 0}
+              />
+            ))}
+            {/* Free monthly rounds */}
+            {freeMonthlyRounds.map((round) => (
+              <RoundCard 
+                key={round.id} 
+                round={round} 
+                type={round.type}
+                onClick={() => handleJoinRound(round)} 
+              />
+            ))}
+            {monthlyRounds.length === 0 && (
               <p className="text-muted-foreground text-sm">No monthly rounds available.</p>
             )}
           </div>

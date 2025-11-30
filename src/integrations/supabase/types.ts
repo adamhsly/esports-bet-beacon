@@ -1134,9 +1134,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           end_date: string
+          entry_fee: number | null
           game_source: string | null
           game_type: string | null
           id: string
+          is_paid: boolean | null
           is_private: boolean
           join_code: string | null
           max_participants: number | null
@@ -1151,9 +1153,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           end_date: string
+          entry_fee?: number | null
           game_source?: string | null
           game_type?: string | null
           id?: string
+          is_paid?: boolean | null
           is_private?: boolean
           join_code?: string | null
           max_participants?: number | null
@@ -1168,9 +1172,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           end_date?: string
+          entry_fee?: number | null
           game_source?: string | null
           game_type?: string | null
           id?: string
+          is_paid?: boolean | null
           is_private?: boolean
           join_code?: string | null
           max_participants?: number | null
@@ -2477,6 +2483,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      round_entries: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          id: string
+          paid_at: string | null
+          pick_id: string | null
+          round_id: string
+          status: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          pick_id?: string | null
+          round_id: string
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          pick_id?: string | null
+          round_id?: string
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_entries_pick_id_fkey"
+            columns: ["pick_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_round_picks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "round_entries_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       season_rewards: {
         Row: {
