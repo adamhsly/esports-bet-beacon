@@ -48,52 +48,114 @@ serve(async (req) => {
       throw new Error(`Webhook signature verification failed: ${err.message}`);
     }
 
+    // Create Supabase client with service role key to bypass RLS
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
+    );
+
     // Handle the checkout.session.completed event
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.metadata?.user_id;
+      const metadata = session.metadata || {};
 
-      if (!userId) {
-        console.error('No user_id found in session metadata');
-        throw new Error('No user_id found in session metadata');
+      console.log('Checkout completed, metadata:', metadata);
+
+      // Check if this is a round entry payment
+      if (metadata.type === 'round_entry' && metadata.round_id && metadata.user_id) {
+        console.log(`Processing round entry: round=${metadata.round_id}, user=${metadata.user_id}`);
+
+        // Update the round entry record
+        const { data: entryData, error: updateEntryError } = await supabaseService
+          .from('round_entries')
+          .update({
+            status: 'completed',
+            stripe_payment_intent_id: session.payment_intent as string,
+            paid_at: new Date().toISOString(),
+          })
+          .eq('stripe_session_id', session.id)
+          .select()
+          .single();
+
+        if (updateEntryError) {
+          console.error('Error updating entry:', updateEntryError);
+          // Try to create the entry if it doesn't exist
+          const { error: createError } = await supabaseService
+            .from('round_entries')
+            .insert({
+              round_id: metadata.round_id,
+              user_id: metadata.user_id,
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent as string,
+              amount_paid: session.amount_total || 0,
+              status: 'completed',
+              paid_at: new Date().toISOString(),
+            });
+
+          if (createError) {
+            console.error('Error creating entry:', createError);
+            throw new Error('Failed to record payment');
+          }
+        }
+
+        // Create a new picks entry for this paid entry
+        const { data: picksData, error: picksError } = await supabaseService
+          .from('fantasy_round_picks')
+          .insert({
+            round_id: metadata.round_id,
+            user_id: metadata.user_id,
+            team_picks: [],
+          })
+          .select()
+          .single();
+
+        if (picksError) {
+          console.error('Error creating picks entry:', picksError);
+        } else {
+          // Link the picks to the entry
+          await supabaseService
+            .from('round_entries')
+            .update({ pick_id: picksData.id })
+            .eq('stripe_session_id', session.id);
+
+          console.log(`Created picks entry: ${picksData.id}`);
+        }
+
+        console.log(`Round entry completed successfully for user ${metadata.user_id}`);
       }
+      // Handle premium pass purchase (existing functionality)
+      else if (metadata.user_id) {
+        const userId = metadata.user_id;
+        console.log('Processing successful payment for user:', userId);
 
-      console.log('Processing successful payment for user:', userId);
+        // Update user's premium status
+        const { error: updateError } = await supabaseService
+          .from('profiles')
+          .update({ premium_pass: true })
+          .eq('id', userId);
 
-      // Create Supabase client with service role key to bypass RLS
-      const supabaseService = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-        { auth: { persistSession: false } }
-      );
+        if (updateError) {
+          console.error('Error updating user premium status:', updateError);
+          throw new Error(`Error updating user premium status: ${updateError.message}`);
+        }
 
-      // Update user's premium status
-      const { error: updateError } = await supabaseService
-        .from('profiles')
-        .update({ premium_pass: true })
-        .eq('id', userId);
+        console.log('Successfully updated premium status for user:', userId);
 
-      if (updateError) {
-        console.error('Error updating user premium status:', updateError);
-        throw new Error(`Error updating user premium status: ${updateError.message}`);
-      }
+        // Optional: Create receipt record
+        const { error: receiptError } = await supabaseService
+          .from('premium_receipts')
+          .insert({
+            user_id: userId,
+            amount_total: session.amount_total,
+            currency: session.currency,
+            stripe_session_id: session.id,
+            created_at: new Date().toISOString(),
+          });
 
-      console.log('Successfully updated premium status for user:', userId);
-
-      // Optional: Create receipt record
-      const { error: receiptError } = await supabaseService
-        .from('premium_receipts')
-        .insert({
-          user_id: userId,
-          amount_total: session.amount_total,
-          currency: session.currency,
-          stripe_session_id: session.id,
-          created_at: new Date().toISOString(),
-        });
-
-      if (receiptError) {
-        console.warn('Error creating receipt record:', receiptError);
-        // Don't throw here as premium status was already updated
+        if (receiptError) {
+          console.warn('Error creating receipt record:', receiptError);
+        }
       }
     }
 

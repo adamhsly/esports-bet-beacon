@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.get-team-match-breakdown]
 verify_jwt = false
+
+[functions.create-round-entry-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

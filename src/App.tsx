@@ -24,6 +24,7 @@ import AdvancedCardsPage from '@/pages/AdvancedCardsPage';
 import FantasyPage from '@/pages/FantasyPage';
 import { PrivateRoundPage } from '@/pages/PrivateRoundPage';
 import { CreatePrivateRoundPage } from '@/pages/CreatePrivateRoundPage';
+import { RoundEntrySuccessPage } from '@/pages/RoundEntrySuccessPage';
 import AuthPage from '@/pages/AuthPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import Web3ProfilePage from '@/pages/Web3ProfilePage';
@@ -149,6 +150,7 @@ function App() {
           <Route path="/fantasy" element={<FantasyPage />} />
           <Route path="/fantasy/private" element={<PrivateRoundPage />} />
           <Route path="/fantasy/private/create" element={<CreatePrivateRoundPage />} />
+          <Route path="/fantasy/entry/success" element={<RoundEntrySuccessPage />} />
           <Route path="/lineup/:roundId/:userId" element={<LineupSharePage />} />
           <Route path="/lineup/:roundId/:userId" element={<LineupSharePage />} />
           <Route path="/auth" element={<AuthPage />} />
