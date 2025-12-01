@@ -59,7 +59,7 @@ serve(async (req) => {
       throw new Error("This is not a paid round");
     }
 
-    if (round.status !== "open") {
+    if (round.status !== "open" && round.status !== "scheduled") {
       throw new Error("Round is not open for entries");
     }
 
