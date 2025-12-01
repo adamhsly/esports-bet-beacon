@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Trophy, Ticket } from 'lucide-react';
+import { Calendar, Trophy, Ticket, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -21,7 +21,7 @@ interface Round {
   type: 'daily' | 'weekly' | 'monthly';
   start_date: string;
   end_date: string;
-  status: 'open' | 'in_progress' | 'finished';
+  status: 'open' | 'scheduled' | 'in_progress' | 'finished';
   is_paid?: boolean;
   entry_fee?: number;
   round_name?: string;
@@ -106,6 +106,7 @@ const RoundCard: React.FC<{
   const isPaid = round.is_paid && round.entry_fee;
   const prizeKey = isPaid ? 'paid_monthly' : round.type;
   const prizeInfo = PRIZE_STRUCTURE[prizeKey as keyof typeof PRIZE_STRUCTURE];
+  const isScheduled = round.status === 'scheduled';
 
   const isInProgress = () => {
     const now = new Date();
@@ -139,7 +140,13 @@ const RoundCard: React.FC<{
             {formatEntryFee(round.entry_fee!)} Entry
           </span>
         )}
-        {isInProgress() && (
+        {isScheduled && (
+          <span className="px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Coming Soon
+          </span>
+        )}
+        {!isScheduled && isInProgress() && (
           <span className="px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30 rounded-full">
             In Progress
           </span>
@@ -206,7 +213,11 @@ const RoundCard: React.FC<{
           }`}
           disabled={isPaidCheckoutLoading}
         >
-          {isPaidCheckoutLoading ? 'Loading...' : isPaid ? (userEntryCount > 0 ? 'Enter Again' : 'Pay to Enter') : 'Join Round'}
+          {isPaidCheckoutLoading 
+            ? 'Loading...' 
+            : isPaid 
+              ? (userEntryCount > 0 ? 'Enter Again' : (isScheduled ? 'Pre-Pay to Enter' : 'Pay to Enter'))
+              : 'Join Round'}
         </Button>
       </CardContent>
 
@@ -273,7 +284,11 @@ const RoundCard: React.FC<{
           }`}
           disabled={isPaidCheckoutLoading}
         >
-          {isPaidCheckoutLoading ? 'Loading...' : isPaid ? (userEntryCount > 0 ? 'Enter Again' : 'Pay to Enter') : 'Join Round'}
+          {isPaidCheckoutLoading 
+            ? 'Loading...' 
+            : isPaid 
+              ? (userEntryCount > 0 ? 'Enter Again' : (isScheduled ? 'Pre-Pay to Enter' : 'Pay to Enter'))
+              : 'Join Round'}
         </Button>
       </CardContent>
     </Card>
@@ -303,7 +318,7 @@ export const RoundSelector: React.FC<{ onNavigateToInProgress?: () => void; onJo
       const { data, error } = await supabase
         .from('fantasy_rounds')
         .select('*')
-        .eq('status', 'open')
+        .in('status', ['open', 'scheduled'])
         .eq('is_private', false)
         .order('start_date', { ascending: true });
 
