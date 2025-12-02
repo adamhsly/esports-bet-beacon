@@ -1145,6 +1145,8 @@ export type Database = {
           round_name: string | null
           start_date: string
           status: string
+          stripe_price_id: string | null
+          team_type: string | null
           type: string
           updated_at: string
         }
@@ -1164,6 +1166,8 @@ export type Database = {
           round_name?: string | null
           start_date: string
           status?: string
+          stripe_price_id?: string | null
+          team_type?: string | null
           type: string
           updated_at?: string
         }
@@ -1183,6 +1187,8 @@ export type Database = {
           round_name?: string | null
           start_date?: string
           status?: string
+          stripe_price_id?: string | null
+          team_type?: string | null
           type?: string
           updated_at?: string
         }
