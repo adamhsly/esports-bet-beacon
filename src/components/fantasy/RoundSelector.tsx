@@ -49,7 +49,12 @@ const RoundCard: React.FC<{
   isPaidCheckoutLoading?: boolean;
   userEntryCount?: number;
 }> = ({ round, type, onClick, onPaidEntry, isPaidCheckoutLoading, userEntryCount = 0 }) => {
-  const getRoundImage = (roundType: string) => {
+  const getRoundImage = (roundType: string, gameType?: string | null) => {
+    // If no specific game type is set, show all games image
+    if (!gameType || gameType === 'all') {
+      return '/lovable-uploads/all_games_round.png';
+    }
+    
     switch (roundType) {
       case 'daily': return 'lovable-uploads/daily_round.png';
       case 'weekly': return 'lovable-uploads/weekly_round.png';
@@ -170,7 +175,7 @@ const RoundCard: React.FC<{
       <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
         <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
           <img
-            src={getRoundImage(round.type)}
+            src={getRoundImage(round.type, round.game_type)}
             alt={`${round.type} round`}
             className="w-20 h-20 object-contain"
           />
@@ -239,7 +244,7 @@ const RoundCard: React.FC<{
         <div className="flex-shrink-0">
           <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
             <img
-              src={getRoundImage(round.type)}
+              src={getRoundImage(round.type, round.game_type)}
               alt={`${round.type} round`}
               className="w-20 h-20 object-contain"
             />
