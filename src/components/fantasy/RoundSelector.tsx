@@ -236,9 +236,9 @@ const RoundCard: React.FC<{
               ? userEntryCount > 0
                 ? "Enter Again"
                 : isScheduled
-                  ? "£2 to Enter"
-                  : "£2 to Enter"
-              : "Join Round"}
+                  ? "£2 to Join"
+                  : "£2 to Join"
+              : "Free to Join"}
         </Button>
       </CardContent>
 
