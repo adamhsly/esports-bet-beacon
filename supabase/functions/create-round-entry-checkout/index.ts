@@ -44,10 +44,10 @@ serve(async (req) => {
 
     console.log(`Creating checkout for user ${user.id}, round ${round_id}`);
 
-    // Fetch round details to get entry fee
+    // Fetch round details to get entry fee and stripe config
     const { data: round, error: roundError } = await supabase
       .from("fantasy_rounds")
-      .select("id, entry_fee, is_paid, status, type, round_name, start_date, end_date")
+      .select("id, entry_fee, is_paid, status, type, round_name, start_date, end_date, stripe_price_id")
       .eq("id", round_id)
       .single();
 
@@ -86,26 +86,36 @@ serve(async (req) => {
       customerId = newCustomer.id;
     }
 
-    // Create checkout session with dynamic price
+    // Create checkout session - use configured price_id or dynamic pricing
     const siteUrl = Deno.env.get("SITE_URL") || "https://fragsandfortunes.com";
     
+    // Build line items based on whether stripe_price_id is configured
+    const lineItems = round.stripe_price_id
+      ? [
+          {
+            price: round.stripe_price_id,
+            quantity: 1,
+          },
+        ]
+      : [
+          {
+            price_data: {
+              currency: "gbp",
+              product_data: {
+                name: `Fantasy Round Entry: ${round.round_name || round.type}`,
+                description: `Entry to the ${round.type} fantasy round (${new Date(round.start_date).toLocaleDateString()} - ${new Date(round.end_date).toLocaleDateString()})`,
+              },
+              unit_amount: round.entry_fee, // Already in pence
+            },
+            quantity: 1,
+          },
+        ];
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
       mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "gbp",
-            product_data: {
-              name: `Fantasy Round Entry: ${round.round_name || round.type}`,
-              description: `Entry to the ${round.type} fantasy round (${new Date(round.start_date).toLocaleDateString()} - ${new Date(round.end_date).toLocaleDateString()})`,
-            },
-            unit_amount: round.entry_fee, // Already in pence
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       metadata: {
         round_id: round.id,
         user_id: user.id,

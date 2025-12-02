@@ -25,6 +25,9 @@ interface Round {
   is_paid?: boolean;
   entry_fee?: number;
   round_name?: string;
+  game_type?: string;
+  team_type?: 'pro' | 'amateur' | 'both';
+  stripe_price_id?: string;
 }
 
 const SectionHeading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
