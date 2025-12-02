@@ -11,7 +11,7 @@ interface CreateRoundRequest {
   end_date: string;
   budget_cap?: number;
   game_type?: string;
-  game_source?: 'pro' | 'amateur' | 'both';
+  team_type?: 'pro' | 'amateur' | 'both';
 }
 
 function generateJoinCode(): string {
@@ -83,11 +83,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate game_source
-    const gameSource = body.game_source || 'both';
-    if (!['pro', 'amateur', 'both'].includes(gameSource)) {
+    // Validate team_type
+    const teamType = body.team_type || 'both';
+    if (!['pro', 'amateur', 'both'].includes(teamType)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid game source' }),
+        JSON.stringify({ error: 'Invalid team type' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
         created_by: user.id,
         status: 'open',
         budget_cap: budgetCap,
-        game_source: gameSource,
+        team_type: teamType,
         game_type: body.game_type || null,
       })
       .select()

@@ -6,7 +6,7 @@ export interface PrivateRoundConfig {
   end_date: string;
   budget_cap?: number;
   game_type?: string;
-  game_source?: 'pro' | 'amateur' | 'both';
+  team_type?: 'pro' | 'amateur' | 'both';
 }
 
 export interface CreateRoundResponse {
