@@ -22,7 +22,7 @@ export const CreatePrivateRound: React.FC = () => {
     start_date: '',
     end_date: '',
     budget_cap: 50,
-    game_source: 'both',
+    team_type: 'both',
     game_type: '',
   });
 
@@ -211,14 +211,14 @@ export const CreatePrivateRound: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="game-source" className="text-white">Match Source</Label>
+                  <Label htmlFor="team-type" className="text-white">Team Type</Label>
                   <Select
-                    value={formData.game_source || 'both'}
-                    onValueChange={(value: 'pro' | 'amateur' | 'both') => setFormData({ ...formData, game_source: value })}
+                    value={formData.team_type || 'both'}
+                    onValueChange={(value: 'pro' | 'amateur' | 'both') => setFormData({ ...formData, team_type: value })}
                     disabled={loading}
                   >
                     <SelectTrigger className="h-10 bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28] text-white border-2 border-transparent hover:border-[#965AFF]/20 focus:border-[#965AFF] focus:shadow-[0_0_20px_rgba(150,90,255,0.4)] transition-all duration-[250ms]">
-                      <SelectValue placeholder="Select match type" />
+                      <SelectValue placeholder="Select team type" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1B1F28] border-white/10">
                       <SelectItem value="both" className="text-white hover:bg-white/10">Both (Pro & Amateur)</SelectItem>
@@ -226,7 +226,7 @@ export const CreatePrivateRound: React.FC = () => {
                       <SelectItem value="amateur" className="text-white hover:bg-white/10">Amateur Only</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-400">Choose match types to include</p>
+                  <p className="text-xs text-gray-400">Choose team types to include</p>
                 </div>
               </div>
 

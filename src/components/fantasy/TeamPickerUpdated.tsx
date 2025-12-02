@@ -30,6 +30,8 @@ interface FantasyRound {
   end_date: string;
   status: 'open' | 'active' | 'finished';
   is_private?: boolean;
+  game_type?: string;
+  team_type?: 'pro' | 'amateur' | 'both';
 }
 
 interface Team {
@@ -163,29 +165,34 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       setLoading(true);
       setPriceStatus(isRetry ? 'calculating' : 'loading');
       
-      const { data: proData, error: proError } = await supabase
+      // Build queries with round filters
+      let proQuery = supabase
         .from('fantasy_team_prices')
         .select('*')
         .eq('team_type', 'pro')
         .eq('round_id', round.id)
-        .like('team_name', `%${debouncedProSearch}%`)
-        .order('price', { ascending: proSortDir === 'asc' })
-        .then(res => {
-          if (res.error) throw res.error;
-          return res;
-        });
-
-      const { data: amateurData, error: amateurError } = await supabase
+        .like('team_name', `%${debouncedProSearch}%`);
+      
+      // Skip pro query entirely if team_type is set to amateur only
+      const shouldFetchPro = !round.team_type || round.team_type !== 'amateur';
+      
+      let amateurQuery = supabase
         .from('fantasy_team_prices')
         .select('*')
         .eq('team_type', 'amateur')
         .eq('round_id', round.id)
-        .like('team_name', `%${debouncedAmSearch}%`)
-        .order('price', { ascending: amSortDir === 'asc' })
-        .then(res => {
-          if (res.error) throw res.error;
-          return res;
-        });
+        .like('team_name', `%${debouncedAmSearch}%`);
+      
+      // Skip amateur query entirely if team_type is set to pro only
+      const shouldFetchAmateur = !round.team_type || round.team_type !== 'pro';
+
+      const { data: proData, error: proError } = shouldFetchPro 
+        ? await proQuery.order('price', { ascending: proSortDir === 'asc' })
+        : { data: [], error: null };
+
+      const { data: amateurData, error: amateurError } = shouldFetchAmateur
+        ? await amateurQuery.order('price', { ascending: amSortDir === 'asc' })
+        : { data: [], error: null };
 
       if (proError) throw proError;
       if (amateurError) throw amateurError;
@@ -209,7 +216,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       }
 
       // Map fantasy_team_prices data to Team interface with logos and esport_type
-      const filteredProTeams = proData?.map((priceData: any) => {
+      let filteredProTeams = proData?.map((priceData: any) => {
         const teamInfo = teamInfoMap.get(String(priceData.team_id));
         return {
           id: priceData.team_id,
@@ -222,8 +229,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           esport_type: teamInfo?.esport_type
         };
       }) || [];
+      
+      // Apply game_type filter if configured
+      if (round.game_type && filteredProTeams.length > 0) {
+        filteredProTeams = filteredProTeams.filter((team: any) => 
+          (team.esport_type ?? '').toLowerCase() === round.game_type!.toLowerCase()
+        );
+      }
 
-      const filteredAmateurTeams = amateurData?.map((priceData: any) => ({
+      let filteredAmateurTeams = amateurData?.map((priceData: any) => ({
         id: priceData.team_id,
         name: priceData.team_name,
         type: 'amateur' as const,
@@ -233,6 +247,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         match_volume: priceData.match_volume,
         esport_type: 'cs2' // All amateur teams are from FACEIT CS2
       })) || [];
+      
+      // Apply game_type filter if configured (amateur teams are cs2)
+      if (round.game_type && filteredAmateurTeams.length > 0) {
+        const gameTypeLower = round.game_type.toLowerCase();
+        // Only show amateur teams if game_type is cs-related
+        if (gameTypeLower !== 'counter-strike' && gameTypeLower !== 'cs2') {
+          filteredAmateurTeams = [];
+        }
+      }
 
       // Check if we got any teams
       const totalTeams = filteredProTeams.length + filteredAmateurTeams.length;

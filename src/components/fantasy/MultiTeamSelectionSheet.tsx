@@ -48,6 +48,8 @@ interface MultiTeamSelectionSheetProps {
     end_date: string;
     status: 'open' | 'active' | 'finished';
     is_private?: boolean;
+    game_type?: string;
+    team_type?: 'pro' | 'amateur' | 'both';
   };
   swapMode?: boolean;
   swappingTeamBudget?: number;
@@ -72,6 +74,15 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       console.log('🔍 First pro team price:', proTeams[0]?.price);
     }
   }, [isOpen, proTeams]);
+
+  // Initialize activeTab based on round team_type
+  useEffect(() => {
+    if (round.team_type === 'pro') {
+      setActiveTab('pro');
+    } else if (round.team_type === 'amateur') {
+      setActiveTab('amateur');
+    }
+  }, [round.team_type]);
 
   const [activeTab, setActiveTab] = useState<'pro' | 'amateur'>('pro');
   const [tempSelectedTeams, setTempSelectedTeams] = useState<Team[]>([]);
@@ -150,23 +161,37 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     }
   }, [maxAmateurPrice]);
 
-  // Step 1: Base filtered teams (search, game, region)
+  // Step 1: Base filtered teams (search, game, region) + round configuration
   const baseFilteredProTeams = useMemo(() => {
     return proTeams.filter(t => {
+      // Apply round team_type filter
+      if (round.team_type === 'amateur') return false; // Hide all pro teams if only amateur selected
+      
       const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
-      return nameMatch && gameMatch;
+      
+      // Apply round game_type filter if configured
+      const roundGameMatch = !round.game_type || (t.esport_type ?? '').toLowerCase() === round.game_type.toLowerCase();
+      
+      return nameMatch && gameMatch && roundGameMatch;
     });
-  }, [proTeams, debouncedProSearch, selectedGamePro]);
+  }, [proTeams, debouncedProSearch, selectedGamePro, round.team_type, round.game_type]);
 
   const baseFilteredAmateurTeams = useMemo(() => {
     return amateurTeams.filter(t => {
+      // Apply round team_type filter
+      if (round.team_type === 'pro') return false; // Hide all amateur teams if only pro selected
+      
       const nameMatch = t.name.toLowerCase().includes(debouncedAmSearch.toLowerCase());
       const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
       const regionMatch = selectedRegionAm === 'all' || (t.region ?? '') === selectedRegionAm;
-      return nameMatch && gameMatch && regionMatch;
+      
+      // Apply round game_type filter if configured (amateur teams are cs2)
+      const roundGameMatch = !round.game_type || round.game_type.toLowerCase() === 'counter-strike' || round.game_type.toLowerCase() === 'cs2';
+      
+      return nameMatch && gameMatch && regionMatch && roundGameMatch;
     });
-  }, [amateurTeams, debouncedAmSearch, selectedGameAm, selectedRegionAm]);
+  }, [amateurTeams, debouncedAmSearch, selectedGameAm, selectedRegionAm, round.team_type, round.game_type]);
 
   // Step 2: Budget and basic filters
   const budgetFilteredProTeams = useMemo(() => {
@@ -338,18 +363,28 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         {/* Tabs */}
         <div className="mt-6">
           <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'pro' | 'amateur')} className="flex-1">
-            <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
-              <TabsTrigger value="pro" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
-                <Trophy className="w-4 h-4 mr-2" />
-                Pro Teams
-              </TabsTrigger>
-              <TabsTrigger value="amateur" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white">
-                <Users className="w-4 h-4 mr-2" />
-                Amateur Teams
-              </TabsTrigger>
-            </TabsList>
+            {round.team_type === 'both' || !round.team_type ? (
+              <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
+                <TabsTrigger value="pro" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                  <Trophy className="w-4 h-4 mr-2" />
+                  Pro Teams
+                </TabsTrigger>
+                <TabsTrigger value="amateur" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white">
+                  <Users className="w-4 h-4 mr-2" />
+                  Amateur Teams
+                </TabsTrigger>
+              </TabsList>
+            ) : (
+              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-sm text-blue-400 font-medium">
+                  {round.team_type === 'pro' ? '🏆 This round is Pro Teams only' : '👥 This round is Amateur Teams only'}
+                  {round.game_type && ` - ${round.game_type}`}
+                </p>
+              </div>
+            )}
 
             {/* Pro Teams Tab */}
+            {(!round.team_type || round.team_type === 'both' || round.team_type === 'pro') && (
             <TabsContent value="pro" className="mt-6 space-y-4">
               {/* Pro Filters */}
               <div className="space-y-4">
@@ -402,8 +437,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   </div>}
               </div>
             </TabsContent>
+            )}
 
             {/* Amateur Teams Tab */}
+            {(!round.team_type || round.team_type === 'both' || round.team_type === 'amateur') && (
             <TabsContent value="amateur" className="mt-6 space-y-4">
               {/* Amateur Warning Banner */}
               
@@ -485,6 +522,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   </div>}
               </div>
             </TabsContent>
+            )}
           </Tabs>
         </div>
 

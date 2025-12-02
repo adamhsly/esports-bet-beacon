@@ -136,7 +136,7 @@ const RoundCard: React.FC<{
       onClick={handleClick}
     >
       {/* Status Pills */}
-      <div className="absolute top-2 right-2 z-10 flex gap-2">
+      <div className="absolute top-2 right-2 z-10 flex gap-2 flex-wrap justify-end">
         {isPaid && (
           <span className="px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full flex items-center gap-1">
             <Ticket className="h-3 w-3" />
@@ -152,6 +152,16 @@ const RoundCard: React.FC<{
         {!isScheduled && isInProgress() && (
           <span className="px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30 rounded-full">
             In Progress
+          </span>
+        )}
+        {round.game_type && (
+          <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full">
+            {round.game_type}
+          </span>
+        )}
+        {round.team_type && round.team_type !== 'both' && (
+          <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-full">
+            {round.team_type === 'pro' ? 'Pro Only' : 'Amateur Only'}
           </span>
         )}
       </div>
