@@ -227,7 +227,7 @@ const RoundCard: React.FC<{
         </div>
 
         <Button
-          className={`w-full font-medium text-sm py-2 mt-1 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+          className={`w-full font-medium text-sm py-2 mt-1 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
           disabled={isPaidCheckoutLoading}
         >
           {isPaidCheckoutLoading
@@ -301,7 +301,7 @@ const RoundCard: React.FC<{
         </div>
 
         <Button
-          className={`font-medium text-sm px-6 flex-shrink-0 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+          className={`font-medium text-sm px-6 flex-shrink-0 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
           disabled={isPaidCheckoutLoading}
         >
           {isPaidCheckoutLoading
