@@ -200,19 +200,6 @@ const RoundCard: React.FC<{
               <span className="text-gray-200">{prizeInfo?.third}</span>
             </span>
           </div>
-          {isPaid ? (
-            <p className="text-sm text-amber-400 font-medium mt-2">
-              {formatEntryFee(round.entry_fee!)} to enter
-              {userEntryCount > 0 && (
-                <span className="text-muted-foreground">
-                  {" "}
-                  • {userEntryCount} {userEntryCount === 1 ? "entry" : "entries"}
-                </span>
-              )}
-            </p>
-          ) : (
-            <p className="text-sm text-green-400 font-medium mt-2">Free to play</p>
-          )}
         </div>
 
         <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
@@ -274,19 +261,6 @@ const RoundCard: React.FC<{
             </div>
           </div>
 
-          {isPaid ? (
-            <p className="text-sm text-amber-400 font-medium mb-1 text-left">
-              {formatEntryFee(round.entry_fee!)} to enter
-              {userEntryCount > 0 && (
-                <span className="text-muted-foreground">
-                  {" "}
-                  • You have {userEntryCount} {userEntryCount === 1 ? "entry" : "entries"}
-                </span>
-              )}
-            </p>
-          ) : (
-            <p className="text-sm text-green-400 font-medium mb-1 text-left">Free to play</p>
-          )}
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
             <div className="flex items-center gap-1">
