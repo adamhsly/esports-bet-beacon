@@ -160,16 +160,17 @@ const RoundCard: React.FC<{
       </div>
 
       {/* Mobile Layout */}
-      <CardContent className="p-4 md:hidden flex flex-col items-center gap-3">
-        <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
+      <CardContent className="p-0 md:hidden flex flex-col">
+        <div className="relative w-full h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
           <img
             src={getRoundImage(round.type, round.game_type)}
             alt={`${round.type} round`}
-            className="w-20 h-20 object-contain"
+            className="w-full h-20 object-cover"
           />
         </div>
 
-        <div className="text-center">
+        <div className="p-4 flex flex-col items-center gap-3">
+          <div className="text-center">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <Trophy className="h-5 w-5 text-yellow-400" />
             <span className="text-base font-semibold text-yellow-400">
@@ -207,33 +208,32 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        <Button
-          className={`w-full font-medium text-sm py-2 mt-1 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-          disabled={isPaidCheckoutLoading}
-        >
-          {isPaidCheckoutLoading
-            ? "Loading..."
-            : isPaid
-              ? userEntryCount > 0
-                ? "Enter Again"
-                : `${formatEntryFee(round.entry_fee!)} To Join`
-              : "Free To Join"}
-        </Button>
+          <Button
+            className={`w-full font-medium text-sm py-2 mt-1 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+            disabled={isPaidCheckoutLoading}
+          >
+            {isPaidCheckoutLoading
+              ? "Loading..."
+              : isPaid
+                ? userEntryCount > 0
+                  ? "Enter Again"
+                  : `${formatEntryFee(round.entry_fee!)} To Join`
+                : "Free To Join"}
+          </Button>
+        </div>
       </CardContent>
 
       {/* Desktop Layout */}
-      <CardContent className="p-4 hidden md:flex items-center gap-4">
-        <div className="flex-shrink-0">
-          <div className="relative p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30">
-            <img
-              src={getRoundImage(round.type, round.game_type)}
-              alt={`${round.type} round`}
-              className="w-20 h-20 object-contain"
-            />
-          </div>
+      <CardContent className="p-0 hidden md:flex items-stretch min-h-[150px]">
+        <div className="flex-shrink-0 w-32 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+          <img
+            src={getRoundImage(round.type, round.game_type)}
+            alt={`${round.type} round`}
+            className="w-full h-full object-cover"
+          />
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
           <div className="flex items-center gap-3 mb-1">
             <Trophy className="h-6 w-6 text-yellow-400 flex-shrink-0" />
             <span className="text-base font-semibold text-yellow-400">
@@ -271,18 +271,20 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        <Button
-          className={`font-medium text-sm px-6 flex-shrink-0 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-          disabled={isPaidCheckoutLoading}
-        >
-          {isPaidCheckoutLoading
-            ? "Loading..."
-            : isPaid
-              ? userEntryCount > 0
-                ? "Enter Again"
-                : `${formatEntryFee(round.entry_fee!)} To Join`
-              : "Free To Join"}
-        </Button>
+        <div className="p-4 flex items-center">
+          <Button
+            className={`font-medium text-sm px-6 flex-shrink-0 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+            disabled={isPaidCheckoutLoading}
+          >
+            {isPaidCheckoutLoading
+              ? "Loading..."
+              : isPaid
+                ? userEntryCount > 0
+                  ? "Enter Again"
+                  : `${formatEntryFee(round.entry_fee!)} To Join`
+                : "Free To Join"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
