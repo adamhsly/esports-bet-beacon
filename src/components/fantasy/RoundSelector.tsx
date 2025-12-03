@@ -235,10 +235,8 @@ const RoundCard: React.FC<{
             : isPaid
               ? userEntryCount > 0
                 ? "Enter Again"
-                : isScheduled
-                  ? "£2 to Join"
-                  : "£2 to Join"
-              : "Free to Join"}
+                : `${formatEntryFee(round.entry_fee!)} To Join`
+              : "Free To Join"}
         </Button>
       </CardContent>
 
@@ -311,10 +309,8 @@ const RoundCard: React.FC<{
             : isPaid
               ? userEntryCount > 0
                 ? "Enter Again"
-                : isScheduled
-                  ? "Pre-Pay to Enter"
-                  : "Pay to Enter"
-              : "Join Round"}
+                : `${formatEntryFee(round.entry_fee!)} To Join`
+              : "Free To Join"}
         </Button>
       </CardContent>
     </Card>
