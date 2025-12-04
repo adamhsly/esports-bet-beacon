@@ -176,13 +176,7 @@ const RoundCard: React.FC<{
 
         <div className="p-4 flex flex-col items-center gap-3">
           <div className="text-center">
-          <div className="flex items-center justify-center gap-1.5 mb-2">
-            <Trophy className="h-5 w-5 text-yellow-400" />
-            <span className="text-base font-semibold text-yellow-400">
-              {prizeInfo?.type === "steam" ? "Steam Vouchers" : "Credits"}
-            </span>
-          </div>
-          <div className="flex items-center justify-center gap-4 text-lg font-semibold">
+          <div className="flex items-center justify-center gap-4 text-xl font-semibold">
             <span className="flex items-center gap-1">
               <span className="text-yellow-400">🥇</span>
               <span className="text-gray-200">{prizeInfo?.first}</span>
@@ -239,12 +233,8 @@ const RoundCard: React.FC<{
         </div>
 
         <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-          <div className="flex items-center gap-3 mb-1">
-            <Trophy className="h-6 w-6 text-yellow-400 flex-shrink-0" />
-            <span className="text-base font-semibold text-yellow-400">
-              {prizeInfo?.type === "steam" ? "Steam Vouchers" : "Credits"}
-            </span>
-            <div className="flex items-center gap-4 text-base font-semibold">
+          <div className="flex items-center gap-4 mb-1">
+            <div className="flex items-center gap-4 text-lg font-semibold">
               <span className="flex items-center gap-1">
                 <span className="text-yellow-400">🥇</span>
                 <span className="text-gray-200">{prizeInfo?.first}</span>
