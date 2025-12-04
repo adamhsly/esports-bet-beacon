@@ -202,7 +202,7 @@ const RoundCard: React.FC<{
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-1 text-xs text-gray-400">
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
@@ -264,7 +264,7 @@ const RoundCard: React.FC<{
             {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur Teams"}
           </p>
 
-          <div className="flex flex-col items-center gap-1 text-xs text-gray-400 w-full">
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
