@@ -152,13 +152,13 @@ const RoundCard: React.FC<{
       {/* Status Pills */}
       <div className="absolute top-2 right-2 z-10 flex gap-2 flex-wrap justify-end">
         {isScheduled && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full flex items-center gap-1">
+          <span className="px-2 py-0.5 text-xs font-medium bg-blue-600 text-white border border-blue-500 rounded-full flex items-center gap-1">
             <Clock className="h-3 w-3" />
             Coming Soon
           </span>
         )}
         {!isScheduled && isInProgress() && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30 rounded-full">
+          <span className="px-2 py-0.5 text-xs font-medium bg-green-600 text-white border border-green-500 rounded-full">
             In Progress
           </span>
         )}
