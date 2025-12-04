@@ -88,7 +88,9 @@ const RoundCard: React.FC<{
     };
 
     const gameKey = getGameImageKey(gameType);
-    return `/lovable-uploads/rounds/${gameKey}-${platform}.png`;
+    // Note: file naming is inverted - "desktop" files are for mobile, "mobile" files are for desktop/tablet
+    const fileSuffix = platform === "mobile" ? "desktop" : "mobile";
+    return `/lovable-uploads/rounds/${gameKey}-${fileSuffix}.png`;
   };
   if (type === "private") {
     return (
