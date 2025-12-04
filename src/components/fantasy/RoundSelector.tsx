@@ -151,7 +151,6 @@ const RoundCard: React.FC<{
     >
       {/* Status Pills */}
       <div className="absolute top-2 right-2 z-10 flex gap-2 flex-wrap justify-end">
-        {isPaid}
         {isScheduled && (
           <span className="px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -203,7 +202,7 @@ const RoundCard: React.FC<{
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+        <div className="flex flex-col items-center gap-1 text-xs text-gray-400">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
@@ -265,7 +264,7 @@ const RoundCard: React.FC<{
             {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur Teams"}
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+          <div className="flex flex-col items-center gap-1 text-xs text-gray-400 w-full">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
