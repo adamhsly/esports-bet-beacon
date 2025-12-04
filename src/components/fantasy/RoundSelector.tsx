@@ -190,8 +190,8 @@ const RoundCard: React.FC<{
               <span className="text-gray-200">{prizeInfo?.third}</span>
             </span>
           </div>
-          <p className="text-xs text-purple-300 mt-2">Games: {round.game_type || "All Games"}</p>
-          <p className="text-xs text-cyan-300">
+          <p className="text-sm text-purple-300 mt-2">Games: {round.game_type || "All Games"}</p>
+          <p className="text-sm text-cyan-300">
             {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur Teams"}
           </p>
         </div>
@@ -249,8 +249,8 @@ const RoundCard: React.FC<{
               </span>
             </div>
           </div>
-          <p className="text-xs text-purple-300">Games: {round.game_type || "All Games"}</p>
-          <p className="text-xs text-cyan-300 mb-1">
+          <p className="text-sm text-purple-300">Games: {round.game_type || "All Games"}</p>
+          <p className="text-sm text-cyan-300 mb-1">
             {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur Teams"}
           </p>
 
