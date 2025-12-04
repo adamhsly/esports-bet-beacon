@@ -176,7 +176,7 @@ const RoundCard: React.FC<{
 
         <div className="p-4 flex flex-col items-center gap-3">
           <div className="text-center">
-          <div className="flex items-center justify-center gap-4 text-xl font-semibold">
+          <div className="flex items-center justify-center gap-4 text-2xl font-bold">
             <span className="flex items-center gap-1">
               <span className="text-yellow-400">🥇</span>
               <span className="text-gray-200">{prizeInfo?.first}</span>
@@ -233,8 +233,8 @@ const RoundCard: React.FC<{
         </div>
 
         <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-1">
-            <div className="flex items-center gap-4 text-lg font-semibold">
+          <div className="flex items-center justify-center gap-4 mb-1">
+            <div className="flex items-center gap-4 text-xl font-bold">
               <span className="flex items-center gap-1">
                 <span className="text-yellow-400">🥇</span>
                 <span className="text-gray-200">{prizeInfo?.first}</span>
@@ -381,7 +381,7 @@ export const RoundSelector: React.FC<{
       <div className="space-y-8">
         {/* Win Vouchers Section - Monthly (Free + Paid) */}
         <section>
-          <SectionHeading>Win Vouchers</SectionHeading>
+          <SectionHeading>Win Steam Vouchers</SectionHeading>
           <div className="space-y-3">
             {/* Paid rounds first (premium positioning) */}
             {paidMonthlyRounds.map((round) => (
@@ -407,7 +407,7 @@ export const RoundSelector: React.FC<{
 
         {/* Quick Fire Section - Daily & Weekly */}
         <section>
-          <SectionHeading>Quick Fire</SectionHeading>
+          <SectionHeading>Win Credits</SectionHeading>
           <div className="space-y-3">
             {dailyRounds.map((round) => (
               <RoundCard key={round.id} round={round} type={round.type} onClick={() => handleJoinRound(round)} />
