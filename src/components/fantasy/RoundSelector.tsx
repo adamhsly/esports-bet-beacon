@@ -68,23 +68,27 @@ const RoundCard: React.FC<{
   isPaidCheckoutLoading?: boolean;
   userEntryCount?: number;
 }> = ({ round, type, onClick, onPaidEntry, isPaidCheckoutLoading, userEntryCount = 0 }) => {
-  const getRoundImage = (roundType: string, gameType?: string | null) => {
-    // If no specific game type is set, show all games image
-    if (!gameType || gameType === "all") {
-      return "/lovable-uploads/all_games_round.png";
+  const getRoundImage = (roundType: string, gameType?: string | null, platform: "mobile" | "desktop" = "desktop") => {
+    // Handle private rounds separately
+    if (roundType === "private") {
+      return "/lovable-uploads/private_round.png";
     }
-    switch (roundType) {
-      case "daily":
-        return "lovable-uploads/daily_round.png";
-      case "weekly":
-        return "lovable-uploads/weekly_round.png";
-      case "monthly":
-        return "lovable-uploads/monthly_round.png";
-      case "private":
-        return "/lovable-uploads/private_round.png";
-      default:
-        return "/images/rounds/default.jpg";
-    }
+
+    // Map game_type to image filename prefix
+    const getGameImageKey = (game: string | null | undefined): string => {
+      if (!game || game === "all") return "all";
+      const normalizedGame = game.toLowerCase();
+      if (normalizedGame === "cs2" || normalizedGame === "counter-strike" || normalizedGame === "csgo") {
+        return "cs2";
+      }
+      if (normalizedGame === "valorant") return "valorant";
+      if (normalizedGame === "dota-2" || normalizedGame === "dota2") return "dota2";
+      if (normalizedGame === "league-of-legends" || normalizedGame === "lol") return "league-of-legends";
+      return "all"; // Default to all games if unknown
+    };
+
+    const gameKey = getGameImageKey(gameType);
+    return `/lovable-uploads/rounds/${gameKey}-${platform}.png`;
   };
   if (type === "private") {
     return (
@@ -163,7 +167,7 @@ const RoundCard: React.FC<{
       <CardContent className="p-0 md:hidden flex flex-col">
         <div className="relative w-full h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
           <img
-            src={getRoundImage(round.type, round.game_type)}
+            src={getRoundImage(round.type, round.game_type, "mobile")}
             alt={`${round.type} round`}
             className="w-full h-20 object-cover"
           />
@@ -227,7 +231,7 @@ const RoundCard: React.FC<{
       <CardContent className="p-0 hidden md:flex items-stretch min-h-[150px]">
         <div className="flex-shrink-0 w-32 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
           <img
-            src={getRoundImage(round.type, round.game_type)}
+            src={getRoundImage(round.type, round.game_type, "desktop")}
             alt={`${round.type} round`}
             className="w-full h-full object-cover"
           />
