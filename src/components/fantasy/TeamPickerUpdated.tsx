@@ -77,6 +77,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
+  const [existingPickId, setExistingPickId] = useState<string | null>(null);
 
   // Price calculation status tracking
   const [priceStatus, setPriceStatus] = useState<'loading' | 'calculating' | 'ready' | 'error'>('loading');
@@ -139,7 +140,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     try {
       const { data, error } = await supabase
         .from('fantasy_round_picks')
-        .select('id')
+        .select('id, team_picks')
         .eq('user_id', user.id)
         .eq('round_id', round.id)
         .maybeSingle();
@@ -147,13 +148,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       if (error) throw error;
 
       if (data) {
-        setHasExistingSubmission(true);
-        // Navigate directly to in-progress tab
-        onBack();
-        if (onNavigateToInProgress) {
-          onNavigateToInProgress();
+        // Check if team_picks is populated (has actual teams selected)
+        const teamPicks = data.team_picks as any[];
+        const hasTeams = teamPicks && Array.isArray(teamPicks) && teamPicks.length > 0;
+        
+        if (hasTeams) {
+          // Already submitted with teams - redirect to in-progress
+          setHasExistingSubmission(true);
+          onBack();
+          if (onNavigateToInProgress) {
+            onNavigateToInProgress();
+          }
+          return;
+        } else {
+          // Empty picks exist (from paid entry) - allow team selection
+          console.log('Found empty pick entry from paid round, allowing team selection');
+          setExistingPickId(data.id);
+          setHasExistingSubmission(false);
         }
-        return;
       }
     } catch (error) {
       console.error('Error checking existing submission:', error);
@@ -416,17 +428,32 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         type: benchTeam.type
       } : null;
       
-      // Insert the team picks
-      const { error } = await supabase
-        .from('fantasy_round_picks')
-        .insert({
-          user_id: user.id,
-          round_id: round.id,
-          team_picks: teamPicksData,
-          bench_team: benchTeamData
-        });
+      // Check if we're updating an existing empty pick (from paid entry) or inserting new
+      if (existingPickId) {
+        // Update existing empty pick from paid entry
+        const { error } = await supabase
+          .from('fantasy_round_picks')
+          .update({
+            team_picks: teamPicksData,
+            bench_team: benchTeamData,
+            submitted_at: new Date().toISOString()
+          })
+          .eq('id', existingPickId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Insert new pick for free round
+        const { error } = await supabase
+          .from('fantasy_round_picks')
+          .insert({
+            user_id: user.id,
+            round_id: round.id,
+            team_picks: teamPicksData,
+            bench_team: benchTeamData
+          });
+
+        if (error) throw error;
+      }
 
       // Set star team if one is selected
       if (starTeamId) {

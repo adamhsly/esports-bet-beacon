@@ -67,7 +67,10 @@ export const RoundEntrySuccessPage: React.FC = () => {
   }, [sessionId, roundId]);
 
   const handleContinue = () => {
-    if (roundId) {
+    if (roundId && pickId) {
+      // Navigate with pickId so TeamPicker knows this is a paid entry
+      navigate(`/fantasy?roundId=${roundId}&pickId=${pickId}`);
+    } else if (roundId) {
       navigate(`/fantasy?roundId=${roundId}`);
     } else {
       navigate('/fantasy');
