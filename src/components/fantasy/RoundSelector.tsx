@@ -65,9 +65,11 @@ const RoundCard: React.FC<{
   type: "daily" | "weekly" | "monthly" | "private";
   onClick: () => void;
   onPaidEntry?: () => void;
+  onSubmitPaidTeams?: () => void;
   isPaidCheckoutLoading?: boolean;
   userEntryCount?: number;
-}> = ({ round, type, onClick, onPaidEntry, isPaidCheckoutLoading, userEntryCount = 0 }) => {
+  hasPaidButEmptyPicks?: boolean;
+}> = ({ round, type, onClick, onPaidEntry, onSubmitPaidTeams, isPaidCheckoutLoading, userEntryCount = 0, hasPaidButEmptyPicks = false }) => {
   const getRoundImage = (roundType: string, gameType?: string | null, platform: "mobile" | "desktop" = "desktop") => {
     // Handle private rounds separately
     if (roundType === "private") {
@@ -138,11 +140,23 @@ const RoundCard: React.FC<{
     return now >= start && now <= end;
   };
   const handleClick = () => {
-    if (isPaid && onPaidEntry) {
+    // If user has paid but hasn't submitted teams, go to team picker
+    if (hasPaidButEmptyPicks && onSubmitPaidTeams) {
+      onSubmitPaidTeams();
+    } else if (isPaid && onPaidEntry) {
       onPaidEntry();
     } else {
       onClick();
     }
+  };
+
+  const getButtonText = () => {
+    if (isPaidCheckoutLoading) return "Loading...";
+    if (hasPaidButEmptyPicks) return "Paid - Submit Teams";
+    if (isPaid) {
+      return userEntryCount > 0 ? "Enter Again" : `${formatEntryFee(round.entry_fee!)} To Join`;
+    }
+    return "Free To Join";
   };
   return (
     <Card
@@ -208,16 +222,10 @@ const RoundCard: React.FC<{
         </div>
 
           <Button
-            className={`w-full font-medium text-sm py-2 mt-1 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+            className={`w-full font-medium text-sm py-2 mt-1 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
             disabled={isPaidCheckoutLoading}
           >
-            {isPaidCheckoutLoading
-              ? "Loading..."
-              : isPaid
-                ? userEntryCount > 0
-                  ? "Enter Again"
-                  : `${formatEntryFee(round.entry_fee!)} To Join`
-                : "Free To Join"}
+            {getButtonText()}
           </Button>
         </div>
       </CardContent>
@@ -268,16 +276,10 @@ const RoundCard: React.FC<{
 
         <div className="p-4 flex items-center">
           <Button
-            className={`font-medium text-sm px-6 flex-shrink-0 ${isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+            className={`font-medium text-sm px-6 flex-shrink-0 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
             disabled={isPaidCheckoutLoading}
           >
-            {isPaidCheckoutLoading
-              ? "Loading..."
-              : isPaid
-                ? userEntryCount > 0
-                  ? "Enter Again"
-                  : `${formatEntryFee(round.entry_fee!)} To Join`
-                : "Free To Join"}
+            {getButtonText()}
           </Button>
         </div>
       </CardContent>
@@ -293,6 +295,7 @@ export const RoundSelector: React.FC<{
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userEntryCounts, setUserEntryCounts] = useState<Record<string, number>>({});
+  const [paidButEmptyPicks, setPaidButEmptyPicks] = useState<Record<string, string>>({});
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   useEffect(() => {
     fetchOpenRounds();
@@ -300,6 +303,7 @@ export const RoundSelector: React.FC<{
   useEffect(() => {
     if (user && rounds.length > 0) {
       fetchUserEntryCounts();
+      fetchPaidButEmptyPicks();
     }
   }, [user, rounds]);
   const fetchOpenRounds = async () => {
@@ -342,6 +346,34 @@ export const RoundSelector: React.FC<{
       console.error("Error fetching entry counts:", err);
     }
   };
+  
+  // Fetch picks that are paid but have empty team_picks
+  const fetchPaidButEmptyPicks = async () => {
+    if (!user) return;
+    const paidRoundIds = rounds.filter((r) => r.is_paid).map((r) => r.id);
+    if (paidRoundIds.length === 0) return;
+    try {
+      const { data, error } = await supabase
+        .from("fantasy_round_picks")
+        .select("id, round_id, team_picks")
+        .eq("user_id", user.id)
+        .in("round_id", paidRoundIds);
+      if (error) throw error;
+      
+      // Find picks with empty team_picks array (created by stripe webhook but not yet submitted)
+      const emptyPicks: Record<string, string> = {};
+      (data || []).forEach((pick) => {
+        const teamPicks = pick.team_picks as unknown[];
+        if (!teamPicks || !Array.isArray(teamPicks) || teamPicks.length === 0) {
+          emptyPicks[pick.round_id] = pick.id;
+        }
+      });
+      setPaidButEmptyPicks(emptyPicks);
+    } catch (err) {
+      console.error("Error fetching paid but empty picks:", err);
+    }
+  };
+  
   const handleJoinRound = (round: Round) => {
     if (!user) {
       setShowAuthModal(true);
@@ -355,6 +387,14 @@ export const RoundSelector: React.FC<{
       return;
     }
     initiateCheckout(round.id);
+  };
+  
+  const handleSubmitPaidTeams = (round: Round) => {
+    const pickId = paidButEmptyPicks[round.id];
+    if (pickId && onJoinRound) {
+      // Pass the round to onJoinRound - FantasyPage will handle the pickId via URL params
+      window.location.href = `/fantasy?roundId=${round.id}&pickId=${pickId}`;
+    }
   };
   const handlePrivateRound = () => {
     window.location.href = "/fantasy/private";
@@ -391,8 +431,10 @@ export const RoundSelector: React.FC<{
                 type={round.type}
                 onClick={() => handleJoinRound(round)}
                 onPaidEntry={() => handlePaidEntry(round)}
+                onSubmitPaidTeams={() => handleSubmitPaidTeams(round)}
                 isPaidCheckoutLoading={checkoutLoading}
                 userEntryCount={userEntryCounts[round.id] || 0}
+                hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
               />
             ))}
             {/* Free monthly rounds */}
