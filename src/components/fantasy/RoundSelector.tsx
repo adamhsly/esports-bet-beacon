@@ -146,9 +146,22 @@ const RoundCard: React.FC<{
     }
     return "Free To Join";
   };
+  // Determine neon border class based on team_type
+  const getNeonBorderClass = () => {
+    switch (round.team_type) {
+      case "pro":
+        return "neon-border-purple";
+      case "amateur":
+        return "neon-border-orange";
+      case "both":
+      default:
+        return "neon-border-split";
+    }
+  };
+
   return (
     <Card
-      className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:ring-1 overflow-hidden ${isPaid ? "bg-gradient-to-br from-amber-900/30 to-slate-700 border-amber-500/30 hover:ring-amber-400/30" : "bg-slate-700 border-gray-700/50 hover:ring-gray-400/30"}`}
+      className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md overflow-hidden ${getNeonBorderClass()} ${isPaid ? "bg-gradient-to-br from-amber-900/30 to-slate-700" : "bg-slate-700"}`}
       onClick={handleClick}
     >
       {/* Status Pills */}
