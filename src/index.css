@@ -754,17 +754,18 @@ nav a:hover {
 
 .neon-border-split {
   border: 2px solid transparent;
-  background: linear-gradient(var(--background), var(--background)) padding-box,
-              linear-gradient(90deg, hsl(25 95% 53%) 0%, hsl(25 95% 53%) 50%, hsl(272 91% 65%) 50%, hsl(272 91% 65%) 100%) border-box;
+  border-image: linear-gradient(90deg, hsl(25 95% 53%) 0%, hsl(25 95% 53%) 50%, hsl(272 91% 65%) 50%, hsl(272 91% 65%) 100%) 1;
   animation: neon-pulse-split 2s ease-in-out infinite;
 }
 
 @keyframes neon-pulse-split {
   0%, 100% {
-    box-shadow: -10px 0 15px hsl(25 95% 53% / 0.4), 10px 0 15px hsl(272 91% 65% / 0.4);
+    box-shadow: -10px 0 15px hsl(25 95% 53% / 0.4), 10px 0 15px hsl(272 91% 65% / 0.4),
+                0 0 5px hsl(25 95% 53% / 0.3), 0 0 5px hsl(272 91% 65% / 0.3);
   }
   50% {
-    box-shadow: -15px 0 25px hsl(25 95% 53% / 0.6), 15px 0 25px hsl(272 91% 65% / 0.6);
+    box-shadow: -15px 0 25px hsl(25 95% 53% / 0.6), 15px 0 25px hsl(272 91% 65% / 0.6),
+                0 0 15px hsl(25 95% 53% / 0.5), 0 0 15px hsl(272 91% 65% / 0.5);
   }
 }
 
