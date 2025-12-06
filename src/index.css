@@ -719,53 +719,20 @@ nav a:hover {
   transform: scale(1.02);
 }
 
-/* Neon pulsating border for fantasy round cards */
-@keyframes neon-pulse-purple {
-  0%, 100% {
-    box-shadow: 0 0 5px hsl(272 91% 65% / 0.6), 0 0 15px hsl(272 91% 65% / 0.4), 0 0 30px hsl(272 91% 65% / 0.2);
-    border-color: hsl(272 91% 65%);
-  }
-  50% {
-    box-shadow: 0 0 10px hsl(272 91% 65% / 0.8), 0 0 25px hsl(272 91% 65% / 0.5), 0 0 50px hsl(272 91% 65% / 0.3);
-    border-color: hsl(272 91% 75%);
-  }
-}
-
-@keyframes neon-pulse-orange {
-  0%, 100% {
-    box-shadow: 0 0 5px hsl(25 95% 53% / 0.6), 0 0 15px hsl(25 95% 53% / 0.4), 0 0 30px hsl(25 95% 53% / 0.2);
-    border-color: hsl(25 95% 53%);
-  }
-  50% {
-    box-shadow: 0 0 10px hsl(25 95% 53% / 0.8), 0 0 25px hsl(25 95% 53% / 0.5), 0 0 50px hsl(25 95% 53% / 0.3);
-    border-color: hsl(25 95% 63%);
-  }
-}
-
+/* Neon border for fantasy round cards */
 .neon-border-purple {
   border: 2px solid hsl(272 91% 65%);
-  animation: neon-pulse-purple 2s ease-in-out infinite;
+  box-shadow: 0 0 10px hsl(272 91% 65% / 0.5), 0 0 20px hsl(272 91% 65% / 0.3);
 }
 
 .neon-border-orange {
   border: 2px solid hsl(25 95% 53%);
-  animation: neon-pulse-orange 2s ease-in-out infinite;
+  box-shadow: 0 0 10px hsl(25 95% 53% / 0.5), 0 0 20px hsl(25 95% 53% / 0.3);
 }
 
 .neon-border-split {
   border: 2px solid transparent;
   border-image: linear-gradient(90deg, hsl(25 95% 53%) 0%, hsl(25 95% 53%) 50%, hsl(272 91% 65%) 50%, hsl(272 91% 65%) 100%) 1;
-  animation: neon-pulse-split 2s ease-in-out infinite;
-}
-
-@keyframes neon-pulse-split {
-  0%, 100% {
-    box-shadow: -10px 0 15px hsl(25 95% 53% / 0.4), 10px 0 15px hsl(272 91% 65% / 0.4),
-                0 0 5px hsl(25 95% 53% / 0.3), 0 0 5px hsl(272 91% 65% / 0.3);
-  }
-  50% {
-    box-shadow: -15px 0 25px hsl(25 95% 53% / 0.6), 15px 0 25px hsl(272 91% 65% / 0.6),
-                0 0 15px hsl(25 95% 53% / 0.5), 0 0 15px hsl(272 91% 65% / 0.5);
-  }
+  box-shadow: -10px 0 15px hsl(25 95% 53% / 0.4), 10px 0 15px hsl(272 91% 65% / 0.4);
 }
 
