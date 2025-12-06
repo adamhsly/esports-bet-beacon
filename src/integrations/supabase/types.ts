@@ -1142,7 +1142,12 @@ export type Database = {
           is_private: boolean
           join_code: string | null
           max_participants: number | null
+          prize_1st: number | null
+          prize_2nd: number | null
+          prize_3rd: number | null
+          prize_type: string | null
           round_name: string | null
+          section_name: string | null
           start_date: string
           status: string
           stripe_price_id: string | null
@@ -1163,7 +1168,12 @@ export type Database = {
           is_private?: boolean
           join_code?: string | null
           max_participants?: number | null
+          prize_1st?: number | null
+          prize_2nd?: number | null
+          prize_3rd?: number | null
+          prize_type?: string | null
           round_name?: string | null
+          section_name?: string | null
           start_date: string
           status?: string
           stripe_price_id?: string | null
@@ -1184,7 +1194,12 @@ export type Database = {
           is_private?: boolean
           join_code?: string | null
           max_participants?: number | null
+          prize_1st?: number | null
+          prize_2nd?: number | null
+          prize_3rd?: number | null
+          prize_type?: string | null
           round_name?: string | null
+          section_name?: string | null
           start_date?: string
           status?: string
           stripe_price_id?: string | null

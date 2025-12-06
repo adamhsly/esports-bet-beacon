@@ -8,33 +8,6 @@ import { toast } from "sonner";
 import AuthModal from "@/components/AuthModal";
 import { usePaidRoundCheckout } from "@/hooks/usePaidRoundCheckout";
 
-// Prize structure for each round type
-const PRIZE_STRUCTURE = {
-  daily: {
-    first: "200",
-    second: "100",
-    third: "50",
-    type: "credits",
-  },
-  weekly: {
-    first: "200",
-    second: "100",
-    third: "50",
-    type: "credits",
-  },
-  monthly: {
-    first: "£100",
-    second: "£25",
-    third: "£5",
-    type: "steam",
-  },
-  paid_monthly: {
-    first: "£100",
-    second: "£25",
-    third: "£5",
-    type: "steam",
-  },
-};
 interface Round {
   id: string;
   type: "daily" | "weekly" | "monthly";
@@ -47,7 +20,20 @@ interface Round {
   game_type?: string;
   team_type?: "pro" | "amateur" | "both";
   stripe_price_id?: string;
+  prize_type?: "credits" | "vouchers";
+  prize_1st?: number;
+  prize_2nd?: number;
+  prize_3rd?: number;
+  section_name?: string;
 }
+
+// Format prize amount based on type
+const formatPrize = (amount: number, prizeType: "credits" | "vouchers" = "credits") => {
+  if (prizeType === "vouchers") {
+    return `£${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
+  }
+  return amount.toString();
+};
 const SectionHeading: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => (
@@ -130,8 +116,10 @@ const RoundCard: React.FC<{
   }
   if (!round) return null;
   const isPaid = round.is_paid && round.entry_fee;
-  const prizeKey = isPaid ? "paid_monthly" : round.type;
-  const prizeInfo = PRIZE_STRUCTURE[prizeKey as keyof typeof PRIZE_STRUCTURE];
+  const prizeType = round.prize_type || "credits";
+  const prize1st = formatPrize(round.prize_1st ?? 200, prizeType);
+  const prize2nd = formatPrize(round.prize_2nd ?? 100, prizeType);
+  const prize3rd = formatPrize(round.prize_3rd ?? 50, prizeType);
   const isScheduled = round.status === "scheduled";
   const isInProgress = () => {
     const now = new Date();
@@ -193,15 +181,15 @@ const RoundCard: React.FC<{
           <div className="flex items-center justify-center gap-4 text-2xl font-bold">
             <span className="flex items-center gap-1">
               <span className="text-yellow-400">🥇</span>
-              <span className="text-gray-200">{prizeInfo?.first}</span>
+              <span className="text-gray-200">{prize1st}</span>
             </span>
             <span className="flex items-center gap-1">
               <span className="text-gray-400">🥈</span>
-              <span className="text-gray-200">{prizeInfo?.second}</span>
+              <span className="text-gray-200">{prize2nd}</span>
             </span>
             <span className="flex items-center gap-1">
               <span className="text-orange-400">🥉</span>
-              <span className="text-gray-200">{prizeInfo?.third}</span>
+              <span className="text-gray-200">{prize3rd}</span>
             </span>
           </div>
           <p className="text-sm text-purple-300 mt-2">Games: {round.game_type || "All Games"}</p>
@@ -245,15 +233,15 @@ const RoundCard: React.FC<{
             <div className="flex items-center gap-4 text-xl font-bold">
               <span className="flex items-center gap-1">
                 <span className="text-yellow-400">🥇</span>
-                <span className="text-gray-200">{prizeInfo?.first}</span>
+                <span className="text-gray-200">{prize1st}</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="text-gray-400">🥈</span>
-                <span className="text-gray-200">{prizeInfo?.second}</span>
+                <span className="text-gray-200">{prize2nd}</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="text-orange-400">🥉</span>
-                <span className="text-gray-200">{prizeInfo?.third}</span>
+                <span className="text-gray-200">{prize3rd}</span>
               </span>
             </div>
           </div>
@@ -400,14 +388,30 @@ export const RoundSelector: React.FC<{
     window.location.href = "/fantasy/private";
   };
 
-  // Categorize rounds by type
-  const monthlyRounds = rounds.filter((r) => r.type === "monthly");
-  const dailyRounds = rounds.filter((r) => r.type === "daily");
-  const weeklyRounds = rounds.filter((r) => r.type === "weekly");
-
-  // Separate free and paid monthly rounds
-  const freeMonthlyRounds = monthlyRounds.filter((r) => !r.is_paid);
-  const paidMonthlyRounds = monthlyRounds.filter((r) => r.is_paid);
+  // Group rounds by section_name, fallback to default sections
+  const groupedRounds = rounds.reduce<Record<string, Round[]>>((acc, round) => {
+    let sectionKey = round.section_name;
+    
+    // Default section logic if no section_name set
+    if (!sectionKey) {
+      if (round.prize_type === "vouchers" || round.type === "monthly") {
+        sectionKey = "Win Steam Vouchers";
+      } else {
+        sectionKey = "Win Credits";
+      }
+    }
+    
+    if (!acc[sectionKey]) acc[sectionKey] = [];
+    acc[sectionKey].push(round);
+    return acc;
+  }, {});
+  
+  // Get section names in a predictable order (vouchers first, then credits)
+  const sectionOrder = Object.keys(groupedRounds).sort((a, b) => {
+    if (a.toLowerCase().includes("voucher")) return -1;
+    if (b.toLowerCase().includes("voucher")) return 1;
+    return a.localeCompare(b);
+  });
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -419,49 +423,41 @@ export const RoundSelector: React.FC<{
   return (
     <>
       <div className="space-y-8">
-        {/* Win Vouchers Section - Monthly (Free + Paid) */}
-        <section>
-          <SectionHeading>Win Steam Vouchers</SectionHeading>
-          <div className="space-y-3">
-            {/* Paid rounds first (premium positioning) */}
-            {paidMonthlyRounds.map((round) => (
-              <RoundCard
-                key={round.id}
-                round={round}
-                type={round.type}
-                onClick={() => handleJoinRound(round)}
-                onPaidEntry={() => handlePaidEntry(round)}
-                onSubmitPaidTeams={() => handleSubmitPaidTeams(round)}
-                isPaidCheckoutLoading={checkoutLoading}
-                userEntryCount={userEntryCounts[round.id] || 0}
-                hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
-              />
-            ))}
-            {/* Free monthly rounds */}
-            {freeMonthlyRounds.map((round) => (
-              <RoundCard key={round.id} round={round} type={round.type} onClick={() => handleJoinRound(round)} />
-            ))}
-            {monthlyRounds.length === 0 && (
-              <p className="text-muted-foreground text-sm">No monthly rounds available.</p>
-            )}
-          </div>
-        </section>
-
-        {/* Quick Fire Section - Daily & Weekly */}
-        <section>
-          <SectionHeading>Win Credits</SectionHeading>
-          <div className="space-y-3">
-            {dailyRounds.map((round) => (
-              <RoundCard key={round.id} round={round} type={round.type} onClick={() => handleJoinRound(round)} />
-            ))}
-            {weeklyRounds.map((round) => (
-              <RoundCard key={round.id} round={round} type={round.type} onClick={() => handleJoinRound(round)} />
-            ))}
-            {dailyRounds.length === 0 && weeklyRounds.length === 0 && (
-              <p className="text-muted-foreground text-sm">No daily or weekly rounds available.</p>
-            )}
-          </div>
-        </section>
+        {/* Dynamic sections based on section_name from database */}
+        {sectionOrder.map((sectionName) => {
+          const sectionRounds = groupedRounds[sectionName];
+          // Sort paid rounds first within section
+          const sortedRounds = [...sectionRounds].sort((a, b) => {
+            if (a.is_paid && !b.is_paid) return -1;
+            if (!a.is_paid && b.is_paid) return 1;
+            return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+          });
+          
+          return (
+            <section key={sectionName}>
+              <SectionHeading>{sectionName}</SectionHeading>
+              <div className="space-y-3">
+                {sortedRounds.map((round) => (
+                  <RoundCard
+                    key={round.id}
+                    round={round}
+                    type={round.type}
+                    onClick={() => handleJoinRound(round)}
+                    onPaidEntry={round.is_paid ? () => handlePaidEntry(round) : undefined}
+                    onSubmitPaidTeams={paidButEmptyPicks[round.id] ? () => handleSubmitPaidTeams(round) : undefined}
+                    isPaidCheckoutLoading={checkoutLoading}
+                    userEntryCount={userEntryCounts[round.id] || 0}
+                    hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+        
+        {sectionOrder.length === 0 && (
+          <p className="text-muted-foreground text-sm">No rounds available.</p>
+        )}
 
         {/* Private Leagues Section */}
         <section>
