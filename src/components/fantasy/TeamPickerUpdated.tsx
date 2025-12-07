@@ -177,26 +177,31 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       setLoading(true);
       setPriceStatus(isRetry ? 'calculating' : 'loading');
       
-      // Build queries with round filters
+      // Skip pro query entirely if team_type is set to amateur only
+      const shouldFetchPro = !round.team_type || round.team_type !== 'amateur';
+      // Skip amateur query entirely if team_type is set to pro only
+      const shouldFetchAmateur = !round.team_type || round.team_type !== 'pro';
+      
+      // Build queries with round filters - only apply search if non-empty
       let proQuery = supabase
         .from('fantasy_team_prices')
         .select('*')
         .eq('team_type', 'pro')
-        .eq('round_id', round.id)
-        .like('team_name', `%${debouncedProSearch}%`);
+        .eq('round_id', round.id);
       
-      // Skip pro query entirely if team_type is set to amateur only
-      const shouldFetchPro = !round.team_type || round.team_type !== 'amateur';
+      if (debouncedProSearch) {
+        proQuery = proQuery.ilike('team_name', `%${debouncedProSearch}%`);
+      }
       
       let amateurQuery = supabase
         .from('fantasy_team_prices')
         .select('*')
         .eq('team_type', 'amateur')
-        .eq('round_id', round.id)
-        .like('team_name', `%${debouncedAmSearch}%`);
+        .eq('round_id', round.id);
       
-      // Skip amateur query entirely if team_type is set to pro only
-      const shouldFetchAmateur = !round.team_type || round.team_type !== 'pro';
+      if (debouncedAmSearch) {
+        amateurQuery = amateurQuery.ilike('team_name', `%${debouncedAmSearch}%`);
+      }
 
       const { data: proData, error: proError } = shouldFetchPro 
         ? await proQuery.order('price', { ascending: proSortDir === 'asc' })
@@ -208,6 +213,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       if (proError) throw proError;
       if (amateurError) throw amateurError;
+
+      console.log(`Initial fetch: ${proData?.length || 0} pro prices, ${amateurData?.length || 0} amateur prices for round ${round.id}`);
 
       // Fetch logos and esport_type for pro teams from pandascore_teams
       const proTeamIds = proData?.map((p: any) => p.team_id) || [];
@@ -242,8 +249,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         };
       }) || [];
       
-      // Apply game_type filter if configured
-      if (round.game_type && filteredProTeams.length > 0) {
+      // Apply game_type filter if configured (only for specific game types, not 'all')
+      if (round.game_type && round.game_type !== 'all' && filteredProTeams.length > 0) {
         filteredProTeams = filteredProTeams.filter((team: any) => 
           (team.esport_type ?? '').toLowerCase() === round.game_type!.toLowerCase()
         );
@@ -261,7 +268,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       })) || [];
       
       // Apply game_type filter if configured (amateur teams are cs2)
-      if (round.game_type && filteredAmateurTeams.length > 0) {
+      if (round.game_type && round.game_type !== 'all' && filteredAmateurTeams.length > 0) {
         const gameTypeLower = round.game_type.toLowerCase();
         // Only show amateur teams if game_type is cs-related
         if (gameTypeLower !== 'counter-strike' && gameTypeLower !== 'cs2') {
