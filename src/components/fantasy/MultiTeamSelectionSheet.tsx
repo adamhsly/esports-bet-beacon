@@ -46,10 +46,11 @@ interface MultiTeamSelectionSheetProps {
     type: 'daily' | 'weekly' | 'monthly' | 'private';
     start_date: string;
     end_date: string;
-    status: 'open' | 'active' | 'finished';
+    status: 'open' | 'active' | 'finished' | 'scheduled';
     is_private?: boolean;
     game_type?: string;
     team_type?: 'pro' | 'amateur' | 'both';
+    round_name?: string;
   };
   swapMode?: boolean;
   swappingTeamBudget?: number;
@@ -311,6 +312,26 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   ? `Choose a replacement team with budget ${swappingTeamBudget ?? 0} credits or less`
                   : 'Choose up to 5 teams within your budget'}
               </p>
+              {/* Round Configuration Info */}
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {round.round_name && (
+                  <Badge variant="outline" className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 text-xs">
+                    {round.round_name}
+                  </Badge>
+                )}
+                {round.game_type && round.game_type !== 'all' && (
+                  <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400 text-xs">
+                    {round.game_type}
+                  </Badge>
+                )}
+                {round.team_type && round.team_type !== 'both' && (
+                  <Badge variant="outline" className={`text-xs ${round.team_type === 'pro' 
+                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+                    : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
+                    {round.team_type === 'pro' ? 'Pro Only' : 'Amateur Only'}
+                  </Badge>
+                )}
+              </div>
             </div>
             <SheetClose asChild>
               <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">

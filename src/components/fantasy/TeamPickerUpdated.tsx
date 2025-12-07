@@ -28,10 +28,11 @@ interface FantasyRound {
   type: 'daily' | 'weekly' | 'monthly' | 'private';
   start_date: string;
   end_date: string;
-  status: 'open' | 'active' | 'finished';
+  status: 'open' | 'active' | 'finished' | 'scheduled';
   is_private?: boolean;
   game_type?: string;
   team_type?: 'pro' | 'amateur' | 'both';
+  round_name?: string;
 }
 
 interface Team {
@@ -574,8 +575,36 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     );
   }
 
+  // Get display title for round
+  const getRoundDisplayTitle = () => {
+    if (round.round_name) return round.round_name;
+    const typeLabel = round.type.charAt(0).toUpperCase() + round.type.slice(1);
+    return `${typeLabel} Round`;
+  };
+
   return (
     <div className="space-y-6">
+      {/* Round Header */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          {getRoundDisplayTitle()}
+        </h2>
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          {round.game_type && round.game_type !== 'all' && (
+            <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400">
+              {round.game_type}
+            </Badge>
+          )}
+          {round.team_type && round.team_type !== 'both' && (
+            <Badge variant="outline" className={round.team_type === 'pro' 
+              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+              : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}>
+              {round.team_type === 'pro' ? 'Pro Teams Only' : 'Amateur Teams Only'}
+            </Badge>
+          )}
+        </div>
+      </div>
+
       {/* Selected Teams Widget */}
       <SelectedTeamsWidget 
         selectedTeams={selectedTeams} 
