@@ -30,7 +30,7 @@ interface Round {
 // Format prize amount based on type
 const formatPrize = (amount: number, prizeType: "credits" | "vouchers" = "credits") => {
   if (prizeType === "vouchers") {
-    return `£${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
+    return `$${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
   }
   return amount.toString();
 };
