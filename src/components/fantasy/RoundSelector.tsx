@@ -444,8 +444,14 @@ export const RoundSelector: React.FC<{
         {/* Dynamic sections based on section_name from database */}
         {sectionOrder.map((sectionName) => {
           const sectionRounds = groupedRounds[sectionName];
-          // Sort paid rounds first within section
+          // Sort: in_progress first, then by paid status, then by start_date
           const sortedRounds = [...sectionRounds].sort((a, b) => {
+            // In-progress rounds come first
+            const aInProgress = a.status === "in_progress" || (new Date() >= new Date(a.start_date) && new Date() <= new Date(a.end_date));
+            const bInProgress = b.status === "in_progress" || (new Date() >= new Date(b.start_date) && new Date() <= new Date(b.end_date));
+            if (aInProgress && !bInProgress) return -1;
+            if (!aInProgress && bInProgress) return 1;
+            // Then paid rounds
             if (a.is_paid && !b.is_paid) return -1;
             if (!a.is_paid && b.is_paid) return 1;
             return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
