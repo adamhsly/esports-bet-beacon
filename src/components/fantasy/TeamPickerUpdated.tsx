@@ -252,9 +252,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       
       // Apply game_type filter if configured (only for specific game types, not 'all')
       if (round.game_type && round.game_type !== 'all' && filteredProTeams.length > 0) {
-        filteredProTeams = filteredProTeams.filter((team: any) => 
-          (team.esport_type ?? '').toLowerCase() === round.game_type!.toLowerCase()
-        );
+        const gameTypeLower = round.game_type.toLowerCase();
+        // Map cs2 to Counter-Strike variants
+        const isCSVariant = (esportType: string) => {
+          const lower = esportType.toLowerCase();
+          return lower === 'counter-strike' || lower === 'cs2' || lower === 'csgo';
+        };
+        
+        filteredProTeams = filteredProTeams.filter((team: any) => {
+          const teamEsport = (team.esport_type ?? '').toLowerCase();
+          // If looking for CS2, match all CS variants
+          if (gameTypeLower === 'cs2' || gameTypeLower === 'counter-strike') {
+            return isCSVariant(team.esport_type ?? '');
+          }
+          return teamEsport === gameTypeLower;
+        });
       }
 
       let filteredAmateurTeams = amateurData?.map((priceData: any) => ({
