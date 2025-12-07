@@ -309,11 +309,16 @@ export const RoundSelector: React.FC<{
   }, [user, rounds]);
   const fetchOpenRounds = async () => {
     try {
+      // Calculate date 2 months from now
+      const twoMonthsFromNow = new Date();
+      twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
+      
       const { data, error } = await supabase
         .from("fantasy_rounds")
         .select("*")
-        .in("status", ["open", "scheduled"])
+        .in("status", ["open", "scheduled", "in_progress"])
         .eq("is_private", false)
+        .lte("start_date", twoMonthsFromNow.toISOString())
         .order("start_date", {
           ascending: true,
         });
