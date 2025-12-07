@@ -47,22 +47,39 @@ serve(async (req) => {
     }
 
     const results: any[] = [];
+    const now = new Date();
 
     for (const r of rounds) {
       console.log("=== Processing round ===", r);
 
+      const roundStart = new Date(r.start_date);
+      const roundEnd = new Date(r.end_date);
+      const isScheduledRound = roundStart > now;
+
       // 1) PRO TEAMS - Using match_date for much faster lookups
-      const startDate = new Date(r.start_date).toISOString().split('T')[0];
-      const endDate = new Date(r.end_date).toISOString().split('T')[0];
-      
+      let proStartDate: string;
+      let proEndDate: string;
+
+      if (isScheduledRound) {
+        // For scheduled/future rounds: use upcoming matches within the round window
+        // But also look at recent matches (last 30 days) to find active teams and their stats
+        proStartDate = roundStart.toISOString().split('T')[0];
+        proEndDate = roundEnd.toISOString().split('T')[0];
+        console.log("Scheduled round - checking for upcoming matches in round window");
+      } else {
+        proStartDate = roundStart.toISOString().split('T')[0];
+        proEndDate = roundEnd.toISOString().split('T')[0];
+      }
+
+      // First, try to get matches within the round's date range
       const { data: pandaMatches, error: pandaErr } = await supabase
         .from("pandascore_matches")
         .select("teams, esport_type, start_time")
-        .gte("match_date", startDate)
-        .lte("match_date", endDate)
+        .gte("match_date", proStartDate)
+        .lte("match_date", proEndDate)
         .not("teams", "is", null);
       if (pandaErr) throw pandaErr;
-      console.log("pandaMatches count:", pandaMatches?.length || 0);
+      console.log("pandaMatches in round window:", pandaMatches?.length || 0);
 
       const proTeamMap = new Map<string, { id: string; name: string; esport_type?: string; match_volume: number }>();
       (pandaMatches || []).forEach((m: any) => {
@@ -78,6 +95,41 @@ serve(async (req) => {
           });
         }
       });
+
+      // For scheduled rounds with few/no matches in window, also check recent history (last 60 days)
+      // to populate with active teams that are likely to have matches scheduled
+      if (isScheduledRound && proTeamMap.size < 50) {
+        console.log("Scheduled round has few teams, checking recent 60-day history for active teams");
+        const lookbackStart = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+        const lookbackEnd = now.toISOString().split('T')[0];
+
+        const { data: recentMatches, error: recentErr } = await supabase
+          .from("pandascore_matches")
+          .select("teams, esport_type, start_time")
+          .gte("match_date", lookbackStart)
+          .lte("match_date", lookbackEnd)
+          .not("teams", "is", null)
+          .limit(500);
+        if (recentErr) console.error("Error fetching recent matches:", recentErr);
+        else console.log("Recent matches (60 days):", recentMatches?.length || 0);
+
+        // Add teams from recent history that aren't already in the map
+        (recentMatches || []).forEach((m: any) => {
+          if (Array.isArray(m.teams)) {
+            m.teams.forEach((t: any) => {
+              if (t?.type === "Team" && t?.opponent?.id) {
+                const id = String(t.opponent.id);
+                if (!proTeamMap.has(id)) {
+                  const name = t.opponent.name || t.opponent.slug || "Unknown Team";
+                  // Use 1 as placeholder match volume since we're inferring from history
+                  proTeamMap.set(id, { id, name, esport_type: m.esport_type, match_volume: 1 });
+                }
+              }
+            });
+          }
+        });
+      }
+
       console.log("Pro teams found:", proTeamMap.size);
 
       // Parallel fetch of pro team stats
@@ -126,23 +178,37 @@ serve(async (req) => {
       
       let prevStart: Date;
       let prevEnd: Date;
+      let amateurStartDate: string;
+      let amateurEndDate: string;
       
-      // For private rounds, use 3-month lookback
-      if (r.is_private || r.type === 'private') {
-        // 3 months = 90 days
+      // For scheduled/future rounds, use lookback from today
+      if (isScheduledRound) {
+        // Use 3 months lookback from today for scheduled rounds
+        prevEnd = now;
+        prevStart = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+        // For "current window" teams, also use recent history since round hasn't started
+        amateurStartDate = prevStart.toISOString().split('T')[0];
+        amateurEndDate = prevEnd.toISOString().split('T')[0];
+        console.log("Using 3-month lookback from today for scheduled round amateur pricing");
+      } else if (r.is_private || r.type === 'private') {
+        // For private rounds, use 3-month lookback from round start
         prevEnd = start;
         prevStart = new Date(start.getTime() - (90 * 24 * 60 * 60 * 1000));
+        amateurStartDate = start.toISOString().split('T')[0];
+        amateurEndDate = end.toISOString().split('T')[0];
         console.log("Using 3-month lookback for private round amateur pricing");
       } else {
         // For daily/weekly/monthly: use mirror window (existing logic)
         prevEnd = start;
         prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
+        amateurStartDate = start.toISOString().split('T')[0];
+        amateurEndDate = end.toISOString().split('T')[0];
         console.log("Using mirror window for public round amateur pricing");
       }
       
       const prevStartDate = prevStart.toISOString().split('T')[0];
       const prevEndDate = prevEnd.toISOString().split('T')[0];
-      console.log("Amateur window", { round_id: r.id, is_private: r.is_private, type: r.type, prevStartDate, prevEndDate });
+      console.log("Amateur window", { round_id: r.id, is_private: r.is_private, type: r.type, isScheduledRound, prevStartDate, prevEndDate });
 
       const { data: prevStats, error: prevErr } = await (supabase as any).rpc(
         "get_faceit_teams_prev_window_stats",
@@ -151,9 +217,10 @@ serve(async (req) => {
       if (prevErr) console.error("get_faceit_teams_prev_window_stats error", prevErr);
       else console.log("prevStats count:", prevStats?.length || 0);
 
+      // For scheduled rounds, use the lookback window as "current" since round hasn't started
       const { data: currentFaceitTeams, error: currentErr } = await (supabase as any).rpc(
         "get_all_faceit_teams", 
-        { start_date: startDate, end_date: endDate }
+        { start_date: amateurStartDate, end_date: amateurEndDate }
       );
       if (currentErr) console.error("get_all_faceit_teams error", currentErr);
       else console.log("currentFaceitTeams count:", currentFaceitTeams?.length || 0);
