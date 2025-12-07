@@ -170,8 +170,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const nameMatch = t.name.toLowerCase().includes(debouncedProSearch.toLowerCase());
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
       
-      // Apply round game_type filter if configured
-      const roundGameMatch = !round.game_type || (t.esport_type ?? '').toLowerCase() === round.game_type.toLowerCase();
+      // Apply round game_type filter if configured - 'all' or empty means no filter
+      const roundGameMatch = !round.game_type || round.game_type === 'all' || (t.esport_type ?? '').toLowerCase() === round.game_type.toLowerCase();
       
       return nameMatch && gameMatch && roundGameMatch;
     });
@@ -186,8 +186,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const gameMatch = selectedGameAm === 'all' || (t.esport_type ?? '') === selectedGameAm;
       const regionMatch = selectedRegionAm === 'all' || (t.region ?? '') === selectedRegionAm;
       
-      // Apply round game_type filter if configured (amateur teams are cs2)
-      const roundGameMatch = !round.game_type || round.game_type.toLowerCase() === 'counter-strike' || round.game_type.toLowerCase() === 'cs2';
+      // Apply round game_type filter if configured - 'all' or empty means no filter (amateur teams are cs2)
+      const roundGameMatch = !round.game_type || round.game_type === 'all' || round.game_type.toLowerCase() === 'counter-strike' || round.game_type.toLowerCase() === 'cs2';
       
       return nameMatch && gameMatch && regionMatch && roundGameMatch;
     });
