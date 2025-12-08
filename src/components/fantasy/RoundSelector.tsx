@@ -353,27 +353,48 @@ export const RoundSelector: React.FC<{
     }
   };
   
-  // Fetch picks that are paid but have empty team_picks
+  // Fetch entries that are paid but need team submission
+  // This includes: picks with empty team_picks OR completed entries without a pick_id
   const fetchPaidButEmptyPicks = async () => {
     if (!user) return;
     const paidRoundIds = rounds.filter((r) => r.is_paid).map((r) => r.id);
     if (paidRoundIds.length === 0) return;
     try {
-      const { data, error } = await supabase
+      // First check for completed entries without pick_id (webhook couldn't create picks)
+      const { data: orphanEntries, error: entriesError } = await supabase
+        .from("round_entries")
+        .select("id, round_id")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .is("pick_id", null)
+        .in("round_id", paidRoundIds);
+      
+      if (entriesError) throw entriesError;
+      
+      // Also check for picks with empty team_picks
+      const { data: emptyPicksData, error: picksError } = await supabase
         .from("fantasy_round_picks")
         .select("id, round_id, team_picks")
         .eq("user_id", user.id)
         .in("round_id", paidRoundIds);
-      if (error) throw error;
       
-      // Find picks with empty team_picks array (created by stripe webhook but not yet submitted)
+      if (picksError) throw picksError;
+      
       const emptyPicks: Record<string, string> = {};
-      (data || []).forEach((pick) => {
+      
+      // Add orphan entries (use entry id as placeholder - will create new pick)
+      (orphanEntries || []).forEach((entry) => {
+        emptyPicks[entry.round_id] = `entry:${entry.id}`;
+      });
+      
+      // Add picks with empty team_picks
+      (emptyPicksData || []).forEach((pick) => {
         const teamPicks = pick.team_picks as unknown[];
         if (!teamPicks || !Array.isArray(teamPicks) || teamPicks.length === 0) {
           emptyPicks[pick.round_id] = pick.id;
         }
       });
+      
       setPaidButEmptyPicks(emptyPicks);
     } catch (err) {
       console.error("Error fetching paid but empty picks:", err);
@@ -395,10 +416,39 @@ export const RoundSelector: React.FC<{
     initiateCheckout(round.id);
   };
   
-  const handleSubmitPaidTeams = (round: Round) => {
+  const handleSubmitPaidTeams = async (round: Round) => {
     const pickId = paidButEmptyPicks[round.id];
-    if (pickId && onJoinRound) {
-      // Pass the round to onJoinRound - FantasyPage will handle the pickId via URL params
+    if (!pickId) return;
+    
+    // If it's an orphan entry (no pick created), create the pick now
+    if (pickId.startsWith("entry:")) {
+      const entryId = pickId.replace("entry:", "");
+      try {
+        // Create a new picks entry
+        const { data: newPick, error } = await supabase
+          .from("fantasy_round_picks")
+          .insert({
+            round_id: round.id,
+            user_id: user!.id,
+            team_picks: [],
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Link the pick to the entry
+        await supabase
+          .from("round_entries")
+          .update({ pick_id: newPick.id })
+          .eq("id", entryId);
+        
+        window.location.href = `/fantasy?roundId=${round.id}&pickId=${newPick.id}`;
+      } catch (err) {
+        console.error("Error creating pick for orphan entry:", err);
+        toast.error("Failed to create entry. Please try again.");
+      }
+    } else {
       window.location.href = `/fantasy?roundId=${round.id}&pickId=${pickId}`;
     }
   };
