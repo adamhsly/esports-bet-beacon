@@ -353,26 +353,27 @@ export const RoundSelector: React.FC<{
     }
   };
   
-  // Fetch entries that are paid but need team submission
-  // This includes: picks with empty team_picks OR completed entries without a pick_id
+  // Fetch entries that need team submission by comparing:
+  // - Number of completed round_entries (paid entries)
+  // - Number of fantasy_round_picks with non-empty team_picks (submitted rosters)
+  // If completedEntries > submittedPicks, user needs to submit teams
   const fetchPaidButEmptyPicks = async () => {
     if (!user) return;
     const paidRoundIds = rounds.filter((r) => r.is_paid).map((r) => r.id);
     if (paidRoundIds.length === 0) return;
     try {
-      // First check for completed entries without pick_id (webhook couldn't create picks)
-      const { data: orphanEntries, error: entriesError } = await supabase
+      // Get all completed entries for this user
+      const { data: completedEntries, error: entriesError } = await supabase
         .from("round_entries")
-        .select("id, round_id")
+        .select("id, round_id, pick_id")
         .eq("user_id", user.id)
         .eq("status", "completed")
-        .is("pick_id", null)
         .in("round_id", paidRoundIds);
       
       if (entriesError) throw entriesError;
       
-      // Also check for picks with empty team_picks
-      const { data: emptyPicksData, error: picksError } = await supabase
+      // Get all picks for this user
+      const { data: allPicks, error: picksError } = await supabase
         .from("fantasy_round_picks")
         .select("id, round_id, team_picks")
         .eq("user_id", user.id)
@@ -380,22 +381,59 @@ export const RoundSelector: React.FC<{
       
       if (picksError) throw picksError;
       
-      const emptyPicks: Record<string, string> = {};
-      
-      // Add orphan entries (use entry id as placeholder - will create new pick)
-      (orphanEntries || []).forEach((entry) => {
-        emptyPicks[entry.round_id] = `entry:${entry.id}`;
-      });
-      
-      // Add picks with empty team_picks
-      (emptyPicksData || []).forEach((pick) => {
-        const teamPicks = pick.team_picks as unknown[];
-        if (!teamPicks || !Array.isArray(teamPicks) || teamPicks.length === 0) {
-          emptyPicks[pick.round_id] = pick.id;
+      // Count completed entries per round
+      const entryCountsByRound: Record<string, number> = {};
+      const unlinkedEntriesByRound: Record<string, string[]> = {};
+      (completedEntries || []).forEach((entry) => {
+        entryCountsByRound[entry.round_id] = (entryCountsByRound[entry.round_id] || 0) + 1;
+        // Track unlinked entries for later linking
+        if (!entry.pick_id) {
+          if (!unlinkedEntriesByRound[entry.round_id]) {
+            unlinkedEntriesByRound[entry.round_id] = [];
+          }
+          unlinkedEntriesByRound[entry.round_id].push(entry.id);
         }
       });
       
-      setPaidButEmptyPicks(emptyPicks);
+      // Count submitted picks (non-empty team_picks) and find empty picks per round
+      const submittedPicksCountByRound: Record<string, number> = {};
+      const emptyPicksByRound: Record<string, string[]> = {};
+      (allPicks || []).forEach((pick) => {
+        const teamPicks = pick.team_picks as unknown[];
+        const hasTeams = teamPicks && Array.isArray(teamPicks) && teamPicks.length > 0;
+        if (hasTeams) {
+          submittedPicksCountByRound[pick.round_id] = (submittedPicksCountByRound[pick.round_id] || 0) + 1;
+        } else {
+          if (!emptyPicksByRound[pick.round_id]) {
+            emptyPicksByRound[pick.round_id] = [];
+          }
+          emptyPicksByRound[pick.round_id].push(pick.id);
+        }
+      });
+      
+      // Determine which rounds need team submission
+      const needsSubmission: Record<string, string> = {};
+      paidRoundIds.forEach((roundId) => {
+        const entryCount = entryCountsByRound[roundId] || 0;
+        const submittedCount = submittedPicksCountByRound[roundId] || 0;
+        
+        // Only show "Paid - Submit Teams" if user has more paid entries than submitted picks
+        if (entryCount > submittedCount) {
+          // First priority: use an existing empty pick
+          const emptyPicks = emptyPicksByRound[roundId] || [];
+          if (emptyPicks.length > 0) {
+            needsSubmission[roundId] = emptyPicks[0];
+          } else {
+            // Second priority: use an unlinked entry to create a new pick
+            const unlinkedEntries = unlinkedEntriesByRound[roundId] || [];
+            if (unlinkedEntries.length > 0) {
+              needsSubmission[roundId] = `entry:${unlinkedEntries[0]}`;
+            }
+          }
+        }
+      });
+      
+      setPaidButEmptyPicks(needsSubmission);
     } catch (err) {
       console.error("Error fetching paid but empty picks:", err);
     }
