@@ -31,6 +31,7 @@ interface InProgressRound {
   scores: FantasyScore[];
   is_private: boolean;
   round_name: string | null;
+  status: 'scheduled' | 'open' | 'active';
 }
 
 interface FantasyScore {
@@ -61,38 +62,47 @@ export const InProgressRounds: React.FC = () => {
     try {
       console.log('Fetching in-progress rounds for user:', user.id);
 
+      // Include scheduled rounds in the fetch
       const { data: picks, error: picksError } = await supabase
         .from('fantasy_round_picks')
         .select(`*, fantasy_rounds!inner(*)`)
         .eq('user_id', user.id)
-        .in('fantasy_rounds.status', ['open', 'active']);
+        .in('fantasy_rounds.status', ['scheduled', 'open', 'active']);
       if (picksError) throw picksError;
       console.log('Fantasy picks fetched:', picks);
 
       const roundsWithScores = await Promise.all(
         (picks || []).map(async (pick) => {
-          const { data: scores, error: scoresError } = await supabase
-            .from('fantasy_round_scores')
-            .select('*')
-            .eq('round_id', pick.round_id)
-            .eq('user_id', user.id);
+          // Only fetch scores for non-scheduled rounds
+          const roundStatus = pick.fantasy_rounds.status;
+          let scores: FantasyScore[] = [];
+          
+          if (roundStatus !== 'scheduled') {
+            const { data: scoresData, error: scoresError } = await supabase
+              .from('fantasy_round_scores')
+              .select('*')
+              .eq('round_id', pick.round_id)
+              .eq('user_id', user.id);
 
-          if (scoresError) throw scoresError;
+            if (scoresError) throw scoresError;
+            scores = (scoresData || []).map((score) => ({
+              ...score,
+              team_type: score.team_type as 'pro' | 'amateur'
+            }));
+          }
 
           return {
             id: pick.round_id,
             type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly' | 'private',
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
-            total_score: pick.total_score,
+            total_score: roundStatus === 'scheduled' ? 0 : pick.total_score,
             team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
             is_private: pick.fantasy_rounds.is_private || false,
             round_name: pick.fantasy_rounds.round_name || null,
-            scores: (scores || []).map((score) => ({
-              ...score,
-              team_type: score.team_type as 'pro' | 'amateur'
-            }))
+            status: roundStatus as 'scheduled' | 'open' | 'active',
+            scores
           };
         })
       );
@@ -163,112 +173,205 @@ export const InProgressRounds: React.FC = () => {
     );
   }
 
+  // Separate active/open rounds from scheduled rounds
+  const activeRounds = rounds.filter(r => r.status !== 'scheduled');
+  const scheduledRounds = rounds.filter(r => r.status === 'scheduled');
+
+  // Helper to format time until start for scheduled rounds
+  const formatTimeUntilStart = (startDate: string) => {
+    const now = new Date();
+    const start = new Date(startDate);
+    const diff = start.getTime() - now.getTime();
+    if (diff <= 0) return 'Starting soon';
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    if (days > 0) return `Starts in ${days}d ${hours % 24}h`;
+    return `Starts in ${hours}h`;
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-6">
-        {rounds.map((round) => (
-          <Card
-            key={round.id}
-            className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250"
-          >
-            <CardHeader className="border-b border-gray-700/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                    {round.is_private && round.round_name ? round.round_name : `${round.type} Round`}
-                  </CardTitle>
+    <div className="space-y-8">
+      {/* Active/Open Rounds */}
+      {activeRounds.length > 0 && (
+        <div className="space-y-6">
+          {activeRounds.map((round) => (
+            <Card
+              key={round.id}
+              className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-gray-700/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-250"
+            >
+              <CardHeader className="border-b border-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                      {round.is_private && round.round_name ? round.round_name : round.round_name || `${round.type} Round`}
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {formatTimeRemaining(round.end_date)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Trophy className="h-4 w-4" />
+                      <span className="text-green-400 font-medium">{round.total_score} pts</span>
+                    </span>
+                    <ShareButton roundId={round.id} userId={user?.id} roundType={round.type} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {formatTimeRemaining(round.end_date)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Trophy className="h-4 w-4" />
-                    <span className="text-green-400 font-medium">{round.total_score} pts</span>
-                  </span>
-                  <ShareButton roundId={round.id} userId={user?.id} roundType={round.type} />
-                </div>
-              </div>
-              <Progress
-                value={calculateProgress(round.start_date, round.end_date)}
-                className="h-2 bg-gray-800/50 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
-              />
-            </CardHeader>
+                <Progress
+                  value={calculateProgress(round.start_date, round.end_date)}
+                  className="h-2 bg-gray-800/50 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+                />
+              </CardHeader>
 
-            <CardContent className="p-4 sm:p-6 overflow-hidden">
-              <div className="space-y-6">
-                {/* Team Performance */}
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
-                    <Users className="h-4 w-4" />
-                    Team Performance
-                  </h4>
-
-                  <InProgressTeamsList round={round} onRefresh={fetchInProgressRounds} />
-                </div>
-
-                {/* Leaderboard */}
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
-                    <Trophy className="h-4 w-4" />
-                    Round Leaderboard
-                  </h4>
-
-                  <RoundLeaderboard roundId={round.id} />
-                </div>
-
-                {/* Scoring Breakdown */}
-                {round.scores.length > 0 && (
+              <CardContent className="p-4 sm:p-6 overflow-hidden">
+                <div className="space-y-6">
+                  {/* Team Performance */}
                   <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
-                      <TrendingUp className="h-4 w-4" />
-                      Scoring Breakdown
+                      <Users className="h-4 w-4" />
+                      Team Performance
                     </h4>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-center">
-                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
-                        <div className="text-lg sm:text-xl font-bold text-green-400">
-                          {round.scores.reduce((sum, s) => sum + s.match_wins, 0)}
+                    <InProgressTeamsList round={round} onRefresh={fetchInProgressRounds} />
+                  </div>
+
+                  {/* Leaderboard */}
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                      <Trophy className="h-4 w-4" />
+                      Round Leaderboard
+                    </h4>
+
+                    <RoundLeaderboard roundId={round.id} />
+                  </div>
+
+                  {/* Scoring Breakdown */}
+                  {round.scores.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                        <TrendingUp className="h-4 w-4" />
+                        Scoring Breakdown
+                      </h4>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-center">
+                        <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                          <div className="text-lg sm:text-xl font-bold text-green-400">
+                            {round.scores.reduce((sum, s) => sum + s.match_wins, 0)}
+                          </div>
+                          <div className="text-xs text-gray-400 leading-tight">Match Wins</div>
                         </div>
-                        <div className="text-xs text-gray-400 leading-tight">Match Wins</div>
-                      </div>
-                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
-                        <div className="text-lg sm:text-xl font-bold text-blue-400">
-                          {round.scores.reduce((sum, s) => sum + s.map_wins, 0)}
+                        <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                          <div className="text-lg sm:text-xl font-bold text-blue-400">
+                            {round.scores.reduce((sum, s) => sum + s.map_wins, 0)}
+                          </div>
+                          <div className="text-xs text-gray-400 leading-tight">Map Wins</div>
                         </div>
-                        <div className="text-xs text-gray-400 leading-tight">Map Wins</div>
-                      </div>
-                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
-                        <div className="text-lg sm:text-xl font-bold text-purple-400">
-                          {round.scores.reduce((sum, s) => sum + s.clean_sweeps, 0)}
+                        <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                          <div className="text-lg sm:text-xl font-bold text-purple-400">
+                            {round.scores.reduce((sum, s) => sum + s.clean_sweeps, 0)}
+                          </div>
+                          <div className="text-xs text-gray-400 leading-tight">Clean Sweeps</div>
                         </div>
-                        <div className="text-xs text-gray-400 leading-tight">Clean Sweeps</div>
-                      </div>
-                      <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30">
-                        <div className="text-lg sm:text-xl font-bold text-orange-400">
-                          {round.scores.reduce((sum, s) => sum + s.tournaments_won, 0)}
+                        <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30">
+                          <div className="text-lg sm:text-xl font-bold text-orange-400">
+                            {round.scores.reduce((sum, s) => sum + s.tournaments_won, 0)}
+                          </div>
+                          <div className="text-xs text-gray-400 leading-tight">Tournaments</div>
                         </div>
-                        <div className="text-xs text-gray-400 leading-tight">Tournaments</div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Bench Team */}
-                {round.bench_team && (
-                  <div>
-                    <h4 className="font-semibold mb-2 text-sm text-white">Bench Team</h4>
-                    <Badge variant="outline" className="text-sm bg-orange-500/10 border-orange-400/30 text-orange-400">
-                      {round.bench_team.name} (Amateur)
-                    </Badge>
+                  {/* Bench Team */}
+                  {round.bench_team && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-sm text-white">Bench Team</h4>
+                      <Badge variant="outline" className="text-sm bg-orange-500/10 border-orange-400/30 text-orange-400">
+                        {round.bench_team.name} (Amateur)
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Coming Soon - Scheduled Rounds */}
+      {scheduledRounds.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-300 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-yellow-400" />
+            Coming Soon
+          </h3>
+          <div className="space-y-4">
+            {scheduledRounds.map((round) => (
+              <Card
+                key={round.id}
+                className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-700/30 hover:shadow-lg hover:shadow-yellow-500/10 transition-all duration-250"
+              >
+                <CardHeader className="border-b border-gray-700/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="text-xl capitalize bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                        {round.round_name || `${round.type} Round`}
+                      </CardTitle>
+                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                        Scheduled
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4 text-yellow-400" />
+                        <span className="text-yellow-400">{formatTimeUntilStart(round.start_date)}</span>
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4">
+                    {/* Teams submitted */}
+                    <div>
+                      <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                        <Users className="h-4 w-4" />
+                        Your Teams
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        {round.team_picks.map((team: any, index: number) => (
+                          <div 
+                            key={team.id || index}
+                            className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50 text-center"
+                          >
+                            {team.logo_url && (
+                              <img 
+                                src={team.logo_url} 
+                                alt={team.name} 
+                                className="w-8 h-8 object-contain mx-auto mb-2"
+                              />
+                            )}
+                            <p className="text-sm font-medium text-white truncate">{team.name}</p>
+                            <p className="text-xs text-gray-400">{team.type === 'pro' ? 'Pro' : 'Amateur'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Scoring notice */}
+                    <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <p className="text-sm text-yellow-400 text-center">
+                        Scoring will begin when the round starts on {new Date(round.start_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
