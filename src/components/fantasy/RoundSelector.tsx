@@ -142,7 +142,7 @@ const RoundCard: React.FC<{
     if (isPaidCheckoutLoading) return "Loading...";
     if (hasPaidButEmptyPicks) return "Paid - Submit Teams";
     if (isPaid) {
-      return userEntryCount > 0 ? "Enter Again" : `${formatEntryFee(round.entry_fee!)} To Join`;
+      return userEntryCount > 0 ? `${formatEntryFee(round.entry_fee!)} Enter Again` : `${formatEntryFee(round.entry_fee!)} To Join`;
     }
     return "Free To Join";
   };
