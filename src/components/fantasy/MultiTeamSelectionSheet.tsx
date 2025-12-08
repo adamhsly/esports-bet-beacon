@@ -162,6 +162,12 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     }
   }, [maxAmateurPrice]);
 
+  // Helper to check if esport type is a Counter-Strike variant
+  const isCSVariant = (esportType: string) => {
+    const lower = (esportType ?? '').toLowerCase();
+    return lower === 'counter-strike' || lower === 'cs2' || lower === 'csgo';
+  };
+
   // Step 1: Base filtered teams (search, game, region) + round configuration
   const baseFilteredProTeams = useMemo(() => {
     return proTeams.filter(t => {
@@ -172,7 +178,16 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const gameMatch = selectedGamePro === 'all' || (t.esport_type ?? '') === selectedGamePro;
       
       // Apply round game_type filter if configured - 'all' or empty means no filter
-      const roundGameMatch = !round.game_type || round.game_type === 'all' || (t.esport_type ?? '').toLowerCase() === round.game_type.toLowerCase();
+      // Map cs2/counter-strike to all CS variants
+      let roundGameMatch = !round.game_type || round.game_type === 'all';
+      if (!roundGameMatch && round.game_type) {
+        const gameTypeLower = round.game_type.toLowerCase();
+        if (gameTypeLower === 'cs2' || gameTypeLower === 'counter-strike') {
+          roundGameMatch = isCSVariant(t.esport_type ?? '');
+        } else {
+          roundGameMatch = (t.esport_type ?? '').toLowerCase() === gameTypeLower;
+        }
+      }
       
       return nameMatch && gameMatch && roundGameMatch;
     });
