@@ -122,7 +122,7 @@ const TeamCard: React.FC<{
             <div>
               <div className="text-glass-muted font-bold text-[10px] mb-0.5 tracking-wide">MATCHES</div>
               <div className={`font-bold text-sm text-glass-accent drop-shadow-lg`}>
-                {team.type === 'pro' ? team.matches_in_period || 0 : team.match_volume || 0}
+                {team.match_volume ?? team.matches_in_period ?? 0}
               </div>
             </div>
           </div>
