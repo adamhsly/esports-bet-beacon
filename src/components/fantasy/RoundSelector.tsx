@@ -205,10 +205,14 @@ const RoundCard: React.FC<{
               <span className="text-gray-200">{prize3rd}</span>
             </span>
           </div>
-          <p className="text-sm text-purple-300 mt-2">Games: {round.game_type || "All Games"}</p>
-          <p className="text-sm text-cyan-300">
-            {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur Teams"}
-          </p>
+          <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+            <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+              {round.game_type || "All Games"}
+            </span>
+            <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full">
+              {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
@@ -258,10 +262,14 @@ const RoundCard: React.FC<{
               </span>
             </div>
           </div>
-          <p className="text-sm text-purple-300">Games: {round.game_type || "All Games"}</p>
-          <p className="text-sm text-cyan-300 mb-1">
-            {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur Teams"}
-          </p>
+          <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
+            <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+              {round.game_type || "All Games"}
+            </span>
+            <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full">
+              {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
+            </span>
+          </div>
 
           <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
             <div className="flex items-center gap-1">
