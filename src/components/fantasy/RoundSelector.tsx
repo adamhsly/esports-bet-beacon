@@ -512,10 +512,17 @@ export const RoundSelector: React.FC<{
     return acc;
   }, {});
   
-  // Get section names in a predictable order (vouchers first, then credits)
+  // Get section names in a predictable order (paid sections first, then free)
   const sectionOrder = Object.keys(groupedRounds).sort((a, b) => {
-    if (a.toLowerCase().includes("voucher")) return -1;
-    if (b.toLowerCase().includes("voucher")) return 1;
+    const aLower = a.toLowerCase();
+    const bLower = b.toLowerCase();
+    
+    // Paid sections come before free sections
+    const aIsPaid = aLower.includes("paid") || aLower.includes("voucher");
+    const bIsPaid = bLower.includes("paid") || bLower.includes("voucher");
+    if (aIsPaid && !bIsPaid) return -1;
+    if (!aIsPaid && bIsPaid) return 1;
+    
     return a.localeCompare(b);
   });
   if (loading) {
