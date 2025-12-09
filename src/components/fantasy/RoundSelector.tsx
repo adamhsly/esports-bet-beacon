@@ -159,6 +159,19 @@ const RoundCard: React.FC<{
     }
   };
 
+  // Get team type pill styling based on team_type
+  const getTeamTypePillClass = () => {
+    switch (round.team_type) {
+      case "pro":
+        return "bg-[hsl(272_91%_65%/0.2)] text-[hsl(272_91%_75%)] border-[hsl(272_91%_65%/0.5)]";
+      case "amateur":
+        return "bg-[hsl(25_95%_53%/0.2)] text-[hsl(25_95%_63%)] border-[hsl(25_95%_53%/0.5)]";
+      case "both":
+      default:
+        return "team-type-pill-split";
+    }
+  };
+
   return (
     <Card
       className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md overflow-hidden ${getNeonBorderClass()} ${isPaid ? "bg-gradient-to-br from-amber-900/30 to-slate-700" : "bg-slate-700"}`}
@@ -209,7 +222,7 @@ const RoundCard: React.FC<{
             <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
-            <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full">
+            <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getTeamTypePillClass()}`}>
               {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
             </span>
           </div>
@@ -266,7 +279,7 @@ const RoundCard: React.FC<{
             <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
-            <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full">
+            <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getTeamTypePillClass()}`}>
               {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
             </span>
           </div>
