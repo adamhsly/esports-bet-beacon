@@ -19,11 +19,11 @@ interface RoundVariant {
 }
 
 const DAILY_VARIANTS: RoundVariant[] = [
-  { team_type: 'pro', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire Paid', name_suffix: 'Pro Paid' },
-  { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire Free', name_suffix: 'Pro Free' },
-  { team_type: 'amateur', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire Paid', name_suffix: 'Amateur Paid' },
-  { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire Free', name_suffix: 'Amateur Free' },
-  { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire Free', name_suffix: 'Mixed Free' },
+  { team_type: 'pro', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire Paid', name_suffix: 'Pro - Paid' },
+  { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire Free', name_suffix: 'Pro - Free' },
+  { team_type: 'amateur', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire Paid', name_suffix: 'Amateur - Paid' },
+  { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire Free', name_suffix: 'Amateur - Free' },
+  { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire Free', name_suffix: 'Mixed - Free' },
 ];
 
 Deno.serve(async (_req) => {
