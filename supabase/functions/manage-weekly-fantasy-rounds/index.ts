@@ -6,10 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const WEEKLY_STRIPE_PRICE_ID = 'price_1ScUosFkrjLxsbmbcAWqGN6U';
+
 interface RoundVariant {
   team_type: 'pro' | 'amateur' | 'both';
   is_paid: boolean;
   entry_fee: number | null;
+  stripe_price_id: string | null;
   prize_type: 'vouchers' | 'credits';
   prize_1st: number;
   prize_2nd: number;
@@ -19,11 +22,11 @@ interface RoundVariant {
 }
 
 const WEEKLY_VARIANTS: RoundVariant[] = [
-  { team_type: 'pro', is_paid: true, entry_fee: 250, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun - Paid', name_suffix: 'Pro - Paid' },
-  { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Pro - Free' },
-  { team_type: 'amateur', is_paid: true, entry_fee: 250, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun - Paid', name_suffix: 'Amateur - Paid' },
-  { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Amateur - Free' },
-  { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Mixed - Free' },
+  { team_type: 'pro', is_paid: true, entry_fee: 250, stripe_price_id: WEEKLY_STRIPE_PRICE_ID, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun - Paid', name_suffix: 'Pro - Paid' },
+  { team_type: 'pro', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Pro - Free' },
+  { team_type: 'amateur', is_paid: true, entry_fee: 250, stripe_price_id: WEEKLY_STRIPE_PRICE_ID, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun - Paid', name_suffix: 'Amateur - Paid' },
+  { team_type: 'amateur', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Amateur - Free' },
+  { team_type: 'both', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Mixed - Free' },
 ];
 
 Deno.serve(async (_req) => {
@@ -70,6 +73,7 @@ Deno.serve(async (_req) => {
       team_type: variant.team_type,
       is_paid: variant.is_paid,
       entry_fee: variant.entry_fee,
+      stripe_price_id: variant.stripe_price_id,
       prize_type: variant.prize_type,
       prize_1st: variant.prize_1st,
       prize_2nd: variant.prize_2nd,
