@@ -19,9 +19,9 @@ interface RoundVariant {
 }
 
 const WEEKLY_VARIANTS: RoundVariant[] = [
-  { team_type: 'pro', is_paid: true, entry_fee: 250, prize_type: 'vouchers', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun Paid', name_suffix: 'Pro Paid' },
+  { team_type: 'pro', is_paid: true, entry_fee: 250, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun Paid', name_suffix: 'Pro Paid' },
   { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun Free', name_suffix: 'Pro Free' },
-  { team_type: 'amateur', is_paid: true, entry_fee: 250, prize_type: 'vouchers', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun Paid', name_suffix: 'Amateur Paid' },
+  { team_type: 'amateur', is_paid: true, entry_fee: 250, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun Paid', name_suffix: 'Amateur Paid' },
   { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun Free', name_suffix: 'Amateur Free' },
   { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun Free', name_suffix: 'Mixed Free' },
 ];

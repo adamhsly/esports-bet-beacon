@@ -3297,7 +3297,6 @@ export type Database = {
       }
       bump_login_streak: { Args: never; Returns: undefined }
       calculate_fantasy_points:
-        | { Args: { team_id: string }; Returns: Json }
         | {
             Args: {
               adr: number
@@ -3310,6 +3309,7 @@ export type Database = {
             }
             Returns: number
           }
+        | { Args: { team_id: string }; Returns: Json }
       calculate_fantasy_scores_batch:
         | {
             Args: { p_round_id: string; p_user_id: string }
@@ -3676,16 +3676,16 @@ export type Database = {
       }
       spend_bonus_credits:
         | {
+            Args: { p_amount: number; p_round: string; p_user: string }
+            Returns: boolean
+          }
+        | {
             Args: {
               p_base_amount: number
               p_bonus_amount: number
               p_round: string
               p_user: string
             }
-            Returns: boolean
-          }
-        | {
-            Args: { p_amount: number; p_round: string; p_user: string }
             Returns: boolean
           }
       spend_credits: {
