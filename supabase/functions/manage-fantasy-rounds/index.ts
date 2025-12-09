@@ -16,14 +16,17 @@ interface RoundVariant {
   prize_3rd: number;
   section_name: string;
   name_suffix: string;
+  stripe_price_id: string | null;
 }
 
+const DAILY_STRIPE_PRICE_ID = 'price_1ScUb9FkrjLxsbmbtJ2Iw0I1';
+
 const DAILY_VARIANTS: RoundVariant[] = [
-  { team_type: 'pro', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire - Paid', name_suffix: 'Pro - Paid' },
-  { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Pro - Free' },
-  { team_type: 'amateur', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire - Paid', name_suffix: 'Amateur - Paid' },
-  { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Amateur - Free' },
-  { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Mixed - Free' },
+  { team_type: 'pro', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire - Paid', name_suffix: 'Pro - Paid', stripe_price_id: DAILY_STRIPE_PRICE_ID },
+  { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Pro - Free', stripe_price_id: null },
+  { team_type: 'amateur', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire - Paid', name_suffix: 'Amateur - Paid', stripe_price_id: DAILY_STRIPE_PRICE_ID },
+  { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Amateur - Free', stripe_price_id: null },
+  { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Mixed - Free', stripe_price_id: null },
 ];
 
 Deno.serve(async (_req) => {
@@ -75,6 +78,7 @@ Deno.serve(async (_req) => {
       prize_2nd: variant.prize_2nd,
       prize_3rd: variant.prize_3rd,
       section_name: variant.section_name,
+      stripe_price_id: variant.stripe_price_id,
     }));
 
     const { data: newRounds, error: insertError } = await supabase
