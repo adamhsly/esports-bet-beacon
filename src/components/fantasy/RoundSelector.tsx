@@ -338,6 +338,7 @@ export const RoundSelector: React.FC<{
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userEntryCounts, setUserEntryCounts] = useState<Record<string, number>>({});
   const [paidButEmptyPicks, setPaidButEmptyPicks] = useState<Record<string, string>>({});
+  const [joinedFreeRounds, setJoinedFreeRounds] = useState<Set<string>>(new Set());
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   useEffect(() => {
     fetchOpenRounds();
@@ -346,6 +347,7 @@ export const RoundSelector: React.FC<{
     if (user && rounds.length > 0) {
       fetchUserEntryCounts();
       fetchPaidButEmptyPicks();
+      fetchJoinedFreeRounds();
     }
   }, [user, rounds]);
   const fetchOpenRounds = async () => {
@@ -480,6 +482,25 @@ export const RoundSelector: React.FC<{
     }
   };
   
+  // Fetch free rounds the user has already joined (one entry max per free round)
+  const fetchJoinedFreeRounds = async () => {
+    if (!user) return;
+    const freeRoundIds = rounds.filter((r) => !r.is_paid).map((r) => r.id);
+    if (freeRoundIds.length === 0) return;
+    try {
+      const { data, error } = await supabase
+        .from("fantasy_round_picks")
+        .select("round_id")
+        .eq("user_id", user.id)
+        .in("round_id", freeRoundIds);
+      if (error) throw error;
+      const joined = new Set((data || []).map((p) => p.round_id));
+      setJoinedFreeRounds(joined);
+    } catch (err) {
+      console.error("Error fetching joined free rounds:", err);
+    }
+  };
+  
   const handleJoinRound = (round: Round) => {
     if (!user) {
       setShowAuthModal(true);
@@ -535,8 +556,17 @@ export const RoundSelector: React.FC<{
     window.location.href = "/fantasy/private";
   };
 
+  // Filter out free rounds the user has already joined
+  const filteredRounds = rounds.filter((round) => {
+    // Keep all paid rounds (unlimited entries)
+    if (round.is_paid) return true;
+    // For free rounds, hide if user already joined
+    if (user && joinedFreeRounds.has(round.id)) return false;
+    return true;
+  });
+
   // Group rounds by section_name, fallback to default sections
-  const groupedRounds = rounds.reduce<Record<string, Round[]>>((acc, round) => {
+  const groupedRounds = filteredRounds.reduce<Record<string, Round[]>>((acc, round) => {
     let sectionKey = round.section_name;
     
     // Default section logic if no section_name set
