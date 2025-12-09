@@ -54,19 +54,34 @@ export function useRoundTeamSwap(roundId: string) {
       let oldTeamName: string | null = null;
       let oldTeamType: 'pro' | 'amateur' | null = null;
       
-      // If there was a swap, fetch the old team's name from scores table
+      // If there was a swap, fetch the old team's info
       if (oldTeamId) {
-        const { data: scoreData } = await supabase
-          .from('fantasy_round_scores')
+        // First try fantasy_team_prices (most reliable for team type)
+        const { data: priceData } = await supabase
+          .from('fantasy_team_prices')
           .select('team_name, team_type')
           .eq('round_id', roundId)
           .eq('team_id', oldTeamId)
           .limit(1)
           .maybeSingle();
         
-        if (scoreData) {
-          oldTeamName = scoreData.team_name;
-          oldTeamType = scoreData.team_type as 'pro' | 'amateur';
+        if (priceData) {
+          oldTeamName = priceData.team_name;
+          oldTeamType = priceData.team_type as 'pro' | 'amateur';
+        } else {
+          // Fallback to scores table
+          const { data: scoreData } = await supabase
+            .from('fantasy_round_scores')
+            .select('team_name, team_type')
+            .eq('round_id', roundId)
+            .eq('team_id', oldTeamId)
+            .limit(1)
+            .maybeSingle();
+          
+          if (scoreData) {
+            oldTeamName = scoreData.team_name;
+            oldTeamType = scoreData.team_type as 'pro' | 'amateur';
+          }
         }
       }
 
