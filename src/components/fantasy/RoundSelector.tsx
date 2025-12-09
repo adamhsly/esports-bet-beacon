@@ -219,7 +219,7 @@ const RoundCard: React.FC<{
             </span>
           </div>
           <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-            <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
             <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getTeamTypePillClass()}`}>
@@ -276,7 +276,7 @@ const RoundCard: React.FC<{
             </div>
           </div>
           <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
-            <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
             <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getTeamTypePillClass()}`}>
