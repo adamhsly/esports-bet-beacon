@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface RoundTeamSwapState {
   oldTeamId: string | null;
+  oldTeamName: string | null;
+  oldTeamType: 'pro' | 'amateur' | null;
   newTeamId: string | null;
   swapUsed: boolean;
   canSwap: boolean;
@@ -13,6 +15,8 @@ interface RoundTeamSwapState {
 export function useRoundTeamSwap(roundId: string) {
   const [state, setState] = useState<RoundTeamSwapState>({
     oldTeamId: null,
+    oldTeamName: null,
+    oldTeamType: null,
     newTeamId: null,
     swapUsed: false,
     canSwap: true,
@@ -36,6 +40,8 @@ export function useRoundTeamSwap(roundId: string) {
         console.error('Error fetching swap state:', error);
         setState({
           oldTeamId: null,
+          oldTeamName: null,
+          oldTeamType: null,
           newTeamId: null,
           swapUsed: false,
           canSwap: true,
@@ -44,8 +50,30 @@ export function useRoundTeamSwap(roundId: string) {
         return;
       }
 
+      const oldTeamId = (data as any)?.old_team_id || null;
+      let oldTeamName: string | null = null;
+      let oldTeamType: 'pro' | 'amateur' | null = null;
+      
+      // If there was a swap, fetch the old team's name from scores table
+      if (oldTeamId) {
+        const { data: scoreData } = await supabase
+          .from('fantasy_round_scores')
+          .select('team_name, team_type')
+          .eq('round_id', roundId)
+          .eq('team_id', oldTeamId)
+          .limit(1)
+          .maybeSingle();
+        
+        if (scoreData) {
+          oldTeamName = scoreData.team_name;
+          oldTeamType = scoreData.team_type as 'pro' | 'amateur';
+        }
+      }
+
       setState({
-        oldTeamId: (data as any)?.old_team_id || null,
+        oldTeamId,
+        oldTeamName,
+        oldTeamType,
         newTeamId: (data as any)?.new_team_id || null,
         swapUsed: (data as any)?.swap_used || false,
         canSwap: (data as any)?.can_swap || true,

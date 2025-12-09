@@ -380,7 +380,7 @@ export const InProgressRounds: React.FC = () => {
 const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => Promise<void> }> = ({ round, onRefresh }) => {
   const { user } = useAuth();
   const { starTeamId, changeUsed, canChange, setStarTeam } = useRoundStar(round.id);
-  const { swapUsed, canSwap, oldTeamId, newTeamId, pointsAtSwap, swapTeam, refresh } = useRoundTeamSwap(round.id);
+  const { swapUsed, canSwap, oldTeamId, oldTeamName, oldTeamType, newTeamId, pointsAtSwap, swapTeam, refresh } = useRoundTeamSwap(round.id);
   const [showStarModal, setShowStarModal] = useState(false);
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
@@ -565,52 +565,97 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        {round.scores.length > 0
-          ? round.scores.map((score) => {
-              const isSwappedOut = swapUsed && oldTeamId === score.team_id;
-              const isSwappedIn = swapUsed && newTeamId === score.team_id;
-              
-              return (
-                <TeamCard
-                  key={score.team_id}
-                  team={{
-                    id: score.team_id,
-                    name: score.team_name,
-                    type: score.team_type,
-                    logo_url: round.team_picks.find((team) => team.id === score.team_id)?.logo_url || ''
-                  }}
-                  isSelected={true}
-                  onClick={() => {}}
-                  showStarToggle={true}
-                  isStarred={starTeamId === score.team_id}
-                  onToggleStar={() => handleStarToggle(score.team_id)}
-                  disabledReason={!canChange ? 'Star change used' : null}
-                  variant="progress"
-                  fantasyPoints={score.current_score}
-                  onShowPerformance={handleShowPerformance}
-                  showSwapButton={canSwap && !swapUsed && !isSwappedOut}
-                  onSwapTeam={() => handleSwapTeam(score.team_id, score.team_name, score.team_type)}
-                  isSwappedIn={isSwappedIn}
-                  isSwappedOut={isSwappedOut}
-                />
-              );
-            })
-          : round.team_picks.map((team, index) => (
-              <TeamCard
-                key={team.id || index}
-                team={team}
-                isSelected={true}
-                onClick={() => {}}
-                showStarToggle={true}
-                isStarred={starTeamId === team.id}
-                onToggleStar={() => handleStarToggle(team.id)}
-                disabledReason={!canChange ? 'Star change used' : null}
-                variant="progress"
-                onShowPerformance={handleShowPerformance}
-                showSwapButton={canSwap && !swapUsed}
-                onSwapTeam={() => handleSwapTeam(team.id, team.name, team.type)}
-              />
-            ))}
+        {(() => {
+          // Build a merged list of teams to display
+          const teamsToDisplay: Array<{
+            id: string;
+            name: string;
+            type: 'pro' | 'amateur';
+            logo_url: string;
+            points: number;
+            isSwappedOut: boolean;
+            isSwappedIn: boolean;
+            hasScore: boolean;
+          }> = [];
+          
+          const processedTeamIds = new Set<string>();
+          
+          // First, add teams from scores
+          for (const score of round.scores) {
+            const isSwappedOut = swapUsed && oldTeamId === score.team_id;
+            const isSwappedIn = swapUsed && newTeamId === score.team_id;
+            const teamPick = round.team_picks.find((t) => t.id === score.team_id);
+            
+            teamsToDisplay.push({
+              id: score.team_id,
+              name: score.team_name,
+              type: score.team_type,
+              logo_url: teamPick?.logo_url || '',
+              points: isSwappedOut ? pointsAtSwap : score.current_score,
+              isSwappedOut,
+              isSwappedIn,
+              hasScore: true,
+            });
+            processedTeamIds.add(score.team_id);
+          }
+          
+          // Add teams from picks that don't have scores yet (e.g., newly swapped-in team)
+          for (const team of round.team_picks) {
+            if (!processedTeamIds.has(team.id)) {
+              const isSwappedIn = swapUsed && newTeamId === team.id;
+              teamsToDisplay.push({
+                id: team.id,
+                name: team.name,
+                type: team.type as 'pro' | 'amateur',
+                logo_url: team.logo_url || '',
+                points: 0,
+                isSwappedOut: false,
+                isSwappedIn,
+                hasScore: false,
+              });
+              processedTeamIds.add(team.id);
+            }
+          }
+          
+          // If there was a swap, ensure the old team is displayed (greyed out with preserved points)
+          if (swapUsed && oldTeamId && !processedTeamIds.has(oldTeamId)) {
+            teamsToDisplay.push({
+              id: oldTeamId,
+              name: oldTeamName || 'Swapped Team',
+              type: oldTeamType || 'pro',
+              logo_url: '',
+              points: pointsAtSwap,
+              isSwappedOut: true,
+              isSwappedIn: false,
+              hasScore: false,
+            });
+          }
+          
+          return teamsToDisplay.map((team) => (
+            <TeamCard
+              key={team.id}
+              team={{
+                id: team.id,
+                name: team.name,
+                type: team.type,
+                logo_url: team.logo_url
+              }}
+              isSelected={true}
+              onClick={() => {}}
+              showStarToggle={!team.isSwappedOut}
+              isStarred={starTeamId === team.id}
+              onToggleStar={() => handleStarToggle(team.id)}
+              disabledReason={!canChange ? 'Star change used' : null}
+              variant="progress"
+              fantasyPoints={team.points}
+              onShowPerformance={handleShowPerformance}
+              showSwapButton={canSwap && !swapUsed && !team.isSwappedOut}
+              onSwapTeam={() => handleSwapTeam(team.id, team.name, team.type)}
+              isSwappedIn={team.isSwappedIn}
+              isSwappedOut={team.isSwappedOut}
+            />
+          ));
+        })()}
       </div>
 
       {/* Star Change Modal */}

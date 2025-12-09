@@ -168,11 +168,40 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
     return;
   }
 
+  // Build list of teams to process, including swapped-out team if applicable
+  const teamsToProcess = [...teamPicks];
+  
+  // If there was a swap, we need to also process the old (swapped-out) team
+  // to maintain its score record with preserved points
+  if (swap && swap.old_team_id) {
+    const oldTeamInPicks = teamPicks.some(t => 
+      String(t?.id ?? t?.team_id ?? '').trim() === swap.old_team_id
+    );
+    
+    if (!oldTeamInPicks) {
+      // Get old team info from existing scores or swap record
+      const { data: oldScoreData } = await supabase
+        .from('fantasy_round_scores')
+        .select('team_name, team_type')
+        .eq('round_id', round.id)
+        .eq('user_id', userId)
+        .eq('team_id', swap.old_team_id)
+        .single();
+      
+      teamsToProcess.push({
+        id: swap.old_team_id,
+        name: oldScoreData?.team_name || 'Swapped Team',
+        type: oldScoreData?.team_type || 'pro',
+        _isSwappedOut: true, // Mark for special handling
+      });
+    }
+  }
+
   let totalScore = 0;
   const allBreakdowns = [];
   const scoreUpdates = [];
 
-  for (const rawTeam of teamPicks) {
+  for (const rawTeam of teamsToProcess) {
     const teamId = String(rawTeam?.id ?? rawTeam?.team_id ?? '').trim();
     const teamName = String(rawTeam?.name ?? rawTeam?.team_name ?? '').trim();
     const teamType = String(rawTeam?.type ?? rawTeam?.team_type ?? 'pro').toLowerCase() === 'amateur' ? 'amateur' : 'pro';
@@ -181,7 +210,7 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
 
     const isStarTeam = starTeamId === teamId;
     
-    // Check if this team was swapped out
+    // Check if this team was swapped out or in
     const wasSwappedOut = swap && swap.old_team_id === teamId;
     const wasSwappedIn = swap && swap.new_team_id === teamId;
     const swapTime = swap?.swapped_at ? new Date(swap.swapped_at) : null;
@@ -192,15 +221,15 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
       isStarTeam, wasSwappedOut, wasSwappedIn, swapTime
     );
 
-    // Add preserved points if team was swapped out
+    // For swapped-out team, use preserved points
     let finalScore = score;
-    if (wasSwappedOut && swap.points_at_swap) {
-      finalScore = swap.points_at_swap;
+    if (wasSwappedOut) {
+      finalScore = swap.points_at_swap || 0;
     }
 
     totalScore += finalScore;
 
-    // Prepare breakdown records
+    // Prepare breakdown records (only for matches that count)
     for (const breakdown of breakdowns) {
       allBreakdowns.push({
         round_id: round.id,
