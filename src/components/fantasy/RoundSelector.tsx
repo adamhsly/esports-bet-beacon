@@ -127,6 +127,22 @@ const RoundCard: React.FC<{
     const end = new Date(round.end_date);
     return now >= start && now <= end;
   };
+
+  // Calculate countdown text for pills
+  const getCountdownText = (targetDate: Date) => {
+    const now = new Date();
+    const diffMs = targetDate.getTime() - now.getTime();
+    if (diffMs <= 0) return "";
+    
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffHours >= 1) {
+      return ` - ${diffHours}h`;
+    } else {
+      return ` - ${diffMins}m`;
+    }
+  };
   const handleClick = () => {
     // If user has paid but hasn't submitted teams, go to team picker
     if (hasPaidButEmptyPicks && onSubmitPaidTeams) {
@@ -182,12 +198,13 @@ const RoundCard: React.FC<{
         {isScheduled && (
           <span className="px-2 py-0.5 text-xs font-medium bg-blue-600 text-white border border-blue-500 rounded-full flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            Coming Soon
+            Coming Soon{getCountdownText(new Date(round.start_date))}
           </span>
         )}
         {!isScheduled && isInProgress() && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-green-600 text-white border border-green-500 rounded-full">
-            In Progress
+          <span className="px-2 py-0.5 text-xs font-medium bg-green-600 text-white border border-green-500 rounded-full flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            In Progress{getCountdownText(new Date(round.end_date))}
           </span>
         )}
       </div>
