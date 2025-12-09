@@ -127,10 +127,31 @@ export function useRoundTeamSwap(roundId: string) {
         return { success: false, error: data?.error || 'Failed to swap team' };
       }
 
+      // Fetch old team info for display
+      let swappedOutName: string | null = null;
+      let swappedOutType: 'pro' | 'amateur' | null = null;
+      
+      if (data.old_team_id) {
+        const { data: priceData } = await supabase
+          .from('fantasy_team_prices')
+          .select('team_name, team_type')
+          .eq('round_id', roundId)
+          .eq('team_id', data.old_team_id)
+          .limit(1)
+          .maybeSingle();
+        
+        if (priceData) {
+          swappedOutName = priceData.team_name;
+          swappedOutType = priceData.team_type as 'pro' | 'amateur';
+        }
+      }
+
       // Update local state on success
       setState(prev => ({
         ...prev,
         oldTeamId: data.old_team_id,
+        oldTeamName: swappedOutName,
+        oldTeamType: swappedOutType,
         newTeamId: data.new_team_id,
         swapUsed: data.swap_used,
         canSwap: !data.swap_used,
