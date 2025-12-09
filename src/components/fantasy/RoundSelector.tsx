@@ -134,10 +134,13 @@ const RoundCard: React.FC<{
     const diffMs = targetDate.getTime() - now.getTime();
     if (diffMs <= 0) return "";
     
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMins = Math.floor(diffMs / (1000 * 60));
     
-    if (diffHours >= 1) {
+    if (diffDays >= 1) {
+      return ` - ${diffDays}d`;
+    } else if (diffHours >= 1) {
       return ` - ${diffHours}h`;
     } else {
       return ` - ${diffMins}m`;
