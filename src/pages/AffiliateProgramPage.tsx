@@ -157,10 +157,10 @@ const AffiliateProgramPage = () => {
                 <span className="text-yellow-400">a </span>
                 <span className="text-white">Partner</span>
               </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground mb-8">
+              <p className="text-xl md:text-2xl text-white mb-8">
                 Earn <span className="text-yellow-400 font-semibold">20–30% revenue share</span> from premium contest entries.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground mb-8">
+              <div className="flex flex-wrap justify-center gap-4 text-sm text-white mb-8">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span>Fixed Prizes</span>
@@ -216,9 +216,9 @@ const AffiliateProgramPage = () => {
                     <div className={`w-12 h-12 bg-${step.color}-500/10 rounded-full flex items-center justify-center mx-auto mb-4`}>
                       <step.icon className={`w-6 h-6 text-${step.color}-400`} />
                     </div>
-                    <div className="text-2xl font-bold text-muted-foreground mb-2">{i + 1}</div>
+                    <div className="text-2xl font-bold text-white mb-2">{i + 1}</div>
                     <h3 className="font-semibold mb-1 text-white">{step.title}</h3>
-                    <p className="text-sm text-muted-foreground">{step.desc}</p>
+                    <p className="text-sm text-white">{step.desc}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -232,7 +232,7 @@ const AffiliateProgramPage = () => {
             <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent">
               Revenue Share Tiers
             </h2>
-            <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            <p className="text-center text-white mb-12 max-w-2xl mx-auto">
               Start at Bronze and grow your earnings as you bring in more players
             </p>
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -250,7 +250,7 @@ const AffiliateProgramPage = () => {
                   </CardHeader>
                   <CardContent className="relative">
                     <div className={`text-4xl font-bold mb-2 ${tier.textColor}`}>{tier.percent}%</div>
-                    <p className="text-sm text-muted-foreground">Revenue Share</p>
+                    <p className="text-sm text-white">Revenue Share</p>
                     <div className="mt-4 pt-4 border-t border-white/10">
                       <p className="text-sm text-white">{tier.requirement}</p>
                     </div>
@@ -279,15 +279,15 @@ const AffiliateProgramPage = () => {
                   <CardContent className="space-y-3">
                     <div className="flex items-start gap-2">
                       <Zap className="w-4 h-4 text-green-400 mt-1" />
-                      <span className="text-muted-foreground">Premium contest entry fees from users you refer</span>
+                      <span className="text-white">Premium contest entry fees from users you refer</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Zap className="w-4 h-4 text-green-400 mt-1" />
-                      <span className="text-muted-foreground">Daily, Weekly, and Monthly paid rounds</span>
+                      <span className="text-white">Daily, Weekly, and Monthly paid rounds</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Zap className="w-4 h-4 text-green-400 mt-1" />
-                      <span className="text-muted-foreground">All future premium contest entries by your referrals</span>
+                      <span className="text-white">All future premium contest entries by your referrals</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -298,7 +298,7 @@ const AffiliateProgramPage = () => {
                       What Counts as a Referral
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-muted-foreground">
+                  <CardContent className="space-y-3 text-white">
                     <p>A new user who:</p>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-purple-400 mt-1" />
@@ -340,7 +340,7 @@ const AffiliateProgramPage = () => {
                       <benefit.icon className={`w-6 h-6 text-${benefit.color}-400`} />
                     </div>
                     <h3 className="font-semibold mb-2 text-white">{benefit.title}</h3>
-                    <p className="text-sm text-muted-foreground">{benefit.desc}</p>
+                    <p className="text-sm text-white">{benefit.desc}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -355,7 +355,7 @@ const AffiliateProgramPage = () => {
               <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-yellow-400 to-purple-400 bg-clip-text text-transparent">
                 Apply Now
               </h2>
-              <p className="text-center text-muted-foreground mb-8">
+              <p className="text-center text-white mb-8">
                 Join our creator program and start earning today
               </p>
               
