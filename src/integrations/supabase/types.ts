@@ -3193,6 +3193,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_wallets: {
         Row: {
           blockchain: string
@@ -3792,6 +3813,13 @@ export type Database = {
         Args: { p_level: number; p_user: string }
         Returns: Json
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_xp: {
         Args: { p_user_id: string; p_xp: number }
         Returns: undefined
@@ -3919,6 +3947,7 @@ export type Database = {
       update_panda_team_head_to_head: { Args: never; Returns: undefined }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       cs2_position: "IGL" | "AWPer" | "Entry Fragger" | "Support" | "Lurker"
       tournament_status: "upcoming" | "active" | "completed" | "cancelled"
     }
@@ -4048,6 +4077,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       cs2_position: ["IGL", "AWPer", "Entry Fragger", "Support", "Lurker"],
       tournament_status: ["upcoming", "active", "completed", "cancelled"],
     },
