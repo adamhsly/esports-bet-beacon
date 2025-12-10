@@ -173,9 +173,13 @@ export const InProgressRounds: React.FC = () => {
     );
   }
 
-  // Separate active/open rounds from scheduled rounds
-  const activeRounds = rounds.filter(r => r.status !== 'scheduled');
-  const scheduledRounds = rounds.filter(r => r.status === 'scheduled');
+  // Separate active/open rounds from scheduled rounds, sorted by end date (closest first)
+  const activeRounds = rounds
+    .filter(r => r.status !== 'scheduled')
+    .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime());
+  const scheduledRounds = rounds
+    .filter(r => r.status === 'scheduled')
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
   // Helper to format time until start for scheduled rounds
   const formatTimeUntilStart = (startDate: string) => {
