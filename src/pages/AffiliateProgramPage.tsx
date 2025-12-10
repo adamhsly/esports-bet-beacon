@@ -177,14 +177,16 @@ const AffiliateProgramPage = () => {
               <div className="flex flex-wrap justify-center gap-4">
                 <Button 
                   onClick={() => document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold"
+                  size="lg"
                 >
                   Apply to Partner Program
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={() => navigate('/affiliate-dashboard')}
-                  className="border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
+                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                  size="lg"
                 >
                   Partner Login
                 </Button>
