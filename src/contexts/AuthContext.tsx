@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { getReferralCode, clearReferralCode } from '@/hooks/useReferralTracking';
 
 interface AuthContextType {
   user: User | null;
@@ -98,7 +99,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, metadata: any = {}) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    // Check for referral code
+    const referralCode = getReferralCode();
+    
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -106,6 +110,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: metadata
       }
     });
+    
+    // If signup successful and there's a referral code, save it to profile
+    if (!error && data.user && referralCode) {
+      setTimeout(async () => {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ referrer_code: referralCode })
+            .eq('id', data.user!.id);
+          clearReferralCode();
+        } catch (e) {
+          console.error('Failed to save referral code:', e);
+        }
+      }, 1000); // Delay to ensure profile is created first
+    }
+    
     return { error };
   };
 
