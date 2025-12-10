@@ -122,9 +122,9 @@ const AffiliateProgramPage = () => {
                 Creator Program
               </Badge>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                <span className="text-primary">Become </span>
+                <span className="text-theme-purple">Become </span>
                 <span className="text-yellow-400">a </span>
-                <span className="text-foreground">Partner</span>
+                <span className="text-white">Partner</span>
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground mb-8">
                 Earn <span className="text-primary font-semibold">20–30% revenue share</span> from premium contest entries.
