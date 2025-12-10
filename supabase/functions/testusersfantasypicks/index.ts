@@ -58,19 +58,15 @@ function tryBuildRandomPickset(teams, teamCount, budget) {
   return null;
 }
 
-async function batchedUpsert(supabase, table, rows, batchSize = 300, onConflict) {
-  let totalRequested = 0;
+async function batchedInsert(supabase, table, rows, batchSize = 300) {
+  let totalInserted = 0;
   for(let i = 0; i < rows.length; i += batchSize){
     const chunk = rows.slice(i, i + batchSize);
-    const { error } = await supabase.from(table).upsert(chunk, {
-      onConflict,
-      ignoreDuplicates: true,
-      returning: "minimal"
-    });
+    const { error } = await supabase.from(table).insert(chunk);
     if (error) throw error;
-    totalRequested += chunk.length; // includes ignored duplicates
+    totalInserted += chunk.length;
   }
-  return totalRequested;
+  return totalInserted;
 }
 
 /**
@@ -385,7 +381,7 @@ serve(async (req)=>{
         continue;
       }
       
-      const insertedRequested = await batchedUpsert(supabase, "fantasy_round_picks", rows, 300, "user_id,round_id");
+      const insertedRequested = await batchedInsert(supabase, "fantasy_round_picks", rows, 300);
       perRoundResults.push({
         round_id: round.id,
         round_type: round.type ?? null,
