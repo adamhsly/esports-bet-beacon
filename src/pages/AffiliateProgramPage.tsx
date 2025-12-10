@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 const AffiliateProgramPage = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -156,9 +158,9 @@ const AffiliateProgramPage = () => {
                 <span className="text-white">Partner</span>
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground mb-8">
-                Earn <span className="text-purple-400 font-semibold">20–30% revenue share</span> from premium contest entries.
+                Earn <span className="text-yellow-400 font-semibold">20–30% revenue share</span> from premium contest entries.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground mb-8">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span>Fixed Prizes</span>
@@ -171,6 +173,21 @@ const AffiliateProgramPage = () => {
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
                   <span>No Gambling</span>
                 </div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button 
+                  onClick={() => document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400"
+                >
+                  Apply to Partner Program
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/affiliate-dashboard')}
+                  className="border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
+                >
+                  Partner Login
+                </Button>
               </div>
             </div>
           </div>
