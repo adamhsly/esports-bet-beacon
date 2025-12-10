@@ -39,6 +39,9 @@ import TermsPage from '@/pages/TermsPage';
 import CookiePage from '@/pages/CookiePage';
 import LegacyPrivacyRedirect from '@/components/redirects/LegacyPrivacyRedirect';
 import LegacyTermsRedirect from '@/components/redirects/LegacyTermsRedirect';
+import AffiliateProgramPage from '@/pages/AffiliateProgramPage';
+import AffiliateDashboardPage from '@/pages/AffiliateDashboardPage';
+import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
 import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
@@ -101,6 +104,9 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
   const isMobile = useMobile();
   const location = useLocation();
+  
+  // Track referral codes from URL
+  useReferralTracking();
   
   // Don't show ProgressHudSticky on fantasy page or public lineup share pages
   const isFantasyPage = location.pathname === '/fantasy';
@@ -173,6 +179,8 @@ function App() {
           <Route path="/legal/privacy-policy" element={<LegacyPrivacyRedirect />} />
           <Route path="/legal/tos" element={<LegacyTermsRedirect />} />
           <Route path="/restricted" element={<RestrictedAccessPage />} />
+          <Route path="/affiliate-program" element={<AffiliateProgramPage />} />
+          <Route path="/affiliate-dashboard" element={<AffiliateDashboardPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
