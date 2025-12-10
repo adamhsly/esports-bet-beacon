@@ -8,16 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Users, 
   DollarSign, 
   TrendingUp, 
   Shield, 
   CheckCircle2, 
   Gamepad2,
-  Link2,
   Star,
   Trophy,
   Zap
@@ -27,6 +26,7 @@ const AffiliateProgramPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     creatorName: '',
     email: '',
@@ -80,10 +80,22 @@ const AffiliateProgramPage = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Application Submitted!",
-        description: "We'll review your application and get back to you within 48 hours.",
-      });
+      // Send notification email
+      try {
+        await supabase.functions.invoke('send-affiliate-notification', {
+          body: {
+            name: formData.creatorName,
+            email: formData.email,
+            platformLinks: platformLinksArray,
+            avgViewers: formData.avgViewers,
+            discord: formData.discord,
+            message: formData.message
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending notification email:', emailError);
+        // Don't fail the submission if email fails
+      }
 
       setFormData({
         creatorName: '',
@@ -93,6 +105,8 @@ const AffiliateProgramPage = () => {
         discord: '',
         message: ''
       });
+
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error submitting application:', error);
       toast({
@@ -103,6 +117,11 @@ const AffiliateProgramPage = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    navigate('/fantasy');
   };
 
   const tiers = [
@@ -449,6 +468,33 @@ const AffiliateProgramPage = () => {
       </main>
 
       <Footer />
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={handleSuccessModalClose}>
+        <DialogContent className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 text-white max-w-md">
+          <DialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-green-400" />
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Application Submitted!
+            </DialogTitle>
+            <DialogDescription className="text-center text-white mt-2">
+              Thank you for applying to our Partner Program. We'll review your application and get back to you within 48 hours.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-6">
+            <Button 
+              onClick={handleSuccessModalClose}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold"
+            >
+              Continue to Fantasy
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

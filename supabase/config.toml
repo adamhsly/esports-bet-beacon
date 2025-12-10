@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.testusersfantasypicks]
 verify_jwt = false
+
+[functions.send-affiliate-notification]
+verify_jwt = false
