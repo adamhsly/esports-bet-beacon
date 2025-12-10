@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Check, X, Users, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { Check, X, Users, DollarSign, TrendingUp, Clock, Shield } from 'lucide-react';
 
 interface CreatorApplication {
   id: string;
@@ -43,6 +43,8 @@ const AffiliateAdminPage: React.FC = () => {
   const [affiliates, setAffiliates] = useState<CreatorAffiliate[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [stats, setStats] = useState({
     totalAffiliates: 0,
     pendingApplications: 0,
@@ -50,18 +52,58 @@ const AffiliateAdminPage: React.FC = () => {
     pendingPayouts: 0,
   });
 
+  // Check admin role
   useEffect(() => {
-    if (!user) {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setCheckingAdmin(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (error) {
+          console.error('Error checking admin role:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data === true);
+        }
+      } catch (err) {
+        console.error('Error checking admin role:', err);
+        setIsAdmin(false);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
+
+    checkAdminRole();
+  }, [user]);
+
+  // Redirect non-admins
+  useEffect(() => {
+    if (!checkingAdmin && !user) {
       navigate('/auth');
-      return;
+    } else if (!checkingAdmin && isAdmin === false) {
+      toast.error('Access denied. Admin privileges required.');
+      navigate('/');
     }
-    fetchData();
-  }, [user, navigate]);
+  }, [checkingAdmin, user, isAdmin, navigate]);
+
+  // Fetch data only if admin
+  useEffect(() => {
+    if (isAdmin === true) {
+      fetchData();
+    }
+  }, [isAdmin]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch applications (requires service role, so this is admin-only via RLS)
+      // Fetch applications (admin only via RLS)
       const { data: apps } = await supabase
         .from('creator_applications')
         .select('*')
@@ -90,7 +132,7 @@ const AffiliateAdminPage: React.FC = () => {
         totalAffiliates: (affs || []).filter(a => a.status === 'active').length,
         pendingApplications: (apps || []).filter(a => a.status === 'pending').length,
         totalEarnings,
-        pendingPayouts: 0, // Would need separate payout tracking
+        pendingPayouts: 0,
       });
     } catch (err) {
       console.error('Error fetching admin data:', err);
@@ -103,6 +145,8 @@ const AffiliateAdminPage: React.FC = () => {
     try {
       // Generate unique referral code
       const referralCode = `${application.name.toLowerCase().replace(/\s+/g, '')}_${Math.random().toString(36).substr(2, 6)}`;
+      const tier = 'bronze';
+      const revSharePercent = 20;
 
       // Create affiliate record
       const { error: affiliateError } = await supabase
@@ -113,16 +157,47 @@ const AffiliateAdminPage: React.FC = () => {
           referral_code: referralCode,
           platform_links: application.platform_links,
           discord: application.discord,
-          tier: 'bronze',
-          rev_share_percent: 20,
+          tier,
+          rev_share_percent: revSharePercent,
           status: 'active',
         });
 
       if (affiliateError) throw affiliateError;
 
-      // Update application status - this needs service role
-      // For now, just refresh the data
-      toast.success(`Approved ${application.name}! Referral code: ${referralCode}`);
+      // Update application status to approved
+      const { error: updateError } = await supabase
+        .from('creator_applications')
+        .update({ status: 'approved', updated_at: new Date().toISOString() })
+        .eq('id', application.id);
+
+      if (updateError) {
+        console.error('Error updating application status:', updateError);
+        // Continue anyway - affiliate was created successfully
+      }
+
+      // Send approval email
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-affiliate-approval', {
+          body: {
+            name: application.name,
+            email: application.email,
+            referralCode,
+            tier,
+            revSharePercent,
+          },
+        });
+
+        if (emailError) {
+          console.error('Error sending approval email:', emailError);
+          toast.warning(`Approved ${application.name}, but failed to send email notification`);
+        } else {
+          toast.success(`Approved ${application.name}! Approval email sent.`);
+        }
+      } catch (emailErr) {
+        console.error('Error invoking email function:', emailErr);
+        toast.warning(`Approved ${application.name}, but email notification failed`);
+      }
+
       fetchData();
     } catch (err: any) {
       console.error('Error approving application:', err);
@@ -149,6 +224,26 @@ const AffiliateAdminPage: React.FC = () => {
     return `$${(pence / 100).toFixed(2)}`;
   };
 
+  // Show loading while checking admin status
+  if (checkingAdmin) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SearchableNavbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-2 animate-pulse">
+            <Shield className="h-5 w-5" />
+            <span>Checking admin permissions...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not admin (redirect will happen)
+  if (!isAdmin) {
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -165,7 +260,10 @@ const AffiliateAdminPage: React.FC = () => {
       <SearchableNavbar />
       
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Affiliate Admin</h1>
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="h-6 w-6 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground">Affiliate Admin</h1>
+        </div>
         <p className="text-muted-foreground mb-8">Manage creator applications and affiliates</p>
 
         {/* Stats Overview */}

@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.send-affiliate-notification]
 verify_jwt = false
+
+[functions.send-affiliate-approval]
+verify_jwt = false
