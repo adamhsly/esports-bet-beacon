@@ -42,9 +42,9 @@ const SectionHeading: React.FC<{
   </h2>
 );
 
-// Format entry fee from pence to pounds
+// Format entry fee from pence to dollars
 const formatEntryFee = (feePence: number) => {
-  return `£${(feePence / 100).toFixed(feePence % 100 === 0 ? 0 : 2)}`;
+  return `$${(feePence / 100).toFixed(feePence % 100 === 0 ? 0 : 2)}`;
 };
 const RoundCard: React.FC<{
   round?: Round;
