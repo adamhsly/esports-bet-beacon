@@ -38,7 +38,7 @@ interface CreatorAffiliate {
 
 const AffiliateAdminPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [applications, setApplications] = useState<CreatorApplication[]>([]);
   const [affiliates, setAffiliates] = useState<CreatorAffiliate[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
@@ -52,9 +52,14 @@ const AffiliateAdminPage: React.FC = () => {
     pendingPayouts: 0,
   });
 
-  // Check admin role
+  // Check admin role - only after auth is done loading
   useEffect(() => {
     const checkAdminRole = async () => {
+      // Wait for auth to finish loading
+      if (authLoading) {
+        return;
+      }
+
       if (!user) {
         setCheckingAdmin(false);
         return;
@@ -81,17 +86,20 @@ const AffiliateAdminPage: React.FC = () => {
     };
 
     checkAdminRole();
-  }, [user]);
+  }, [user, authLoading]);
 
-  // Redirect non-admins
+  // Redirect non-admins - only after auth is done loading
   useEffect(() => {
+    // Don't redirect while auth is still loading
+    if (authLoading) return;
+    
     if (!checkingAdmin && !user) {
       navigate('/auth');
     } else if (!checkingAdmin && isAdmin === false) {
       toast.error('Access denied. Admin privileges required.');
       navigate('/');
     }
-  }, [checkingAdmin, user, isAdmin, navigate]);
+  }, [checkingAdmin, user, isAdmin, navigate, authLoading]);
 
   // Fetch data only if admin
   useEffect(() => {
@@ -224,8 +232,8 @@ const AffiliateAdminPage: React.FC = () => {
     return `$${(pence / 100).toFixed(2)}`;
   };
 
-  // Show loading while checking admin status
-  if (checkingAdmin) {
+  // Show loading while auth or admin status is being checked
+  if (authLoading || checkingAdmin) {
     return (
       <div className="min-h-screen bg-background">
         <SearchableNavbar />
