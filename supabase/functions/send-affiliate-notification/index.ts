@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
       : '<li>No links provided</li>';
 
     const emailResponse = await resend.emails.send({
-      from: "Frags & Fortunes <onboarding@resend.dev>",
+      from: "Frags & Fortunes <noreply@fragsandfortunes.com>",
       to: ["theteam@fragsandfortunes.com"],
       subject: `New Partner Application: ${name}`,
       html: `
