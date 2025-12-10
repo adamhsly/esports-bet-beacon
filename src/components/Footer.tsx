@@ -79,7 +79,7 @@ const Footer = () => {
                   to="/affiliate-dashboard"
                   className="text-gray-400 hover:text-theme-purple transition-colors duration-200 text-sm cursor-pointer"
                 >
-                  Creator Dashboard
+                  Partner Dashboard
                 </Link>
               </li>
             </ul>
