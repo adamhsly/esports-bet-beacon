@@ -122,6 +122,57 @@ serve(async (req) => {
           console.log(`Created picks entry: ${picksData.id}`);
         }
 
+        // Track affiliate earnings if user was referred
+        const entryFee = session.amount_total || 0;
+        if (entryFee > 0) {
+          try {
+            // Get user's referrer code
+            const { data: userProfile } = await supabaseService
+              .from('profiles')
+              .select('referrer_code')
+              .eq('id', metadata.user_id)
+              .single();
+
+            if (userProfile?.referrer_code) {
+              console.log(`User ${metadata.user_id} has referrer: ${userProfile.referrer_code}`);
+              
+              // Find the affiliate by referral code
+              const { data: affiliate } = await supabaseService
+                .from('creator_affiliates')
+                .select('id, rev_share_percent')
+                .eq('referral_code', userProfile.referrer_code)
+                .eq('status', 'active')
+                .single();
+
+              if (affiliate) {
+                const revSharePercent = affiliate.rev_share_percent || 20;
+                const earningsAmount = Math.floor(entryFee * (revSharePercent / 100));
+
+                console.log(`Logging affiliate earning: creator=${affiliate.id}, fee=${entryFee}, share=${revSharePercent}%, amount=${earningsAmount}`);
+
+                const { error: earningsError } = await supabaseService
+                  .from('affiliate_earnings')
+                  .insert({
+                    creator_id: affiliate.id,
+                    user_id: metadata.user_id,
+                    round_id: metadata.round_id,
+                    entry_fee: entryFee,
+                    rev_share_percent: revSharePercent,
+                    earnings_amount: earningsAmount,
+                  });
+
+                if (earningsError) {
+                  console.error('Error logging affiliate earnings:', earningsError);
+                } else {
+                  console.log(`Affiliate earnings logged successfully`);
+                }
+              }
+            }
+          } catch (affiliateErr) {
+            console.error('Error processing affiliate tracking:', affiliateErr);
+          }
+        }
+
         console.log(`Round entry completed successfully for user ${metadata.user_id}`);
       }
       // Handle premium pass purchase (existing functionality)
