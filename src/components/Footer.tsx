@@ -66,6 +66,22 @@ const Footer = () => {
                   Join Discord
                 </a>
               </li>
+              <li>
+                <Link
+                  to="/affiliate-program"
+                  className="text-gray-400 hover:text-theme-purple transition-colors duration-200 text-sm cursor-pointer"
+                >
+                  Partner Program
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/affiliate-dashboard"
+                  className="text-gray-400 hover:text-theme-purple transition-colors duration-200 text-sm cursor-pointer"
+                >
+                  Creator Dashboard
+                </Link>
+              </li>
             </ul>
           </div>
 
