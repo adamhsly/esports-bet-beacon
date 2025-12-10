@@ -1,0 +1,45 @@
+name: Generate Test User Picks
+
+on:
+  schedule:
+    # Run daily at 09:30 UTC (30 mins after rounds transition to 'open')
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (no database writes)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  generate-picks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate test user picks
+        run: |
+          echo "Generating test user picks for open/active rounds..."
+          
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://zcjzeafelunqxmxzznos.supabase.co/functions/v1/testusersfantasypicks" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -d "{\"DRY_RUN\": $DRY_RUN}")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Error: Function returned status $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "Test user picks generated successfully"
