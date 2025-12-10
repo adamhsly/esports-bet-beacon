@@ -32,6 +32,7 @@ import PremiumSuccessPage from '@/pages/PremiumSuccessPage';
 import PremiumCancelPage from '@/pages/PremiumCancelPage';
 import WelcomePage from '@/pages/WelcomePage';
 import NotFound from '@/pages/NotFound';
+import RestrictedAccessPage from '@/pages/RestrictedAccessPage';
 import LegalPage from '@/pages/LegalPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
@@ -171,6 +172,7 @@ function App() {
           <Route path="/tos" element={<LegacyTermsRedirect />} />
           <Route path="/legal/privacy-policy" element={<LegacyPrivacyRedirect />} />
           <Route path="/legal/tos" element={<LegacyTermsRedirect />} />
+          <Route path="/restricted" element={<RestrictedAccessPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
