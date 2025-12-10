@@ -385,7 +385,7 @@ const AffiliateProgramPage = () => {
                           onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
                           placeholder="Your creator name"
                           required
-                          className="bg-background/50 border-white/10"
+                          className="bg-background/50 border-white/10 text-white"
                         />
                       </div>
                       <div className="space-y-2">
@@ -397,7 +397,7 @@ const AffiliateProgramPage = () => {
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           placeholder="your@email.com"
                           required
-                          className="bg-background/50 border-white/10"
+                          className="bg-background/50 border-white/10 text-white"
                         />
                       </div>
                     </div>
@@ -411,7 +411,7 @@ const AffiliateProgramPage = () => {
                         placeholder="https://twitch.tv/yourchannel&#10;https://youtube.com/@yourchannel&#10;https://twitter.com/yourhandle"
                         rows={3}
                         required
-                        className="bg-background/50 border-white/10"
+                        className="bg-background/50 border-white/10 text-white"
                       />
                       <p className="text-xs text-muted-foreground">One link per line (Twitch, YouTube, Twitter, etc.)</p>
                     </div>
@@ -424,7 +424,7 @@ const AffiliateProgramPage = () => {
                           value={formData.avgViewers}
                           onChange={(e) => setFormData({ ...formData, avgViewers: e.target.value })}
                           placeholder="e.g., 500 avg viewers"
-                          className="bg-background/50 border-white/10"
+                          className="bg-background/50 border-white/10 text-white"
                         />
                       </div>
                       <div className="space-y-2">
@@ -434,7 +434,7 @@ const AffiliateProgramPage = () => {
                           value={formData.discord}
                           onChange={(e) => setFormData({ ...formData, discord: e.target.value })}
                           placeholder="username#1234"
-                          className="bg-background/50 border-white/10"
+                          className="bg-background/50 border-white/10 text-white"
                         />
                       </div>
                     </div>
@@ -447,7 +447,7 @@ const AffiliateProgramPage = () => {
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder="Tell us about your content and audience..."
                         rows={3}
-                        className="bg-background/50 border-white/10"
+                        className="bg-background/50 border-white/10 text-white"
                       />
                     </div>
 
