@@ -278,7 +278,7 @@ const AffiliateProgramPage = () => {
                   <CardContent className="space-y-3">
                     <div className="flex items-start gap-2">
                       <Zap className="w-4 h-4 text-green-400 mt-1" />
-                      <span className="text-white">Premium contest entry fees from users you refer</span>
+                      <span className="text-white">Premium contest entry fees</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Zap className="w-4 h-4 text-green-400 mt-1" />
