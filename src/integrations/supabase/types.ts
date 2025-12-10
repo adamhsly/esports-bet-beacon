@@ -14,6 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_earnings: {
+        Row: {
+          created_at: string
+          creator_id: string
+          earnings_amount: number
+          entry_fee: number
+          id: string
+          rev_share_percent: number
+          round_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          earnings_amount: number
+          entry_fee: number
+          id?: string
+          rev_share_percent: number
+          round_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          earnings_amount?: number
+          entry_fee?: number
+          id?: string
+          rev_share_percent?: number
+          round_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_earnings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator_affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_earnings_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          creator_id: string
+          id: string
+          month: string
+          notes: string | null
+          paid_at: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          creator_id: string
+          id?: string
+          month: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          creator_id?: string
+          id?: string
+          month?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator_affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_affiliates: {
+        Row: {
+          created_at: string
+          discord: string | null
+          email: string
+          id: string
+          name: string
+          platform_links: Json | null
+          referral_code: string
+          rev_share_percent: number
+          status: string
+          tier: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          discord?: string | null
+          email: string
+          id?: string
+          name: string
+          platform_links?: Json | null
+          referral_code: string
+          rev_share_percent?: number
+          status?: string
+          tier?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          discord?: string | null
+          email?: string
+          id?: string
+          name?: string
+          platform_links?: Json | null
+          referral_code?: string
+          rev_share_percent?: number
+          status?: string
+          tier?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      creator_applications: {
+        Row: {
+          avg_viewers: string | null
+          created_at: string
+          discord: string | null
+          email: string
+          id: string
+          message: string | null
+          name: string
+          platform_links: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          avg_viewers?: string | null
+          created_at?: string
+          discord?: string | null
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          platform_links?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          avg_viewers?: string | null
+          created_at?: string
+          discord?: string | null
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          platform_links?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           created_at: string
@@ -2325,6 +2498,7 @@ export type Database = {
           last_login_at: string | null
           marketing_preferences: Json | null
           premium_pass: boolean
+          referrer_code: string | null
           streak_count: number
           terms_accepted: boolean
           terms_accepted_at: string | null
@@ -2346,6 +2520,7 @@ export type Database = {
           last_login_at?: string | null
           marketing_preferences?: Json | null
           premium_pass?: boolean
+          referrer_code?: string | null
           streak_count?: number
           terms_accepted?: boolean
           terms_accepted_at?: string | null
@@ -2367,6 +2542,7 @@ export type Database = {
           last_login_at?: string | null
           marketing_preferences?: Json | null
           premium_pass?: boolean
+          referrer_code?: string | null
           streak_count?: number
           terms_accepted?: boolean
           terms_accepted_at?: string | null
@@ -3395,6 +3571,10 @@ export type Database = {
         Args: { game_filter?: string; team_name: string }
         Returns: Json
       }
+      generate_referral_code: {
+        Args: { creator_name: string }
+        Returns: string
+      }
       get_all_faceit_teams: {
         Args: { end_date?: string; start_date?: string }
         Returns: {
@@ -3720,6 +3900,7 @@ export type Database = {
           last_login_at: string | null
           marketing_preferences: Json | null
           premium_pass: boolean
+          referrer_code: string | null
           streak_count: number
           terms_accepted: boolean
           terms_accepted_at: string | null
