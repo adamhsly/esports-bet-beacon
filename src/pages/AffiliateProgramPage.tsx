@@ -366,7 +366,7 @@ const AffiliateProgramPage = () => {
         <section className="py-16 bg-gradient-to-br from-[#0B0F14] to-[#12161C] reveal-on-scroll" id="apply">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
-              <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-yellow-400 to-purple-400 bg-clip-text text-transparent">
+              <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Apply Now
               </h2>
               <p className="text-center text-white mb-8">
