@@ -203,20 +203,19 @@ const AffiliateProgramPage = () => {
             </h2>
             <div className="grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
               {[
-                { icon: Users, title: 'Apply', desc: 'Submit your application below', color: 'purple' },
-                { icon: CheckCircle2, title: 'Get Approved', desc: 'We review within 48 hours', color: 'blue' },
-                { icon: Link2, title: 'Share Your Link', desc: 'Get your unique referral link', color: 'purple' },
-                { icon: DollarSign, title: 'Earn Revenue', desc: 'Get paid monthly via PayPal', color: 'yellow' }
+                { title: 'Apply', desc: 'Submit your application below', bgColor: 'bg-purple-500/20', borderColor: 'border-purple-500', textColor: 'text-purple-400', cardBorder: 'border-purple-500/30 hover:border-purple-500/60', shadow: 'hover:shadow-purple-500/20' },
+                { title: 'Get Approved', desc: 'We review within 48 hours', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500', textColor: 'text-blue-400', cardBorder: 'border-blue-500/30 hover:border-blue-500/60', shadow: 'hover:shadow-blue-500/20' },
+                { title: 'Share Your Link', desc: 'Get your unique referral link', bgColor: 'bg-green-500/20', borderColor: 'border-green-500', textColor: 'text-green-400', cardBorder: 'border-green-500/30 hover:border-green-500/60', shadow: 'hover:shadow-green-500/20' },
+                { title: 'Earn Revenue', desc: 'Get paid monthly via PayPal', bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500', textColor: 'text-yellow-400', cardBorder: 'border-yellow-500/30 hover:border-yellow-500/60', shadow: 'hover:shadow-yellow-500/20' }
               ].map((step, i) => (
                 <Card 
                   key={i} 
-                  className={`bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-${step.color}-500/30 hover:border-${step.color}-500/60 transition-all hover:shadow-lg hover:shadow-${step.color}-500/20 text-center`}
+                  className={`bg-gradient-to-br from-[#0B0F14] to-[#12161C] ${step.cardBorder} transition-all hover:shadow-lg ${step.shadow} text-center`}
                 >
                   <CardContent className="pt-6">
-                    <div className={`w-12 h-12 bg-${step.color}-500/10 rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      <step.icon className={`w-6 h-6 text-${step.color}-400`} />
+                    <div className={`w-12 h-12 ${step.bgColor} ${step.borderColor} border-2 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                      <span className={`text-xl font-bold ${step.textColor}`}>{i + 1}</span>
                     </div>
-                    <div className="text-2xl font-bold text-white mb-2">{i + 1}</div>
                     <h3 className="font-semibold mb-1 text-white">{step.title}</h3>
                     <p className="text-sm text-white">{step.desc}</p>
                   </CardContent>
