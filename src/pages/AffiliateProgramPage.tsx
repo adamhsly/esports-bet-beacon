@@ -282,11 +282,7 @@ const AffiliateProgramPage = () => {
                     </div>
                     <div className="flex items-start gap-2">
                       <Zap className="w-4 h-4 text-green-400 mt-1" />
-                      <span className="text-white">Daily, Weekly, and Monthly paid rounds</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Zap className="w-4 h-4 text-green-400 mt-1" />
-                      <span className="text-white">All future premium contest entries by your referrals</span>
+                      <span className="text-white">Battle pass purchases</span>
                     </div>
                   </CardContent>
                 </Card>
