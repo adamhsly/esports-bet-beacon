@@ -242,7 +242,7 @@ const AffiliateAdminPage: React.FC = () => {
       <div className="min-h-screen bg-background">
         <SearchableNavbar />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-2 animate-pulse text-foreground">
+          <div className="flex items-center gap-2 animate-pulse">
             <Shield className="h-5 w-5" />
             <span>Checking admin permissions...</span>
           </div>
@@ -261,7 +261,7 @@ const AffiliateAdminPage: React.FC = () => {
       <div className="min-h-screen bg-background">
         <SearchableNavbar />
         <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse text-foreground">Loading admin data...</div>
+          <div className="animate-pulse">Loading admin data...</div>
         </div>
       </div>
     );
@@ -342,12 +342,12 @@ const AffiliateAdminPage: React.FC = () => {
         <div className="container mx-auto px-3 max-w-full">
 
         <Tabs defaultValue="applications" className="space-y-4">
-          <TabsList className="bg-background/50 border border-border/50">
-            <TabsTrigger value="applications" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">
-              Applications {stats.pendingApplications > 0 && <Badge className="ml-2 bg-yellow-500 text-black">{stats.pendingApplications}</Badge>}
+          <TabsList>
+            <TabsTrigger value="applications">
+              Applications {stats.pendingApplications > 0 && <Badge className="ml-2 bg-yellow-500">{stats.pendingApplications}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="affiliates" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300">Affiliates</TabsTrigger>
-            <TabsTrigger value="earnings" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300">Earnings Log</TabsTrigger>
+            <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
+            <TabsTrigger value="earnings">Earnings Log</TabsTrigger>
           </TabsList>
 
           <TabsContent value="applications">
