@@ -16,7 +16,10 @@ interface WelcomeOfferModalProps {
 const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChange }) => {
   const { status, progressPercent, daysRemaining, displayState } = useWelcomeOffer();
 
-  const formatPence = (pence: number) => `$${(pence / 100).toFixed(0)}`;
+  const formatPence = (pence: number) => {
+    const dollars = pence / 100;
+    return dollars % 1 === 0 ? `$${dollars.toFixed(0)}` : `$${dollars.toFixed(2)}`;
+  };
   const thresholdAmount = status?.thresholdPence ? formatPence(status.thresholdPence) : '$5';
   const rewardAmount = status?.rewardPence ? formatPence(status.rewardPence) : '$10';
 
