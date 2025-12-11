@@ -17,7 +17,8 @@ import {
   Trophy,
   Calendar,
   Loader2,
-  ShieldX
+  ShieldX,
+  Sparkles
 } from 'lucide-react';
 
 interface AffiliateData {
@@ -175,7 +176,10 @@ const AffiliateDashboardPage = () => {
       <div className="min-h-screen bg-background flex flex-col">
         <SearchableNavbar />
         <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="flex items-center gap-2 animate-pulse">
+            <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+            <span className="text-white/70">Loading dashboard...</span>
+          </div>
         </main>
         <Footer />
       </div>
@@ -193,7 +197,10 @@ const AffiliateDashboardPage = () => {
             <p className="text-white/70 mb-6">
               You don't have an active affiliate account. Apply to join our partner program!
             </p>
-            <Button onClick={() => navigate('/affiliate-program')}>
+            <Button 
+              onClick={() => navigate('/affiliate-program')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white"
+            >
               Apply Now
             </Button>
           </div>
@@ -204,150 +211,164 @@ const AffiliateDashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background overflow-x-hidden w-full max-w-screen flex flex-col">
       <SearchableNavbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {affiliateData.name}</p>
-          </div>
-          <div className="flex items-center gap-3 mt-4 md:mt-0">
-            <Badge variant="outline" className={getTierColor(affiliateData.tier)}>
-              <Trophy className="w-3 h-3 mr-1" />
-              {affiliateData.tier} Tier
-            </Badge>
-            <Badge variant="outline" className="border-primary/50 text-primary">
-              {affiliateData.rev_share_percent}% Rev Share
-            </Badge>
-          </div>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-8 md:py-16">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-blue-900/10 to-background" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.15),transparent_50%)]" />
         </div>
 
-        {/* Referral Link Card */}
-        <Card className="bg-card border-primary/30 mb-8">
-          <CardContent className="py-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Your Referral Link</p>
-                <code className="text-sm bg-muted px-3 py-1 rounded">
+        <div className="container mx-auto px-3 relative z-10 max-w-full">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <Sparkles className="h-8 w-8 md:h-10 md:w-10 text-purple-400" />
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                  Affiliate Dashboard
+                </h1>
+              </div>
+              <p className="text-muted-foreground text-sm md:text-base">Welcome back, {affiliateData.name}</p>
+            </div>
+            <div className="flex items-center gap-3 mt-4 md:mt-0">
+              <Badge variant="outline" className={getTierColor(affiliateData.tier)}>
+                <Trophy className="w-3 h-3 mr-1" />
+                {affiliateData.tier} Tier
+              </Badge>
+              <Badge variant="outline" className="border-purple-500/50 text-purple-400">
+                {affiliateData.rev_share_percent}% Rev Share
+              </Badge>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">{earnings.totalReferredUsers}</p>
+                    <p className="text-xs md:text-sm text-white/70">Referred Users</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">{earnings.totalPremiumEntries}</p>
+                    <p className="text-xs md:text-sm text-white/70">Premium Entries</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30 hover:border-green-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">${(earnings.totalEarnings / 100).toFixed(2)}</p>
+                    <p className="text-xs md:text-sm text-white/70">Total Earnings</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-6 w-6 md:h-8 md:w-8 text-yellow-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">${(earnings.monthlyEarnings / 100).toFixed(2)}</p>
+                    <p className="text-xs md:text-sm text-white/70">This Month</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="flex-1 py-8 md:py-12 bg-gradient-to-br from-[#0B0F14] to-[#12161C]">
+        <div className="container mx-auto px-3 max-w-full space-y-6">
+          {/* Referral Link Card */}
+          <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="text-purple-400">Your Referral Link</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <code className="text-sm bg-background/50 px-3 py-2 rounded border border-border/50 text-white/80">
                   fragsandfortunes.com/?ref={affiliateData.referral_code}
                 </code>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={copyReferralLink} variant="outline" size="sm">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Link
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.open(`/?ref=${affiliateData.referral_code}`, '_blank')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Preview
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-card border-border">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{earnings.totalReferredUsers}</p>
-                  <p className="text-xs text-muted-foreground">Referred Users</p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={copyReferralLink} 
+                    size="sm"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Link
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                    onClick={() => window.open(`/?ref=${affiliateData.referral_code}`, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Preview
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-500" />
+          {/* Payout History */}
+          <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30">
+            <CardHeader>
+              <CardTitle className="text-green-400">Payout History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {payouts.length === 0 ? (
+                <p className="text-white/70 text-center py-8">
+                  No payouts yet. Keep sharing your link to earn!
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {payouts.map((payout) => (
+                    <div 
+                      key={payout.id} 
+                      className="flex items-center justify-between p-3 bg-background/30 rounded-lg border border-border/50 hover:border-green-500/40 transition-all"
+                    >
+                      <div>
+                        <p className="font-medium text-white">${(payout.amount / 100).toFixed(2)}</p>
+                        <p className="text-sm text-white/70">{payout.month}</p>
+                      </div>
+                      <Badge 
+                        variant="outline"
+                        className={payout.status === 'paid' 
+                          ? 'border-green-500/50 text-green-400' 
+                          : 'border-yellow-500/50 text-yellow-400'
+                        }
+                      >
+                        {payout.status}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{earnings.totalPremiumEntries}</p>
-                  <p className="text-xs text-muted-foreground">Premium Entries</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">${(earnings.totalEarnings / 100).toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">Total Earnings</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-yellow-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">${(earnings.monthlyEarnings / 100).toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">This Month</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Payout History */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle>Payout History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {payouts.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No payouts yet. Keep sharing your link to earn!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {payouts.map((payout) => (
-                  <div 
-                    key={payout.id} 
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">${(payout.amount / 100).toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">{payout.month}</p>
-                    </div>
-                    <Badge 
-                      variant="outline"
-                      className={payout.status === 'paid' 
-                        ? 'border-green-500/50 text-green-500' 
-                        : 'border-yellow-500/50 text-yellow-500'
-                      }
-                    >
-                      {payout.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </main>
 
       <Footer />
