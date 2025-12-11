@@ -100,12 +100,14 @@ serve(async (req) => {
         throw new Error('Failed to apply promo balance');
       }
 
-      // Create completed entry record
+      // Create completed entry record with a promo-specific session id
+      const promoSessionId = `promo_${crypto.randomUUID()}`;
       const { error: entryError } = await supabaseAdmin
         .from("round_entries")
         .insert({
           round_id: round.id,
           user_id: user.id,
+          stripe_session_id: promoSessionId,
           amount_paid: entryFeePence,
           promo_used: promoToUse,
           status: "completed",
