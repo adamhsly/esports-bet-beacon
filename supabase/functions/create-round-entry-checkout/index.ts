@@ -206,7 +206,7 @@ serve(async (req) => {
         promo_used: promoToUse.toString(),
         original_fee: entryFeePence.toString(),
       },
-      success_url: `${siteUrl}/fantasy/entry/success?session_id={CHECKOUT_SESSION_ID}&round_id=${round.id}`,
+      success_url: `${siteUrl}/fantasy?payment=success&round_id=${round.id}`,
       cancel_url: `${siteUrl}/fantasy`,
     });
 
