@@ -2688,6 +2688,7 @@ export type Database = {
           id: string
           paid_at: string | null
           pick_id: string | null
+          promo_used: number | null
           round_id: string
           status: string | null
           stripe_payment_intent_id: string | null
@@ -2700,6 +2701,7 @@ export type Database = {
           id?: string
           paid_at?: string | null
           pick_id?: string | null
+          promo_used?: number | null
           round_id: string
           status?: string | null
           stripe_payment_intent_id?: string | null
@@ -2712,6 +2714,7 @@ export type Database = {
           id?: string
           paid_at?: string | null
           pick_id?: string | null
+          promo_used?: number | null
           round_id?: string
           status?: string | null
           stripe_payment_intent_id?: string | null
