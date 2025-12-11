@@ -351,11 +351,19 @@ const AffiliateAdminPage: React.FC = () => {
                             {app.avg_viewers && <p className="text-sm">Avg Viewers: {app.avg_viewers}</p>}
                             {app.message && <p className="text-sm mt-2 text-muted-foreground italic">"{app.message}"</p>}
                             <div className="flex gap-2 mt-2">
-                              {Array.isArray(app.platform_links) && app.platform_links.map((link: string, i: number) => (
-                                <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                                  {new URL(link).hostname}
-                                </a>
-                              ))}
+                              {Array.isArray(app.platform_links) && app.platform_links.map((link: string, i: number) => {
+                                try {
+                                  const url = new URL(link);
+                                  return (
+                                    <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                                      {url.hostname}
+                                    </a>
+                                  );
+                                } catch {
+                                  // Invalid URL - display as plain text
+                                  return <span key={i} className="text-xs text-muted-foreground">{link}</span>;
+                                }
+                              })}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
