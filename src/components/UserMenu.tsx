@@ -12,14 +12,32 @@ import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { free, premium } = useRewardsTrack();
+
+  // Check if user is an approved affiliate
+  const { data: isApprovedAffiliate } = useQuery({
+    queryKey: ['affiliate-status', user?.id],
+    queryFn: async () => {
+      if (!user?.email) return false;
+      const { data } = await supabase
+        .from('creator_affiliates')
+        .select('status')
+        .eq('email', user.email)
+        .eq('status', 'active')
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user?.email,
+  });
 
   // Get current avatar frame and border assets
   const currentFrameAsset = useMemo(() => {
@@ -81,6 +99,14 @@ const UserMenu: React.FC = () => {
             Fantasy Teams
           </Link>
         </DropdownMenuItem>
+        {isApprovedAffiliate && (
+          <DropdownMenuItem asChild>
+            <Link to="/affiliate-dashboard" className="text-gray-300 hover:text-white cursor-pointer">
+              <Users className="mr-2 h-4 w-4" />
+              Partner Dashboard
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator className="bg-theme-gray-light" />
         <DropdownMenuItem 
           onClick={handleSignOut}
