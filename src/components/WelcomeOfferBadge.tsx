@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
 import { Gift, Clock, Sparkles, Info } from 'lucide-react';
 import {
@@ -10,8 +11,16 @@ import {
 import WelcomeOfferModal from './WelcomeOfferModal';
 
 const WelcomeOfferBadge: React.FC = () => {
-  const { status, loading, displayState, progressPercent, daysRemaining } = useWelcomeOffer();
+  const [searchParams] = useSearchParams();
+  const { status, loading, displayState, progressPercent, daysRemaining, refetch } = useWelcomeOffer();
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Refetch balance when payment success is detected
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      refetch();
+    }
+  }, [searchParams, refetch]);
 
   if (loading || !status) {
     return null;
