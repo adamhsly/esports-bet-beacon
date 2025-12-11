@@ -168,7 +168,7 @@ serve(async (req) => {
     }
 
     // Create checkout session - use configured price_id or dynamic pricing
-    const siteUrl = Deno.env.get("SITE_URL") || "https://fragsandfortunes.com";
+    const siteUrl = (Deno.env.get("SITE_URL") || "https://fragsandfortunes.com").replace(/\/$/, '');
     
     // Build line items - always use dynamic pricing when promo is involved
     const lineItems = (round.stripe_price_id && promoToUse === 0)
