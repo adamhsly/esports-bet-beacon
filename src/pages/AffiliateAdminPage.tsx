@@ -268,63 +268,78 @@ const AffiliateAdminPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden w-full max-w-screen">
       <SearchableNavbar />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Shield className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Affiliate Admin</h1>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-8 md:py-16">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-blue-900/10 to-background" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.15),transparent_50%)]" />
         </div>
-        <p className="text-muted-foreground mb-8">Manage creator applications and affiliates</p>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalAffiliates}</p>
-                  <p className="text-sm text-muted-foreground">Active Affiliates</p>
+        <div className="container mx-auto px-3 relative z-10 max-w-full">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="h-8 w-8 md:h-10 md:w-10 text-purple-400" />
+            <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Affiliate Admin
+            </h1>
+          </div>
+          <p className="text-muted-foreground mb-8 text-sm md:text-base">Manage creator applications and affiliates</p>
+
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Users className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-foreground">{stats.totalAffiliates}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Active Affiliates</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Clock className="h-8 w-8 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.pendingApplications}</p>
-                  <p className="text-sm text-muted-foreground">Pending Apps</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-6 w-6 md:h-8 md:w-8 text-yellow-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-foreground">{stats.pendingApplications}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Pending Apps</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.totalEarnings)}</p>
-                  <p className="text-sm text-muted-foreground">Total Earned</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30 hover:border-green-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-foreground">{formatCurrency(stats.totalEarnings)}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Total Earned</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <TrendingUp className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">{earnings.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Entries</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-foreground">{earnings.length}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Total Entries</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="py-8 md:py-12 bg-gradient-to-br from-[#0B0F14] to-[#12161C]">
+        <div className="container mx-auto px-3 max-w-full">
 
         <Tabs defaultValue="applications" className="space-y-4">
           <TabsList>
@@ -336,9 +351,9 @@ const AffiliateAdminPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="applications">
-            <Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30">
               <CardHeader>
-                <CardTitle>Creator Applications</CardTitle>
+                <CardTitle className="text-purple-400">Creator Applications</CardTitle>
               </CardHeader>
               <CardContent>
                 {applications.length === 0 ? (
@@ -346,40 +361,39 @@ const AffiliateAdminPage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {applications.map((app) => (
-                      <div key={app.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
+                      <div key={app.id} className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-purple-500/40 transition-all">
+                        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div>
-                            <h3 className="font-semibold">{app.name}</h3>
+                            <h3 className="font-semibold text-foreground">{app.name}</h3>
                             <p className="text-sm text-muted-foreground">{app.email}</p>
-                            {app.discord && <p className="text-sm">Discord: {app.discord}</p>}
-                            {app.avg_viewers && <p className="text-sm">Avg Viewers: {app.avg_viewers}</p>}
+                            {app.discord && <p className="text-sm text-foreground">Discord: {app.discord}</p>}
+                            {app.avg_viewers && <p className="text-sm text-foreground">Avg Viewers: {app.avg_viewers}</p>}
                             {app.message && <p className="text-sm mt-2 text-muted-foreground italic">"{app.message}"</p>}
-                            <div className="flex gap-2 mt-2">
+                            <div className="flex flex-wrap gap-2 mt-2">
                               {Array.isArray(app.platform_links) && app.platform_links.map((link: string, i: number) => {
                                 try {
                                   const url = new URL(link);
                                   return (
-                                    <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                                    <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:underline">
                                       {url.hostname}
                                     </a>
                                   );
                                 } catch {
-                                  // Invalid URL - display as plain text
                                   return <span key={i} className="text-xs text-muted-foreground">{link}</span>;
                                 }
                               })}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <Badge variant={app.status === 'pending' ? 'secondary' : app.status === 'approved' ? 'default' : 'destructive'}>
                               {app.status}
                             </Badge>
                             {app.status === 'pending' && (
                               <>
-                                <Button size="sm" variant="outline" onClick={() => approveApplication(app)}>
+                                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white" onClick={() => approveApplication(app)}>
                                   <Check className="h-4 w-4 mr-1" /> Approve
                                 </Button>
-                                <Button size="sm" variant="ghost">
+                                <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
                                   <X className="h-4 w-4" />
                                 </Button>
                               </>
@@ -395,9 +409,9 @@ const AffiliateAdminPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="affiliates">
-            <Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30">
               <CardHeader>
-                <CardTitle>Active Affiliates</CardTitle>
+                <CardTitle className="text-blue-400">Active Affiliates</CardTitle>
               </CardHeader>
               <CardContent>
                 {affiliates.length === 0 ? (
@@ -405,16 +419,16 @@ const AffiliateAdminPage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {affiliates.map((affiliate) => (
-                      <div key={affiliate.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
+                      <div key={affiliate.id} className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-blue-500/40 transition-all">
+                        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div>
-                            <h3 className="font-semibold">{affiliate.name}</h3>
+                            <h3 className="font-semibold text-foreground">{affiliate.name}</h3>
                             <p className="text-sm text-muted-foreground">{affiliate.email}</p>
-                            <p className="text-sm font-mono bg-muted px-2 py-1 rounded mt-1">
+                            <p className="text-sm font-mono bg-purple-500/20 text-purple-300 px-2 py-1 rounded mt-2 inline-block">
                               Code: {affiliate.referral_code}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <Select
                               defaultValue={affiliate.tier}
                               onValueChange={(value) => {
@@ -422,7 +436,7 @@ const AffiliateAdminPage: React.FC = () => {
                                 updateAffiliateTier(affiliate.id, value, revShare);
                               }}
                             >
-                              <SelectTrigger className="w-32">
+                              <SelectTrigger className="w-32 border-border/50">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -445,9 +459,9 @@ const AffiliateAdminPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="earnings">
-            <Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30">
               <CardHeader>
-                <CardTitle>Recent Earnings</CardTitle>
+                <CardTitle className="text-green-400">Recent Earnings</CardTitle>
               </CardHeader>
               <CardContent>
                 {earnings.length === 0 ? (
@@ -456,22 +470,22 @@ const AffiliateAdminPage: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2">Date</th>
-                          <th className="text-left py-2">Creator</th>
-                          <th className="text-right py-2">Entry Fee</th>
-                          <th className="text-right py-2">Share %</th>
-                          <th className="text-right py-2">Earned</th>
+                        <tr className="border-b border-border/50">
+                          <th className="text-left py-2 text-muted-foreground">Date</th>
+                          <th className="text-left py-2 text-muted-foreground">Creator</th>
+                          <th className="text-right py-2 text-muted-foreground">Entry Fee</th>
+                          <th className="text-right py-2 text-muted-foreground">Share %</th>
+                          <th className="text-right py-2 text-muted-foreground">Earned</th>
                         </tr>
                       </thead>
                       <tbody>
                         {earnings.map((earning) => (
-                          <tr key={earning.id} className="border-b">
-                            <td className="py-2">{new Date(earning.created_at).toLocaleDateString()}</td>
-                            <td className="py-2">{earning.creator_id?.slice(0, 8)}...</td>
-                            <td className="text-right py-2">{formatCurrency(earning.entry_fee)}</td>
-                            <td className="text-right py-2">{earning.rev_share_percent}%</td>
-                            <td className="text-right py-2 text-green-500">{formatCurrency(earning.earnings_amount)}</td>
+                          <tr key={earning.id} className="border-b border-border/30 hover:bg-background/30 transition-colors">
+                            <td className="py-2 text-foreground">{new Date(earning.created_at).toLocaleDateString()}</td>
+                            <td className="py-2 text-foreground">{earning.creator_id?.slice(0, 8)}...</td>
+                            <td className="text-right py-2 text-foreground">{formatCurrency(earning.entry_fee)}</td>
+                            <td className="text-right py-2 text-foreground">{earning.rev_share_percent}%</td>
+                            <td className="text-right py-2 text-green-400 font-medium">{formatCurrency(earning.earnings_amount)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -482,6 +496,7 @@ const AffiliateAdminPage: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </main>
 
       <Footer />
