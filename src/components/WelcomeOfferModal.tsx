@@ -1,5 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Gift, Sparkles, Clock, CheckCircle, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +16,7 @@ interface WelcomeOfferModalProps {
 }
 
 const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChange }) => {
+  const navigate = useNavigate();
   const { status, progressPercent, daysRemaining, displayState } = useWelcomeOffer();
 
   const formatPence = (pence: number) => {
@@ -128,6 +131,17 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
               </div>
             </div>
           </div>
+
+          {/* CTA Button */}
+          <Button 
+            onClick={() => {
+              onOpenChange(false);
+              navigate('/fantasy');
+            }}
+            className="w-full bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-700 hover:to-yellow-600 text-white font-semibold"
+          >
+            Play Fantasy
+          </Button>
 
           {/* Fine print */}
           <div className="border-t border-gray-700 pt-3">
