@@ -170,7 +170,7 @@ const AffiliateDashboardPage = () => {
             <ShieldX className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-4 text-white">Not an Affiliate</h1>
             <p className="text-white/70 mb-6">
-              You don't have an active affiliate account. Apply to join our creator program!
+              You don't have an active affiliate account. Apply to join our partner program!
             </p>
             <Button onClick={() => navigate('/affiliate-program')}>
               Apply Now
