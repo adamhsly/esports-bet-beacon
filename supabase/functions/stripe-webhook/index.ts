@@ -66,6 +66,28 @@ serve(async (req) => {
       if (metadata.type === 'round_entry' && metadata.round_id && metadata.user_id) {
         console.log(`Processing round entry: round=${metadata.round_id}, user=${metadata.user_id}`);
 
+        // Get the actual Stripe amount paid (may be reduced by promo)
+        const stripePaidAmount = session.amount_total || 0;
+        const promoUsed = parseInt(metadata.promo_used || '0', 10);
+        const totalEntryFee = stripePaidAmount + promoUsed;
+
+        console.log(`Payment breakdown: stripe=${stripePaidAmount}, promo=${promoUsed}, total=${totalEntryFee}`);
+
+        // Deduct promo balance if used
+        if (promoUsed > 0) {
+          const { data: deductedAmount, error: promoError } = await supabaseService
+            .rpc('deduct_promo_balance', {
+              p_user_id: metadata.user_id,
+              p_amount_pence: promoUsed
+            });
+
+          if (promoError) {
+            console.error('Error deducting promo balance:', promoError);
+          } else {
+            console.log(`Deducted ${deductedAmount} pence from promo balance`);
+          }
+        }
+
         // Update the round entry record
         const { data: entryData, error: updateEntryError } = await supabaseService
           .from('round_entries')
@@ -88,7 +110,7 @@ serve(async (req) => {
               user_id: metadata.user_id,
               stripe_session_id: session.id,
               stripe_payment_intent_id: session.payment_intent as string,
-              amount_paid: session.amount_total || 0,
+              amount_paid: totalEntryFee,
               status: 'completed',
               paid_at: new Date().toISOString(),
             });
@@ -122,8 +144,108 @@ serve(async (req) => {
           console.log(`Created picks entry: ${picksData.id}`);
         }
 
+        // Track welcome offer spending (only count Stripe payments, not promo used)
+        if (stripePaidAmount > 0) {
+          try {
+            // Upsert welcome spending record
+            const { error: spendingError } = await supabaseService
+              .from('user_welcome_spending')
+              .upsert({
+                user_id: metadata.user_id,
+                total_spent_pence: stripePaidAmount,
+                updated_at: new Date().toISOString(),
+              }, {
+                onConflict: 'user_id',
+              });
+
+            if (spendingError) {
+              // Try increment approach if upsert fails
+              const { data: existingSpending } = await supabaseService
+                .from('user_welcome_spending')
+                .select('total_spent_pence')
+                .eq('user_id', metadata.user_id)
+                .single();
+
+              if (existingSpending) {
+                await supabaseService
+                  .from('user_welcome_spending')
+                  .update({
+                    total_spent_pence: existingSpending.total_spent_pence + stripePaidAmount,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('user_id', metadata.user_id);
+              } else {
+                await supabaseService
+                  .from('user_welcome_spending')
+                  .insert({
+                    user_id: metadata.user_id,
+                    total_spent_pence: stripePaidAmount,
+                  });
+              }
+            } else {
+              // Update total with increment
+              const { data: currentSpending } = await supabaseService
+                .from('user_welcome_spending')
+                .select('total_spent_pence, offer_claimed')
+                .eq('user_id', metadata.user_id)
+                .single();
+
+              if (currentSpending && !currentSpending.offer_claimed) {
+                // Need to actually increment - the upsert just set the value
+                // Get current and add to it
+                const { data: freshSpending } = await supabaseService
+                  .from('user_welcome_spending')
+                  .select('total_spent_pence')
+                  .eq('user_id', metadata.user_id)
+                  .single();
+
+                if (freshSpending) {
+                  const newTotal = freshSpending.total_spent_pence + stripePaidAmount - stripePaidAmount; // upsert already set it
+                  // Actually we need a different approach - let's use RPC
+                }
+              }
+            }
+
+            // Re-fetch and update correctly
+            const { data: spendingRecord } = await supabaseService
+              .from('user_welcome_spending')
+              .select('*')
+              .eq('user_id', metadata.user_id)
+              .single();
+
+            if (!spendingRecord) {
+              // First time - insert
+              await supabaseService
+                .from('user_welcome_spending')
+                .insert({
+                  user_id: metadata.user_id,
+                  total_spent_pence: stripePaidAmount,
+                });
+            } else if (!spendingRecord.offer_claimed) {
+              // Increment existing
+              await supabaseService
+                .from('user_welcome_spending')
+                .update({
+                  total_spent_pence: spendingRecord.total_spent_pence + stripePaidAmount,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('user_id', metadata.user_id);
+            }
+
+            // Check if threshold reached and award offer
+            const { data: offerResult } = await supabaseService
+              .rpc('award_welcome_offer', { p_user_id: metadata.user_id });
+
+            if (offerResult === true) {
+              console.log(`Welcome offer awarded to user ${metadata.user_id}! £10 promo balance granted.`);
+            }
+          } catch (welcomeErr) {
+            console.error('Error processing welcome offer tracking:', welcomeErr);
+          }
+        }
+
         // Track affiliate earnings if user was referred
-        const entryFee = session.amount_total || 0;
+        const entryFee = totalEntryFee;
         if (entryFee > 0) {
           try {
             // Get user's referrer code

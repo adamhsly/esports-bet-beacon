@@ -3161,6 +3161,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_promo_balance: {
+        Row: {
+          balance_pence: number
+          created_at: string
+          expires_at: string
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          balance_pence?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          balance_pence?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_rewards: {
         Row: {
           reward_id: string
@@ -3247,6 +3274,33 @@ export type Database = {
           user_id?: string
           wallet_address?: string
           wallet_type?: string
+        }
+        Relationships: []
+      }
+      user_welcome_spending: {
+        Row: {
+          created_at: string
+          offer_claimed: boolean
+          offer_claimed_at: string | null
+          total_spent_pence: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          offer_claimed?: boolean
+          offer_claimed_at?: string | null
+          total_spent_pence?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          offer_claimed?: boolean
+          offer_claimed_at?: string | null
+          total_spent_pence?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3481,6 +3535,7 @@ export type Database = {
           username: string
         }[]
       }
+      award_welcome_offer: { Args: { p_user_id: string }; Returns: boolean }
       award_xp: { Args: { p_kind: string; p_ref_id?: string }; Returns: Json }
       backfill_pandascore_match_date_window: {
         Args: {
@@ -3570,6 +3625,10 @@ export type Database = {
               upcoming_count: number
             }[]
           }
+      deduct_promo_balance: {
+        Args: { p_amount_pence: number; p_user_id: string }
+        Returns: number
+      }
       faceit_form_bulk: {
         Args: { game?: string; team_names: string[] }
         Returns: {
@@ -3795,6 +3854,7 @@ export type Database = {
         }[]
       }
       get_team_swap_state: { Args: { p_round_id: string }; Returns: Json }
+      get_welcome_offer_status: { Args: { p_user_id?: string }; Returns: Json }
       grant_bonus_credits: {
         Args: { p_amount: number; p_source: string; p_user: string }
         Returns: undefined
