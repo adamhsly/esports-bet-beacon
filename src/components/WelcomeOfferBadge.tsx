@@ -22,7 +22,10 @@ const WelcomeOfferBadge: React.FC = () => {
     return null;
   }
 
-  const formatPence = (pence: number) => `$${(pence / 100).toFixed(0)}`;
+  const formatPence = (pence: number) => {
+    const dollars = pence / 100;
+    return dollars % 1 === 0 ? `$${dollars.toFixed(0)}` : `$${dollars.toFixed(2)}`;
+  };
 
   const InfoButton = () => (
     <button
