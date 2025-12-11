@@ -54,8 +54,8 @@ const WelcomeOfferBadge: React.FC = () => {
                     {formatPence(status.thresholdPence)}
                   </span>
                 </div>
-                {/* Progress bar */}
-                <div className="w-8 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                {/* Progress bar - hidden on mobile */}
+                <div className="hidden sm:block w-8 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-purple-500 to-yellow-400 transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
