@@ -6,6 +6,7 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 import Autoplay from "embla-carousel-autoplay";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWelcomeOffer } from "@/hooks/useWelcomeOffer";
 
 import SearchableNavbar from "@/components/SearchableNavbar";
 import SEOContentBlock from "@/components/SEOContentBlock";
@@ -15,6 +16,7 @@ import { FilterPills } from "@/components/FilterPills";
 import { EsportsLogoFilter } from "@/components/EsportsLogoFilter";
 import { DateMatchPicker } from "@/components/DateMatchPicker";
 import LiveDataTestPanel from "@/components/LiveDataTestPanel";
+import WelcomeOfferModal from "@/components/WelcomeOfferModal";
 
 import { formatMatchDate } from "@/utils/dateMatchUtils";
 import { MatchCountBreakdown } from "@/utils/matchCountUtils";
@@ -229,6 +231,7 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { displayState, loading: welcomeOfferLoading } = useWelcomeOffer();
   
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
@@ -237,6 +240,37 @@ const Index = () => {
   const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
+  // Welcome offer modal auto-show state
+  const [showWelcomeOfferModal, setShowWelcomeOfferModal] = useState(false);
+  const welcomeOfferShownRef = useRef(false);
+
+  // Auto-show welcome offer modal on login (max 2 times, with 3 second delay)
+  useEffect(() => {
+    if (!user || loading || welcomeOfferLoading || welcomeOfferShownRef.current) return;
+    
+    // Check if offer is still active (progress or active state)
+    if (displayState !== 'progress' && displayState !== 'active') return;
+    
+    // Get view count for this user from localStorage
+    const storageKey = `welcomeOfferViewCount_${user.id}`;
+    const viewCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    
+    // Only show if viewed less than 2 times
+    if (viewCount >= 2) return;
+    
+    // Mark as shown this session to prevent re-triggering
+    welcomeOfferShownRef.current = true;
+    
+    // Show modal after 3 second delay
+    const timer = setTimeout(() => {
+      setShowWelcomeOfferModal(true);
+      // Increment view count
+      localStorage.setItem(storageKey, String(viewCount + 1));
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [user, loading, welcomeOfferLoading, displayState]);
 
   const fantasyBanners = [
     {
@@ -766,6 +800,12 @@ const Index = () => {
         </div>
       </div>
       <Footer />
+      
+      {/* Welcome Offer Modal - auto-shows on login for eligible users */}
+      <WelcomeOfferModal 
+        open={showWelcomeOfferModal} 
+        onOpenChange={setShowWelcomeOfferModal} 
+      />
     </div>
   );
 };
