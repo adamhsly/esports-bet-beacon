@@ -262,12 +262,12 @@ const Index = () => {
     // Mark as shown this session to prevent re-triggering
     welcomeOfferShownRef.current = true;
     
-    // Show modal after 3 second delay
+    // Show modal after 1 second delay
     const timer = setTimeout(() => {
       setShowWelcomeOfferModal(true);
       // Increment view count
       localStorage.setItem(storageKey, String(viewCount + 1));
-    }, 3000);
+    }, 1000);
     
     return () => clearTimeout(timer);
   }, [user, loading, welcomeOfferLoading, displayState]);
