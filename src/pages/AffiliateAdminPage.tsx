@@ -366,8 +366,8 @@ const AffiliateAdminPage: React.FC = () => {
                           <div>
                             <h3 className="font-semibold text-foreground">{app.name}</h3>
                             <p className="text-sm text-muted-foreground">{app.email}</p>
-                            {app.discord && <p className="text-sm text-foreground">Discord: {app.discord}</p>}
-                            {app.avg_viewers && <p className="text-sm text-foreground">Avg Viewers: {app.avg_viewers}</p>}
+                            {app.discord && <p className="text-sm text-white">Discord: {app.discord}</p>}
+                            {app.avg_viewers && <p className="text-sm text-white">Avg Viewers: {app.avg_viewers}</p>}
                             {app.message && <p className="text-sm mt-2 text-muted-foreground italic">"{app.message}"</p>}
                             <div className="flex flex-wrap gap-2 mt-2">
                               {Array.isArray(app.platform_links) && app.platform_links.map((link: string, i: number) => {
@@ -436,13 +436,13 @@ const AffiliateAdminPage: React.FC = () => {
                                 updateAffiliateTier(affiliate.id, value, revShare);
                               }}
                             >
-                              <SelectTrigger className="w-32 border-border/50">
+                              <SelectTrigger className="w-32 border-border/50 text-white">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="bronze">Bronze (20%)</SelectItem>
-                                <SelectItem value="silver">Silver (25%)</SelectItem>
-                                <SelectItem value="gold">Gold (30%)</SelectItem>
+                              <SelectContent className="bg-[#12161C] border-border/50">
+                                <SelectItem value="bronze" className="text-white">Bronze (20%)</SelectItem>
+                                <SelectItem value="silver" className="text-white">Silver (25%)</SelectItem>
+                                <SelectItem value="gold" className="text-white">Gold (30%)</SelectItem>
                               </SelectContent>
                             </Select>
                             <Badge variant={affiliate.status === 'active' ? 'default' : 'secondary'}>
@@ -481,10 +481,10 @@ const AffiliateAdminPage: React.FC = () => {
                       <tbody>
                         {earnings.map((earning) => (
                           <tr key={earning.id} className="border-b border-border/30 hover:bg-background/30 transition-colors">
-                            <td className="py-2 text-foreground">{new Date(earning.created_at).toLocaleDateString()}</td>
-                            <td className="py-2 text-foreground">{earning.creator_id?.slice(0, 8)}...</td>
-                            <td className="text-right py-2 text-foreground">{formatCurrency(earning.entry_fee)}</td>
-                            <td className="text-right py-2 text-foreground">{earning.rev_share_percent}%</td>
+                            <td className="py-2 text-white">{new Date(earning.created_at).toLocaleDateString()}</td>
+                            <td className="py-2 text-white">{earning.creator_id?.slice(0, 8)}...</td>
+                            <td className="text-right py-2 text-white">{formatCurrency(earning.entry_fee)}</td>
+                            <td className="text-right py-2 text-white">{earning.rev_share_percent}%</td>
                             <td className="text-right py-2 text-green-400 font-medium">{formatCurrency(earning.earnings_amount)}</td>
                           </tr>
                         ))}
