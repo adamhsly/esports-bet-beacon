@@ -25,7 +25,7 @@ serve(async (req) => {
     // Find rounds that have closed (ended) but haven't been processed yet
     const { data: recentlyFinishedRounds, error: roundsError } = await supabase
       .from('fantasy_rounds')
-      .select('id, type, end_date, round_name')
+      .select('id, type, end_date, round_name, prize_type, prize_1st, prize_2nd, prize_3rd')
       .eq('status', 'closed')
       .lte('end_date', new Date().toISOString());
 
@@ -60,7 +60,7 @@ serve(async (req) => {
           finish_position,
           total_score,
           credits_awarded,
-          profiles!inner(username, full_name)
+          profiles!inner(username, full_name, test)
         `)
         .eq('round_id', round.id)
         .eq('notification_sent', false);
@@ -78,6 +78,9 @@ serve(async (req) => {
       console.log(`Found ${unsentWinners.length} unsent notifications for round ${round.id}`);
       totalWinnersAwarded += unsentWinners.length;
 
+      // Collect winner data for team summary email
+      const winnersForSummary: any[] = [];
+
       // Send email notifications to winners
       for (const winner of unsentWinners) {
         try {
@@ -90,13 +93,23 @@ serve(async (req) => {
             continue;
           }
 
+          const isTestUser = winner.profiles?.test === true;
+          const prizeAmount = getPrizeAmount(winner.finish_position, round);
+          const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+
           const winnerData = {
             finish_position: winner.finish_position,
             total_score: winner.total_score,
             credits_awarded: winner.credits_awarded,
             username: winner.profiles?.username || winner.profiles?.full_name || 'Player',
-            user_email: userEmail
+            user_email: userEmail,
+            is_test_user: isTestUser,
+            prize_amount: prizeAmount,
+            prize_type: prizeType,
           };
+
+          // Add to summary list
+          winnersForSummary.push(winnerData);
 
           const emailSubject = getEmailSubject(winner.finish_position, round.type);
           const emailHtml = generateWinnerEmail(winnerData, round);
@@ -126,6 +139,29 @@ serve(async (req) => {
           }
         } catch (emailError) {
           console.error(`Error sending email for winner ${winner.id}:`, emailError);
+        }
+      }
+
+      // Send team summary email
+      if (winnersForSummary.length > 0) {
+        try {
+          const summaryEmailHtml = generateTeamSummaryEmail(round, winnersForSummary);
+          const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+          
+          const { error: summaryEmailError } = await resend.emails.send({
+            from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+            to: ["theteam@fragsandfortunes.com"],
+            subject: `🏆 Round Finished: ${roundName} - Winners Summary`,
+            html: summaryEmailHtml,
+          });
+
+          if (summaryEmailError) {
+            console.error(`Failed to send team summary email:`, summaryEmailError);
+          } else {
+            console.log(`✅ Team summary email sent for round ${round.id}`);
+          }
+        } catch (summaryError) {
+          console.error(`Error sending team summary email:`, summaryError);
         }
       }
 
@@ -163,6 +199,36 @@ serve(async (req) => {
   }
 });
 
+function getPrizeAmount(position: number, round: any): string {
+  const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+  
+  // Use dynamic prize values from round if available
+  if (position === 1 && round.prize_1st !== null) {
+    return prizeType === 'vouchers' ? formatPence(round.prize_1st) : `${round.prize_1st}`;
+  }
+  if (position === 2 && round.prize_2nd !== null) {
+    return prizeType === 'vouchers' ? formatPence(round.prize_2nd) : `${round.prize_2nd}`;
+  }
+  if (position === 3 && round.prize_3rd !== null) {
+    return prizeType === 'vouchers' ? formatPence(round.prize_3rd) : `${round.prize_3rd}`;
+  }
+  
+  // Fallback to legacy monthly prizes
+  if (round.type === 'monthly') {
+    const monthlyPrizes: Record<number, string> = { 1: '£100', 2: '£30', 3: '£5' };
+    return monthlyPrizes[position] || '£0';
+  }
+  
+  // Default credit prizes
+  const defaultCredits: Record<number, number> = { 1: 200, 2: 100, 3: 50 };
+  return `${defaultCredits[position] || 0}`;
+}
+
+function formatPence(pence: number): string {
+  const dollars = pence / 100;
+  return `$${dollars.toFixed(dollars % 1 === 0 ? 0 : 2)}`;
+}
+
 function getEmailSubject(position: number, roundType: string): string {
   const roundTypeTitle = roundType.charAt(0).toUpperCase() + roundType.slice(1);
   const medals = ['🥇', '🥈', '🥉'];
@@ -175,7 +241,141 @@ function getEmailSubject(position: number, roundType: string): string {
   return `${medals[position - 1]} You finished ${places[position - 1]} in the ${roundTypeTitle} Fantasy Round!`;
 }
 
-// Monthly Steam voucher prizes
+function generateTeamSummaryEmail(round: any, winners: any[]): string {
+  const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+  const roundType = round.type.charAt(0).toUpperCase() + round.type.slice(1);
+  const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+  const prizeTypeLabel = prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits';
+  
+  // Sort winners by position
+  const sortedWinners = [...winners].sort((a, b) => a.finish_position - b.finish_position);
+  
+  const winnersHtml = sortedWinners.map(winner => {
+    const medals = ['🥇', '🥈', '🥉'];
+    const places = ['1st', '2nd', '3rd'];
+    const position = winner.finish_position - 1;
+    const testUserBadge = winner.is_test_user 
+      ? '<span style="background: #F56565; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">TEST USER</span>' 
+      : '';
+    const prizeDisplay = prizeType === 'vouchers' ? winner.prize_amount : `${winner.prize_amount} credits`;
+    
+    return `
+      <tr>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
+          ${medals[position]} ${places[position]}
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
+          ${winner.username}${testUserBadge}
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
+          ${winner.user_email}
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
+          ${winner.total_score} pts
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
+          <strong>${prizeDisplay}</strong>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const testUserCount = sortedWinners.filter(w => w.is_test_user).length;
+  const realUserCount = sortedWinners.length - testUserCount;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+        .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .info-box { background: #F7FAFC; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #E2E8F0; }
+        .info-row:last-child { border-bottom: none; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        .warning-box { background: #FED7D7; border: 1px solid #FC8181; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .success-box { background: #C6F6D5; border: 1px solid #68D391; padding: 15px; border-radius: 8px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0;">🏆 Round Complete!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 18px;">${roundName}</p>
+        </div>
+        
+        <div class="content">
+          <div class="info-box">
+            <div class="info-row">
+              <span><strong>Round Name:</strong></span>
+              <span>${roundName}</span>
+            </div>
+            <div class="info-row">
+              <span><strong>Round Type:</strong></span>
+              <span>${roundType}</span>
+            </div>
+            <div class="info-row">
+              <span><strong>Prize Type:</strong></span>
+              <span>${prizeTypeLabel}</span>
+            </div>
+            <div class="info-row">
+              <span><strong>End Date:</strong></span>
+              <span>${new Date(round.end_date).toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</span>
+            </div>
+          </div>
+
+          ${testUserCount > 0 ? `
+          <div class="warning-box">
+            ⚠️ <strong>${testUserCount} of ${sortedWinners.length} winners are TEST USERS</strong> - No action required for test user prizes.
+          </div>
+          ` : `
+          <div class="success-box">
+            ✅ <strong>All ${sortedWinners.length} winners are real users</strong> - ${prizeType === 'vouchers' ? 'Steam vouchers need to be sent.' : 'Credits have been awarded automatically.'}
+          </div>
+          `}
+
+          <h2>🏅 Winners</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Score</th>
+                <th>Prize</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${winnersHtml}
+            </tbody>
+          </table>
+
+          ${prizeType === 'vouchers' && realUserCount > 0 ? `
+          <div class="warning-box">
+            📧 <strong>Action Required:</strong> Please send Steam vouchers to the ${realUserCount} real user(s) listed above.
+          </div>
+          ` : ''}
+
+          <p style="color: #718096; font-size: 14px; margin-top: 30px;">
+            This is an automated notification from Frags & Fortunes.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Monthly Steam voucher prizes (legacy fallback)
 const MONTHLY_STEAM_PRIZES: Record<number, string> = {
   1: '£100',
   2: '£30',
@@ -189,13 +389,13 @@ function generateWinnerEmail(winner: any, round: any): string {
   
   const position = winner.finish_position - 1;
   const roundTypeTitle = round.type.charAt(0).toUpperCase() + round.type.slice(1);
-  const isMonthlyRound = round.type === 'monthly';
-  const steamPrize = MONTHLY_STEAM_PRIZES[winner.finish_position];
+  const prizeType = winner.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+  const isVoucherPrize = prizeType === 'vouchers';
 
-  const prizeSection = isMonthlyRound ? `
+  const prizeSection = isVoucherPrize ? `
           <div class="prize-box">
             <p style="margin: 0; font-size: 20px;">You've won a</p>
-            <div class="prize-amount">${steamPrize}</div>
+            <div class="prize-amount">${winner.prize_amount}</div>
             <p style="margin: 0; font-size: 20px;">Steam Voucher!</p>
           </div>
           
@@ -215,7 +415,7 @@ function generateWinnerEmail(winner: any, round: any): string {
           </div>
   `;
 
-  const closingText = isMonthlyRound 
+  const closingText = isVoucherPrize 
     ? `Check your inbox for details about your Steam voucher prize!`
     : `Use your bonus credits to enter more fantasy rounds and climb the leaderboard!`;
 
@@ -265,7 +465,7 @@ function generateWinnerEmail(winner: any, round: any): string {
             </div>
             <div class="stat-row" style="border-bottom: none;">
               <span><strong>Prize:</strong></span>
-              <span>${isMonthlyRound ? steamPrize + ' Steam Voucher' : winner.credits_awarded + ' Credits'}</span>
+              <span>${isVoucherPrize ? winner.prize_amount + ' Steam Voucher' : winner.credits_awarded + ' Credits'}</span>
             </div>
           </div>
           
