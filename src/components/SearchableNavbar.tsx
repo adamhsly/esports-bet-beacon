@@ -6,6 +6,7 @@ import UserMenu from './UserMenu';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import WalletConnector from './WalletConnector';
+import WelcomeOfferBadge from './WelcomeOfferBadge';
 
 const SearchableNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -66,6 +67,7 @@ const SearchableNavbar: React.FC = () => {
             {!loading && (
               user ? (
                 <div className="flex items-center space-x-3">
+                  <WelcomeOfferBadge />
                   <UserMenu />
                   <WalletConnector />
                 </div>
@@ -86,10 +88,13 @@ const SearchableNavbar: React.FC = () => {
           </div>
           
           {/* Mobile Actions */}
-          <div className="flex md:hidden items-center">
+          <div className="flex md:hidden items-center gap-2">
             {!loading && (
               user ? (
-                <UserMenu />
+                <>
+                  <WelcomeOfferBadge />
+                  <UserMenu />
+                </>
               ) : (
                 <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
                   <Link to="/auth" onClick={handleNavigationClick}>Login</Link>
