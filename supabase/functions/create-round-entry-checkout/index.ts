@@ -88,38 +88,9 @@ serve(async (req) => {
     if (stripeAmount === 0) {
       console.log('Promo covers entire entry - processing without Stripe');
 
-      // Deduct promo balance
-      const { data: deductedAmount, error: deductError } = await supabaseAdmin
-        .rpc('deduct_promo_balance', {
-          p_user_id: user.id,
-          p_amount_pence: promoToUse
-        });
-
-      if (deductError) {
-        console.error('Error deducting promo balance:', deductError);
-        throw new Error('Failed to apply promo balance');
-      }
-
-      // Create completed entry record with a promo-specific session id
       const promoSessionId = `promo_${crypto.randomUUID()}`;
-      const { error: entryError } = await supabaseAdmin
-        .from("round_entries")
-        .insert({
-          round_id: round.id,
-          user_id: user.id,
-          stripe_session_id: promoSessionId,
-          amount_paid: entryFeePence,
-          promo_used: promoToUse,
-          status: "completed",
-          paid_at: new Date().toISOString(),
-        });
 
-      if (entryError) {
-        console.error("Error creating entry:", entryError);
-        throw new Error("Failed to create entry");
-      }
-
-      // Create picks entry
+      // Create picks entry FIRST (before deducting promo)
       const { data: picksData, error: picksError } = await supabaseAdmin
         .from("fantasy_round_picks")
         .insert({
@@ -132,7 +103,45 @@ serve(async (req) => {
 
       if (picksError) {
         console.error("Error creating picks entry:", picksError);
+        throw new Error("Failed to create picks entry");
       }
+
+      // Create completed entry record with link to picks
+      const { error: entryError } = await supabaseAdmin
+        .from("round_entries")
+        .insert({
+          round_id: round.id,
+          user_id: user.id,
+          stripe_session_id: promoSessionId,
+          amount_paid: entryFeePence,
+          promo_used: promoToUse,
+          status: "completed",
+          paid_at: new Date().toISOString(),
+          pick_id: picksData.id,
+        });
+
+      if (entryError) {
+        console.error("Error creating entry:", entryError);
+        // Clean up the picks entry since entry failed
+        await supabaseAdmin.from("fantasy_round_picks").delete().eq("id", picksData.id);
+        throw new Error("Failed to create entry");
+      }
+
+      // Deduct promo balance LAST (only after all records are created)
+      const { data: deductedAmount, error: deductError } = await supabaseAdmin
+        .rpc('deduct_promo_balance', {
+          p_user_id: user.id,
+          p_amount_pence: promoToUse
+        });
+
+      if (deductError) {
+        console.error('Error deducting promo balance:', deductError);
+        // Entry already created, but promo deduction failed - this shouldn't happen
+        // but log it for investigation
+        console.error('CRITICAL: Entry created but promo deduction failed!');
+      }
+
+      console.log(`Promo entry completed: deducted ${deductedAmount || promoToUse} pence`);
 
       return new Response(
         JSON.stringify({ 
