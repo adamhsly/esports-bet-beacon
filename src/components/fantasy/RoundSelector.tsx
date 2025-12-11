@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Trophy, Ticket, Clock } from "lucide-react";
@@ -333,6 +334,7 @@ export const RoundSelector: React.FC<{
   onJoinRound?: (round: Round) => void;
 }> = ({ onNavigateToInProgress, onJoinRound }) => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -340,9 +342,11 @@ export const RoundSelector: React.FC<{
   const [paidButEmptyPicks, setPaidButEmptyPicks] = useState<Record<string, string>>({});
   const [joinedFreeRounds, setJoinedFreeRounds] = useState<Set<string>>(new Set());
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
+
   useEffect(() => {
     fetchOpenRounds();
   }, []);
+
   useEffect(() => {
     if (user && rounds.length > 0) {
       fetchUserEntryCounts();
@@ -500,6 +504,21 @@ export const RoundSelector: React.FC<{
       console.error("Error fetching joined free rounds:", err);
     }
   };
+
+  // Detect payment=success in URL and refetch entry data
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success' && user && rounds.length > 0) {
+      // Refetch entry data after successful payment/promo entry
+      fetchUserEntryCounts();
+      fetchPaidButEmptyPicks();
+      fetchJoinedFreeRounds();
+      // Clear the payment param to prevent refetching on every render
+      searchParams.delete('payment');
+      searchParams.delete('round_id');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, user, rounds]);
   
   const handleJoinRound = (round: Round) => {
     if (!user) {
