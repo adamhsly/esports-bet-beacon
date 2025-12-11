@@ -22,6 +22,10 @@ interface CreatorApplication {
   message: string | null;
   status: string;
   created_at: string;
+  // Linked F&F account info
+  ff_user_id?: string;
+  ff_username?: string;
+  ff_full_name?: string;
 }
 
 interface CreatorAffiliate {
@@ -130,7 +134,29 @@ const AffiliateAdminPage: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      setApplications(apps || []);
+      // Enrich applications with F&F account info by looking up emails
+      let enrichedApps: CreatorApplication[] = apps || [];
+      if (apps && apps.length > 0) {
+        const emails = apps.map(a => a.email);
+        // Use RPC or direct query to find matching users
+        const { data: matchedUsers } = await supabase
+          .rpc('get_users_by_emails', { emails });
+        
+        if (matchedUsers && matchedUsers.length > 0) {
+          const userMap = new Map(matchedUsers.map((u: any) => [u.email?.toLowerCase(), u]));
+          enrichedApps = apps.map(app => {
+            const matchedUser = userMap.get(app.email?.toLowerCase());
+            return {
+              ...app,
+              ff_user_id: matchedUser?.id,
+              ff_username: matchedUser?.username,
+              ff_full_name: matchedUser?.full_name,
+            };
+          });
+        }
+      }
+
+      setApplications(enrichedApps);
       setAffiliates(affs || []);
       setEarnings(earningsData || []);
 
