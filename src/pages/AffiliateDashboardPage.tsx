@@ -74,14 +74,35 @@ const AffiliateDashboardPage = () => {
     if (!user) return;
     
     try {
-      // Fetch affiliate record
-      const { data: affiliate, error: affiliateError } = await supabase
+      // First try by user_id
+      let { data: affiliate, error: affiliateError } = await supabase
         .from('creator_affiliates')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      // If not found by user_id, try by email
       if (affiliateError || !affiliate) {
+        const { data: affiliateByEmail } = await supabase
+          .from('creator_affiliates')
+          .select('*')
+          .eq('email', user.email)
+          .single();
+        
+        if (affiliateByEmail) {
+          affiliate = affiliateByEmail;
+          
+          // Link the user_id if not already set
+          if (!affiliateByEmail.user_id) {
+            await supabase
+              .from('creator_affiliates')
+              .update({ user_id: user.id })
+              .eq('id', affiliateByEmail.id);
+          }
+        }
+      }
+
+      if (!affiliate) {
         setAffiliateData(null);
         setLoading(false);
         return;
