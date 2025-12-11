@@ -147,96 +147,60 @@ serve(async (req) => {
         // Track welcome offer spending (only count Stripe payments, not promo used)
         if (stripePaidAmount > 0) {
           try {
-            // Upsert welcome spending record
-            const { error: spendingError } = await supabaseService
+            console.log(`Welcome spending: Processing ${stripePaidAmount} pence for user ${metadata.user_id}`);
+            
+            // First, check if record exists
+            const { data: existingSpending, error: fetchError } = await supabaseService
               .from('user_welcome_spending')
-              .upsert({
-                user_id: metadata.user_id,
-                total_spent_pence: stripePaidAmount,
-                updated_at: new Date().toISOString(),
-              }, {
-                onConflict: 'user_id',
-              });
+              .select('total_spent_pence, offer_claimed')
+              .eq('user_id', metadata.user_id)
+              .maybeSingle();
 
-            if (spendingError) {
-              // Try increment approach if upsert fails
-              const { data: existingSpending } = await supabaseService
-                .from('user_welcome_spending')
-                .select('total_spent_pence')
-                .eq('user_id', metadata.user_id)
-                .single();
-
-              if (existingSpending) {
-                await supabaseService
-                  .from('user_welcome_spending')
-                  .update({
-                    total_spent_pence: existingSpending.total_spent_pence + stripePaidAmount,
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq('user_id', metadata.user_id);
-              } else {
-                await supabaseService
-                  .from('user_welcome_spending')
-                  .insert({
-                    user_id: metadata.user_id,
-                    total_spent_pence: stripePaidAmount,
-                  });
-              }
-            } else {
-              // Update total with increment
-              const { data: currentSpending } = await supabaseService
-                .from('user_welcome_spending')
-                .select('total_spent_pence, offer_claimed')
-                .eq('user_id', metadata.user_id)
-                .single();
-
-              if (currentSpending && !currentSpending.offer_claimed) {
-                // Need to actually increment - the upsert just set the value
-                // Get current and add to it
-                const { data: freshSpending } = await supabaseService
-                  .from('user_welcome_spending')
-                  .select('total_spent_pence')
-                  .eq('user_id', metadata.user_id)
-                  .single();
-
-                if (freshSpending) {
-                  const newTotal = freshSpending.total_spent_pence + stripePaidAmount - stripePaidAmount; // upsert already set it
-                  // Actually we need a different approach - let's use RPC
-                }
-              }
+            if (fetchError) {
+              console.error('Error fetching welcome spending:', fetchError);
             }
 
-            // Re-fetch and update correctly
-            const { data: spendingRecord } = await supabaseService
-              .from('user_welcome_spending')
-              .select('*')
-              .eq('user_id', metadata.user_id)
-              .single();
-
-            if (!spendingRecord) {
-              // First time - insert
-              await supabaseService
+            if (!existingSpending) {
+              // First payment - insert new record
+              const { error: insertError } = await supabaseService
                 .from('user_welcome_spending')
                 .insert({
                   user_id: metadata.user_id,
                   total_spent_pence: stripePaidAmount,
                 });
-            } else if (!spendingRecord.offer_claimed) {
-              // Increment existing
-              await supabaseService
+              
+              if (insertError) {
+                console.error('Error inserting welcome spending:', insertError);
+              } else {
+                console.log(`Welcome spending: Created new record with ${stripePaidAmount} pence`);
+              }
+            } else if (!existingSpending.offer_claimed) {
+              // Existing record, offer not yet claimed - increment
+              const newTotal = existingSpending.total_spent_pence + stripePaidAmount;
+              const { error: updateError } = await supabaseService
                 .from('user_welcome_spending')
                 .update({
-                  total_spent_pence: spendingRecord.total_spent_pence + stripePaidAmount,
+                  total_spent_pence: newTotal,
                   updated_at: new Date().toISOString(),
                 })
                 .eq('user_id', metadata.user_id);
+              
+              if (updateError) {
+                console.error('Error updating welcome spending:', updateError);
+              } else {
+                console.log(`Welcome spending: Incremented from ${existingSpending.total_spent_pence} to ${newTotal} pence`);
+              }
+            } else {
+              console.log(`Welcome spending: Offer already claimed, skipping tracking`);
             }
 
             // Check if threshold reached and award offer
-            const { data: offerResult } = await supabaseService
+            const { data: offerResult, error: awardError } = await supabaseService
               .rpc('award_welcome_offer', { p_user_id: metadata.user_id });
 
-            if (offerResult === true) {
+            if (awardError) {
+              console.error('Error calling award_welcome_offer:', awardError);
+            } else if (offerResult === true) {
               console.log(`Welcome offer awarded to user ${metadata.user_id}! £10 promo balance granted.`);
             }
           } catch (welcomeErr) {
