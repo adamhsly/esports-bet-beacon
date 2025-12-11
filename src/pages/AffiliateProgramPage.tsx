@@ -65,6 +65,11 @@ const AffiliateProgramPage = () => {
     }
   }, [formData]);
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Add scroll reveal animation
   useEffect(() => {
     const observer = new IntersectionObserver(
