@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import loginBanner from "@/assets/login-banner.png";
+import loginBanner from "@/assets/auth-welcome-banner.png";
 
 const AuthPage: React.FC = () => {
   // Mark welcome page as seen when auth page is accessed
@@ -332,7 +332,7 @@ const AuthPage: React.FC = () => {
           <CardHeader className="p-0 pb-4">
             <img 
               src={loginBanner} 
-              alt="Win Prizes - 1st Place £100, 2nd Place £25, 3rd Place £5 in the free to play fantasy monthly round" 
+              alt="Welcome - Spend $5 Get $10 Free! New users first $5 of paid entries unlocks $10 in bonus credits" 
               className="w-full h-auto rounded-t-lg"
             />
           </CardHeader>
