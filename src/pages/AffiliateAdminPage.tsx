@@ -294,8 +294,8 @@ const AffiliateAdminPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Users className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">{stats.totalAffiliates}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Active Affiliates</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{stats.totalAffiliates}</p>
+                    <p className="text-xs md:text-sm text-white/70">Active Affiliates</p>
                   </div>
                 </div>
               </CardContent>
@@ -305,8 +305,8 @@ const AffiliateAdminPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Clock className="h-6 w-6 md:h-8 md:w-8 text-yellow-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">{stats.pendingApplications}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Pending Apps</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{stats.pendingApplications}</p>
+                    <p className="text-xs md:text-sm text-white/70">Pending Apps</p>
                   </div>
                 </div>
               </CardContent>
@@ -316,8 +316,8 @@ const AffiliateAdminPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">{formatCurrency(stats.totalEarnings)}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Total Earned</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(stats.totalEarnings)}</p>
+                    <p className="text-xs md:text-sm text-white/70">Total Earned</p>
                   </div>
                 </div>
               </CardContent>
@@ -327,8 +327,8 @@ const AffiliateAdminPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">{earnings.length}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Total Entries</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{earnings.length}</p>
+                    <p className="text-xs md:text-sm text-white/70">Total Entries</p>
                   </div>
                 </div>
               </CardContent>
@@ -342,12 +342,12 @@ const AffiliateAdminPage: React.FC = () => {
         <div className="container mx-auto px-3 max-w-full">
 
         <Tabs defaultValue="applications" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="applications">
-              Applications {stats.pendingApplications > 0 && <Badge className="ml-2 bg-yellow-500">{stats.pendingApplications}</Badge>}
+          <TabsList className="bg-[#0B0F14] border border-border/50">
+            <TabsTrigger value="applications" className="text-white data-[state=active]:text-white data-[state=active]:bg-purple-600">
+              Applications {stats.pendingApplications > 0 && <Badge className="ml-2 bg-yellow-500 text-black">{stats.pendingApplications}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
-            <TabsTrigger value="earnings">Earnings Log</TabsTrigger>
+            <TabsTrigger value="affiliates" className="text-white data-[state=active]:text-white data-[state=active]:bg-purple-600">Affiliates</TabsTrigger>
+            <TabsTrigger value="earnings" className="text-white data-[state=active]:text-white data-[state=active]:bg-purple-600">Earnings Log</TabsTrigger>
           </TabsList>
 
           <TabsContent value="applications">
@@ -356,19 +356,19 @@ const AffiliateAdminPage: React.FC = () => {
                 <CardTitle className="text-purple-400">Creator Applications</CardTitle>
               </CardHeader>
               <CardContent>
-                {applications.length === 0 ? (
-                  <p className="text-muted-foreground">No applications yet</p>
+              {applications.length === 0 ? (
+                  <p className="text-white/70">No applications yet</p>
                 ) : (
                   <div className="space-y-4">
                     {applications.map((app) => (
                       <div key={app.id} className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-purple-500/40 transition-all">
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div>
-                            <h3 className="font-semibold text-foreground">{app.name}</h3>
-                            <p className="text-sm text-muted-foreground">{app.email}</p>
+                            <h3 className="font-semibold text-white">{app.name}</h3>
+                            <p className="text-sm text-white/70">{app.email}</p>
                             {app.discord && <p className="text-sm text-white">Discord: {app.discord}</p>}
                             {app.avg_viewers && <p className="text-sm text-white">Avg Viewers: {app.avg_viewers}</p>}
-                            {app.message && <p className="text-sm mt-2 text-muted-foreground italic">"{app.message}"</p>}
+                            {app.message && <p className="text-sm mt-2 text-white/60 italic">"{app.message}"</p>}
                             <div className="flex flex-wrap gap-2 mt-2">
                               {Array.isArray(app.platform_links) && app.platform_links.map((link: string, i: number) => {
                                 try {
@@ -379,13 +379,13 @@ const AffiliateAdminPage: React.FC = () => {
                                     </a>
                                   );
                                 } catch {
-                                  return <span key={i} className="text-xs text-muted-foreground">{link}</span>;
+                                  return <span key={i} className="text-xs text-white/60">{link}</span>;
                                 }
                               })}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge variant={app.status === 'pending' ? 'secondary' : app.status === 'approved' ? 'default' : 'destructive'}>
+                            <Badge variant={app.status === 'pending' ? 'secondary' : app.status === 'approved' ? 'default' : 'destructive'} className="text-white">
                               {app.status}
                             </Badge>
                             {app.status === 'pending' && (
@@ -414,16 +414,16 @@ const AffiliateAdminPage: React.FC = () => {
                 <CardTitle className="text-blue-400">Active Affiliates</CardTitle>
               </CardHeader>
               <CardContent>
-                {affiliates.length === 0 ? (
-                  <p className="text-muted-foreground">No affiliates yet</p>
+              {affiliates.length === 0 ? (
+                  <p className="text-white/70">No affiliates yet</p>
                 ) : (
                   <div className="space-y-4">
                     {affiliates.map((affiliate) => (
                       <div key={affiliate.id} className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-blue-500/40 transition-all">
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div>
-                            <h3 className="font-semibold text-foreground">{affiliate.name}</h3>
-                            <p className="text-sm text-muted-foreground">{affiliate.email}</p>
+                            <h3 className="font-semibold text-white">{affiliate.name}</h3>
+                            <p className="text-sm text-white/70">{affiliate.email}</p>
                             <p className="text-sm font-mono bg-purple-500/20 text-purple-300 px-2 py-1 rounded mt-2 inline-block">
                               Code: {affiliate.referral_code}
                             </p>
