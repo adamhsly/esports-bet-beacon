@@ -167,9 +167,9 @@ const AffiliateDashboardPage = () => {
         <SearchableNavbar />
         <main className="flex-1 container mx-auto px-4 py-16 text-center">
           <div className="max-w-md mx-auto">
-            <ShieldX className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-4">Not an Affiliate</h1>
-            <p className="text-muted-foreground mb-6">
+            <ShieldX className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-4 text-white">Not an Affiliate</h1>
+            <p className="text-white/70 mb-6">
               You don't have an active affiliate account. Apply to join our creator program!
             </p>
             <Button onClick={() => navigate('/affiliate-program')}>
