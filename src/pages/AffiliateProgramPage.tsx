@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import AuthModal from '@/components/AuthModal';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -19,14 +21,20 @@ import {
   Gamepad2,
   Star,
   Trophy,
-  Zap
+  Zap,
+  LogIn
 } from 'lucide-react';
+
+const FORM_STORAGE_KEY = 'affiliate_application_form';
 
 const AffiliateProgramPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     creatorName: '',
     email: '',
@@ -35,6 +43,27 @@ const AffiliateProgramPage = () => {
     discord: '',
     message: ''
   });
+
+  // Load form data from localStorage on mount
+  useEffect(() => {
+    const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
+    if (savedForm) {
+      try {
+        const parsed = JSON.parse(savedForm);
+        setFormData(parsed);
+      } catch (e) {
+        console.error('Error parsing saved form data:', e);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const hasData = Object.values(formData).some(v => v.trim() !== '');
+    if (hasData) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
+    }
+  }, [formData]);
 
   // Add scroll reveal animation
   useEffect(() => {
@@ -58,6 +87,13 @@ const AffiliateProgramPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is logged in
+    if (!user) {
+      setShowLoginRequiredModal(true);
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -106,6 +142,9 @@ const AffiliateProgramPage = () => {
         message: ''
       });
 
+      // Clear saved form data
+      localStorage.removeItem(FORM_STORAGE_KEY);
+
       setShowSuccessModal(true);
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -122,6 +161,24 @@ const AffiliateProgramPage = () => {
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
     navigate('/fantasy');
+  };
+
+  const handleLoginRequiredModalClose = () => {
+    setShowLoginRequiredModal(false);
+  };
+
+  const handleOpenAuthModal = () => {
+    setShowLoginRequiredModal(false);
+    setShowAuthModal(true);
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    // Form data is already preserved in localStorage and will be loaded on re-render
+    toast({
+      title: "Welcome!",
+      description: "You can now submit your partner application.",
+    });
   };
 
   const tiers = [
@@ -495,6 +552,47 @@ const AffiliateProgramPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Login Required Modal */}
+      <Dialog open={showLoginRequiredModal} onOpenChange={handleLoginRequiredModalClose}>
+        <DialogContent className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 text-white max-w-md">
+          <DialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-purple-500/20 border-2 border-purple-500 rounded-full flex items-center justify-center">
+                <LogIn className="w-8 h-8 text-purple-400" />
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Account Required
+            </DialogTitle>
+            <DialogDescription className="text-center text-white mt-2">
+              You need to create an account or sign in before applying to become a partner. Your application details will be saved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-6 space-y-3">
+            <Button 
+              onClick={handleOpenAuthModal}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold"
+            >
+              Create Account / Sign In
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleLoginRequiredModalClose}
+              className="w-full border-white/20 text-white hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
