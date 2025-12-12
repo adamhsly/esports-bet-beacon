@@ -15,6 +15,7 @@ import { TeamPerformanceModal } from './TeamPerformanceModal';
 interface FinishedRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly';
+  round_name: string | null;
   start_date: string;
   end_date: string;
   total_score: number;
@@ -78,6 +79,7 @@ export const FinishedRounds: React.FC = () => {
           return {
             id: pick.round_id,
             type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
+            round_name: pick.fantasy_rounds.round_name,
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
             total_score: pick.total_score,
@@ -160,8 +162,8 @@ export const FinishedRounds: React.FC = () => {
             <AccordionTrigger className="px-4 sm:px-6 py-4 border-b border-gray-700/50 hover:no-underline">
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl capitalize bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold">
-                    {round.type} Round
+                  <h3 className="text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold">
+                    {round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`}
                   </h3>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-400">
