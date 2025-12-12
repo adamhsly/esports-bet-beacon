@@ -21,7 +21,7 @@ const FaqSection = () => {
     },
     {
       question: "IS FRAGS & FORTUNES FREE TO PLAY?",
-      answer: "Yes! Frags & Fortunes is completely free to play. Join global leaderboards and compete for prizes without any entry fees.",
+      answer: "Yes! Frags & Fortunes offers completely free to play rounds and also pay to enter rounds where steam vouchers can be won. Join global leaderboards and compete for prizes.",
     },
     {
       question: "WHAT CAN I WIN BY PLAYING FRAGS & FORTUNES?",
