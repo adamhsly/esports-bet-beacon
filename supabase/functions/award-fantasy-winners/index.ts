@@ -22,12 +22,15 @@ serve(async (req) => {
 
     console.log('🏆 Starting fantasy round winner awards...');
 
-    // Find rounds that have closed (ended) but haven't been processed yet
+    // Find rounds that have closed (ended) today or later - skip old backlog
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    
     const { data: recentlyFinishedRounds, error: roundsError } = await supabase
       .from('fantasy_rounds')
       .select('id, type, end_date, round_name, prize_type, prize_1st, prize_2nd, prize_3rd')
       .eq('status', 'closed')
-      .lte('end_date', new Date().toISOString());
+      .gte('end_date', today.toISOString());
 
     if (roundsError) {
       console.error('Error fetching finished rounds:', roundsError);
