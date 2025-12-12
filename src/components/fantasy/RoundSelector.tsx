@@ -224,7 +224,7 @@ const RoundCard: React.FC<{
           {/* Round name overlay */}
           {round.round_name && (
             <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
-              <p className="text-white text-sm font-semibold truncate">{round.round_name}</p>
+              <p className="text-sm font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent truncate">{round.round_name}</p>
             </div>
           )}
         </div>
@@ -291,7 +291,7 @@ const RoundCard: React.FC<{
         <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
           {/* Round name above prizes */}
           {round.round_name && (
-            <p className="text-white text-sm font-semibold text-center mb-2 truncate">{round.round_name}</p>
+            <p className="text-sm font-bold text-center mb-2 truncate bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{round.round_name}</p>
           )}
           <div className="flex flex-col items-center justify-center mb-1">
             <div className="flex items-center gap-4 text-xl font-bold">
