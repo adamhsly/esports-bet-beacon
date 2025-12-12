@@ -36,10 +36,14 @@ serve(async (req) => {
 
     console.log(`Found ${recentlyFinishedRounds?.length || 0} recently finished rounds`);
 
+    // Limit to 10 rounds per invocation to avoid timeouts
+    const roundsToProcess = (recentlyFinishedRounds || []).slice(0, 10);
+    console.log(`Processing ${roundsToProcess.length} rounds this invocation (max 10)`);
+
     let totalWinnersAwarded = 0;
     let totalEmailsSent = 0;
 
-    for (const round of recentlyFinishedRounds || []) {
+    for (const round of roundsToProcess) {
       console.log(`Processing round ${round.id} (${round.type})`);
 
       // Award winners (creates records if they don't exist, idempotent)
@@ -142,6 +146,8 @@ serve(async (req) => {
               console.error(`Failed to mark notification as sent for winner ${winner.id}:`, updateError);
             } else {
               totalEmailsSent++;
+              // Rate limit: wait 600ms between emails to stay under Resend's 2/sec limit
+              await new Promise(resolve => setTimeout(resolve, 600));
               console.log(`✅ Email sent to ${winnerData.username} (${userEmail})`);
             }
           }
@@ -167,6 +173,8 @@ serve(async (req) => {
             console.error(`Failed to send team summary email:`, summaryEmailError);
           } else {
             console.log(`✅ Team summary email sent for round ${round.id}`);
+            // Rate limit: wait 600ms after summary email
+            await new Promise(resolve => setTimeout(resolve, 600));
           }
         } catch (summaryError) {
           console.error(`Error sending team summary email:`, summaryError);
