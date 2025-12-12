@@ -88,7 +88,7 @@ const WelcomePage = () => {
         <Link to="/fantasy" className="block w-full">
           <img 
             src={welcomeBanner} 
-            alt="$100 Steam voucher - Free to play - Join the round now!" 
+            alt="Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits"
             className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
           />
         </Link>
