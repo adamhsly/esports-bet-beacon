@@ -51,17 +51,10 @@ serve(async (req) => {
         continue;
       }
 
-      // Query for winners who haven't received email notifications yet
-      const { data: unsentWinners, error: winnersError } = await supabase
+      // Query for winners who haven't received email notifications yet (without profile join)
+      const { data: unsentWinnersRaw, error: winnersError } = await supabase
         .from('fantasy_round_winners')
-        .select(`
-          id,
-          user_id,
-          finish_position,
-          total_score,
-          credits_awarded,
-          profiles!inner(username, full_name, test)
-        `)
+        .select('id, user_id, finish_position, total_score, credits_awarded')
         .eq('round_id', round.id)
         .eq('notification_sent', false);
 
@@ -70,9 +63,24 @@ serve(async (req) => {
         continue;
       }
 
-      if (!unsentWinners || unsentWinners.length === 0) {
+      if (!unsentWinnersRaw || unsentWinnersRaw.length === 0) {
         console.log(`No unsent notifications for round ${round.id}`);
         continue;
+      }
+
+      // Enrich each winner with profile data (fetched separately to avoid FK join issues)
+      const unsentWinners = [];
+      for (const winner of unsentWinnersRaw) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, full_name, test')
+          .eq('id', winner.user_id)
+          .single();
+        
+        unsentWinners.push({
+          ...winner,
+          profiles: profile || { username: null, full_name: null, test: false }
+        });
       }
 
       console.log(`Found ${unsentWinners.length} unsent notifications for round ${round.id}`);
