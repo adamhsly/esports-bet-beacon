@@ -44,8 +44,8 @@ const FantasyPage: React.FC = () => {
       alt: 'Use your in-round team swap and star team change wisely'
     },
     {
-      src: '/lovable-uploads/monthlyroundprize.png',
-      alt: '£100 Steam voucher for 1st place in December Monthly Round'
+      src: '/lovable-uploads/Spend_5_Get_10.png',
+      alt: 'Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits'
     }
   ];
 
