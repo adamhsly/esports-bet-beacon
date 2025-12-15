@@ -14,8 +14,8 @@ const Footer = () => {
               <span className="text-theme-purple">FRAGS</span> <span className="text-yellow-400">&</span>{" "}
               <span className="text-white">FORTUNES</span>
             </h3>
-            <p className="text-gray-400 text-sm max-w-xs mx-auto">
-              Your esports fantasy pick'ems destination. Build rosters, track live matches, and compete on leaderboards across CS2, Valorant, Dota 2, and League of Legends.
+            <p className="text-gray-400 text-sm max-w-md mx-auto leading-relaxed">
+              Frags & Fortunes is your free-to-play esports fantasy pick'ems platform. Build your ultimate roster from professional and amateur teams across Counter-Strike 2, Valorant, Dota 2, and League of Legends. Track live match scores in real-time, compete on global and private leaderboards, and win Steam vouchers and exclusive rewards. Join daily, weekly, and monthly fantasy esports contests featuring the world's top esports organizations and rising amateur talent.
             </p>
           </div>
 
