@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
+import SEOContentBlock from '@/components/SEOContentBlock';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -80,8 +82,25 @@ const FantasyPage: React.FC = () => {
     }
   }, [searchParams, selectedRound, setSearchParams]);
 
+  const fantasySEOContent = {
+    title: "Free Fantasy Esports Leagues – Daily, Weekly & Monthly Rounds",
+    paragraphs: [
+      "Join the ultimate fantasy esports experience on Frags & Fortunes. Our free-to-play fantasy leagues let you build your dream roster from professional CS2, Valorant, Dota 2, and League of Legends teams. Compete in daily quick-fire rounds for instant action, weekly contests for sustained competition, or monthly marathon rounds to prove your esports expertise.",
+      "Our fantasy pick'ems feature both professional teams from major tournaments and amateur talent from FACEIT competitive leagues. With dynamic team pricing based on recent performance, every pick matters. Use your budget wisely to assemble the strongest roster and outperform your competition on global leaderboards.",
+      "Strategic features like the Star Team mechanic (2x points multiplier) and mid-round team swaps add depth to your fantasy experience. Designate your most confident pick as your Star Team to maximize points, or use your one-time swap to pivot your strategy based on match results.",
+      "Free rounds award credits and exclusive cosmetic rewards including badges, avatar frames, and titles. Paid entry rounds offer Steam voucher prizes – compete for $100, $50, and more. Create private rounds with custom join codes to challenge friends, streaming communities, or esports fan groups.",
+      "Track your progress across all active rounds, view detailed scoring breakdowns by team and match, and climb the seasonal leaderboards. Whether you're a fantasy esports veteran or new to pick'ems, Frags & Fortunes offers the perfect competitive experience for every skill level.",
+    ],
+  };
+
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
+      <Helmet>
+        <title>Fantasy Esports Pick'ems | Free Daily, Weekly & Monthly Rounds - Frags & Fortunes</title>
+        <meta name="description" content="Play free fantasy esports pick'ems. Build rosters from CS2, Valorant, Dota 2, and LoL teams. Compete in daily, weekly, and monthly rounds. Win Steam vouchers and exclusive rewards." />
+        <meta name="keywords" content="fantasy esports, esports pick'ems, fantasy CS2, fantasy Valorant, fantasy Dota 2, fantasy LoL, free fantasy esports, esports fantasy league, win Steam vouchers" />
+        <link rel="canonical" href="https://fragsandfortunes.com/fantasy" />
+      </Helmet>
       <SearchableNavbar />
 
       <div className="flex-grow w-full">
@@ -201,6 +220,9 @@ const FantasyPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* SEO Content Block */}
+      <SEOContentBlock title={fantasySEOContent.title} paragraphs={fantasySEOContent.paragraphs} />
 
       <Footer />
       

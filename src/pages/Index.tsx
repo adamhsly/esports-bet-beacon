@@ -583,12 +583,14 @@ const Index = () => {
   );
 
   const homepageSEOContent = {
-    title: "Your Ultimate Esports Betting & Stats Platform",
+    title: "Fantasy Esports Pick'ems – Your Ultimate Competitive Gaming Destination",
     paragraphs: [
-      "Stay updated with live esports scores from major tournaments and competitions around the world. Our real-time esports match tracker provides second-by-second updates from your favorite games including CS:GO, League of Legends, Dota 2, and Valorant.",
-      "Compare esports odds from leading betting sites in one convenient location. Find the best value for your bets with our comprehensive esports odds comparison tool featuring upcoming esports matches across all major titles.",
-      "Explore in-depth team stats, performance analytics, and historical match results to inform your betting decisions. Our database tracks player performance, team rankings, and head-to-head statistics from all professional esports competitions.",
-      "Whether you're following international championships or regional qualifiers, our platform provides all the information you need to stay ahead of the game with live coverage, match predictions, and expert analysis for the most competitive esports titles.",
+      "Welcome to Frags & Fortunes, the premier free-to-play fantasy esports platform where you can build your dream roster and compete against players worldwide. Our fantasy pick'ems system lets you select teams from professional leagues and amateur competitions, earning points based on real match results from Counter-Strike 2 (CS2), Valorant, Dota 2, and League of Legends tournaments.",
+      "Choose from hundreds of professional esports teams including legendary organizations competing in major championships like IEM, BLAST Premier, VCT, The International, and Worlds. Our platform also features rising amateur talent from FACEIT leagues, giving you access to the full spectrum of competitive esports – from tier-1 professionals to up-and-coming stars.",
+      "Our unique fantasy scoring system rewards strategic thinking. Earn points for match wins, map victories, clean sweeps, and tournament championships. Use the Star Team feature to double your points on your most confident pick, or swap teams mid-round if your strategy needs adjustment. With budget caps and team pricing based on recent performance, every roster decision matters.",
+      "Compete in daily quick-fire rounds for fast action, weekly contests for sustained competition, or monthly marathon rounds for the ultimate test of esports knowledge. Free rounds award credits and exclusive rewards, while paid entry rounds offer Steam voucher prizes for top performers. Create private leaderboards to challenge friends, colleagues, or your gaming community.",
+      "Track every match in real-time with our comprehensive live scores and match tracker. Follow tournament brackets, view team statistics, and analyze head-to-head records to inform your fantasy picks. Our database covers all major esports competitions including CS2 Majors, Valorant Champions, Dota 2 Majors, and League of Legends World Championship.",
+      "Join thousands of esports fans already competing on Frags & Fortunes. Sign up for free, pick your teams, and start climbing the leaderboards today. Whether you're a casual fan or a dedicated esports enthusiast, our fantasy pick'ems platform offers the perfect blend of strategy, competition, and rewards.",
     ],
   };
 
