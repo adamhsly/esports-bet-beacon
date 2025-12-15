@@ -15,8 +15,7 @@ const Footer = () => {
               <span className="text-white">FORTUNES</span>
             </h3>
             <p className="text-gray-400 text-sm max-w-xs mx-auto">
-              The premier destination for esports fantasy leagues and scores where both amateur and pro teams wage
-              battle.
+              Your esports fantasy pick'ems destination. Build rosters, track live matches, and compete on leaderboards across CS2, Valorant, Dota 2, and League of Legends.
             </p>
           </div>
 
