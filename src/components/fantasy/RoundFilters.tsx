@@ -403,11 +403,8 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] border-t border-white/[0.1]">
             <SheetHeader className="pb-4">
-              <SheetTitle className="flex items-center justify-between text-white">
-                <span>Filter Rounds</span>
-                <span className="text-sm font-normal text-[#d1d1d9]">
-                  {resultCount} results
-                </span>
+              <SheetTitle className="text-white">
+                Filter Rounds
               </SheetTitle>
             </SheetHeader>
 
