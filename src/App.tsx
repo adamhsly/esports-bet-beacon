@@ -109,8 +109,8 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   // Track referral codes from URL
   useReferralTracking();
   
-  // Don't show ProgressHudSticky on fantasy page or public lineup share pages
-  const isFantasyPage = location.pathname === '/fantasy';
+  // Don't show ProgressHudSticky on fantasy page (homepage or /fantasy) or public lineup share pages
+  const isFantasyPage = location.pathname === '/' || location.pathname === '/fantasy';
   const isLineupSharePage = location.pathname.startsWith('/lineup/');
   const showProgressHud = isMobile && !isFantasyPage && !isLineupSharePage;
 
@@ -137,7 +137,8 @@ function App() {
     <Router>
       <QueryClientWrapper>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<FantasyPage />} />
+          <Route path="/scores" element={<Index />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/esports/:gameType" element={<EsportPage />} />
           <Route path="/tournaments" element={<TournamentsPage />} />
@@ -159,7 +160,6 @@ function App() {
           <Route path="/fantasy/private" element={<PrivateRoundPage />} />
           <Route path="/fantasy/private/create" element={<CreatePrivateRoundPage />} />
           <Route path="/fantasy/entry/success" element={<RoundEntrySuccessPage />} />
-          <Route path="/lineup/:roundId/:userId" element={<LineupSharePage />} />
           <Route path="/lineup/:roundId/:userId" element={<LineupSharePage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
