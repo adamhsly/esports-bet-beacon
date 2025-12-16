@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gift, Sparkles, Clock, CheckCircle, ArrowRight } from 'lucide-react';
+import { Gift, Clock, CheckCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -37,15 +37,13 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Hero section */}
-          <div className="bg-gradient-to-r from-purple-600/20 to-yellow-500/20 border border-purple-500/30 rounded-lg p-4 text-center">
-            <Sparkles className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-            <h3 className="text-xl font-bold text-white mb-1">
-              Spend {thresholdAmount}, Get {rewardAmount} Free!
-            </h3>
-            <p className="text-sm text-gray-300">
-              Your first {thresholdAmount} in paid entries unlocks {rewardAmount} promo balance
-            </p>
+          {/* Hero banner */}
+          <div className="rounded-lg overflow-hidden">
+            <img 
+              src="/lovable-uploads/Spend_5_Get_10.png" 
+              alt={`Spend ${thresholdAmount}, Get ${rewardAmount} Free!`}
+              className="w-full h-auto"
+            />
           </div>
 
           {/* Current status */}
