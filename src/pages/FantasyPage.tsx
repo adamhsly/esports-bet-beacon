@@ -160,7 +160,7 @@ const FantasyPage: React.FC = () => {
                       className="flex-1 min-w-[120px] whitespace-nowrap text-center py-2.5 px-4 rounded-lg font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] cursor-pointer transition-all duration-250 ease data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#7a5cff] data-[state=active]:to-[#8e6fff] data-[state=active]:text-white data-[state=active]:shadow-[0_0_12px_rgba(122,92,255,0.4)] data-[state=active]:font-semibold hover:bg-[#7a5cff]/15 hover:text-white flex items-center justify-center gap-2"
                     >
                       <Clock className="h-4 w-4" />
-                      In Progress
+                      My Picks
                     </TabsTrigger>
                     <TabsTrigger
                       value="finished"
