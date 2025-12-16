@@ -39,7 +39,7 @@ const gameOptions = [
   { value: "lol", label: "LoL", logo: leagueOfLegendsLogo, showLabel: true },
 ];
 
-// Status tab component
+// Status tab component - matching fantasy page TabsList styling
 const StatusTabs: React.FC<{
   value: RoundFiltersState["status"];
   onChange: (value: RoundFiltersState["status"]) => void;
@@ -51,16 +51,16 @@ const StatusTabs: React.FC<{
   ];
 
   return (
-    <div className="inline-flex h-10 items-center justify-center rounded-lg bg-muted/50 p-1 w-full sm:w-auto">
+    <div className="inline-flex items-center justify-center bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-[10px] p-1.5 gap-1.5 w-full sm:w-auto">
       {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            "flex-1 sm:flex-none inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all",
+            "flex-1 sm:flex-none inline-flex items-center justify-center whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-250",
             value === option.value
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)] font-semibold"
+              : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
           )}
         >
           {option.label}
@@ -70,7 +70,7 @@ const StatusTabs: React.FC<{
   );
 };
 
-// Game filter pills with icons (multi-select)
+// Game filter pills with icons (multi-select) - matching fantasy styling
 const GameFilterPills: React.FC<{
   selectedGames: string[];
   onChange: (games: string[]) => void;
@@ -108,11 +108,10 @@ const GameFilterPills: React.FC<{
           key={game.value}
           onClick={() => handleToggle(game.value)}
           className={cn(
-            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-            "border-2",
+            "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-250",
             isSelected(game.value)
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border/50 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/50"
+              ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)]"
+              : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
           )}
         >
           {game.logo ? (
@@ -129,25 +128,25 @@ const GameFilterPills: React.FC<{
   );
 };
 
-// Secondary filter pills (Entry Type and Team Type)
+// Secondary filter pills (Entry Type and Team Type) - matching fantasy styling
 const SecondaryFilterPill: React.FC<{
   label: string;
   options: { value: string; label: string }[];
   value: string;
   onChange: (value: string) => void;
 }> = ({ label, options, value, onChange }) => (
-  <div className="flex items-center gap-2">
-    <span className="text-xs text-muted-foreground font-medium">{label}:</span>
-    <div className="flex gap-1">
+  <div className="flex items-center gap-3">
+    <span className="text-sm text-[#d1d1d9] font-medium">{label}:</span>
+    <div className="flex gap-1.5">
       {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            "px-2.5 py-1 rounded-md text-xs font-medium transition-all",
+            "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-250",
             value === option.value
-              ? "bg-primary/20 text-primary border border-primary/30"
-              : "bg-muted/40 text-muted-foreground hover:bg-muted/60 border border-transparent"
+              ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_8px_rgba(122,92,255,0.3)]"
+              : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
           )}
         >
           {option.label}
@@ -157,18 +156,18 @@ const SecondaryFilterPill: React.FC<{
   </div>
 );
 
-// Active filter chip
+// Active filter chip - with purple glow styling
 const ActiveFilterChip: React.FC<{
   label: string;
   onRemove: () => void;
 }> = ({ label, onRemove }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium bg-[#7a5cff]/20 text-[#a78bfa] border border-[#7a5cff]/30">
     {label}
     <button
       onClick={onRemove}
-      className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+      className="hover:bg-[#7a5cff]/30 rounded-full p-0.5 transition-colors"
     >
-      <X className="w-3 h-3" />
+      <X className="w-3.5 h-3.5" />
     </button>
   </span>
 );
@@ -246,8 +245,8 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
   return (
     <div
       className={cn(
-        "bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg transition-all",
-        isSticky && "shadow-lg"
+        "bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] backdrop-blur-lg border border-white/[0.05] rounded-[10px] transition-all",
+        isSticky && "shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
       )}
     >
       {/* Primary row: Status tabs + Result count */}
@@ -257,39 +256,42 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
           onChange={(v) => updateFilter("status", v)}
         />
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{resultCount}</span> rounds found
+          <span className="text-sm text-[#d1d1d9]">
+            <span className="font-semibold text-white">{resultCount}</span> rounds found
           </span>
         </div>
       </div>
 
       {/* Game filter row */}
-      <div className="px-4 pb-3 border-t border-border/30 pt-3">
+      <div className="px-4 pb-3 border-t border-white/[0.05] pt-3">
         <div className="flex items-center justify-between gap-4">
           <GameFilterPills
             selectedGames={filters.gameTypes}
             onChange={(games) => updateFilter("gameTypes", games)}
           />
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => setShowMoreFilters(!showMoreFilters)}
-            className="text-muted-foreground hover:text-foreground shrink-0"
+            className={cn(
+              "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-250 shrink-0",
+              showMoreFilters
+                ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_8px_rgba(122,92,255,0.3)]"
+                : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
+            )}
           >
-            <SlidersHorizontal className="w-4 h-4 mr-2" />
+            <SlidersHorizontal className="w-4 h-4" />
             More
             {showMoreFilters ? (
-              <ChevronUp className="w-4 h-4 ml-1" />
+              <ChevronUp className="w-4 h-4" />
             ) : (
-              <ChevronDown className="w-4 h-4 ml-1" />
+              <ChevronDown className="w-4 h-4" />
             )}
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Collapsible more filters */}
       {showMoreFilters && (
-        <div className="px-4 pb-3 border-t border-border/30 pt-3 flex flex-wrap gap-4">
+        <div className="px-4 pb-4 border-t border-white/[0.05] pt-4 flex flex-wrap gap-6">
           <SecondaryFilterPill
             label="Entry"
             options={[
@@ -316,7 +318,7 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
 
       {/* Active filters chips */}
       {hasActiveFilters && (
-        <div className="px-4 pb-3 border-t border-border/30 pt-3 flex flex-wrap items-center gap-2">
+        <div className="px-4 pb-4 border-t border-white/[0.05] pt-3 flex flex-wrap items-center gap-2">
           {activeFilters.map((filter, idx) => (
             <ActiveFilterChip
               key={idx}
@@ -326,7 +328,7 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
           ))}
           <button
             onClick={resetAllFilters}
-            className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
+            className="text-sm text-[#a78bfa] hover:text-white underline underline-offset-2 ml-2 transition-colors"
           >
             Reset all
           </button>
@@ -369,7 +371,7 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+    <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] backdrop-blur-lg border border-white/[0.05] rounded-[10px] p-3">
       {/* Quick status tabs + filter button */}
       <div className="flex items-center gap-2">
         <StatusTabs
@@ -378,29 +380,29 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
         />
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="relative shrink-0">
+            <button className="relative shrink-0 inline-flex items-center justify-center p-2.5 rounded-lg text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white transition-all duration-250">
               <SlidersHorizontal className="w-4 h-4" />
               {activeCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white text-xs flex items-center justify-center font-semibold shadow-[0_0_8px_rgba(122,92,255,0.4)]">
                   {activeCount}
                 </span>
               )}
-            </Button>
+            </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl">
+          <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] border-t border-white/[0.1]">
             <SheetHeader className="pb-4">
-              <SheetTitle className="flex items-center justify-between">
+              <SheetTitle className="flex items-center justify-between text-white">
                 <span>Filter Rounds</span>
-                <span className="text-sm font-normal text-muted-foreground">
+                <span className="text-sm font-normal text-[#d1d1d9]">
                   {resultCount} results
                 </span>
               </SheetTitle>
             </SheetHeader>
 
-            <div className="space-y-6 overflow-y-auto pb-20">
+            <div className="space-y-6 overflow-y-auto pb-24">
               {/* Status */}
               <div>
-                <h4 className="text-sm font-medium mb-3">Status</h4>
+                <h4 className="text-sm font-medium mb-3 text-white">Status</h4>
                 <StatusTabs
                   value={filters.status}
                   onChange={(v) => updateFilter("status", v)}
@@ -409,7 +411,7 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
 
               {/* Game Type */}
               <div>
-                <h4 className="text-sm font-medium mb-3">Game</h4>
+                <h4 className="text-sm font-medium mb-3 text-white">Game</h4>
                 <GameFilterPills
                   selectedGames={filters.gameTypes}
                   onChange={(games) => updateFilter("gameTypes", games)}
@@ -418,7 +420,7 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
 
               {/* Entry Type */}
               <div>
-                <h4 className="text-sm font-medium mb-3">Entry Type</h4>
+                <h4 className="text-sm font-medium mb-3 text-white">Entry Type</h4>
                 <div className="flex gap-2">
                   {[
                     { value: "all", label: "All" },
@@ -431,10 +433,10 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
                         updateFilter("entryType", option.value as RoundFiltersState["entryType"])
                       }
                       className={cn(
-                        "flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border-2",
+                        "flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-250",
                         filters.entryType === option.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/50 bg-muted/30 text-muted-foreground"
+                          ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)]"
+                          : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
                       )}
                     >
                       {option.label}
@@ -445,7 +447,7 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
 
               {/* Team Type */}
               <div>
-                <h4 className="text-sm font-medium mb-3">Team Type</h4>
+                <h4 className="text-sm font-medium mb-3 text-white">Team Type</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: "all", label: "All Teams" },
@@ -459,10 +461,10 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
                         updateFilter("teamType", option.value as RoundFiltersState["teamType"])
                       }
                       className={cn(
-                        "px-4 py-2.5 rounded-lg text-sm font-medium transition-all border-2",
+                        "px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-250",
                         filters.teamType === option.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/50 bg-muted/30 text-muted-foreground"
+                          ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)]"
+                          : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
                       )}
                     >
                       {option.label}
@@ -473,61 +475,33 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
             </div>
 
             {/* Fixed bottom actions */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#1e1e2a] to-transparent border-t border-white/[0.05] flex gap-3">
+              <button
                 onClick={resetAllFilters}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-medium text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white transition-all duration-250"
               >
                 Reset All
-              </Button>
-              <Button className="flex-1" onClick={() => setIsOpen(false)}>
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)] hover:shadow-[0_0_20px_rgba(122,92,255,0.6)] transition-all duration-250"
+              >
                 Show {resultCount} Rounds
-              </Button>
+              </button>
             </div>
           </SheetContent>
         </Sheet>
       </div>
 
       {/* Result count */}
-      <div className="mt-2 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">{resultCount}</span> rounds found
+      <div className="mt-2 text-xs text-[#d1d1d9]">
+        <span className="font-semibold text-white">{resultCount}</span> rounds found
       </div>
     </div>
   );
 };
 
 // Main exported component with sticky behavior
-export const RoundFilters: React.FC<RoundFiltersProps> = (props) => {
-  const isMobile = useIsMobile();
-  const [isSticky, setIsSticky] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Become sticky after scrolling 100px
-      setIsSticky(window.scrollY > 100);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  return (
-    <div
-      className={cn(
-        "mb-6 transition-all duration-200",
-        isSticky && "sticky top-16 z-40"
-      )}
-    >
-      {isMobile ? (
-        <MobileFilterSheet {...props} />
-      ) : (
-        <DesktopFilters {...props} isSticky={isSticky} />
-      )}
-    </div>
-  );
-};
-
 export const defaultFilters: RoundFiltersState = {
   entryType: "all",
   gameTypes: ["all"],
@@ -535,71 +509,94 @@ export const defaultFilters: RoundFiltersState = {
   teamType: "all",
 };
 
-// Filter function to apply filters to rounds
-export const applyRoundFilters = <
-  T extends {
-    id: string;
-    is_paid?: boolean;
-    game_type?: string;
-    status: string;
-    team_type?: string;
-    start_date: string;
-    end_date: string;
+export const RoundFilters: React.FC<RoundFiltersProps> = (props) => {
+  const isMobile = useIsMobile();
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className={cn(
+        "transition-all duration-300",
+        isSticky && "sticky top-0 z-40"
+      )}>
+        <MobileFilterSheet {...props} />
+      </div>
+    );
   }
->(
+
+  return (
+    <div className={cn(
+      "transition-all duration-300",
+      isSticky && "sticky top-0 z-40"
+    )}>
+      <DesktopFilters {...props} isSticky={isSticky} />
+    </div>
+  );
+};
+
+// Filter application function
+export const applyRoundFilters = <T extends {
+  is_paid?: boolean | null;
+  game_type?: string | null;
+  status?: string;
+  team_type?: string | null;
+}>(
   rounds: T[],
   filters: RoundFiltersState
 ): T[] => {
   return rounds.filter((round) => {
     // Entry type filter
-    if (filters.entryType === "free" && round.is_paid) return false;
-    if (filters.entryType === "paid" && !round.is_paid) return false;
+    if (filters.entryType !== "all") {
+      const isPaid = round.is_paid === true;
+      if (filters.entryType === "paid" && !isPaid) return false;
+      if (filters.entryType === "free" && isPaid) return false;
+    }
 
-    // Game type filter (multi-select) - show specific games + "all games" rounds
+    // Game type filter (multi-select)
     if (!filters.gameTypes.includes("all") && filters.gameTypes.length > 0) {
-      const roundGame = (round.game_type || "all").toLowerCase();
-
-      // "All Games" rounds always show
-      if (roundGame !== "all" && roundGame) {
-        const gameMatches = filters.gameTypes.some((filterGame) => {
-          const normalizedDb = roundGame.toLowerCase();
-          switch (filterGame) {
-            case "cs2":
-              return (
-                normalizedDb === "cs2" ||
-                normalizedDb === "counter-strike" ||
-                normalizedDb === "csgo"
-              );
-            case "valorant":
-              return normalizedDb === "valorant";
-            case "dota2":
-              return normalizedDb === "dota-2" || normalizedDb === "dota2";
-            case "lol":
-              return normalizedDb === "league-of-legends" || normalizedDb === "lol";
-            default:
-              return false;
-          }
-        });
-        if (!gameMatches) return false;
-      }
+      const roundGameType = round.game_type?.toLowerCase() || "";
+      // Check if the round's game type matches any selected game OR if the round is "all games" (null/empty)
+      const matchesSelectedGame = filters.gameTypes.some((selectedGame) => {
+        if (selectedGame === "cs2") {
+          return roundGameType === "cs2" || roundGameType === "counter-strike" || roundGameType === "csgo";
+        }
+        if (selectedGame === "lol") {
+          return roundGameType === "lol" || roundGameType === "league-of-legends";
+        }
+        return roundGameType === selectedGame;
+      });
+      // Also show "all games" rounds when filtering by game
+      const isAllGamesRound = !round.game_type || round.game_type === "";
+      if (!matchesSelectedGame && !isAllGamesRound) return false;
     }
 
     // Status filter
     if (filters.status !== "all") {
-      const now = new Date();
-      const start = new Date(round.start_date);
-      const end = new Date(round.end_date);
-      const isInProgress = now >= start && now <= end;
-      const isScheduled = round.status === "scheduled" || now < start;
-
-      if (filters.status === "in_progress" && !isInProgress) return false;
-      if (filters.status === "coming_soon" && !isScheduled) return false;
+      const roundStatus = round.status?.toLowerCase() || "";
+      if (filters.status === "in_progress") {
+        if (roundStatus !== "open" && roundStatus !== "active" && roundStatus !== "in_progress") {
+          return false;
+        }
+      }
+      if (filters.status === "coming_soon") {
+        if (roundStatus !== "scheduled") return false;
+      }
     }
 
     // Team type filter
     if (filters.teamType !== "all") {
-      const roundTeamType = round.team_type || "both";
-      if (filters.teamType !== roundTeamType) return false;
+      const roundTeamType = round.team_type?.toLowerCase() || "";
+      if (filters.teamType === "pro" && roundTeamType !== "pro") return false;
+      if (filters.teamType === "amateur" && roundTeamType !== "amateur") return false;
+      if (filters.teamType === "both" && roundTeamType !== "both") return false;
     }
 
     return true;
