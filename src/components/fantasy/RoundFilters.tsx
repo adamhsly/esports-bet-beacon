@@ -16,6 +16,12 @@ import counterStrike2Logo from '@/assets/logos/esports/counter-strike-2.png';
 import leagueOfLegendsLogo from '@/assets/logos/esports/league-of-legends.png';
 import dota2Logo from '@/assets/logos/esports/dota-2.png';
 import valorantLogo from '@/assets/logos/esports/valorant.png';
+import rainbowSixSiegeLogo from '@/assets/logos/esports/rainbow-six-siege.png';
+import rocketLeagueLogo from '@/assets/logos/esports/rocket-league.png';
+import starcraft2Logo from '@/assets/logos/esports/starcraft-2.png';
+import overwatchLogo from '@/assets/logos/esports/overwatch.png';
+import honorOfKingsLogo from '@/assets/logos/esports/honor-of-kings.png';
+import mobileLegendsLogo from '@/assets/logos/esports/mobile-legends.png';
 
 export interface RoundFiltersState {
   entryType: "all" | "free" | "paid";
@@ -30,13 +36,19 @@ interface RoundFiltersProps {
   resultCount: number;
 }
 
-// Game options with logos
+// Game options with logos - matching homepage filter
 const gameOptions = [
-  { value: "all", label: "All Games", logo: null, showLabel: true },
-  { value: "cs2", label: "CS2", logo: counterStrike2Logo, showLabel: true },
-  { value: "valorant", label: "Valorant", logo: valorantLogo, showLabel: true },
-  { value: "dota2", label: "Dota 2", logo: dota2Logo, showLabel: true },
-  { value: "lol", label: "LoL", logo: leagueOfLegendsLogo, showLabel: true },
+  { value: "all", label: "All Games", logo: null },
+  { value: "counter-strike", label: "CS2", logo: counterStrike2Logo },
+  { value: "lol", label: "LoL", logo: leagueOfLegendsLogo },
+  { value: "dota2", label: "Dota 2", logo: dota2Logo },
+  { value: "valorant", label: "Valorant", logo: valorantLogo },
+  { value: "rainbow-6-siege", label: "R6", logo: rainbowSixSiegeLogo },
+  { value: "rocket-league", label: "RL", logo: rocketLeagueLogo },
+  { value: "starcraft-2", label: "SC2", logo: starcraft2Logo },
+  { value: "overwatch", label: "OW", logo: overwatchLogo },
+  { value: "king-of-glory", label: "HoK", logo: honorOfKingsLogo },
+  { value: "mobile-legends", label: "MLBB", logo: mobileLegendsLogo },
 ];
 
 // Status tab component - matching fantasy page TabsList styling
@@ -565,12 +577,19 @@ export const applyRoundFilters = <T extends {
       const roundGameType = round.game_type?.toLowerCase() || "";
       // Check if the round's game type matches any selected game OR if the round is "all games" (null/empty)
       const matchesSelectedGame = filters.gameTypes.some((selectedGame) => {
-        if (selectedGame === "cs2") {
+        // Handle Counter-Strike variants
+        if (selectedGame === "counter-strike") {
           return roundGameType === "cs2" || roundGameType === "counter-strike" || roundGameType === "csgo";
         }
+        // Handle League of Legends variants
         if (selectedGame === "lol") {
           return roundGameType === "lol" || roundGameType === "league-of-legends";
         }
+        // Handle Rainbow Six variants
+        if (selectedGame === "rainbow-6-siege") {
+          return roundGameType === "rainbow-6-siege" || roundGameType === "r6" || roundGameType === "rainbow-six-siege";
+        }
+        // Handle other games
         return roundGameType === selectedGame;
       });
       // Also show "all games" rounds when filtering by game
