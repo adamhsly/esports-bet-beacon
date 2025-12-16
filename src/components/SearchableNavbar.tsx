@@ -32,10 +32,10 @@ const SearchableNavbar: React.FC = () => {
             
             <div className="flex space-x-2 md:space-x-4 text-sm md:text-base">
               <Link to="/" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
-                Matches
-              </Link>
-              <Link to="/fantasy" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
                 Fantasy
+              </Link>
+              <Link to="/scores" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
+                Scores
               </Link>
             </div>
           </div>
