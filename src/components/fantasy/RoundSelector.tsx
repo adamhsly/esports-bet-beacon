@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AuthModal from "@/components/AuthModal";
 import { usePaidRoundCheckout } from "@/hooks/usePaidRoundCheckout";
+import { RoundFilters, RoundFiltersState, defaultFilters, applyRoundFilters } from "./RoundFilters";
 
 interface Round {
   id: string;
@@ -357,6 +358,7 @@ export const RoundSelector: React.FC<{
   const [userEntryCounts, setUserEntryCounts] = useState<Record<string, number>>({});
   const [paidButEmptyPicks, setPaidButEmptyPicks] = useState<Record<string, string>>({});
   const [joinedFreeRounds, setJoinedFreeRounds] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<RoundFiltersState>(defaultFilters);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
 
   useEffect(() => {
@@ -592,13 +594,16 @@ export const RoundSelector: React.FC<{
   };
 
   // Filter out free rounds the user has already joined
-  const filteredRounds = rounds.filter((round) => {
+  const baseFilteredRounds = rounds.filter((round) => {
     // Keep all paid rounds (unlimited entries)
     if (round.is_paid) return true;
     // For free rounds, hide if user already joined
     if (user && joinedFreeRounds.has(round.id)) return false;
     return true;
   });
+
+  // Apply user-selected filters
+  const filteredRounds = applyRoundFilters(baseFilteredRounds, filters);
 
   // Group rounds by section_name, fallback to default sections
   const groupedRounds = filteredRounds.reduce<Record<string, Round[]>>((acc, round) => {
@@ -641,6 +646,7 @@ export const RoundSelector: React.FC<{
   }
   return (
     <>
+      <RoundFilters filters={filters} onFiltersChange={setFilters} />
       <div className="space-y-8">
         {/* Dynamic sections based on section_name from database */}
         {sectionOrder.map((sectionName) => {
