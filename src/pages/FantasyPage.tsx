@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Helmet } from 'react-helmet-async';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
@@ -35,6 +36,16 @@ const FantasyPage: React.FC = () => {
   const { awardXP, progressMission } = useRPCActions();
   const isMobile = useMobile();
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect unauthenticated users to welcome page (only if they haven't seen it)
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
+    if (!authLoading && !user && !hasSeenWelcome) {
+      navigate('/welcome');
+    }
+  }, [user, authLoading, navigate]);
 
   const banners = [
     {
