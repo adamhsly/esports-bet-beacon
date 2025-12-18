@@ -37,6 +37,9 @@ const SearchableNavbar: React.FC = () => {
               <Link to="/scores" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
                 Scores
               </Link>
+              <Link to="/blog" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
+                Blog
+              </Link>
             </div>
           </div>
           

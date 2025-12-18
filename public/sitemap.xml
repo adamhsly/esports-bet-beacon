@@ -56,6 +56,13 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Blog -->
+  <url>
+    <loc>https://fragsandfortunes.com/blog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Partner Program -->
   <url>
     <loc>https://fragsandfortunes.com/affiliate-program</loc>
