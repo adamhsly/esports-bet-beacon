@@ -259,7 +259,7 @@ const BlogPostPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedPosts.map((relPost) => (
                 <Link key={relPost.id} to={`/blog/${relPost.slug}`}>
-                  <Card className="overflow-hidden bg-card border-border hover:border-theme-purple/50 transition-all duration-300 h-full group">
+                  <Card className="relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md hover:shadow-purple-500/20 overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border-purple-500/30 hover:border-purple-500/50 h-full group">
                     {relPost.featured_image_url && (
                       <div className="relative h-32 overflow-hidden">
                         <img
