@@ -85,8 +85,9 @@ const BlogPage: React.FC = () => {
           {/* Hero Section */}
           <section className="text-center mb-8 max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="text-theme-purple">Frags & Fortunes</span>{' '}
-              <span className="text-white">Blog</span>
+              <span className="text-theme-purple">Frags</span>{' '}
+              <span className="text-yellow-400">&</span>{' '}
+              <span className="text-white">Fortunes Blog</span>
             </h1>
             <p className="text-lg text-[#d1d1d9] max-w-2xl mx-auto">
               Esports insights, fantasy strategies, and gaming guides to help you dominate the leaderboards.
