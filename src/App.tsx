@@ -44,6 +44,7 @@ import AffiliateDashboardPage from '@/pages/AffiliateDashboardPage';
 import AffiliateAdminPage from '@/pages/AffiliateAdminPage';
 import BlogPage from '@/pages/BlogPage';
 import BlogPostPage from '@/pages/BlogPostPage';
+import BlogAdminPage from '@/pages/BlogAdminPage';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
@@ -187,6 +188,7 @@ function App() {
           <Route path="/affiliate-admin" element={<AffiliateAdminPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/blog-admin" element={<BlogAdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
