@@ -51,16 +51,16 @@ const FantasyPage: React.FC = () => {
 
   const banners = [
     {
+      src: '/lovable-uploads/Spend_5_Get_10.png',
+      alt: 'Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits'
+    },
+    {
       src: '/lovable-uploads/build_roster_banner.png',
       alt: 'Draft your ultimate roster - Pick teams and win prizes'
     },
     {
       src: '/lovable-uploads/team_swap_banner.png',
       alt: 'Use your in-round team swap and star team change wisely'
-    },
-    {
-      src: '/lovable-uploads/Spend_5_Get_10.png',
-      alt: 'Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits'
     }
   ];
 
