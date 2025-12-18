@@ -240,13 +240,13 @@ const BlogPostPage: React.FC = () => {
             <Share2 className="w-5 h-5" /> Share this article
           </h3>
           <div className="flex gap-3">
-            <Button variant="outline" size="sm" onClick={() => handleShare('twitter')}>
+            <Button variant="outline" size="sm" className="text-white border-white/30 hover:bg-white/10" onClick={() => handleShare('twitter')}>
               <Twitter className="w-4 h-4 mr-2" /> Twitter
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleShare('facebook')}>
+            <Button variant="outline" size="sm" className="text-white border-white/30 hover:bg-white/10" onClick={() => handleShare('facebook')}>
               <Facebook className="w-4 h-4 mr-2" /> Facebook
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleShare('linkedin')}>
+            <Button variant="outline" size="sm" className="text-white border-white/30 hover:bg-white/10" onClick={() => handleShare('linkedin')}>
               <Linkedin className="w-4 h-4 mr-2" /> LinkedIn
             </Button>
           </div>
