@@ -39,13 +39,15 @@ const FantasyPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect unauthenticated users to welcome page (only if they haven't seen it)
+  // Redirect new visitors to welcome page immediately (don't wait for auth)
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
-    if (!authLoading && !user && !hasSeenWelcome) {
-      navigate('/welcome');
+    if (!hasSeenWelcome) {
+      // Preserve URL parameters when redirecting
+      const currentSearch = window.location.search;
+      navigate('/welcome' + currentSearch);
     }
-  }, [user, authLoading, navigate]);
+  }, [navigate]);
 
   const banners = [
     {

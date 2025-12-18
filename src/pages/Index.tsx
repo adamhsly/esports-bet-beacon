@@ -295,13 +295,14 @@ const Index = () => {
     Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
   );
 
-  // Redirect unauthenticated users to welcome page (only if they haven't seen it)
+  // Redirect new visitors to welcome page immediately (don't wait for auth)
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
-    if (!loading && !user && !hasSeenWelcome) {
-      navigate('/welcome');
+    if (!hasSeenWelcome) {
+      const currentSearch = window.location.search;
+      navigate('/welcome' + currentSearch);
     }
-  }, [user, loading, navigate]);
+  }, [navigate]);
 
   const [dateFilteredLiveMatches, setDateFilteredLiveMatches] = useState<MatchInfo[]>([]);
   const [dateFilteredUpcomingMatches, setDateFilteredUpcomingMatches] = useState<MatchInfo[]>([]);
