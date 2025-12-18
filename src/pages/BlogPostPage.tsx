@@ -167,8 +167,8 @@ const BlogPostPage: React.FC = () => {
           {!post.featured_image_url && post.category && (
             <Badge className="mb-4 bg-theme-purple/90">{post.category}</Badge>
           )}
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{post.title}</h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{post.title}</h1>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-white/80">
             <span className="flex items-center gap-1">
               <User className="w-4 h-4" />
               {post.author_name}
@@ -189,7 +189,7 @@ const BlogPostPage: React.FC = () => {
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
               {post.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">
+                <Badge key={tag} variant="outline" className="text-xs text-white border-white/30">
                   {tag}
                 </Badge>
               ))}
@@ -202,20 +202,20 @@ const BlogPostPage: React.FC = () => {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              h1: ({ children }) => <h1 className="text-3xl font-bold mt-8 mb-4 text-foreground">{children}</h1>,
-              h2: ({ children }) => <h2 className="text-2xl font-bold mt-6 mb-3 text-foreground">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-xl font-semibold mt-5 mb-2 text-foreground">{children}</h3>,
-              p: ({ children }) => <p className="mb-4 text-muted-foreground leading-relaxed">{children}</p>,
-              ul: ({ children }) => <ul className="list-disc pl-6 mb-4 text-muted-foreground">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 text-muted-foreground">{children}</ol>,
-              li: ({ children }) => <li className="mb-2">{children}</li>,
+              h1: ({ children }) => <h1 className="text-3xl font-bold mt-8 mb-4 text-white">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-2xl font-bold mt-6 mb-3 text-white">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-xl font-semibold mt-5 mb-2 text-white">{children}</h3>,
+              p: ({ children }) => <p className="mb-4 text-white leading-relaxed">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc pl-6 mb-4 text-white">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 text-white">{children}</ol>,
+              li: ({ children }) => <li className="mb-2 text-white">{children}</li>,
               a: ({ href, children }) => (
                 <a href={href} className="text-theme-purple hover:underline" target="_blank" rel="noopener noreferrer">
                   {children}
                 </a>
               ),
               blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-theme-purple pl-4 italic my-4 text-muted-foreground">
+                <blockquote className="border-l-4 border-theme-purple pl-4 italic my-4 text-white/80">
                   {children}
                 </blockquote>
               ),
@@ -236,7 +236,7 @@ const BlogPostPage: React.FC = () => {
 
         {/* Share Section */}
         <div className="border-t border-border pt-8 mb-12">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
             <Share2 className="w-5 h-5" /> Share this article
           </h3>
           <div className="flex gap-3">
@@ -255,7 +255,7 @@ const BlogPostPage: React.FC = () => {
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+            <h2 className="text-2xl font-bold mb-6 text-white">Related Articles</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedPosts.map((relPost) => (
                 <Link key={relPost.id} to={`/blog/${relPost.slug}`}>
@@ -270,11 +270,11 @@ const BlogPostPage: React.FC = () => {
                       </div>
                     )}
                     <CardContent className="p-4">
-                      <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-theme-purple transition-colors">
+                      <h3 className="font-semibold text-white line-clamp-2 group-hover:text-theme-purple transition-colors">
                         {relPost.title}
                       </h3>
                       {relPost.published_at && (
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-white/70 mt-2">
                           {formatPublishedDate(relPost.published_at)}
                         </p>
                       )}
