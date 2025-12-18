@@ -15,10 +15,14 @@ const WelcomePage = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users or users who have dismissed welcome page
+  // Mark welcome page as seen on mount
   useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
-    if (!loading && (user || hasSeenWelcome)) {
+    localStorage.setItem('hasSeenWelcome', 'true');
+  }, []);
+
+  // Redirect authenticated users to main page
+  useEffect(() => {
+    if (!loading && user) {
       navigate("/");
     }
   }, [user, loading, navigate]);
