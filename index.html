@@ -2,8 +2,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Start cookieyes banner -->
-    <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/d4e53f5fb4ed2d73b13f5090/script.js"></script>
+    <!-- Start cookieyes banner - delayed by 3 seconds -->
+    <script>
+      setTimeout(function() {
+        var s = document.createElement('script');
+        s.id = 'cookieyes';
+        s.type = 'text/javascript';
+        s.src = 'https://cdn-cookieyes.com/client_data/d4e53f5fb4ed2d73b13f5090/script.js';
+        document.head.appendChild(s);
+      }, 3000);
+    </script>
     <!-- End cookieyes banner -->
 
     <meta charset="UTF-8" />
