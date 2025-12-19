@@ -11,7 +11,6 @@ const SUPABASE_URL = "https://zcjzeafelunqxmxzznos.supabase.co";
 export function usePageViewTracker() {
   const location = useLocation();
   const hasTrackedInitial = useRef(false);
-  const currentPageViewId = useRef<string | null>(null);
 
   useEffect(() => {
     // Build full URL
@@ -20,10 +19,7 @@ export function usePageViewTracker() {
     // Get referrer (only on initial page load, not on SPA navigation)
     const referrer = hasTrackedInitial.current ? null : document.referrer || null;
     
-    // Reset the page view ID for new navigation
-    currentPageViewId.current = null;
-
-    // Track the page view and get the ID
+    // Track the page view and then update fully_loaded when page is complete
     fetch(`${SUPABASE_URL}/functions/v1/track-pageview`, {
       method: 'POST',
       headers: {
@@ -37,7 +33,29 @@ export function usePageViewTracker() {
       .then(res => res.json())
       .then(data => {
         if (data.id) {
-          currentPageViewId.current = data.id;
+          // Once we have the ID, set up the fully_loaded update
+          const markFullyLoaded = () => {
+            fetch(`${SUPABASE_URL}/functions/v1/track-pageview`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                id: data.id,
+                fully_loaded: true,
+              }),
+              keepalive: true,
+            }).catch(() => {
+              // Silently fail
+            });
+          };
+
+          // Check if document is already loaded
+          if (document.readyState === 'complete') {
+            markFullyLoaded();
+          } else {
+            window.addEventListener('load', markFullyLoaded, { once: true });
+          }
         }
       })
       .catch(() => {
@@ -45,37 +63,5 @@ export function usePageViewTracker() {
       });
 
     hasTrackedInitial.current = true;
-  }, [location.pathname, location.search]);
-
-  // Track when page fully loads
-  useEffect(() => {
-    const markFullyLoaded = () => {
-      // Small delay to ensure currentPageViewId is set
-      setTimeout(() => {
-        if (currentPageViewId.current) {
-          fetch(`${SUPABASE_URL}/functions/v1/track-pageview`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: currentPageViewId.current,
-              fully_loaded: true,
-            }),
-            keepalive: true,
-          }).catch(() => {
-            // Silently fail
-          });
-        }
-      }, 100);
-    };
-
-    // Check if document is already loaded
-    if (document.readyState === 'complete') {
-      markFullyLoaded();
-    } else {
-      window.addEventListener('load', markFullyLoaded);
-      return () => window.removeEventListener('load', markFullyLoaded);
-    }
   }, [location.pathname, location.search]);
 }
