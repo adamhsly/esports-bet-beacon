@@ -20,7 +20,10 @@ serve(async (req) => {
   }
 
   try {
-    const { page_url, referrer, id, fully_loaded } = await req.json();
+    const body = await req.json();
+    const { page_url, referrer, id, fully_loaded } = body;
+    
+    console.log(`[track-pageview] Request received:`, JSON.stringify({ page_url: page_url?.substring(0, 100), referrer, id, fully_loaded }));
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -29,22 +32,25 @@ serve(async (req) => {
 
     // If id is provided, update the existing record to mark as fully loaded
     if (id && fully_loaded === true) {
-      const { error } = await supabase
+      console.log(`[track-pageview] Attempting to mark ${id} as fully_loaded`);
+      
+      const { data: updateData, error } = await supabase
         .from("page_views")
         .update({ fully_loaded: true })
-        .eq("id", id);
+        .eq("id", id)
+        .select();
 
       if (error) {
-        console.error("Failed to update page view:", error);
+        console.error(`[track-pageview] Failed to update page view ${id}:`, error);
         return new Response(
           JSON.stringify({ error: "Failed to update page view" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      console.log(`Page view marked as fully loaded: ${id}`);
+      console.log(`[track-pageview] Successfully marked ${id} as fully_loaded. Rows updated: ${updateData?.length ?? 0}`);
       return new Response(
-        JSON.stringify({ success: true }),
+        JSON.stringify({ success: true, updated: updateData?.length ?? 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
