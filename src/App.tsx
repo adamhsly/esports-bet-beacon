@@ -46,6 +46,7 @@ import BlogPage from '@/pages/BlogPage';
 import BlogPostPage from '@/pages/BlogPostPage';
 import BlogAdminPage from '@/pages/BlogAdminPage';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
+import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
 import { StickyProfileHud } from '@/components/StickyProfileHud';
 import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
@@ -111,6 +112,9 @@ const QueryClientWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   
   // Track referral codes from URL
   useReferralTracking();
+  
+  // GDPR-compliant page view tracking (no PII)
+  usePageViewTracker();
   
   // Don't show ProgressHudSticky on fantasy page (homepage or /fantasy) or public lineup share pages
   const isFantasyPage = location.pathname === '/' || location.pathname === '/fantasy';
