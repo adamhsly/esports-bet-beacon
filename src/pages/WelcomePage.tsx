@@ -13,7 +13,7 @@ const FaqSection = lazy(() => import("@/components/FaqSection"));
 const pickTeamsImg = "/assets/welcome/pick-teams.png";
 const scorePointsImg = "/assets/welcome/score-points.png";
 const winPrizesImg = "/assets/welcome/win-prizes.png";
-const welcomeBanner = "/assets/welcome-banner.png";
+const welcomeBanner = "/lovable-uploads/Spend_5_Get_10.webp";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
