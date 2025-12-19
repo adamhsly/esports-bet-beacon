@@ -39,6 +39,11 @@ const FantasyPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Redirect new visitors to welcome page immediately (don't wait for auth)
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
