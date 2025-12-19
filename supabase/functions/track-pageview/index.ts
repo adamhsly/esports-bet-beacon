@@ -20,8 +20,36 @@ serve(async (req) => {
   }
 
   try {
-    const { page_url, referrer } = await req.json();
+    const { page_url, referrer, id, fully_loaded } = await req.json();
 
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // If id is provided, update the existing record to mark as fully loaded
+    if (id && fully_loaded === true) {
+      const { error } = await supabase
+        .from("page_views")
+        .update({ fully_loaded: true })
+        .eq("id", id);
+
+      if (error) {
+        console.error("Failed to update page view:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to update page view" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Page view marked as fully loaded: ${id}`);
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Otherwise, create a new page view record
     if (!page_url || typeof page_url !== "string") {
       return new Response(
         JSON.stringify({ error: "page_url is required" }),
@@ -37,17 +65,15 @@ serve(async (req) => {
       }
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("page_views")
       .insert({
         page_url,
         referrer: normalizedReferrer,
-      });
+        fully_loaded: false,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("Failed to insert page view:", error);
@@ -57,10 +83,10 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Page view recorded: ${page_url} | referrer: ${normalizedReferrer}`);
+    console.log(`Page view recorded: ${page_url} | referrer: ${normalizedReferrer} | id: ${data.id}`);
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, id: data.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
