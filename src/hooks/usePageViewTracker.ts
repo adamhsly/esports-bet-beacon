@@ -16,8 +16,22 @@ export function usePageViewTracker() {
 
   useEffect(() => {
     const pageUrl = window.location.origin + location.pathname + location.search;
-    const referrer = hasTrackedInitial.current ? null : document.referrer || null;
     const startTime = Date.now();
+
+    // Get referrer: prefer document.referrer, fallback to utm_source from URL
+    let referrer: string | null = null;
+    if (!hasTrackedInitial.current) {
+      if (document.referrer) {
+        referrer = document.referrer;
+      } else {
+        // Fallback: extract utm_source from URL (e.g., tiktok, facebook, etc.)
+        const params = new URLSearchParams(location.search);
+        const utmSource = params.get('utm_source');
+        if (utmSource) {
+          referrer = utmSource;
+        }
+      }
+    }
 
     let disposed = false;
     const cleanupFns: Array<() => void> = [];
