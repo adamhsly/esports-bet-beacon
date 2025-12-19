@@ -1824,6 +1824,27 @@ export type Database = {
         }
         Relationships: []
       }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          page_url: string
+          referrer: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_url: string
+          referrer?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_url?: string
+          referrer?: string | null
+        }
+        Relationships: []
+      }
       pages: {
         Row: {
           content_markdown: string
