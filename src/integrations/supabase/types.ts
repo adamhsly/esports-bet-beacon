@@ -1827,18 +1827,21 @@ export type Database = {
       page_views: {
         Row: {
           created_at: string
+          fully_loaded: boolean
           id: string
           page_url: string
           referrer: string | null
         }
         Insert: {
           created_at?: string
+          fully_loaded?: boolean
           id?: string
           page_url: string
           referrer?: string | null
         }
         Update: {
           created_at?: string
+          fully_loaded?: boolean
           id?: string
           page_url?: string
           referrer?: string | null
