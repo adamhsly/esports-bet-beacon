@@ -71,7 +71,10 @@ const WelcomePage = () => {
             src="/lovable-uploads/frags_and_fortunes_transparent.png" 
             alt="Frags & Fortunes" 
             className="h-16 md:h-48 mx-auto mb-4 md:mb-8 max-w-full object-contain"
+            width={400}
+            height={192}
             fetchPriority="high"
+            decoding="async"
           />
           <h1 className="text-xl sm:text-2xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight leading-tight px-2 break-words">
             <span className="text-purple-500">Build a </span>
@@ -99,7 +102,10 @@ const WelcomePage = () => {
             src={welcomeBanner} 
             alt="Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits"
             className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+            width={1920}
+            height={400}
             loading="lazy"
+            decoding="async"
           />
         </Link>
       </section>
@@ -121,7 +127,10 @@ const WelcomePage = () => {
                       src={pickTeamsImg} 
                       alt="Pick Teams" 
                       className="w-full h-full object-contain drop-shadow-2xl"
+                      width={288}
+                      height={288}
                       loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <div className="text-center md:text-left">
@@ -141,7 +150,10 @@ const WelcomePage = () => {
                       src={scorePointsImg} 
                       alt="Score Points" 
                       className="w-full h-full object-contain drop-shadow-2xl"
+                      width={288}
+                      height={288}
                       loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <div className="text-center md:text-left">
@@ -161,7 +173,10 @@ const WelcomePage = () => {
                       src={winPrizesImg} 
                       alt="Win Prizes" 
                       className="w-full h-full object-contain drop-shadow-2xl"
+                      width={288}
+                      height={288}
                       loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <div className="text-center md:text-left">
