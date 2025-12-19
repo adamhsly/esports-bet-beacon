@@ -69,12 +69,12 @@ const WelcomePage = () => {
             className="h-16 md:h-48 mx-auto mb-4 md:mb-8 max-w-full object-contain"
           />
           <h1 className="text-xl sm:text-2xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight leading-tight px-2 break-words">
-            <span className="text-purple-500">Pick'ems meets </span>
-            <span className="text-yellow-400">Fantasy </span>
-            <span className="text-white">Esports!!!</span>
+            <span className="text-purple-500">Build a </span>
+            <span className="text-yellow-400">fantasy roster </span>
+            <span className="text-white">for live esports</span>
           </h1>
 
-          <p className="text-sm md:text-xl text-muted-foreground mb-6 md:mb-10 px-2 max-w-3xl mx-auto break-words">Pick Your Favourite Pro & Amateur teams. Score points when they win. The most points collect prizes.</p>
+          <p className="text-sm md:text-xl text-muted-foreground mb-6 md:mb-10 px-2 max-w-3xl mx-auto break-words">Pick teams. Score points. Win prizes.</p>
 
           <Link to="/auth">
             <Button
