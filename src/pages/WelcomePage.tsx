@@ -1,15 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import SearchableNavbar from "@/components/SearchableNavbar";
-import Footer from "@/components/Footer";
-import FaqSection from "@/components/FaqSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import pickTeamsImg from "@/assets/welcome/pick-teams.png";
-import scorePointsImg from "@/assets/welcome/score-points.png";
-import winPrizesImg from "@/assets/welcome/win-prizes.png";
-import welcomeBanner from "@/assets/welcome-banner.png";
+
+// Lazy load below-fold components
+const Footer = lazy(() => import("@/components/Footer"));
+const FaqSection = lazy(() => import("@/components/FaqSection"));
+
+// Static image paths for lazy loading
+const pickTeamsImg = "/assets/welcome/pick-teams.png";
+const scorePointsImg = "/assets/welcome/score-points.png";
+const winPrizesImg = "/assets/welcome/win-prizes.png";
+const welcomeBanner = "/assets/welcome-banner.png";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
@@ -67,6 +71,7 @@ const WelcomePage = () => {
             src="/lovable-uploads/frags_and_fortunes_transparent.png" 
             alt="Frags & Fortunes" 
             className="h-16 md:h-48 mx-auto mb-4 md:mb-8 max-w-full object-contain"
+            fetchPriority="high"
           />
           <h1 className="text-xl sm:text-2xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight leading-tight px-2 break-words">
             <span className="text-purple-500">Build a </span>
@@ -94,6 +99,7 @@ const WelcomePage = () => {
             src={welcomeBanner} 
             alt="Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits"
             className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+            loading="lazy"
           />
         </Link>
       </section>
@@ -115,6 +121,7 @@ const WelcomePage = () => {
                       src={pickTeamsImg} 
                       alt="Pick Teams" 
                       className="w-full h-full object-contain drop-shadow-2xl"
+                      loading="lazy"
                     />
                   </div>
                   <div className="text-center md:text-left">
@@ -134,6 +141,7 @@ const WelcomePage = () => {
                       src={scorePointsImg} 
                       alt="Score Points" 
                       className="w-full h-full object-contain drop-shadow-2xl"
+                      loading="lazy"
                     />
                   </div>
                   <div className="text-center md:text-left">
@@ -153,6 +161,7 @@ const WelcomePage = () => {
                       src={winPrizesImg} 
                       alt="Win Prizes" 
                       className="w-full h-full object-contain drop-shadow-2xl"
+                      loading="lazy"
                     />
                   </div>
                   <div className="text-center md:text-left">
@@ -166,8 +175,10 @@ const WelcomePage = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <FaqSection />
+      {/* FAQ Section - Lazy loaded */}
+      <Suspense fallback={<div className="py-20" />}>
+        <FaqSection />
+      </Suspense>
 
       {/* Final CTA Section */}
       <section className="py-8 md:py-32 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-background reveal-on-scroll overflow-hidden">
@@ -190,7 +201,9 @@ const WelcomePage = () => {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<div className="py-10" />}>
+        <Footer />
+      </Suspense>
     </div>
   );
 };
