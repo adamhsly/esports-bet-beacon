@@ -81,7 +81,7 @@ const WelcomePage = () => {
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
             >
-              Start Playing
+              Pick your teams
             </Button>
           </Link>
         </div>
