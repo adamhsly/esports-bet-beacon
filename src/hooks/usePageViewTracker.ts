@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const SUPABASE_URL = "https://zcjzeafelunqxmxzznos.supabase.co";
+const MIN_ENGAGEMENT_MS = 2000; // 2 seconds minimum before marking as fully loaded
 
 /**
  * Minimal GDPR-compliant page view tracker
@@ -14,11 +15,9 @@ export function usePageViewTracker() {
   const fullyLoadedSent = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    // Build full URL
     const pageUrl = window.location.origin + location.pathname + location.search;
-
-    // Get referrer (only on initial page load, not on SPA navigation)
     const referrer = hasTrackedInitial.current ? null : document.referrer || null;
+    const startTime = Date.now();
 
     let disposed = false;
     const cleanupFns: Array<() => void> = [];
@@ -26,98 +25,62 @@ export function usePageViewTracker() {
     const postJson = (body: unknown, opts?: { keepalive?: boolean }) => {
       return fetch(`${SUPABASE_URL}/functions/v1/track-pageview`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
         keepalive: opts?.keepalive,
       });
     };
 
-    // Track the page view and then update fully_loaded when page is complete
-    postJson({
-      page_url: pageUrl,
-      referrer,
-    })
+    // Track the initial page view
+    postJson({ page_url: pageUrl, referrer })
       .then((res) => res.json())
       .then((data) => {
-        if (disposed) return;
+        if (disposed || !data?.id) return;
 
-        if (data?.id) {
-          const pageViewId: string = data.id;
+        const pageViewId: string = data.id;
 
-          const markFullyLoaded = () => {
-            if (disposed) return;
+        const markFullyLoaded = () => {
+          if (disposed || fullyLoadedSent.current.has(pageViewId)) return;
 
-            // Prevent duplicate updates for the same page view
-            if (fullyLoadedSent.current.has(pageViewId)) {
-              return;
-            }
-            fullyLoadedSent.current.add(pageViewId);
-
-            const payload = JSON.stringify({ id: pageViewId, fully_loaded: true });
-            let beaconOk = false;
-
-            // Prefer sendBeacon for reliability on bounces/unloads
-            try {
-              if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-                const blob = new Blob([payload], { type: 'application/json' });
-                beaconOk = navigator.sendBeacon(`${SUPABASE_URL}/functions/v1/track-pageview`, blob);
-              }
-            } catch {
-              beaconOk = false;
-            }
-
-            if (beaconOk) return;
-
-            // Fallback to fetch (keepalive helps if the user leaves quickly)
-            postJson({ id: pageViewId, fully_loaded: true }, { keepalive: true }).catch(() => {
-              // Silently fail - remove from set so it can retry
-              fullyLoadedSent.current.delete(pageViewId);
-            });
-          };
-
-          // 1) If already loaded, send immediately.
-          // 2) Otherwise, listen for load.
-          // 3) Always add pagehide/visibility fallbacks to catch quick exits.
-          if (document.readyState === 'complete') {
-            markFullyLoaded();
-          } else {
-            const onLoad = () => markFullyLoaded();
-            window.addEventListener('load', onLoad, { once: true });
-            cleanupFns.push(() => window.removeEventListener('load', onLoad));
-
-            // Fallback: mark after a grace period even if load never fires (e.g., hanging resources)
-            const fallbackTimeout = setTimeout(() => markFullyLoaded(), 6000);
-            cleanupFns.push(() => clearTimeout(fallbackTimeout));
+          // Ensure minimum engagement time before marking as fully loaded
+          const elapsed = Date.now() - startTime;
+          if (elapsed < MIN_ENGAGEMENT_MS) {
+            const remaining = MIN_ENGAGEMENT_MS - elapsed;
+            const t = setTimeout(() => markFullyLoaded(), remaining);
+            cleanupFns.push(() => clearTimeout(t));
+            return;
           }
 
-          const onPageHide = () => markFullyLoaded();
-          window.addEventListener('pagehide', onPageHide, { once: true });
-          cleanupFns.push(() => window.removeEventListener('pagehide', onPageHide));
+          fullyLoadedSent.current.add(pageViewId);
 
-          const onVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-              markFullyLoaded();
-            }
-          };
-          document.addEventListener('visibilitychange', onVisibilityChange);
-          cleanupFns.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+          // Use fetch with keepalive for reliability
+          postJson({ id: pageViewId, fully_loaded: true }, { keepalive: true }).catch(() => {
+            fullyLoadedSent.current.delete(pageViewId);
+          });
+        };
 
-          // Extra nudge for SPA navigations where document is already 'interactive'/'complete'
-          if (document.readyState !== 'loading') {
-            if ('requestIdleCallback' in window) {
-              const idleId = (window as any).requestIdleCallback(() => markFullyLoaded(), { timeout: 2000 });
-              cleanupFns.push(() => (window as any).cancelIdleCallback?.(idleId));
-            } else {
-              const t = setTimeout(() => markFullyLoaded(), 0);
-              cleanupFns.push(() => clearTimeout(t));
-            }
-          }
+        // Fire when page is ready
+        if (document.readyState === 'complete') {
+          markFullyLoaded();
+        } else {
+          const onLoad = () => markFullyLoaded();
+          window.addEventListener('load', onLoad, { once: true });
+          cleanupFns.push(() => window.removeEventListener('load', onLoad));
         }
+
+        // Fire when user leaves (captures bounces)
+        const onPageHide = () => markFullyLoaded();
+        window.addEventListener('pagehide', onPageHide, { once: true });
+        cleanupFns.push(() => window.removeEventListener('pagehide', onPageHide));
+
+        const onVisibilityChange = () => {
+          if (document.visibilityState === 'hidden') markFullyLoaded();
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        cleanupFns.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
       })
       .catch(() => {
-        // Silently fail - tracking should never affect user experience
+        // Silently fail
       });
 
     hasTrackedInitial.current = true;
