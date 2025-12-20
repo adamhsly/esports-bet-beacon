@@ -401,12 +401,12 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
             <Button
               size="sm"
               onClick={handleNext}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex-shrink-0"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex-shrink-0 h-9"
             >
               {isLastStep ? (
                 <>
                   <Sparkles className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">Create account</span>
+                  Create account
                 </>
               ) : (
                 <>
