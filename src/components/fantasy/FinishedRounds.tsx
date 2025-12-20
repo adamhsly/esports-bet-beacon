@@ -65,7 +65,7 @@ export const FinishedRounds: React.FC = () => {
 
       if (picksError) throw picksError;
 
-      // Fetch scores for each round
+      // Fetch scores for each round with fallback to match breakdown if needed
       const roundsWithScores = await Promise.all(
         (picks || []).map(async (pick) => {
           const { data: scores, error: scoresError } = await supabase
@@ -76,6 +76,56 @@ export const FinishedRounds: React.FC = () => {
 
           if (scoresError) throw scoresError;
 
+          // If scores show 0, try to get data from match breakdown table
+          let finalScores = (scores || []).map(score => ({
+            ...score,
+            team_type: score.team_type as 'pro' | 'amateur'
+          }));
+
+          // Check if any score is 0 and we need fallback
+          const needsFallback = finalScores.some(s => s.current_score === 0);
+          if (needsFallback && finalScores.length > 0) {
+            // Fetch match breakdowns and calculate scores from them
+            const { data: breakdowns } = await supabase
+              .from('fantasy_team_match_breakdown')
+              .select('*')
+              .eq('round_id', pick.round_id)
+              .eq('user_id', user.id);
+
+            if (breakdowns && breakdowns.length > 0) {
+              // Group by team_id and sum points
+              const teamScoresMap = new Map<string, { points: number; matchWins: number; mapWins: number; cleanSweeps: number; tournamentsWon: number; matchesPlayed: number }>();
+              
+              for (const b of breakdowns) {
+                const existing = teamScoresMap.get(b.team_id) || { points: 0, matchWins: 0, mapWins: 0, cleanSweeps: 0, tournamentsWon: 0, matchesPlayed: 0 };
+                existing.points += b.points_earned || 0;
+                existing.mapWins += b.map_wins || 0;
+                existing.matchesPlayed += 1;
+                if (b.result === 'win') existing.matchWins += 1;
+                if (b.is_clean_sweep) existing.cleanSweeps += 1;
+                if (b.is_tournament_win) existing.tournamentsWon += 1;
+                teamScoresMap.set(b.team_id, existing);
+              }
+
+              // Update scores with calculated values
+              finalScores = finalScores.map(score => {
+                const calculated = teamScoresMap.get(score.team_id);
+                if (calculated && score.current_score === 0) {
+                  return {
+                    ...score,
+                    current_score: calculated.points,
+                    match_wins: calculated.matchWins,
+                    map_wins: calculated.mapWins,
+                    clean_sweeps: calculated.cleanSweeps,
+                    tournaments_won: calculated.tournamentsWon,
+                    matches_played: calculated.matchesPlayed,
+                  };
+                }
+                return score;
+              });
+            }
+          }
+
           return {
             id: pick.round_id,
             type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly',
@@ -85,10 +135,7 @@ export const FinishedRounds: React.FC = () => {
             total_score: pick.total_score,
             team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
-            scores: (scores || []).map(score => ({
-              ...score,
-              team_type: score.team_type as 'pro' | 'amateur'
-            }))
+            scores: finalScores
           };
         })
       );
