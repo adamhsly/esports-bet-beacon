@@ -386,7 +386,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
               {isLastStep ? (
                 <>
                   <Sparkles className="h-4 w-4 mr-1" />
-                  Let's Go!
+                  Create account
                 </>
               ) : (
                 <>
