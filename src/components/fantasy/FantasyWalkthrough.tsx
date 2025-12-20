@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, ChevronLeft, Filter, Calendar, Trophy, Users, Sparkles, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ interface FantasyWalkthroughProps {
 }
 
 export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComplete }) => {
+  const navigate = useNavigate();
   const [showIntro, setShowIntro] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -161,7 +163,9 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
     if (currentStep < WALKTHROUGH_STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
+      // Last step - navigate to signup
       handleComplete();
+      navigate('/auth?tab=signup');
     }
   };
 

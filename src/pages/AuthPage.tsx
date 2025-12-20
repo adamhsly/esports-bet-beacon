@@ -64,6 +64,7 @@ const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "signin";
 
   // Generate dropdown options
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
@@ -337,7 +338,7 @@ const AuthPage: React.FC = () => {
             />
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="space-y-4">
+            <Tabs defaultValue={defaultTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
                 <TabsTrigger
                   value="signin"
