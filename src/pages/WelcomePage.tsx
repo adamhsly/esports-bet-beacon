@@ -84,7 +84,7 @@ const WelcomePage = () => {
 
           <p className="text-sm md:text-xl text-muted-foreground mb-6 md:mb-10 px-2 max-w-3xl mx-auto break-words">Pick teams. Score points. Win prizes.</p>
 
-          <Link to="/auth">
+          <Link to="/fantasy">
             <Button
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
