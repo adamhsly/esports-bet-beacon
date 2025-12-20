@@ -139,7 +139,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       checkExistingSubmission();
     }
     fetchAvailableTeams();
-  }, [round, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round.id, user?.id]);
 
   const checkExistingSubmission = async () => {
     if (!user) return;
