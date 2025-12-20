@@ -64,7 +64,30 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
     return () => clearTimeout(timer);
   }, []);
 
-  // Update target position without aggressive scrolling
+  // Lock body scroll when walkthrough is active
+  useEffect(() => {
+    if (isActive) {
+      // Store current scroll position and lock
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore scroll position when unlocking
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isActive]);
+
+  // Update target position
   const updateTargetPosition = useCallback(() => {
     if (!isActive) return;
     
@@ -79,7 +102,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
     }
   }, [isActive, currentStep]);
 
-  // Handle step changes with gentle scroll
+  // Handle step changes - scroll element into view before locking
   useEffect(() => {
     if (!isActive) return;
     
@@ -87,28 +110,35 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
     const element = document.querySelector(step.target);
     
     if (element) {
-      const rect = element.getBoundingClientRect();
-      setTargetRect(rect);
+      // Temporarily unlock scroll to position element
+      const currentTop = document.body.style.top;
+      const scrollY = currentTop ? -parseInt(currentTop, 10) : 0;
       
-      // Only scroll if element is mostly out of view
-      const viewportHeight = window.innerHeight;
-      const isOutOfView = rect.top < 80 || rect.bottom > viewportHeight - 80;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
       
-      if (isOutOfView) {
-        // Gentle scroll - keep element in upper third of screen
-        const scrollTop = window.scrollY + rect.top - viewportHeight / 3;
-        window.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+      // Scroll element into view
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Re-lock scroll after animation
+      setTimeout(() => {
+        const newScrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${newScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.overflow = 'hidden';
         
-        // Update rect after scroll
-        setTimeout(() => {
-          const newRect = element.getBoundingClientRect();
-          setTargetRect(newRect);
-        }, 400);
-      }
+        // Update rect after scroll completes
+        const rect = element.getBoundingClientRect();
+        setTargetRect(rect);
+      }, 500);
     }
   }, [currentStep, isActive]);
 
-  // Update on resize only (not scroll to avoid jitter)
+  // Update on resize
   useEffect(() => {
     if (!isActive) return;
     
