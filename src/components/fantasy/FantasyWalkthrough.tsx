@@ -234,29 +234,45 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
     }
 
     const padding = 16;
-    const tooltipWidth = 320;
+    const tooltipWidth = isLastStep ? 360 : 320;
+    const effectiveTooltipWidth = Math.min(tooltipWidth, window.innerWidth - padding * 2);
     const tooltipHeight = 200;
 
     switch (step.position) {
       case 'bottom':
         return {
           top: targetRect.bottom + padding,
-          left: Math.max(padding, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - padding)),
+          left: Math.max(
+            padding,
+            Math.min(
+              targetRect.left + targetRect.width / 2 - effectiveTooltipWidth / 2,
+              window.innerWidth - effectiveTooltipWidth - padding,
+            ),
+          ),
         };
       case 'top':
         return {
           top: Math.max(padding, targetRect.top - tooltipHeight - padding),
-          left: Math.max(padding, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - padding)),
+          left: Math.max(
+            padding,
+            Math.min(
+              targetRect.left + targetRect.width / 2 - effectiveTooltipWidth / 2,
+              window.innerWidth - effectiveTooltipWidth - padding,
+            ),
+          ),
         };
       case 'left':
         return {
           top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-          left: targetRect.left - tooltipWidth - padding,
+          left: Math.max(padding, targetRect.left - effectiveTooltipWidth - padding),
         };
       case 'right':
         return {
           top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-          left: targetRect.right + padding,
+          left: Math.min(
+            window.innerWidth - effectiveTooltipWidth - padding,
+            targetRect.right + padding,
+          ),
         };
       default:
         return {
@@ -314,7 +330,11 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
 
       {/* Tooltip Card */}
       <div
-        className="fixed z-[101] w-80 bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] border border-[#8B5CF6]/30 rounded-xl shadow-2xl p-5"
+        className={cn(
+          "fixed z-[101] bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] border border-[#8B5CF6]/30 rounded-xl shadow-2xl p-5",
+          isLastStep ? "w-[360px]" : "w-80",
+          "max-w-[calc(100vw-1.5rem)]",
+        )}
         style={getTooltipStyle()}
       >
         {/* Close button */}
