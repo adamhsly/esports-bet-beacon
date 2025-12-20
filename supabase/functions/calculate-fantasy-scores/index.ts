@@ -165,6 +165,30 @@ serve(async (req) => {
           continue;
         }
 
+        // Add swapped-out team if it's no longer in picks (to preserve its score record)
+        if (swap && swap.old_team_id) {
+          const oldTeamInPicks = teams.some(t => t.id === swap.old_team_id);
+          
+          if (!oldTeamInPicks) {
+            // Get old team info from existing scores
+            const { data: oldScoreData } = await supabase
+              .from('fantasy_round_scores')
+              .select('team_name, team_type')
+              .eq('round_id', round.id)
+              .eq('user_id', pick.user_id)
+              .eq('team_id', swap.old_team_id)
+              .maybeSingle();
+            
+            teams.push({
+              id: swap.old_team_id,
+              name: oldScoreData?.team_name || 'Swapped Team',
+              type: (oldScoreData?.team_type || 'pro') as 'pro' | 'amateur',
+            });
+            
+            console.log(`🔄 Added swapped-out team ${swap.old_team_id} for processing`);
+          }
+        }
+
         let totalScore = 0;
         const allBreakdowns: any[] = [];
         const scoreUpdates: any[] = [];
