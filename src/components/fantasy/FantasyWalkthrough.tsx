@@ -22,14 +22,6 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     position: 'bottom',
   },
   {
-    id: 'round-types',
-    target: '[data-walkthrough="round-section"]',
-    title: 'Types of Rounds',
-    description: 'Win Steam Vouchers in paid rounds, or earn Credits in free rounds. Daily, weekly, and monthly options available!',
-    icon: <Calendar className="h-5 w-5" />,
-    position: 'top',
-  },
-  {
     id: 'team-types',
     target: '[data-walkthrough="round-card"]',
     title: 'Pro & Amateur Teams',
