@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronRight, ChevronLeft, Filter, Calendar, Trophy, Users, Sparkles } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Filter, Calendar, Trophy, Users, Sparkles, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface WalkthroughStep {
   id: string;
-  target: string; // CSS selector or data-walkthrough attribute
+  target: string;
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -54,21 +54,25 @@ interface FantasyWalkthroughProps {
 }
 
 export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComplete }) => {
+  const [showIntro, setShowIntro] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
-  // Check if walkthrough should show
+  // Check if walkthrough should show - with delay
   useEffect(() => {
     const hasCompleted = localStorage.getItem(STORAGE_KEY) === 'true';
-    if (!hasCompleted) {
-      // Small delay to let page render
-      const timer = setTimeout(() => setIsActive(true), 800);
-      return () => clearTimeout(timer);
-    }
+    if (hasCompleted) return;
+
+    // Longer delay before showing intro prompt
+    const timer = setTimeout(() => {
+      setShowIntro(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Find and highlight target element
+  // Update target position without aggressive scrolling
   const updateTargetPosition = useCallback(() => {
     if (!isActive) return;
     
@@ -78,26 +82,58 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
     if (element) {
       const rect = element.getBoundingClientRect();
       setTargetRect(rect);
-      
-      // Scroll element into view if needed
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
       setTargetRect(null);
     }
   }, [isActive, currentStep]);
 
+  // Handle step changes with gentle scroll
   useEffect(() => {
-    updateTargetPosition();
+    if (!isActive) return;
     
-    // Update on scroll/resize
-    window.addEventListener('scroll', updateTargetPosition);
+    const step = WALKTHROUGH_STEPS[currentStep];
+    const element = document.querySelector(step.target);
+    
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      setTargetRect(rect);
+      
+      // Only scroll if element is mostly out of view
+      const viewportHeight = window.innerHeight;
+      const isOutOfView = rect.top < 80 || rect.bottom > viewportHeight - 80;
+      
+      if (isOutOfView) {
+        // Gentle scroll - keep element in upper third of screen
+        const scrollTop = window.scrollY + rect.top - viewportHeight / 3;
+        window.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+        
+        // Update rect after scroll
+        setTimeout(() => {
+          const newRect = element.getBoundingClientRect();
+          setTargetRect(newRect);
+        }, 400);
+      }
+    }
+  }, [currentStep, isActive]);
+
+  // Update on resize only (not scroll to avoid jitter)
+  useEffect(() => {
+    if (!isActive) return;
+    
     window.addEventListener('resize', updateTargetPosition);
-    
-    return () => {
-      window.removeEventListener('scroll', updateTargetPosition);
-      window.removeEventListener('resize', updateTargetPosition);
-    };
-  }, [updateTargetPosition]);
+    return () => window.removeEventListener('resize', updateTargetPosition);
+  }, [updateTargetPosition, isActive]);
+
+  const handleStartWalkthrough = () => {
+    setShowIntro(false);
+    setIsActive(true);
+  };
+
+  const handleSkipIntro = () => {
+    setShowIntro(false);
+    localStorage.setItem(STORAGE_KEY, 'true');
+    onComplete?.();
+  };
 
   const handleNext = () => {
     if (currentStep < WALKTHROUGH_STEPS.length - 1) {
@@ -122,6 +158,43 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
   const handleSkip = () => {
     handleComplete();
   };
+
+  // Intro prompt - ask if user wants help
+  if (showIntro) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-[#8B5CF6]/20 rounded-xl">
+              <Sparkles className="h-6 w-6 text-[#8B5CF6]" />
+            </div>
+            <h2 className="text-xl font-bold text-white">New to Fantasy?</h2>
+          </div>
+          
+          <p className="text-[#d1d1d9] mb-6 leading-relaxed">
+            Would you like a quick tour to learn how to pick teams, join rounds, and win prizes?
+          </p>
+          
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSkipIntro}
+              variant="outline"
+              className="flex-1 border-white/10 text-[#d1d1d9] hover:bg-white/5"
+            >
+              No thanks
+            </Button>
+            <Button
+              onClick={handleStartWalkthrough}
+              className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+            >
+              <HelpCircle className="h-4 w-4 mr-2" />
+              Show me
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isActive) return null;
 
@@ -150,7 +223,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
         };
       case 'top':
         return {
-          top: targetRect.top - tooltipHeight - padding,
+          top: Math.max(padding, targetRect.top - tooltipHeight - padding),
           left: Math.max(padding, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - padding)),
         };
       case 'left':
