@@ -399,9 +399,10 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
               </Button>
             )}
             <Button
+              variant="outline"
               size="sm"
               onClick={handleNext}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex-shrink-0 h-9"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:text-white border-transparent flex-shrink-0 h-9"
             >
               {isLastStep ? (
                 <>
