@@ -16,9 +16,20 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  defaultTab?: 'signin' | 'signup';
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+// Check if user has ever logged in before (stored in localStorage)
+const hasLoggedInBefore = (): boolean => {
+  return localStorage.getItem('has_logged_in') === 'true';
+};
+
+// Mark that user has logged in
+const markAsLoggedIn = (): void => {
+  localStorage.setItem('has_logged_in', 'true');
+};
+
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defaultTab }) => {
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
@@ -128,6 +139,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
       });
     } else {
       setSignInError('');
+      markAsLoggedIn(); // Mark user as returning user
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -207,6 +219,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
       });
     } else {
       setSignUpError('');
+      markAsLoggedIn(); // Mark user as returning user after successful signup
       toast({
         title: "Account created successfully!",
         description: "Welcome to EsportsHub! Please check your email to verify your account.",
@@ -272,7 +285,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
           />
         </DialogHeader>
         
-        <Tabs defaultValue="signin" className="space-y-4">
+        <Tabs defaultValue={defaultTab || (hasLoggedInBefore() ? 'signin' : 'signup')} className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
             <TabsTrigger 
               value="signin" 
