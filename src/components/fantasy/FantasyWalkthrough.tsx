@@ -160,7 +160,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
             <div className="p-2 bg-[#8B5CF6]/20 rounded-xl">
               <Sparkles className="h-6 w-6 text-[#8B5CF6]" />
             </div>
-            <h2 className="text-xl font-bold text-white">New to Fantasy?</h2>
+            <h2 className="text-xl font-bold text-white">New to Frags and Fortunes?</h2>
           </div>
           
           <p className="text-[#d1d1d9] mb-6 leading-relaxed">
