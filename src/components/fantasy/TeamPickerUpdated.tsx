@@ -129,6 +129,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const debouncedProSearch = useDebounce(proSearch, 300);
   const debouncedAmSearch = useDebounce(amSearch, 300);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (user) {
       checkExistingSubmission();
