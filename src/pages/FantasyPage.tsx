@@ -25,7 +25,7 @@ import { ProfileSheet } from '@/components/ProfileSheet';
 import { supabase } from '@/integrations/supabase/client';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
-
+import { FantasyWalkthrough } from '@/components/fantasy/FantasyWalkthrough';
 
 const FantasyPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -258,6 +258,9 @@ const FantasyPage: React.FC = () => {
       
       {/* Profile Sheet */}
       <ProfileSheet isOpen={isOpen} onOpenChange={closeProfile} />
+      
+      {/* First-time visitor walkthrough */}
+      {!selectedRound && activeTab === 'join' && <FantasyWalkthrough />}
     </div>
   );
 };

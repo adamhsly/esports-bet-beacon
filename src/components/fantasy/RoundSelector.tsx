@@ -646,7 +646,7 @@ export const RoundSelector: React.FC<{
   }
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-6" data-walkthrough="filters">
         <RoundFilters filters={filters} onFiltersChange={setFilters} resultCount={filteredRounds.length} />
       </div>
       <div className="space-y-8">
@@ -666,23 +666,33 @@ export const RoundSelector: React.FC<{
             return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
           });
           
+          // Find first free pro round for walkthrough targeting
+          const firstFreeProRound = sortedRounds.find(r => !r.is_paid && r.team_type === 'pro');
+          
           return (
-            <section key={sectionName}>
+            <section key={sectionName} data-walkthrough="round-section">
               <SectionHeading>{sectionName}</SectionHeading>
               <div className="space-y-3">
-                {sortedRounds.map((round) => (
-                  <RoundCard
-                    key={round.id}
-                    round={round}
-                    type={round.type}
-                    onClick={() => handleJoinRound(round)}
-                    onPaidEntry={round.is_paid ? () => handlePaidEntry(round) : undefined}
-                    onSubmitPaidTeams={paidButEmptyPicks[round.id] ? () => handleSubmitPaidTeams(round) : undefined}
-                    isPaidCheckoutLoading={checkoutLoading}
-                    userEntryCount={userEntryCounts[round.id] || 0}
-                    hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
-                  />
-                ))}
+                {sortedRounds.map((round, idx) => {
+                  const isFirstFreeProRound = round === firstFreeProRound;
+                  return (
+                    <div 
+                      key={round.id}
+                      data-walkthrough={isFirstFreeProRound ? "free-round" : idx === 0 ? "round-card" : undefined}
+                    >
+                      <RoundCard
+                        round={round}
+                        type={round.type}
+                        onClick={() => handleJoinRound(round)}
+                        onPaidEntry={round.is_paid ? () => handlePaidEntry(round) : undefined}
+                        onSubmitPaidTeams={paidButEmptyPicks[round.id] ? () => handleSubmitPaidTeams(round) : undefined}
+                        isPaidCheckoutLoading={checkoutLoading}
+                        userEntryCount={userEntryCounts[round.id] || 0}
+                        hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </section>
           );
