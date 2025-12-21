@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,11 +28,10 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<{ userId: string; username: string } | null>(null);
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [roundId, user]);
+  // Get user ID - memoize to prevent unnecessary re-renders
+  const userId = user?.id;
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       // Use RPC function to get public leaderboard data that bypasses RLS
       const { data: scores, error: scoresError } = await supabase
@@ -45,16 +44,17 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
 
       if (!scores || scores.length === 0) {
         setLeaderboard([]);
+        setLoading(false);
         return;
       }
 
-      // Create leaderboard entries
+      // Create leaderboard entries - use userId from closure
       const entries: LeaderboardEntry[] = scores.map((score) => ({
         position: score.user_position,
         user_id: score.user_id,
         username: '', // Will be filled from profiles
         total_score: score.total_score,
-        is_current_user: user ? score.user_id === user.id : false
+        is_current_user: userId ? score.user_id === userId : false
       }));
 
       // Find current user's position
@@ -63,7 +63,7 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
       setUserPosition(currentUserPos);
 
       // Track leaderboard position missions
-      if (currentUserPos && user) {
+      if (currentUserPos && userId) {
         import('@/lib/missionBus').then(async ({ MissionBus }) => {
           if (currentUserPos <= 25) {
             MissionBus.onTop25Placement();
@@ -123,7 +123,11 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
     } finally {
       setLoading(false);
     }
-  };
+  }, [roundId, userId]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   const getRankDisplay = (position: number) => {
     switch (position) {
