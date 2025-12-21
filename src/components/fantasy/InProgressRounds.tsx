@@ -454,6 +454,11 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
   };
 
   const fetchSwapTeams = async (maxBudget: number, excludeTeamId?: string) => {
+    // Get all team IDs currently in the roster (excluding the team being swapped)
+    const rosterTeamIds = round.team_picks
+      .map((pick: any) => pick.team_id || pick.id)
+      .filter((id: string) => id !== excludeTeamId);
+
     const { data: prices } = await supabase
       .from('fantasy_team_prices')
       .select('*')
@@ -461,9 +466,10 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
       .lte('price', maxBudget);
     
     if (prices) {
-      const filtered = excludeTeamId
-        ? prices.filter((p) => p.team_id !== excludeTeamId)
-        : prices;
+      // Exclude the swapping team AND all other roster teams
+      const filtered = prices.filter((p) => 
+        p.team_id !== excludeTeamId && !rosterTeamIds.includes(p.team_id)
+      );
 
       const pro = filtered.filter(p => p.team_type === 'pro');
       const amateur = filtered.filter(p => p.team_type === 'amateur');
