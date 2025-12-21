@@ -24,7 +24,7 @@ import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
-import { TeamPickerWalkthrough } from './TeamPickerWalkthrough';
+import { TeamPickerWalkthrough, TeamPickerHelpButton } from './TeamPickerWalkthrough';
 interface FantasyRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly' | 'private';
@@ -655,6 +655,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   return <div className="space-y-6">
       {/* Team Picker Walkthrough */}
       <TeamPickerWalkthrough />
+
+      {/* Help Button - always visible */}
+      <div className="flex justify-end">
+        <TeamPickerHelpButton />
+      </div>
 
       {/* Selected Teams Widget */}
       <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
