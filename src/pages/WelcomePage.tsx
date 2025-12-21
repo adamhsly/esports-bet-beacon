@@ -23,7 +23,7 @@ const WelcomePage = () => {
   
   // Build the team picker link for the upcoming daily round
   const teamPickerLink = upcomingDailyRound 
-    ? `/fantasy/pick?roundId=${upcomingDailyRound.id}` 
+    ? `/fantasy?roundId=${upcomingDailyRound.id}` 
     : "/fantasy";
 
   // Mark welcome page as seen on mount
