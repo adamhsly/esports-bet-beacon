@@ -556,11 +556,24 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     if (!pendingSubmission) return;
     if (!user) return;
 
-    setPendingSubmission(false);
-    // Defer to next tick so state is settled
-    setTimeout(() => {
-      submitTeams();
-    }, 0);
+    // Wait for checkExistingSubmission to run first (via the other effect)
+    // then submit. Small delay ensures state is settled.
+    const timer = setTimeout(async () => {
+      setPendingSubmission(false);
+      
+      // For new signups on free rounds, there won't be an existingPickId, which is fine.
+      // For paid rounds, existingPickId would have been set by checkExistingSubmission.
+      
+      // Check if star team is selected; if not, show the modal
+      if (!starTeamId) {
+        setShowNoStarModal(true);
+        return;
+      }
+      
+      await submitTeams();
+    }, 300); // Allow auth state and existing submission check to propagate
+
+    return () => clearTimeout(timer);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, pendingSubmission]);
