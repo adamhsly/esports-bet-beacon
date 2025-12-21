@@ -426,6 +426,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       return;
     }
 
+    // Auth can take a moment to propagate after signup/login; avoid crashing on user.id
+    if (!user) {
+      toast.error('Finishing sign-in… please wait a moment and try again.');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -543,13 +549,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   const handleAuthSuccess = async () => {
     setShowAuthModal(false);
-    if (pendingSubmission) {
-      setPendingSubmission(false);
-      setTimeout(() => {
-        submitTeams();
-      }, 500);
-    }
+    // Submission is handled by the effect below once `user` is available.
   };
+
+  useEffect(() => {
+    if (!pendingSubmission) return;
+    if (!user) return;
+
+    setPendingSubmission(false);
+    // Defer to next tick so state is settled
+    setTimeout(() => {
+      submitTeams();
+    }, 0);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, pendingSubmission]);
 
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
