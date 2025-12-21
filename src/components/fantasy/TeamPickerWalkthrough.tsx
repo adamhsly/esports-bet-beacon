@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import { X, ChevronRight, ChevronLeft, DollarSign, Star, Users, Sparkles, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -58,6 +58,8 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [measuredTooltipHeight, setMeasuredTooltipHeight] = useState<number | null>(null);
 
   // Debug: Log on mount
   useEffect(() => {
@@ -169,6 +171,19 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
     return () => window.removeEventListener('resize', updateTargetPosition);
   }, [updateTargetPosition, isActive]);
 
+  // Measure tooltip height so it never gets cut off on mobile browsers
+  useLayoutEffect(() => {
+    if (!isActive) return;
+
+    const raf = window.requestAnimationFrame(() => {
+      const el = tooltipRef.current;
+      if (!el) return;
+      setMeasuredTooltipHeight(el.getBoundingClientRect().height);
+    });
+
+    return () => window.cancelAnimationFrame(raf);
+  }, [isActive, currentStep, targetRect]);
+
   const handleStartWalkthrough = () => {
     setShowIntro(false);
     setIsActive(true);
@@ -250,14 +265,19 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
   const getTooltipStyle = (): React.CSSProperties => {
     const padding = 16;
     const tooltipWidth = 320;
-    const tooltipHeight = 220; // approximate; keeps card safely on-screen on mobile
 
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
+    // visualViewport helps on iOS Safari where innerHeight can be misleading
+    const vv = window.visualViewport;
+    const viewportW = vv?.width ?? window.innerWidth;
+    const viewportH = vv?.height ?? window.innerHeight;
+
+    const tooltipHeight = measuredTooltipHeight ?? 260;
 
     const effectiveTooltipWidth = Math.min(tooltipWidth, viewportW - padding * 2);
 
     const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+    const maxTop = Math.max(padding, viewportH - tooltipHeight - padding);
+    const maxLeft = Math.max(padding, viewportW - effectiveTooltipWidth - padding);
 
     // If we don't know the target, keep the card centered.
     if (!targetRect) {
@@ -272,7 +292,7 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
     const centeredLeft = clamp(
       targetRect.left + targetRect.width / 2 - effectiveTooltipWidth / 2,
       padding,
-      viewportW - effectiveTooltipWidth - padding,
+      maxLeft,
     );
 
     let top = padding;
@@ -301,8 +321,8 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
     }
 
     // Final clamp to ensure it always stays visible.
-    top = clamp(top, padding, viewportH - tooltipHeight - padding);
-    left = clamp(left, padding, viewportW - effectiveTooltipWidth - padding);
+    top = clamp(top, padding, maxTop);
+    left = clamp(left, padding, maxLeft);
 
     return { top, left };
   };
@@ -355,9 +375,11 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
 
       {/* Tooltip Card */}
       <div
+        ref={tooltipRef}
         className={cn(
           "fixed z-[101] bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] border border-[#8B5CF6]/30 rounded-xl shadow-2xl p-5",
           "w-80 max-w-[calc(100vw-1.5rem)]",
+          "max-h-[calc(100svh-2rem)] overflow-auto",
         )}
         style={getTooltipStyle()}
       >
