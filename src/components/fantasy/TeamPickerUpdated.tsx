@@ -33,6 +33,7 @@ interface FantasyRound {
   game_type?: string;
   team_type?: 'pro' | 'amateur' | 'both';
   round_name?: string;
+  entry_fee?: number | null;
 }
 
 interface Team {
@@ -93,9 +94,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
   const { setStarTeam } = useRoundStar(round.id);
 
-  // Salary cap and budget calculations - automatic bonus credits
+  // Salary cap and budget calculations - automatic bonus credits (only for authenticated users)
   const SALARY_CAP = 50;
-  const totalBudget = SALARY_CAP + availableBonusCredits;
+  const isFreeRound = !round.entry_fee || round.entry_fee === 0;
+  // For unauthenticated users on free rounds, only show base budget
+  const effectiveBonusCredits = user ? availableBonusCredits : 0;
+  const totalBudget = SALARY_CAP + effectiveBonusCredits;
   const budgetSpent = useMemo(() => selectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [selectedTeams]);
   const budgetRemaining = Math.max(0, totalBudget - budgetSpent);
 
@@ -646,16 +650,34 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       <div className="flex justify-center">
         <Button 
           onClick={async () => {
-            if (!user) {
-              setShowAuthModal(true);
-              setPendingSubmission(true);
-              return;
-            }
             if (selectedTeams.length !== 5) {
               toast.error('Please select exactly 5 teams');
               return;
             }
-            // Validate budget with bonus credits
+            
+            // Check if this is a free round (no entry fee)
+            const isFreeRound = !round.entry_fee || round.entry_fee === 0;
+            
+            // For unauthenticated users on free rounds, show auth modal
+            if (!user) {
+              if (isFreeRound) {
+                // Validate budget stays within base 50 credits for unauthenticated users
+                if (budgetSpent > SALARY_CAP) {
+                  toast.error('Please stay within the 50 credit budget. Sign in to use bonus credits.');
+                  return;
+                }
+                setShowAuthModal(true);
+                setPendingSubmission(true);
+                return;
+              } else {
+                // Paid rounds require authentication first
+                setShowAuthModal(true);
+                setPendingSubmission(true);
+                return;
+              }
+            }
+            
+            // For authenticated users, validate budget with bonus credits
             const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
             if (bonusCreditsNeeded > availableBonusCredits) {
               toast.error(`Need ${bonusCreditsNeeded} bonus credits but you only have ${availableBonusCredits} available.`);
@@ -670,7 +692,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           disabled={selectedTeams.length !== 5 || submitting} 
           className="w-full max-w-md h-14 text-lg font-semibold bg-theme-purple hover:bg-theme-purple/90"
         >
-          {submitting ? 'Submitting...' : 'Submit Team'}
+          {submitting ? 'Submitting...' : (user ? 'Submit Team' : 'Sign Up & Submit')}
         </Button>
       </div>
 
@@ -709,8 +731,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         </div>
       )}
 
-      {/* Bonus Credits Info - Auto-deducted */}
-      {availableBonusCredits > 0 && (
+      {/* Bonus Credits Info - Auto-deducted (only show for authenticated users with bonus credits) */}
+      {user && availableBonusCredits > 0 && (
         <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
