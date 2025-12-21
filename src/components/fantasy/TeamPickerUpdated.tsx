@@ -767,24 +767,21 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               <span className="text-gray-200">{prize3rd}</span>
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Prize type: {prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits'}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          {round.game_type && round.game_type !== 'all' && (
-            <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400">
-              {round.game_type}
-            </Badge>
-          )}
-          {round.team_type && round.team_type !== 'both' && (
-            <Badge variant="outline" className={round.team_type === 'pro' 
-              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-              : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}>
-              {round.team_type === 'pro' ? 'Pro Teams Only' : 'Amateur Teams Only'}
-            </Badge>
-          )}
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>Prize type: {prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits'}</span>
+            {round.game_type && round.game_type !== 'all' && (
+              <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400">
+                {round.game_type}
+              </Badge>
+            )}
+            {round.team_type && round.team_type !== 'both' && (
+              <Badge variant="outline" className={round.team_type === 'pro' 
+                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+                : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}>
+                {round.team_type === 'pro' ? 'Pro Teams Only' : 'Amateur Teams Only'}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
