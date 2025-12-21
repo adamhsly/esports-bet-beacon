@@ -483,19 +483,13 @@ export const resetTeamPickerWalkthrough = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
 
-// Help button to re-trigger walkthrough
-export const TeamPickerHelpButton: React.FC<{ className?: string }> = ({ className }) => {
-  const handleClick = () => {
-    console.log('[TeamPickerHelpButton] Re-triggering walkthrough');
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.reload();
-  };
-
+// Help button to open rules modal
+export const TeamPickerHelpButton: React.FC<{ className?: string; onOpenRules?: () => void }> = ({ className, onOpenRules }) => {
   return (
     <Button
       variant="ghost"
       size="sm"
-      onClick={handleClick}
+      onClick={onOpenRules}
       className={cn("gap-2 text-muted-foreground hover:text-foreground", className)}
     >
       <HelpCircle className="h-4 w-4" />
