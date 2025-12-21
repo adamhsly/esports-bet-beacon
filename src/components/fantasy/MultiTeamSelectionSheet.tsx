@@ -365,7 +365,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
         {/* Tabs */}
         <div className="mt-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Available teams</h3>
           <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'pro' | 'amateur')} className="flex-1">
             {round.team_type === 'both' || !round.team_type ? (
               <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
@@ -418,6 +417,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 Match count shows games scheduled during this round's period. 
                 Credits are based on recent win rate and match volume.
               </div>
+              
+              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                Available teams
+              </h3>
               
               {/* Pro Team List */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -503,6 +506,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   </>
                 )}
               </div>
+              
+              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                Available teams
+              </h3>
               
               {/* Amateur Team List */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
