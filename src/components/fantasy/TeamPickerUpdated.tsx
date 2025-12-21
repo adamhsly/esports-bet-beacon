@@ -22,6 +22,7 @@ import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 import { TeamPickerWalkthrough, TeamPickerHelpButton } from './TeamPickerWalkthrough';
+import { FantasyRulesModal } from './FantasyRulesModal';
 
 
 interface FantasyRound {
@@ -150,6 +151,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
   const [sheetHasBeenOpened, setSheetHasBeenOpened] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
   const { setStarTeam } = useRoundStar(round.id);
 
   // Track if sheet has ever been opened (for skipping walkthrough)
@@ -724,7 +726,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       <TeamPickerWalkthrough skip={sheetHasBeenOpened} />
 
       <div className="flex justify-end">
-        <TeamPickerHelpButton />
+        <TeamPickerHelpButton onOpenRules={() => setShowRulesModal(true)} />
       </div>
 
       {/* Round Header */}
@@ -955,6 +957,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         budgetRemaining={budgetRemaining} 
         totalBudget={totalBudget}
         round={round}
+      />
+
+      <FantasyRulesModal 
+        open={showRulesModal} 
+        onOpenChange={setShowRulesModal} 
       />
     </div>
   );
