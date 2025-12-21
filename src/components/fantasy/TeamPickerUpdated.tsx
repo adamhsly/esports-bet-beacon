@@ -56,6 +56,14 @@ interface Team {
   abandon_rate?: number; // 0..1, amateur only
 }
 
+type PendingLineupSubmission = {
+  roundId: string;
+  selectedTeams: Team[];
+  benchTeam: Team | null;
+  starTeamId: string | null;
+  createdAt: number;
+};
+
 interface TeamPickerProps {
   round: FantasyRound;
   onBack: () => void;
@@ -83,6 +91,52 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [existingPickId, setExistingPickId] = useState<string | null>(null);
   const [existingSubmissionChecked, setExistingSubmissionChecked] = useState(false);
   const autoSubmitInFlightRef = useRef(false);
+  const authFlowCompletedRef = useRef(false);
+
+  const pendingStorageKey = useMemo(
+    () => `fantasy:pending_lineup_submit:${round.id}`,
+    [round.id]
+  );
+  const PENDING_TTL_MS = 15 * 60 * 1000;
+
+  const persistPendingSubmission = (payload: PendingLineupSubmission) => {
+    try {
+      sessionStorage.setItem(pendingStorageKey, JSON.stringify(payload));
+    } catch {}
+  };
+
+  const clearPersistedPendingSubmission = () => {
+    try {
+      sessionStorage.removeItem(pendingStorageKey);
+    } catch {}
+  };
+
+  // Restore queued submission (and the user's picks) after returning from /auth
+  // or an email-confirmation redirect.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(pendingStorageKey);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw) as PendingLineupSubmission | null;
+      if (!parsed || parsed.roundId !== round.id) return;
+
+      if (Date.now() - (parsed.createdAt ?? 0) > PENDING_TTL_MS) {
+        clearPersistedPendingSubmission();
+        return;
+      }
+
+      if (Array.isArray(parsed.selectedTeams) && parsed.selectedTeams.length > 0) {
+        setSelectedTeams(parsed.selectedTeams);
+        setBenchTeam(parsed.benchTeam ?? null);
+        setStarTeamId(parsed.starTeamId ?? null);
+        setPendingSubmission(true);
+      }
+    } catch {
+      clearPersistedPendingSubmission();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingStorageKey, round.id]);
 
   // Price calculation status tracking
   const [priceStatus, setPriceStatus] = useState<'loading' | 'calculating' | 'ready' | 'error'>('loading');
@@ -543,6 +597,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       }
 
       // Show success modal
+      clearPersistedPendingSubmission();
       setShowSuccessModal(true);
 
       // Check for star team performance mission (w_star_top)
@@ -564,8 +619,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   };
 
   const handleAuthSuccess = () => {
+    // Called on sign-in OR after successful sign-up (even if email confirmation is required).
+    authFlowCompletedRef.current = true;
     setShowAuthModal(false);
-    // Keep `pendingSubmission` intact so the auto-submit effect can run once auth is ready.
   };
 
   useEffect(() => {
@@ -583,6 +639,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
 
     autoSubmitInFlightRef.current = true;
+    clearPersistedPendingSubmission();
     setPendingSubmission(false);
 
     void (async () => {
@@ -599,12 +656,16 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
 
-    // Only cancel an auto-submit if the user is still not authenticated.
-    // (AuthModal closes itself on successful auth, and in that case we want to proceed.)
-    if (!user?.id) {
+    // If the user dismissed the modal without completing sign-in/sign-up, cancel the queued submit.
+    if (!user?.id && !authFlowCompletedRef.current) {
       setPendingSubmission(false);
+      clearPersistedPendingSubmission();
     }
+
+    // Reset for next time
+    authFlowCompletedRef.current = false;
   };
+
 
   const getStarredTeamName = () => {
     const starredTeam = selectedTeams.find(t => t.id === starTeamId);
@@ -719,7 +780,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             // Check if this is a free round (no entry fee)
             const isFreeRound = !round.entry_fee || round.entry_fee === 0;
             
-            // For unauthenticated users on free rounds, show auth modal
+            // For unauthenticated users, queue an auto-submit and send them through auth
             if (!user) {
               if (isFreeRound) {
                 // Validate budget stays within base 50 credits for unauthenticated users
@@ -727,17 +788,22 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
                   toast.error('Please stay within the 50 credit budget. Sign in to use bonus credits.');
                   return;
                 }
-                setShowAuthModal(true);
-                setPendingSubmission(true);
-                return;
-              } else {
-                // Paid rounds require authentication first
-                setShowAuthModal(true);
-                setPendingSubmission(true);
-                return;
               }
+
+              authFlowCompletedRef.current = false;
+              persistPendingSubmission({
+                roundId: round.id,
+                selectedTeams,
+                benchTeam,
+                starTeamId,
+                createdAt: Date.now()
+              });
+
+              setShowAuthModal(true);
+              setPendingSubmission(true);
+              return;
             }
-            
+
             // For authenticated users, validate budget with bonus credits
             const bonusCreditsNeeded = Math.max(0, budgetSpent - SALARY_CAP);
             if (bonusCreditsNeeded > availableBonusCredits) {
@@ -748,6 +814,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               setShowNoStarModal(true);
               return;
             }
+
+            clearPersistedPendingSubmission();
             await submitTeams();
           }} 
           disabled={selectedTeams.length !== 5 || submitting} 
@@ -834,6 +902,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         description="Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed." 
         onConfirm={async () => {
           setShowNoStarModal(false);
+          clearPersistedPendingSubmission();
           setPendingSubmission(false);
           await submitTeams();
         }} 
