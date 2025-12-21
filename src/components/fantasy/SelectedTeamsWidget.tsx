@@ -223,12 +223,6 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
     return selectedTeams[index] || null;
   });
   return <div className="space-y-6">
-      {/* Description */}
-      <div className="space-y-2">
-        <p className="text-gray-400 text-sm text-center">
-          Select 5 teams to build your ultimate fantasy roster
-        </p>
-      </div>
 
       {/* Budget Progress */}
       <div 
