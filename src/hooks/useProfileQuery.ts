@@ -35,7 +35,7 @@ export const useProfileQuery = () => {
         .from('profiles')
         .select('id, username, full_name, avatar_url, avatar_frame_id, avatar_border_id, country, bio, premium_pass')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
