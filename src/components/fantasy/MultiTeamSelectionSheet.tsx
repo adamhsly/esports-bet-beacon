@@ -327,42 +327,35 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   return <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-2xl bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-l border-gray-700/50">
         <SheetHeader className="border-b border-gray-700/50 pb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                {swapMode ? 'Select Replacement Team' : 'Select Your Teams'}
-              </SheetTitle>
-              <p className="text-gray-400 text-sm mt-1">
-                {swapMode 
-                  ? `Choose a replacement team with budget ${swappingTeamBudget ?? 0} credits or less`
-                  : 'Choose up to 5 teams within your budget'}
-              </p>
-              {/* Round Configuration Info */}
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {round.round_name && (
-                  <Badge variant="outline" className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 text-xs">
-                    {round.round_name}
-                  </Badge>
-                )}
-                {round.game_type && round.game_type !== 'all' && (
-                  <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400 text-xs">
-                    {round.game_type}
-                  </Badge>
-                )}
-                {round.team_type && round.team_type !== 'both' && (
-                  <Badge variant="outline" className={`text-xs ${round.team_type === 'pro' 
-                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                    : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
-                    {round.team_type === 'pro' ? 'Pro Only' : 'Amateur Only'}
-                  </Badge>
-                )}
-              </div>
+          <div>
+            <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              {swapMode ? 'Select Replacement Team' : 'Select Your Teams'}
+            </SheetTitle>
+            <p className="text-gray-400 text-sm mt-1">
+              {swapMode 
+                ? `Choose a replacement team with budget ${swappingTeamBudget ?? 0} credits or less`
+                : 'Choose up to 5 teams within your budget'}
+            </p>
+            {/* Round Configuration Info */}
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {round.round_name && (
+                <Badge variant="outline" className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 text-xs">
+                  {round.round_name}
+                </Badge>
+              )}
+              {round.game_type && round.game_type !== 'all' && (
+                <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400 text-xs">
+                  {round.game_type}
+                </Badge>
+              )}
+              {round.team_type && round.team_type !== 'both' && (
+                <Badge variant="outline" className={`text-xs ${round.team_type === 'pro' 
+                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+                  : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}`}>
+                  {round.team_type === 'pro' ? 'Pro Only' : 'Amateur Only'}
+                </Badge>
+              )}
             </div>
-            <SheetClose asChild>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </Button>
-            </SheetClose>
           </div>
           
           {/* Budget & Selection Status */}
