@@ -189,17 +189,10 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
   if (showIntro) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-[#8B5CF6]/20 rounded-xl">
-              <Sparkles className="h-6 w-6 text-[#8B5CF6]" />
-            </div>
-            <h2 className="text-xl font-bold text-white">New to Frags and Fortunes?</h2>
-          </div>
-          
-          <p className="text-[#d1d1d9] mb-6 leading-relaxed">
-            Would you like a quick tour to learn how to pick teams, join rounds, and win prizes?
-          </p>
+        <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300 text-center">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Want us to show you around?
+          </h2>
           
           <div className="flex gap-3">
             <Button
@@ -207,7 +200,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
               variant="outline"
               className="flex-1 border-white/10 text-[#d1d1d9] hover:bg-white/5"
             >
-              No thanks
+              I got this
             </Button>
             <Button
               onClick={handleStartWalkthrough}
