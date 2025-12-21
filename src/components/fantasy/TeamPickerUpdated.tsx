@@ -95,7 +95,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showNoStarModal, setShowNoStarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
+  const [sheetHasBeenOpened, setSheetHasBeenOpened] = useState(false);
   const { setStarTeam } = useRoundStar(round.id);
+
+  // Track if sheet has ever been opened (for skipping walkthrough)
+  useEffect(() => {
+    if (showTeamSelectionSheet && !sheetHasBeenOpened) {
+      setSheetHasBeenOpened(true);
+    }
+  }, [showTeamSelectionSheet, sheetHasBeenOpened]);
 
   // Salary cap and budget calculations - automatic bonus credits (only for authenticated users)
   const SALARY_CAP = 50;
@@ -600,7 +608,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   if (loading) {
     return (
       <>
-        <TeamPickerWalkthrough />
+        <TeamPickerWalkthrough skip={sheetHasBeenOpened} />
         <div className="text-center py-12">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           {priceStatus === 'calculating' ? (
@@ -646,7 +654,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   return (
     <div className="space-y-6">
-      <TeamPickerWalkthrough />
+      <TeamPickerWalkthrough skip={sheetHasBeenOpened} />
 
       <div className="flex justify-end">
         <TeamPickerHelpButton />

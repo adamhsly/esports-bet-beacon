@@ -51,9 +51,10 @@ const STORAGE_KEY = 'team_picker_walkthrough_completed';
 
 interface TeamPickerWalkthroughProps {
   onComplete?: () => void;
+  skip?: boolean;
 }
 
-export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ onComplete }) => {
+export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ onComplete, skip = false }) => {
   const [showIntro, setShowIntro] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -71,6 +72,13 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
 
   // Check if walkthrough should show - with delay
   useEffect(() => {
+    if (skip) {
+      console.log('[TeamPickerWalkthrough] Skipped due to skip prop');
+      // Hide intro if it was already showing
+      setShowIntro(false);
+      return;
+    }
+
     const hasCompleted = localStorage.getItem(STORAGE_KEY) === 'true';
     console.log('[TeamPickerWalkthrough] Checking if should show, hasCompleted:', hasCompleted);
     
@@ -87,7 +95,7 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [skip]);
 
   // Lock body scroll when walkthrough is active
   useEffect(() => {
