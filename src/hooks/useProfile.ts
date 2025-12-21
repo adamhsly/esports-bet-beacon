@@ -1,57 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from './useAuthUser';
 import { toast } from 'sonner';
+import { useProfileQuery, type ProfileData } from './useProfileQuery';
 
-interface Profile {
-  id: string;
-  username?: string;
-  full_name?: string;
-  avatar_url?: string;
-  avatar_frame_id?: string;
-  avatar_border_id?: string;
-  country?: string;
-  bio?: string;
-  premium_pass?: boolean;
-}
-
+/**
+ * Extended profile hook that wraps useProfileQuery and adds
+ * upload/update functionality. Uses React Query for caching.
+ */
 export const useProfile = () => {
   const { user, isAuthenticated } = useAuthUser();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { profile, loading, refetch, premiumActive, hasPremium } = useProfileQuery();
   const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchProfile();
-    } else {
-      setProfile(null);
-      setLoading(false);
-    }
-  }, [isAuthenticated, user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const uploadAvatar = async (file: File): Promise<string | null> => {
     if (!user || !isAuthenticated) {
@@ -99,7 +59,8 @@ export const useProfile = () => {
 
       if (updateError) throw updateError;
 
-      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
+      // Refetch to update the cache
+      await refetch();
       toast.success('Avatar uploaded successfully!');
       
       return publicUrl;
@@ -126,7 +87,8 @@ export const useProfile = () => {
 
       if (error) throw error;
 
-      setProfile(prev => prev ? { ...prev, avatar_frame_id: frameId } : null);
+      // Refetch to update the cache
+      await refetch();
       toast.success('Avatar frame updated!');
       return true;
     } catch (error: any) {
@@ -150,7 +112,8 @@ export const useProfile = () => {
 
       if (error) throw error;
 
-      setProfile(prev => prev ? { ...prev, avatar_border_id: borderId } : null);
+      // Refetch to update the cache
+      await refetch();
       toast.success('Avatar border updated!');
       return true;
     } catch (error: any) {
@@ -167,6 +130,12 @@ export const useProfile = () => {
     uploadAvatar,
     updateAvatarFrame,
     updateAvatarBorder,
-    refetch: fetchProfile
+    refetch,
+    // Re-export premium status from useProfileQuery
+    premiumActive,
+    hasPremium
   };
 };
+
+// Re-export the ProfileData type
+export type { ProfileData };
