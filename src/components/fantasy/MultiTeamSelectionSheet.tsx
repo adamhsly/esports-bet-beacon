@@ -386,12 +386,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 }}
               />
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Teams Selected:</span>
-              <span className={`font-medium ${tempSelectedTeams.length > 5 ? 'text-red-400' : 'text-blue-400'}`}>
-                {tempSelectedTeams.length} / 5
-              </span>
-            </div>
           </div>
 
           {/* Selected Teams Summary */}
