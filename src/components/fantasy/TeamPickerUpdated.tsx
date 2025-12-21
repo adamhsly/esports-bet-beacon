@@ -739,18 +739,17 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const prize3rd = formatPrize(round.prize_3rd ?? 50, prizeType);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <TeamPickerWalkthrough skip={sheetHasBeenOpened} />
 
-      <div className="flex justify-end">
-        <TeamPickerHelpButton onOpenRules={() => setShowRulesModal(true)} />
-      </div>
-
       {/* Round Header */}
-      <div className="text-center space-y-3">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-          {getRoundDisplayTitle()}
-        </h2>
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-2">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            {getRoundDisplayTitle()}
+          </h2>
+          <TeamPickerHelpButton onOpenRules={() => setShowRulesModal(true)} />
+        </div>
         
         {/* Prize Display */}
         <div className="flex flex-col items-center gap-1">
