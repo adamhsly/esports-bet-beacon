@@ -622,14 +622,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     return starredTeam?.name || null;
   };
   if (loading) {
-    return <div className="text-center py-12">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-muted-foreground">
-          {priceStatus === 'calculating' 
-            ? `Setting up team prices for this round... (attempt ${retryCount}/${MAX_RETRIES})`
-            : 'Loading available teams...'}
-        </p>
-      </div>;
+    return (
+      <>
+        <TeamPickerWalkthrough />
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">
+            {priceStatus === 'calculating' 
+              ? `Setting up team prices for this round... (attempt ${retryCount}/${MAX_RETRIES})`
+              : 'Loading available teams...'}
+          </p>
+        </div>
+      </>
+    );
   }
   
   // Error state with retry button
