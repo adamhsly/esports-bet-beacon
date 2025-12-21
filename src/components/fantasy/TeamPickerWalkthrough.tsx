@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronRight, ChevronLeft, DollarSign, Star, Users, Sparkles, HelpCircle, RefreshCw } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, DollarSign, Star, Users, Sparkles, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -59,13 +59,28 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
+  // Debug: Log on mount
+  useEffect(() => {
+    const hasCompleted = localStorage.getItem(STORAGE_KEY);
+    console.log('[TeamPickerWalkthrough] Component mounted');
+    console.log('[TeamPickerWalkthrough] Storage key:', STORAGE_KEY);
+    console.log('[TeamPickerWalkthrough] Has completed:', hasCompleted);
+  }, []);
+
   // Check if walkthrough should show - with delay
   useEffect(() => {
     const hasCompleted = localStorage.getItem(STORAGE_KEY) === 'true';
-    if (hasCompleted) return;
+    console.log('[TeamPickerWalkthrough] Checking if should show, hasCompleted:', hasCompleted);
+    
+    if (hasCompleted) {
+      console.log('[TeamPickerWalkthrough] Already completed, not showing');
+      return;
+    }
 
+    console.log('[TeamPickerWalkthrough] Setting timeout to show intro...');
     // Longer delay before showing intro prompt
     const timer = setTimeout(() => {
+      console.log('[TeamPickerWalkthrough] Timer fired! Setting showIntro to true');
       setShowIntro(true);
     }, 1500);
 
@@ -432,5 +447,27 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
 
 // Helper to reset walkthrough (for testing)
 export const resetTeamPickerWalkthrough = () => {
+  console.log('[TeamPickerWalkthrough] Resetting walkthrough');
   localStorage.removeItem(STORAGE_KEY);
+};
+
+// Help button to re-trigger walkthrough
+export const TeamPickerHelpButton: React.FC<{ className?: string }> = ({ className }) => {
+  const handleClick = () => {
+    console.log('[TeamPickerHelpButton] Re-triggering walkthrough');
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleClick}
+      className={cn("gap-2 text-muted-foreground hover:text-foreground", className)}
+    >
+      <HelpCircle className="h-4 w-4" />
+      <span className="hidden sm:inline">How to Play</span>
+    </Button>
+  );
 };
