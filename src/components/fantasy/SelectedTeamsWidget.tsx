@@ -231,7 +231,10 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       </div>
 
       {/* Budget Progress */}
-      <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-xl p-4 border border-gray-700/50 backdrop-blur-sm">
+      <div 
+        data-walkthrough="budget-bar"
+        className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-xl p-4 border border-gray-700/50 backdrop-blur-sm"
+      >
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-gray-300 font-medium">Budget</span>
           <div className="text-right">
@@ -271,7 +274,7 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       </div>
 
       {/* Team Cards Grid */}
-      <div className="space-y-4">
+      <div data-walkthrough="team-slots" className="space-y-4">
         {/* Mobile: First row - 2 cards */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square">

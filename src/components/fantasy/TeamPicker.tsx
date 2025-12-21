@@ -24,6 +24,7 @@ import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
+import { TeamPickerWalkthrough } from './TeamPickerWalkthrough';
 interface FantasyRound {
   id: string;
   type: 'daily' | 'weekly' | 'monthly' | 'private';
@@ -647,13 +648,14 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   }
   
   return <div className="space-y-6">
-      
+      {/* Team Picker Walkthrough */}
+      <TeamPickerWalkthrough />
 
       {/* Selected Teams Widget */}
       <SelectedTeamsWidget selectedTeams={selectedTeams} benchTeam={benchTeam} budgetSpent={budgetSpent} budgetRemaining={budgetRemaining} salaryCapacity={SALARY_CAP} bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)} totalBudget={totalBudget} roundType={round.type} onRemoveTeam={handleRemoveTeam} proTeams={proTeams} amateurTeams={amateurTeams} onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} onTeamSelect={handleTeamSelect} starTeamId={starTeamId} onToggleStar={handleToggleStar} />
 
       {/* Submit Button */}
-      <div className="flex justify-center">
+      <div data-walkthrough="submit-button" className="flex justify-center">
         <Button onClick={async () => {
         if (!user) {
           setShowAuthModal(true);
@@ -681,7 +683,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       </div>
 
       {/* Star Team Summary */}
-      {selectedTeams.length > 0 && <div className="bg-muted/30 rounded-lg p-4 border border-border">
+      {selectedTeams.length > 0 && <div data-walkthrough="star-team-info" className="bg-muted/30 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Star className={`h-5 w-5 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
