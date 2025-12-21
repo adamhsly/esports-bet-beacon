@@ -63,7 +63,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   isSwappedOut = false
 }) => {
   const isAmateur = team.type === 'amateur';
-  const canAfford = showPrice ? (team.price ?? 0) <= budgetRemaining : true;
+  // Allow clicking already-selected teams even when budget is maxed out (so user can deselect)
+  const canAfford = showPrice ? (isSelected || (team.price ?? 0) <= budgetRemaining) : true;
   const StarButton = () => {
     if (!showStarToggle) return null;
     const isDisabled = !!disabledReason;
