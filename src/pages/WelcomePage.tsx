@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUpcomingDailyRound } from "@/hooks/useUpcomingDailyRound";
 import SearchableNavbar from "@/components/SearchableNavbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,13 @@ const welcomeBanner = "/lovable-uploads/Spend_5_Get_10.webp";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
+  const { round: upcomingDailyRound } = useUpcomingDailyRound();
   const navigate = useNavigate();
+  
+  // Build the team picker link for the upcoming daily round
+  const teamPickerLink = upcomingDailyRound 
+    ? `/fantasy/pick?roundId=${upcomingDailyRound.id}` 
+    : "/fantasy";
 
   // Mark welcome page as seen on mount
   useEffect(() => {
@@ -84,7 +91,7 @@ const WelcomePage = () => {
 
           <p className="text-sm md:text-xl text-muted-foreground mb-6 md:mb-10 px-2 max-w-3xl mx-auto break-words">Pick teams. Score points. Win prizes.</p>
 
-          <Link to="/fantasy">
+          <Link to={teamPickerLink}>
             <Button
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
@@ -95,9 +102,8 @@ const WelcomePage = () => {
         </div>
       </section>
 
-      {/* Fantasy Banner */}
       <section className="w-full reveal-on-scroll">
-        <Link to="/fantasy" className="block w-full">
+        <Link to={teamPickerLink} className="block w-full">
           <img 
             src={welcomeBanner} 
             alt="Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits"
