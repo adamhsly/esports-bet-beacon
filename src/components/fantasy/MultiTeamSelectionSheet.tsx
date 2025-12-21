@@ -214,12 +214,16 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   // Step 2: Budget and basic filters
   const budgetFilteredProTeams = useMemo(() => {
     return baseFilteredProTeams.filter(t => {
+      // Always show currently selected teams so user can deselect them
+      const isSelected = tempSelectedTeams.some(st => st.id === t.id);
+      if (isSelected) return true;
+      
       const matches = t.match_volume ?? 0;
       const matchesMatch = matches >= minMatchesPro;
       const logoMatch = !hasLogoOnlyPro || !!t.logo_url;
       const budgetMatch = swapMode 
         ? (t.price ?? 0) <= (swappingTeamBudget ?? 0)
-        : ((t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id));
+        : (t.price ?? 0) <= tempBudgetRemaining;
       const priceMatch = (t.price ?? 0) >= priceRangePro[0] && (t.price ?? 0) <= priceRangePro[1];
       return matchesMatch && logoMatch && budgetMatch && priceMatch;
     });
@@ -227,6 +231,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
   const budgetFilteredAmateurTeams = useMemo(() => {
     return baseFilteredAmateurTeams.filter(t => {
+      // Always show currently selected teams so user can deselect them
+      const isSelected = tempSelectedTeams.some(st => st.id === t.id);
+      if (isSelected) return true;
+      
       const matchVolume = t.match_volume ?? 0;
       const matchesMatch = matchVolume >= minMatchesPrev;
       const missed = t.missed_pct ?? 100;
@@ -234,7 +242,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const logoMatch = !hasLogoOnlyAm || !!t.logo_url;
       const budgetMatch = swapMode 
         ? (t.price ?? 0) <= (swappingTeamBudget ?? 0)
-        : ((t.price ?? 0) <= tempBudgetRemaining || tempSelectedTeams.find(st => st.id === t.id));
+        : (t.price ?? 0) <= tempBudgetRemaining;
       const priceMatch = (t.price ?? 0) >= priceRangeAm[0] && (t.price ?? 0) <= priceRangeAm[1];
       return matchesMatch && missedMatch && logoMatch && budgetMatch && priceMatch;
     });
