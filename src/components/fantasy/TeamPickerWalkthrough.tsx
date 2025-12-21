@@ -231,17 +231,10 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
   if (showIntro) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-[#8B5CF6]/20 rounded-xl">
-              <Users className="h-6 w-6 text-[#8B5CF6]" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Build Your Lineup!</h2>
-          </div>
-          
-          <p className="text-[#d1d1d9] mb-6 leading-relaxed">
-            Want a quick guide on how to pick teams, manage your budget, and maximize your points?
-          </p>
+        <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300 text-center">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Want us to show you around?
+          </h2>
           
           <div className="flex gap-3">
             <Button
