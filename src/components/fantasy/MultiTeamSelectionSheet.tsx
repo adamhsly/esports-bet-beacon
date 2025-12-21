@@ -419,7 +419,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
               
               <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                Pick your teams
+                Pick your teams ({tempSelectedTeams.length}/5)
               </h3>
               
               {/* Pro Team List */}
@@ -508,7 +508,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
               
               <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                Pick your teams
+                Pick your teams ({tempSelectedTeams.length}/5)
               </h3>
               
               {/* Amateur Team List */}
