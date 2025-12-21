@@ -539,7 +539,9 @@ export const RoundSelector: React.FC<{
   }, [searchParams, user, rounds]);
   
   const handleJoinRound = (round: Round) => {
-    if (!user) {
+    // Allow unauthenticated users to join free rounds - auth will be required at submission
+    const isFreeRound = !round.is_paid && (!round.entry_fee || round.entry_fee === 0);
+    if (!user && !isFreeRound) {
       setShowAuthModal(true);
       return;
     }
