@@ -76,14 +76,16 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     }
   }, [isOpen, proTeams]);
 
-  // Initialize activeTab based on round team_type
+  // Initialize activeTab based on round team_type - run when sheet opens
   useEffect(() => {
-    if (round.team_type === 'pro') {
-      setActiveTab('pro');
-    } else if (round.team_type === 'amateur') {
-      setActiveTab('amateur');
+    if (isOpen) {
+      if (round.team_type === 'pro') {
+        setActiveTab('pro');
+      } else if (round.team_type === 'amateur') {
+        setActiveTab('amateur');
+      }
     }
-  }, [round.team_type]);
+  }, [round.team_type, isOpen]);
 
   const [activeTab, setActiveTab] = useState<'pro' | 'amateur'>('pro');
   const [tempSelectedTeams, setTempSelectedTeams] = useState<Team[]>([]);
