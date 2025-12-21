@@ -93,12 +93,15 @@ export const InProgressRounds: React.FC = () => {
             }));
           }
 
+          // Calculate total score from individual team scores for consistency
+          const calculatedTotalScore = scores.reduce((sum, s) => sum + (s.current_score || 0), 0);
+
           return {
             id: pick.round_id,
             type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly' | 'private',
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
-            total_score: roundStatus === 'scheduled' ? 0 : pick.total_score,
+            total_score: roundStatus === 'scheduled' ? 0 : calculatedTotalScore,
             team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
             is_private: pick.fantasy_rounds.is_private || false,
