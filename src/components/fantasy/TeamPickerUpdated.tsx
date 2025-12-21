@@ -36,6 +36,10 @@ interface FantasyRound {
   team_type?: 'pro' | 'amateur' | 'both';
   round_name?: string;
   entry_fee?: number | null;
+  prize_type?: 'credits' | 'vouchers';
+  prize_1st?: number;
+  prize_2nd?: number;
+  prize_3rd?: number;
 }
 
 interface Team {
@@ -721,6 +725,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     return `${typeLabel} Round`;
   };
 
+  // Format prize amount based on type
+  const formatPrize = (amount: number, prizeType: 'credits' | 'vouchers' = 'credits') => {
+    if (prizeType === 'vouchers') {
+      return `$${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
+    }
+    return amount.toString();
+  };
+
+  const prizeType = round.prize_type || 'credits';
+  const prize1st = formatPrize(round.prize_1st ?? 200, prizeType);
+  const prize2nd = formatPrize(round.prize_2nd ?? 100, prizeType);
+  const prize3rd = formatPrize(round.prize_3rd ?? 50, prizeType);
+
   return (
     <div className="space-y-6">
       <TeamPickerWalkthrough skip={sheetHasBeenOpened} />
@@ -730,10 +747,32 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       </div>
 
       {/* Round Header */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-3">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
           {getRoundDisplayTitle()}
         </h2>
+        
+        {/* Prize Display */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center justify-center gap-4 text-xl font-bold">
+            <span className="flex items-center gap-1">
+              <span className="text-yellow-400">🥇</span>
+              <span className="text-gray-200">{prize1st}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-gray-400">🥈</span>
+              <span className="text-gray-200">{prize2nd}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-orange-400">🥉</span>
+              <span className="text-gray-200">{prize3rd}</span>
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits'}
+          </p>
+        </div>
+
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           {round.game_type && round.game_type !== 'all' && (
             <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400">
