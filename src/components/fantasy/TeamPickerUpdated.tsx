@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +67,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   onBack,
   onNavigateToInProgress
 }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { progressMission } = useRPCActions();
   const { availableCredits: availableBonusCredits, spendBonusCredits } = useBonusCredits();
   
@@ -81,6 +81,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
   const [existingPickId, setExistingPickId] = useState<string | null>(null);
+  const [existingSubmissionChecked, setExistingSubmissionChecked] = useState(false);
+  const autoSubmitInFlightRef = useRef(false);
 
   // Price calculation status tracking
   const [priceStatus, setPriceStatus] = useState<'loading' | 'calculating' | 'ready' | 'error'>('loading');
@@ -142,6 +144,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   useEffect(() => {
     if (user) {
       checkExistingSubmission();
+    } else {
+      setExistingSubmissionChecked(false);
     }
     fetchAvailableTeams();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -149,6 +153,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   const checkExistingSubmission = async () => {
     if (!user) return;
+    setExistingSubmissionChecked(false);
+
     try {
       const { data, error } = await supabase
         .from('fantasy_round_picks')
@@ -163,7 +169,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         // Check if team_picks is populated (has actual teams selected)
         const teamPicks = data.team_picks as any[];
         const hasTeams = teamPicks && Array.isArray(teamPicks) && teamPicks.length > 0;
-        
+
         if (hasTeams) {
           // Already submitted with teams - redirect to in-progress
           setHasExistingSubmission(true);
@@ -181,6 +187,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       }
     } catch (error) {
       console.error('Error checking existing submission:', error);
+    } finally {
+      setExistingSubmissionChecked(true);
     }
   };
 
@@ -554,30 +562,31 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   useEffect(() => {
     if (!pendingSubmission) return;
-    if (!user) return;
+    if (authLoading) return;
+    if (!user?.id) return;
+    if (!existingSubmissionChecked) return;
+    if (autoSubmitInFlightRef.current) return;
 
-    // Wait for checkExistingSubmission to run first (via the other effect)
-    // then submit. Small delay ensures state is settled.
-    const timer = setTimeout(async () => {
-      setPendingSubmission(false);
-      
-      // For new signups on free rounds, there won't be an existingPickId, which is fine.
-      // For paid rounds, existingPickId would have been set by checkExistingSubmission.
-      
-      // Check if star team is selected; if not, show the modal
-      if (!starTeamId) {
-        setShowNoStarModal(true);
-        return;
+    // If no star team chosen yet, keep `pendingSubmission` true so once they pick a star
+    // team we can submit immediately.
+    if (!starTeamId) {
+      setShowNoStarModal(true);
+      return;
+    }
+
+    autoSubmitInFlightRef.current = true;
+    setPendingSubmission(false);
+
+    void (async () => {
+      try {
+        await submitTeams();
+      } finally {
+        autoSubmitInFlightRef.current = false;
       }
-      
-      await submitTeams();
-    }, 300); // Allow auth state and existing submission check to propagate
-
-    return () => clearTimeout(timer);
+    })();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, pendingSubmission]);
-
+  }, [pendingSubmission, authLoading, user?.id, existingSubmissionChecked, starTeamId]);
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
     setPendingSubmission(false);
@@ -811,6 +820,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         description="Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed." 
         onConfirm={async () => {
           setShowNoStarModal(false);
+          setPendingSubmission(false);
           await submitTeams();
         }} 
         onCancel={() => setShowNoStarModal(false)} 
