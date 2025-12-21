@@ -768,7 +768,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            {prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits'}
+            Prize type: {prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits'}
           </p>
         </div>
 
