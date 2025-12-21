@@ -21,6 +21,7 @@ import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
+import { TeamPickerWalkthrough, TeamPickerHelpButton } from './TeamPickerWalkthrough';
 
 
 interface FantasyRound {
@@ -562,17 +563,20 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        {priceStatus === 'calculating' ? (
-          <div className="space-y-3">
-            <p className="text-muted-foreground font-medium">Setting up team prices for this round...</p>
-            <p className="text-sm text-muted-foreground">This may take a few moments. (Attempt {retryCount + 1}/{MAX_RETRIES})</p>
-          </div>
-        ) : (
-          <p className="text-muted-foreground">Loading available teams...</p>
-        )}
-      </div>
+      <>
+        <TeamPickerWalkthrough />
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          {priceStatus === 'calculating' ? (
+            <div className="space-y-3">
+              <p className="text-muted-foreground font-medium">Setting up team prices for this round...</p>
+              <p className="text-sm text-muted-foreground">This may take a few moments. (Attempt {retryCount + 1}/{MAX_RETRIES})</p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Loading available teams...</p>
+          )}
+        </div>
+      </>
     );
   }
 
@@ -606,6 +610,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   return (
     <div className="space-y-6">
+      <TeamPickerWalkthrough />
+
+      <div className="flex justify-end">
+        <TeamPickerHelpButton />
+      </div>
+
       {/* Round Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
@@ -649,6 +659,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       {/* Submit Button */}
       <div className="flex justify-center">
         <Button 
+          data-walkthrough="submit-button"
           onClick={async () => {
             if (selectedTeams.length !== 5) {
               toast.error('Please select exactly 5 teams');
