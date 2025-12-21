@@ -32,6 +32,8 @@ interface InProgressRound {
   is_private: boolean;
   round_name: string | null;
   status: 'scheduled' | 'open' | 'active';
+  game_type?: string;
+  team_type?: 'pro' | 'amateur' | 'both';
 }
 
 interface FantasyScore {
@@ -102,6 +104,8 @@ export const InProgressRounds: React.FC = () => {
             is_private: pick.fantasy_rounds.is_private || false,
             round_name: pick.fantasy_rounds.round_name || null,
             status: roundStatus as 'scheduled' | 'open' | 'active',
+            game_type: pick.fantasy_rounds.game_type,
+            team_type: pick.fantasy_rounds.team_type as 'pro' | 'amateur' | 'both' | undefined,
             scores
           };
         })
@@ -709,7 +713,9 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
             start_date: round.start_date,
             end_date: round.end_date,
             status: 'active',
-            is_private: round.is_private
+            is_private: round.is_private,
+            game_type: round.game_type,
+            team_type: round.team_type
           }}
           swapMode={true}
           swappingTeamBudget={swappingTeam?.price}
