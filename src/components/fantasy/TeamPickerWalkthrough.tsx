@@ -17,7 +17,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'budget',
     target: '[data-walkthrough="budget-bar"]',
     title: 'Budget & Salary Cap',
-    description: 'You have $50M to spend on 5 teams. More successful teams cost more. Use bonus credits from XP rewards to go over budget!',
+    description: 'You have 50 credits to spend on 5 teams. Stronger teams cost more. Earn bonus credits from XP rewards to go over budget!',
     icon: <DollarSign className="h-5 w-5" />,
     position: 'bottom',
   },
@@ -248,6 +248,18 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
 
   // Calculate tooltip position
   const getTooltipStyle = (): React.CSSProperties => {
+    const padding = 16;
+    const tooltipWidth = 320;
+    const tooltipHeight = 220; // approximate; keeps card safely on-screen on mobile
+
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+
+    const effectiveTooltipWidth = Math.min(tooltipWidth, viewportW - padding * 2);
+
+    const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+
+    // If we don't know the target, keep the card centered.
     if (!targetRect) {
       return {
         top: '50%',
@@ -256,53 +268,43 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
       };
     }
 
-    const padding = 16;
-    const tooltipWidth = 320;
-    const effectiveTooltipWidth = Math.min(tooltipWidth, window.innerWidth - padding * 2);
-    const tooltipHeight = 200;
+    // Center align horizontally by default.
+    const centeredLeft = clamp(
+      targetRect.left + targetRect.width / 2 - effectiveTooltipWidth / 2,
+      padding,
+      viewportW - effectiveTooltipWidth - padding,
+    );
 
-    switch (step.position) {
-      case 'bottom':
-        return {
-          top: targetRect.bottom + padding,
-          left: Math.max(
-            padding,
-            Math.min(
-              targetRect.left + targetRect.width / 2 - effectiveTooltipWidth / 2,
-              window.innerWidth - effectiveTooltipWidth - padding,
-            ),
-          ),
-        };
-      case 'top':
-        return {
-          top: Math.max(padding, targetRect.top - tooltipHeight - padding),
-          left: Math.max(
-            padding,
-            Math.min(
-              targetRect.left + targetRect.width / 2 - effectiveTooltipWidth / 2,
-              window.innerWidth - effectiveTooltipWidth - padding,
-            ),
-          ),
-        };
-      case 'left':
-        return {
-          top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-          left: Math.max(padding, targetRect.left - effectiveTooltipWidth - padding),
-        };
-      case 'right':
-        return {
-          top: targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-          left: Math.min(
-            window.innerWidth - effectiveTooltipWidth - padding,
-            targetRect.right + padding,
-          ),
-        };
-      default:
-        return {
-          top: targetRect.bottom + padding,
-          left: targetRect.left,
-        };
+    let top = padding;
+    let left = centeredLeft;
+
+    if (step.position === 'bottom') {
+      top = targetRect.bottom + padding;
+
+      // If placing below would go off-screen, flip to above.
+      if (top + tooltipHeight > viewportH - padding) {
+        top = targetRect.top - tooltipHeight - padding;
+      }
+    } else if (step.position === 'top') {
+      top = targetRect.top - tooltipHeight - padding;
+
+      // If placing above would go off-screen, flip to below.
+      if (top < padding) {
+        top = targetRect.bottom + padding;
+      }
+    } else if (step.position === 'left') {
+      top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
+      left = targetRect.left - effectiveTooltipWidth - padding;
+    } else if (step.position === 'right') {
+      top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
+      left = targetRect.right + padding;
     }
+
+    // Final clamp to ensure it always stays visible.
+    top = clamp(top, padding, viewportH - tooltipHeight - padding);
+    left = clamp(left, padding, viewportW - effectiveTooltipWidth - padding);
+
+    return { top, left };
   };
 
   return (

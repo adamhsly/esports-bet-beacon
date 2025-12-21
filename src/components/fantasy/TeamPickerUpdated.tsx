@@ -709,7 +709,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
       {/* Star Team Summary */}
       {selectedTeams.length > 0 && (
-        <div className="bg-muted/30 rounded-lg p-4 border border-border">
+        <div data-walkthrough="star-team-info" className="bg-muted/30 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Star className={`h-5 w-5 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
