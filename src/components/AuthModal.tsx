@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import loginBanner from '@/assets/auth-welcome-banner.png';
+const loginBanner = "/lovable-uploads/Spend_5_Get_10.webp";
 
 interface AuthModalProps {
   isOpen: boolean;
