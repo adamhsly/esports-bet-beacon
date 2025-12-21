@@ -563,9 +563,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     }
   };
 
-  const handleAuthSuccess = async () => {
+  const handleAuthSuccess = () => {
     setShowAuthModal(false);
-    // Submission is handled by the effect below once `user` is available.
+    // Keep `pendingSubmission` intact so the auto-submit effect can run once auth is ready.
   };
 
   useEffect(() => {
@@ -595,9 +595,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingSubmission, authLoading, user?.id, existingSubmissionChecked, starTeamId]);
+
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
-    setPendingSubmission(false);
+
+    // Only cancel an auto-submit if the user is still not authenticated.
+    // (AuthModal closes itself on successful auth, and in that case we want to proceed.)
+    if (!user?.id) {
+      setPendingSubmission(false);
+    }
   };
 
   const getStarredTeamName = () => {
