@@ -377,14 +377,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                   Amateur Teams
                 </TabsTrigger>
               </TabsList>
-            ) : (
-              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <p className="text-sm text-blue-400 font-medium">
-                  {round.team_type === 'pro' ? '🏆 This round is Pro Teams only' : '👥 This round is Amateur Teams only'}
-                  {round.game_type && ` - ${round.game_type}`}
-                </p>
-              </div>
-            )}
+            ) : null}
 
             {/* Pro Teams Tab */}
             {(!round.team_type || round.team_type === 'both' || round.team_type === 'pro') && (
