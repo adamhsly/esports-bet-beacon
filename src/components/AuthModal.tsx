@@ -532,31 +532,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                 </div>
               </div>
 
-              {/* Marketing Preferences */}
-              <div className="space-y-3">
-                <Label className="text-gray-300 text-sm font-medium">
-                  Marketing Preferences (Optional)
-                </Label>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="product-updates"
-                      checked={marketingPreferences.product_updates}
-                      onCheckedChange={(checked) => 
-                        setMarketingPreferences(prev => ({
-                          ...prev,
-                          product_updates: checked as boolean
-                        }))
-                      }
-                      className="border-theme-gray-light data-[state=checked]:bg-theme-purple"
-                    />
-                    <Label htmlFor="product-updates" className="text-sm text-gray-300">
-                      Product updates and new features
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
               {/* Terms & Conditions */}
               <div className="space-y-2">
                 <div className="flex items-start space-x-2">
