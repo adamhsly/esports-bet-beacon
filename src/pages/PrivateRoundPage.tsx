@@ -29,13 +29,13 @@ export const PrivateRoundPage: React.FC = () => {
         <div className="flex-grow container mx-auto px-4 py-8 text-center">
           <h1 className="text-3xl font-bold mb-4">Private Rounds</h1>
           <p className="text-muted-foreground mb-6">
-            Please sign in to access private rounds
+            Please login to access private rounds
           </p>
           <Button
             onClick={() => setShowAuthModal(true)}
             size="lg"
           >
-            Sign In
+            Login
           </Button>
         </div>
         <Footer />

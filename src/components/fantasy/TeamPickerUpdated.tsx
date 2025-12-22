@@ -822,7 +822,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
               if (isFreeRound) {
                 // Validate budget stays within base 50 credits for unauthenticated users
                 if (budgetSpent > SALARY_CAP) {
-                  toast.error('Please stay within the 50 credit budget. Sign in to use bonus credits.');
+                  toast.error('Please stay within the 50 credit budget. Login to use bonus credits.');
                   return;
                 }
               }
@@ -858,7 +858,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           disabled={selectedTeams.length !== 5 || submitting} 
           className="w-full max-w-md h-14 text-lg font-semibold bg-theme-purple hover:bg-theme-purple/90"
         >
-          {submitting ? 'Submitting...' : (user ? 'Submit Team' : 'Sign Up & Submit')}
+          {submitting ? 'Submitting...' : (user ? 'Submit Team' : 'Create Account & Submit')}
         </Button>
       </div>
 

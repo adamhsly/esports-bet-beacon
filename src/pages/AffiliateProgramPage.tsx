@@ -571,7 +571,7 @@ const AffiliateProgramPage = () => {
               Account Required
             </DialogTitle>
             <DialogDescription className="text-center text-white mt-2">
-              You need to create an account or sign in before applying to become a partner. Your application details will be saved.
+              You need to create an account or login before applying to become a partner. Your application details will be saved.
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6 space-y-3">
@@ -579,7 +579,7 @@ const AffiliateProgramPage = () => {
               onClick={handleOpenAuthModal}
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold"
             >
-              Create Account / Sign In
+              Create Account / Login
             </Button>
             <Button 
               variant="outline"

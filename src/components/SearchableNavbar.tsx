@@ -74,11 +74,11 @@ const SearchableNavbar: React.FC = () => {
               ) : (
                 <>
                   <Button asChild variant="outline" className="border-theme-purple text-theme-purple hover:bg-theme-purple hover:text-white">
-                    <Link to="/auth" onClick={handleNavigationClick}>Sign In</Link>
+                    <Link to="/auth" onClick={handleNavigationClick}>Login</Link>
                   </Button>
                   
                   <Button asChild className="bg-theme-purple hover:bg-theme-purple/90">
-                    <Link to="/auth" onClick={handleNavigationClick}>Sign Up</Link>
+                    <Link to="/auth" onClick={handleNavigationClick}>Create Account</Link>
                   </Button>
                   
                   <WalletConnector />
