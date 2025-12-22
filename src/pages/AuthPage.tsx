@@ -115,7 +115,9 @@ const AuthPage: React.FC = () => {
   }, [signUpEmail]);
 
   const checkDuplicates = async () => {
-    if (!signUpEmail) return;
+    // Only check if we have a valid email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!signUpEmail || !emailRegex.test(signUpEmail.trim())) return;
 
     setChecking(true);
     try {
