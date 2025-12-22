@@ -13,7 +13,7 @@ const FaqSection = lazy(() => import("@/components/FaqSection"));
 // Static image paths for lazy loading
 const pickTeamsImg = "/assets/welcome/pick-teams.png";
 const scorePointsImg = "/assets/welcome/score-points.png";
-const winPrizesImg = "/assets/welcome/win-prizes.png";
+import winPrizesImg from "@/assets/welcome/win-prizes.webp";
 const welcomeBanner = "/lovable-uploads/Spend_5_Get_10.webp";
 
 const WelcomePage = () => {
