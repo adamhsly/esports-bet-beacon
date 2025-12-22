@@ -281,10 +281,13 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
 
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 z-[100] pointer-events-none">
+      {/* Overlay - clicking advances to next step */}
+      <div 
+        className="fixed inset-0 z-[100] cursor-pointer"
+        onClick={handleNext}
+      >
         {/* Semi-transparent backdrop with spotlight effect */}
-        <svg className="absolute inset-0 w-full h-full">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
           <defs>
             <mask id="spotlight-mask">
               <rect x="0" y="0" width="100%" height="100%" fill="white" />
@@ -325,7 +328,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
         )}
       </div>
 
-      {/* Tooltip Card */}
+      {/* Tooltip Card - stop propagation to prevent advancing when clicking inside */}
       <div
         className={cn(
           "fixed z-[101] bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] border border-[#8B5CF6]/30 rounded-xl shadow-2xl p-5",
@@ -333,6 +336,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
           "max-w-[calc(100vw-1.5rem)]",
         )}
         style={getTooltipStyle()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
