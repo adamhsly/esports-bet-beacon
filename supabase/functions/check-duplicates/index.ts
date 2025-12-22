@@ -18,9 +18,8 @@ const validateInput = (input: any) => {
     }
   }
   
-  if (!input.username || typeof input.username !== 'string') {
-    errors.push('Username is required');
-  } else {
+  // Username is optional - only validate if provided
+  if (input.username && typeof input.username === 'string') {
     const usernameRegex = /^[a-zA-Z0-9_-]+$/;
     if (!usernameRegex.test(input.username) || input.username.length < 3 || input.username.length > 50) {
       errors.push('Username must be 3-50 characters and contain only letters, numbers, hyphens, and underscores');
