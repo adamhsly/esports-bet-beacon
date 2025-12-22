@@ -13,7 +13,17 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import loginBanner from "@/assets/auth-welcome-banner.png";
+const loginBanner = "/lovable-uploads/Spend_5_Get_10.webp";
+
+// Check if user has ever logged in before (stored in localStorage)
+const hasLoggedInBefore = (): boolean => {
+  return localStorage.getItem('has_logged_in') === 'true';
+};
+
+// Mark that user has logged in
+const markAsLoggedIn = (): void => {
+  localStorage.setItem('has_logged_in', 'true');
+};
 
 const AuthPage: React.FC = () => {
   // Mark welcome page as seen when auth page is accessed
@@ -65,7 +75,8 @@ const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
-  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "signin";
+  const tabFromParam = searchParams.get("tab");
+  const defaultTab = tabFromParam === "signup" ? "signup" : tabFromParam === "signin" ? "signin" : (hasLoggedInBefore() ? "signin" : "signup");
 
   // Generate dropdown options
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
@@ -152,6 +163,7 @@ const AuthPage: React.FC = () => {
       });
     } else {
       setSignInError("");
+      markAsLoggedIn(); // Mark user as returning user
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -261,6 +273,7 @@ const AuthPage: React.FC = () => {
       });
     } else {
       setSignUpError("");
+      markAsLoggedIn(); // Mark user as returning user after successful signup
       toast({
         title: "Account created successfully!",
         description: "Welcome to EsportsHub! Please check your email to verify your account.",
