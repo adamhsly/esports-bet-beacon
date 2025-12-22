@@ -33,6 +33,7 @@ const FantasyPage: React.FC = () => {
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
+  const [loadingRoundFromUrl, setLoadingRoundFromUrl] = useState(!!searchParams.get('roundId'));
   const { awardXP, progressMission } = useRPCActions();
   const isMobile = useMobile();
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
@@ -77,6 +78,7 @@ const FantasyPage: React.FC = () => {
   useEffect(() => {
     const roundId = searchParams.get('roundId');
     if (roundId && !selectedRound) {
+      setLoadingRoundFromUrl(true);
       // Fetch the round details and select it
       const fetchRound = async () => {
         try {
@@ -94,6 +96,8 @@ const FantasyPage: React.FC = () => {
           }
         } catch (err) {
           console.error('Error fetching round:', err);
+        } finally {
+          setLoadingRoundFromUrl(false);
         }
       };
       fetchRound();
@@ -110,6 +114,18 @@ const FantasyPage: React.FC = () => {
       "Track your progress across all active rounds, view detailed scoring breakdowns by team and match, and climb the seasonal leaderboards. Whether you're a fantasy esports veteran or new to pick'ems, Frags & Fortunes offers the perfect competitive experience for every skill level.",
     ],
   };
+
+  // Show loading screen when coming from welcome page with roundId
+  if (loadingRoundFromUrl) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-theme-gray-dark">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-12 w-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto" />
+          <p className="text-lg text-muted-foreground">Loading your round...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-theme-gray-dark theme-alt-card">
