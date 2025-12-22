@@ -151,62 +151,9 @@ serve(async (req) => {
           }
         });
 
-        // For scheduled rounds with few/no matches in window, also check recent history (last 60 days)
-        if (isScheduledRound && proTeamMap.size < 50) {
-          console.log("Scheduled round has few teams, checking recent 60-day history for active teams");
-          const lookbackStart = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-          const lookbackEnd = now.toISOString().split('T')[0];
-
-          let recentQuery = supabase
-            .from("pandascore_matches")
-            .select("teams, esport_type, start_time")
-            .gte("match_date", lookbackStart)
-            .lte("match_date", lookbackEnd)
-            .not("teams", "is", null)
-            .limit(500);
-          
-          // Apply game type filter to recent matches too
-          if (esportTypeFilter) {
-            recentQuery = recentQuery.in("esport_type", esportTypeFilter);
-          }
-          
-          const { data: recentMatches, error: recentErr } = await recentQuery;
-          if (recentErr) console.error("Error fetching recent matches:", recentErr);
-          else console.log("Recent matches (60 days):", recentMatches?.length || 0);
-
-          // Track match counts for teams from lookback to calculate better match_volume
-          const lookbackMatchCounts = new Map<string, number>();
-          
-          // Add teams from recent history that aren't already in the map
-          (recentMatches || []).forEach((m: any) => {
-            if (Array.isArray(m.teams)) {
-              m.teams.forEach((t: any) => {
-                if (t?.type === "Team" && t?.opponent?.id) {
-                  const id = String(t.opponent.id);
-                  const count = lookbackMatchCounts.get(id) || 0;
-                  lookbackMatchCounts.set(id, count + 1);
-                  
-                  if (!proTeamMap.has(id)) {
-                    const name = t.opponent.name || t.opponent.slug || "Unknown Team";
-                    proTeamMap.set(id, { id, name, esport_type: m.esport_type, match_volume: 0 });
-                  }
-                }
-              });
-            }
-          });
-          
-          // Update match_volume for teams from lookback (use their lookback match count)
-          lookbackMatchCounts.forEach((count, teamId) => {
-            const team = proTeamMap.get(teamId);
-            if (team && team.match_volume === 0) {
-              // Estimate matches for the round based on recent activity
-              // Use a rough estimate: lookback matches / 60 days * round duration
-              const roundDurationDays = Math.max(1, (roundEnd.getTime() - roundStart.getTime()) / (24 * 60 * 60 * 1000));
-              const estimatedMatches = Math.max(1, Math.round((count / 60) * roundDurationDays));
-              team.match_volume = estimatedMatches;
-            }
-          });
-        }
+        // Pro teams: Only include teams with matches scheduled in the round window
+        // No 60-day fallback - teams must have actual matches in the window to be selectable
+        console.log("Pro teams: Only teams with matches in round window will be included (no fallback)");
 
         console.log("Pro teams found:", proTeamMap.size);
 
