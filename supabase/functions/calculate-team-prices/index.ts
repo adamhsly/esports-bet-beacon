@@ -157,6 +157,19 @@ serve(async (req) => {
 
         console.log("Pro teams found:", proTeamMap.size);
 
+        // Delete existing pro team prices for this round before inserting fresh ones
+        // This ensures only teams with matches in the current window are selectable
+        const { error: deleteErr } = await supabase
+          .from("fantasy_team_prices")
+          .delete()
+          .eq("round_id", r.id)
+          .eq("team_type", "pro");
+        if (deleteErr) {
+          console.error("Error deleting old pro prices:", deleteErr);
+        } else {
+          console.log("Cleared old pro team prices for round:", r.id);
+        }
+
         // Parallel fetch of pro team stats
         const proStatsPromises = Array.from(proTeamMap.entries()).map(async ([teamId, info]) => {
           try {
