@@ -50,7 +50,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ variant = 'page', onUnlockPre
         <Card className="bg-gradient-to-br from-[#1A1F26] to-[#12161C] border border-white/[0.08] p-8 max-w-md w-full text-center">
           <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-2xl font-gaming text-white mb-2">Profile Unavailable</h2>
-          <p className="text-muted-foreground">Please sign in to view your profile</p>
+          <p className="text-muted-foreground">Please login to view your profile</p>
         </Card>
       </div>
     );

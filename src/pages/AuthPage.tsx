@@ -157,7 +157,7 @@ const AuthPage: React.FC = () => {
       const errorMessage = error.message;
       setSignInError(errorMessage);
       toast({
-        title: "Sign in failed",
+        title: "Login failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -256,7 +256,7 @@ const AuthPage: React.FC = () => {
       const errorMessage = error.message;
       setSignUpError(errorMessage);
       toast({
-        title: "Sign up failed",
+        title: "Account creation failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -341,13 +341,13 @@ const AuthPage: React.FC = () => {
                   value="signin"
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
                 >
-                  Sign In
+                  Login
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
                   className="data-[state=active]:bg-theme-purple data-[state=active]:text-white"
                 >
-                  Sign Up
+                  Create Account
                 </TabsTrigger>
               </TabsList>
 
@@ -406,7 +406,7 @@ const AuthPage: React.FC = () => {
                       className="w-full bg-theme-purple hover:bg-theme-purple/90"
                       disabled={loading}
                     >
-                      {loading ? "Signing in..." : "Sign In"}
+                      {loading ? "Logging in..." : "Login"}
                     </Button>
                   </form>
                 ) : (

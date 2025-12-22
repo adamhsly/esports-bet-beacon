@@ -41,7 +41,7 @@ const ProfilePageLive: React.FC<ProfilePageLiveProps> = ({ onUnlockPremium }) =>
           <div className="text-center">
             <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-gaming text-white mb-2">Profile Unavailable</h2>
-            <p className="text-muted-foreground">Please sign in to view your profile</p>
+            <p className="text-muted-foreground">Please login to view your profile</p>
           </div>
         </Card>
       </div>

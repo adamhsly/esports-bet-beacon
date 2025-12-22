@@ -95,7 +95,7 @@ const ResetPasswordPage: React.FC = () => {
         setSuccess(true);
         toast({
           title: "Password reset successful!",
-          description: "You can now sign in with your new password.",
+          description: "You can now login with your new password.",
         });
         
         // Sign out to clear the recovery session
@@ -159,7 +159,7 @@ const ResetPasswordPage: React.FC = () => {
               <Alert className="bg-green-950/50 border-green-800">
                 <CheckCircle className="h-4 w-4 text-green-400" />
                 <AlertDescription className="text-green-200">
-                  Password reset successful! Redirecting to sign in...
+                  Password reset successful! Redirecting to login...
                 </AlertDescription>
               </Alert>
             ) : (
