@@ -125,73 +125,79 @@ const WelcomePage = () => {
 
           <div className="max-w-6xl mx-auto space-y-6 md:space-y-12 overflow-hidden">
             {/* Card 1 - Pick Teams (Image Left) */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20 mx-0">
-              <CardContent className="p-2 md:p-8">
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
-                  <div className="w-28 h-28 md:w-72 md:h-72 flex-shrink-0">
-                    <img 
-                      src={pickTeamsImg} 
-                      alt="Pick Teams" 
-                      className="w-full h-full object-contain drop-shadow-2xl"
-                      width={288}
-                      height={288}
-                      loading="lazy"
-                      decoding="async"
-                    />
+            <Link to={teamPickerLink} className="block">
+              <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20 mx-0 cursor-pointer">
+                <CardContent className="p-2 md:p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
+                    <div className="w-28 h-28 md:w-72 md:h-72 flex-shrink-0">
+                      <img 
+                        src={pickTeamsImg} 
+                        alt="Pick Teams" 
+                        className="w-full h-full object-contain drop-shadow-2xl"
+                        width={288}
+                        height={288}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className="text-center md:text-left">
+                      <h3 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-purple-400 leading-tight break-words">1. Pick Your Teams</h3>
+                      <p className="text-xs md:text-lg text-muted-foreground leading-relaxed break-words">Choose your favorite professional or amateur esports teams within your budget.</p>
+                    </div>
                   </div>
-                  <div className="text-center md:text-left">
-                    <h3 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-purple-400 leading-tight break-words">1. Pick Your Teams</h3>
-                    <p className="text-xs md:text-lg text-muted-foreground leading-relaxed break-words">Choose your favorite professional or amateur esports teams within your budget.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
             {/* Card 2 - Score Points (Image Right) */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20 mx-0">
-              <CardContent className="p-2 md:p-8">
-                <div className="flex flex-col md:flex-row-reverse items-center gap-4 md:gap-12">
-                  <div className="w-28 h-28 md:w-72 md:h-72 flex-shrink-0">
-                    <img 
-                      src={scorePointsImg} 
-                      alt="Score Points" 
-                      className="w-full h-full object-contain drop-shadow-2xl"
-                      width={288}
-                      height={288}
-                      loading="lazy"
-                      decoding="async"
-                    />
+            <Link to={teamPickerLink} className="block">
+              <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20 mx-0 cursor-pointer">
+                <CardContent className="p-2 md:p-8">
+                  <div className="flex flex-col md:flex-row-reverse items-center gap-4 md:gap-12">
+                    <div className="w-28 h-28 md:w-72 md:h-72 flex-shrink-0">
+                      <img 
+                        src={scorePointsImg} 
+                        alt="Score Points" 
+                        className="w-full h-full object-contain drop-shadow-2xl"
+                        width={288}
+                        height={288}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className="text-center md:text-left">
+                      <h3 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-blue-400 leading-tight break-words">2. Score Points</h3>
+                      <p className="text-xs md:text-lg text-muted-foreground leading-relaxed break-words">Earn points when your chosen teams win matches and tournaments.</p>
+                    </div>
                   </div>
-                  <div className="text-center md:text-left">
-                    <h3 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-blue-400 leading-tight break-words">2. Score Points</h3>
-                    <p className="text-xs md:text-lg text-muted-foreground leading-relaxed break-words">Earn points when your chosen teams win matches and tournaments.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
             {/* Card 3 - Win Prizes (Image Left) */}
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20 mx-0">
-              <CardContent className="p-2 md:p-8">
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
-                  <div className="w-28 h-28 md:w-72 md:h-72 flex-shrink-0">
-                    <img 
-                      src={winPrizesImg} 
-                      alt="Win Prizes" 
-                      className="w-full h-full object-contain drop-shadow-2xl"
-                      width={288}
-                      height={288}
-                      loading="lazy"
-                      decoding="async"
-                    />
+            <Link to={teamPickerLink} className="block">
+              <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20 mx-0 cursor-pointer">
+                <CardContent className="p-2 md:p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
+                    <div className="w-28 h-28 md:w-72 md:h-72 flex-shrink-0">
+                      <img 
+                        src={winPrizesImg} 
+                        alt="Win Prizes" 
+                        className="w-full h-full object-contain drop-shadow-2xl"
+                        width={288}
+                        height={288}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className="text-center md:text-left">
+                      <h3 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-yellow-400 leading-tight break-words">3. Win Prizes</h3>
+                      <p className="text-xs md:text-lg text-muted-foreground leading-relaxed break-words">Climb the leaderboard and win exciting rewards based on your performance.</p>
+                    </div>
                   </div>
-                  <div className="text-center md:text-left">
-                    <h3 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-yellow-400 leading-tight break-words">3. Win Prizes</h3>
-                    <p className="text-xs md:text-lg text-muted-foreground leading-relaxed break-words">Climb the leaderboard and win exciting rewards based on your performance.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
