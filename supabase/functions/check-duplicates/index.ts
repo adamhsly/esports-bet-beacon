@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const email = body.email?.trim();
+    const email = body.email?.trim()?.toLowerCase();
     
     // Validate input
     const validationErrors = validateInput({ email });
@@ -40,29 +40,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    const supabaseClient = createClient(
+    // Use service role key to access auth.users
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     console.log('Checking email duplicate for:', email)
 
-    // Check if email exists in auth.users via profiles or directly
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle()
-
+    // Check if email exists in auth.users using admin API
+    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
+    
     if (error) {
-      console.error('Error checking duplicates:', error)
-      // If profiles table doesn't have email column, just return no duplicate
+      console.error('Error checking auth users:', error)
       return new Response(JSON.stringify({ duplicates: { email: false } }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const emailExists = !!data
+    // Check if any user has this email (case-insensitive)
+    const emailExists = users.some(user => user.email?.toLowerCase() === email)
 
     console.log('Email duplicate check result:', emailExists)
 
