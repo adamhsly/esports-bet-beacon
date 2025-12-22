@@ -3706,6 +3706,21 @@ export type Database = {
               upcoming_count: number
             }[]
           }
+        | {
+            Args: {
+              end_date: string
+              p_esport_type?: string
+              p_source?: string
+              p_status?: string
+              start_date: string
+            }
+            Returns: {
+              esport_type: string
+              match_count: number
+              match_date: string
+              source: string
+            }[]
+          }
       deduct_promo_balance: {
         Args: { p_amount_pence: number; p_user_id: string }
         Returns: number
