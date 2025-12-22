@@ -65,11 +65,11 @@ serve(async (req) => {
       // Ignore bad JSON
     }
 
-    // Get active fantasy rounds (optionally scoped) - include 'closed' like the mjs script
+    // Get active fantasy rounds (optionally scoped) - include finished for recalculating
     let roundsQuery = supabase
       .from('fantasy_rounds')
       .select('*')
-      .in('status', ['open', 'active', 'closed']);
+      .in('status', ['open', 'active', 'closed', 'finished']);
     if (roundFilter) roundsQuery = roundsQuery.eq('id', roundFilter);
 
     const { data: activeRounds, error: roundsError } = await roundsQuery;
