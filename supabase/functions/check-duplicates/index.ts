@@ -7,19 +7,20 @@ const corsHeaders = {
 
 // Input validation - only email required
 const validateInput = (input: any) => {
-  const errors: string[] = [];
-  
+  const errors: string[] = []
+
   if (!input.email || typeof input.email !== 'string') {
-    errors.push('Email is required');
+    errors.push('Email is required')
   } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(input.email.trim()) || input.email.length > 255) {
-      errors.push('Invalid email format or too long (max 255 characters)');
+    const email = input.email.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email) || email.length > 255) {
+      errors.push('Invalid email format or too long (max 255 characters)')
     }
   }
-  
-  return errors;
-};
+
+  return errors
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,11 +29,12 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('[check-duplicates] v2')
+
     const body = await req.json()
-    const email = body.email?.trim()?.toLowerCase();
-    
-    // Validate input
-    const validationErrors = validateInput({ email });
+    const email = body.email?.trim()?.toLowerCase()
+
+    const validationErrors = validateInput({ email })
     if (validationErrors.length > 0) {
       return new Response(JSON.stringify({ error: 'Validation failed', details: validationErrors }), {
         status: 400,
@@ -40,35 +42,51 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Use service role key to access auth.users
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    console.log('Checking email duplicate for:', email)
-
-    // Check if email exists in auth.users using admin API
-    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (error) {
-      console.error('Error checking auth users:', error)
-      return new Response(JSON.stringify({ duplicates: { email: false } }), {
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (!serviceRoleKey) {
+      console.error('[check-duplicates] Missing SUPABASE_SERVICE_ROLE_KEY')
+      // Fail open so signup flow isn't blocked, but log loudly.
+      return new Response(JSON.stringify({ duplicates: { email: false }, warning: 'Server misconfigured' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Check if any user has this email (case-insensitive)
-    const emailExists = users.some(user => user.email?.toLowerCase() === email)
+    const supabaseAdmin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey)
 
-    console.log('Email duplicate check result:', emailExists)
+    console.log('[check-duplicates] checking email:', email)
+
+    // Admin API doesn't support querying by email directly, so we page through users.
+    // We stop as soon as we find a match.
+    const perPage = 1000
+    let page = 1
+    let emailExists = false
+
+    for (let i = 0; i < 20; i++) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+
+      if (error) {
+        console.error('[check-duplicates] listUsers error:', error)
+        return new Response(JSON.stringify({ duplicates: { email: false } }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      emailExists = (data.users ?? []).some((u) => (u.email ?? '').toLowerCase() === email)
+      if (emailExists) break
+
+      const nextPage = (data as any).nextPage as number | null
+      if (!nextPage) break
+      page = nextPage
+    }
+
+    console.log('[check-duplicates] result:', { email: emailExists })
 
     return new Response(JSON.stringify({ duplicates: { email: emailExists } }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Error in check-duplicates function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[check-duplicates] unhandled error:', error)
+    return new Response(JSON.stringify({ error: error.message ?? 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
