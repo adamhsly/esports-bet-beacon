@@ -673,29 +673,33 @@ export const RoundSelector: React.FC<{
           
           return (
             <section key={sectionName} data-walkthrough="round-section">
-              <SectionHeading>{sectionName}</SectionHeading>
-              <div className="space-y-3">
-                {sortedRounds.map((round, idx) => {
-                  const isFirstFreeProRound = round === firstFreeProRound;
-                  return (
-                    <div 
-                      key={round.id}
-                      data-walkthrough={isFirstFreeProRound ? "free-round" : idx === 0 ? "round-card" : undefined}
-                    >
-                      <RoundCard
-                        round={round}
-                        type={round.type}
-                        onClick={() => handleJoinRound(round)}
-                        onPaidEntry={round.is_paid ? () => handlePaidEntry(round) : undefined}
-                        onSubmitPaidTeams={paidButEmptyPicks[round.id] ? () => handleSubmitPaidTeams(round) : undefined}
-                        isPaidCheckoutLoading={checkoutLoading}
-                        userEntryCount={userEntryCounts[round.id] || 0}
-                        hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              <Card className="bg-gradient-to-br from-[#1a1a2e] to-[#16162a] border-white/10 overflow-hidden">
+                <CardContent className="p-4 md:p-6">
+                  <SectionHeading>{sectionName}</SectionHeading>
+                  <div className="space-y-3">
+                    {sortedRounds.map((round, idx) => {
+                      const isFirstFreeProRound = round === firstFreeProRound;
+                      return (
+                        <div 
+                          key={round.id}
+                          data-walkthrough={isFirstFreeProRound ? "free-round" : idx === 0 ? "round-card" : undefined}
+                        >
+                          <RoundCard
+                            round={round}
+                            type={round.type}
+                            onClick={() => handleJoinRound(round)}
+                            onPaidEntry={round.is_paid ? () => handlePaidEntry(round) : undefined}
+                            onSubmitPaidTeams={paidButEmptyPicks[round.id] ? () => handleSubmitPaidTeams(round) : undefined}
+                            isPaidCheckoutLoading={checkoutLoading}
+                            userEntryCount={userEntryCounts[round.id] || 0}
+                            hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           );
         })}
@@ -706,10 +710,14 @@ export const RoundSelector: React.FC<{
 
         {/* Private Leagues Section */}
         <section>
-          <SectionHeading>Private Leagues</SectionHeading>
-          <div className="space-y-3">
-            <RoundCard type="private" onClick={handlePrivateRound} />
-          </div>
+          <Card className="bg-gradient-to-br from-[#1a1a2e] to-[#16162a] border-white/10 overflow-hidden">
+            <CardContent className="p-4 md:p-6">
+              <SectionHeading>Private Leagues</SectionHeading>
+              <div className="space-y-3">
+                <RoundCard type="private" onClick={handlePrivateRound} />
+              </div>
+            </CardContent>
+          </Card>
         </section>
       </div>
 
