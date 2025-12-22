@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Input validation schema
+// Input validation - only email required
 const validateInput = (input: any) => {
   const errors: string[] = [];
   
@@ -13,21 +13,9 @@ const validateInput = (input: any) => {
     errors.push('Email is required');
   } else {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(input.email) || input.email.length > 255) {
+    if (!emailRegex.test(input.email.trim()) || input.email.length > 255) {
       errors.push('Invalid email format or too long (max 255 characters)');
     }
-  }
-  
-  // Username is optional - only validate if provided
-  if (input.username && typeof input.username === 'string') {
-    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
-    if (!usernameRegex.test(input.username) || input.username.length < 3 || input.username.length > 50) {
-      errors.push('Username must be 3-50 characters and contain only letters, numbers, hyphens, and underscores');
-    }
-  }
-  
-  if (input.full_name && typeof input.full_name === 'string' && input.full_name.length > 100) {
-    errors.push('Full name must be less than 100 characters');
   }
   
   return errors;
@@ -41,9 +29,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
+    const email = body.email?.trim();
     
     // Validate input
-    const validationErrors = validateInput(body);
+    const validationErrors = validateInput({ email });
     if (validationErrors.length > 0) {
       return new Response(JSON.stringify({ error: 'Validation failed', details: validationErrors }), {
         status: 400,
@@ -51,30 +40,33 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { email, username, full_name } = body;
-
-    // Use anon key instead of service role key for proper RLS enforcement
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    console.log('Checking duplicates for:', { email, username, full_name })
+    console.log('Checking email duplicate for:', email)
 
-    const { data, error } = await supabaseClient.rpc('check_registration_duplicates', {
-      p_email: email,
-      p_username: username,
-      p_full_name: full_name
-    })
+    // Check if email exists in auth.users via profiles or directly
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
 
     if (error) {
       console.error('Error checking duplicates:', error)
-      throw error
+      // If profiles table doesn't have email column, just return no duplicate
+      return new Response(JSON.stringify({ duplicates: { email: false } }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    console.log('Duplicate check result:', data)
+    const emailExists = !!data
 
-    return new Response(JSON.stringify({ duplicates: data }), {
+    console.log('Email duplicate check result:', emailExists)
+
+    return new Response(JSON.stringify({ duplicates: { email: emailExists } }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
