@@ -80,6 +80,7 @@ export const InProgressRounds: React.FC = () => {
           let scores: FantasyScore[] = [];
           
           if (roundStatus !== 'scheduled') {
+            // First try fantasy_round_scores
             const { data: scoresData, error: scoresError } = await supabase
               .from('fantasy_round_scores')
               .select('*')
@@ -87,21 +88,63 @@ export const InProgressRounds: React.FC = () => {
               .eq('user_id', user.id);
 
             if (scoresError) throw scoresError;
-            scores = (scoresData || []).map((score) => ({
-              ...score,
-              team_type: score.team_type as 'pro' | 'amateur'
-            }));
+            
+            if (scoresData && scoresData.length > 0) {
+              scores = scoresData.map((score) => ({
+                ...score,
+                team_type: score.team_type as 'pro' | 'amateur'
+              }));
+            } else {
+              // Fallback: aggregate scores from fantasy_team_match_breakdown
+              const { data: breakdowns } = await supabase
+                .from('fantasy_team_match_breakdown')
+                .select('*')
+                .eq('round_id', pick.round_id)
+                .eq('user_id', user.id);
+              
+              if (breakdowns && breakdowns.length > 0) {
+                // Group by team_id and aggregate
+                const teamScores = new Map<string, FantasyScore>();
+                for (const b of breakdowns) {
+                  const existing = teamScores.get(b.team_id);
+                  if (existing) {
+                    existing.current_score += b.points_earned || 0;
+                    existing.match_wins += b.result === 'win' ? 1 : 0;
+                    existing.map_wins += b.map_wins || 0;
+                    existing.clean_sweeps += b.is_clean_sweep ? 1 : 0;
+                    existing.tournaments_won += b.is_tournament_win ? 1 : 0;
+                    existing.matches_played += 1;
+                  } else {
+                    teamScores.set(b.team_id, {
+                      team_id: b.team_id,
+                      team_name: b.team_name,
+                      team_type: b.team_type as 'pro' | 'amateur',
+                      current_score: b.points_earned || 0,
+                      match_wins: b.result === 'win' ? 1 : 0,
+                      map_wins: b.map_wins || 0,
+                      clean_sweeps: b.is_clean_sweep ? 1 : 0,
+                      tournaments_won: b.is_tournament_win ? 1 : 0,
+                      matches_played: 1,
+                    });
+                  }
+                }
+                scores = Array.from(teamScores.values());
+              }
+            }
           }
 
-          // Calculate total score from individual team scores for consistency
+          // Calculate total score from individual team scores, but use pick.total_score as authoritative fallback
           const calculatedTotalScore = scores.reduce((sum, s) => sum + (s.current_score || 0), 0);
+          const pickTotalScore = typeof pick.total_score === 'number' ? pick.total_score : 0;
+          // Use the higher of the two (pick.total_score is the source of truth from the scoring job)
+          const finalTotalScore = roundStatus === 'scheduled' ? 0 : Math.max(calculatedTotalScore, pickTotalScore);
 
           return {
             id: pick.round_id,
             type: pick.fantasy_rounds.type as 'daily' | 'weekly' | 'monthly' | 'private',
             start_date: pick.fantasy_rounds.start_date,
             end_date: pick.fantasy_rounds.end_date,
-            total_score: roundStatus === 'scheduled' ? 0 : calculatedTotalScore,
+            total_score: finalTotalScore,
             team_picks: Array.isArray(pick.team_picks) ? pick.team_picks : [],
             bench_team: pick.bench_team,
             is_private: pick.fantasy_rounds.is_private || false,
