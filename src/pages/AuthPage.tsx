@@ -35,7 +35,6 @@ const AuthPage: React.FC = () => {
   const [signInPassword, setSignInPassword] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
-  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   const [dobDay, setDobDay] = useState("");
   const [dobMonth, setDobMonth] = useState("");
   const [dobYear, setDobYear] = useState("");
@@ -202,17 +201,6 @@ const AuthPage: React.FC = () => {
       return;
     }
 
-    if (signUpPassword !== signUpConfirmPassword) {
-      const errorMessage = "Please make sure your passwords match.";
-      setSignUpError(errorMessage);
-      toast({
-        title: "Password mismatch",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (signUpPassword.length < 6) {
       const errorMessage = "Password must be at least 6 characters long.";
       setSignUpError(errorMessage);
@@ -282,7 +270,6 @@ const AuthPage: React.FC = () => {
       // Clear form and navigate to homepage
       setSignUpEmail("");
       setSignUpPassword("");
-      setSignUpConfirmPassword("");
       setDobDay("");
       setDobMonth("");
       setDobYear("");
@@ -575,22 +562,6 @@ const AuthPage: React.FC = () => {
                       required
                       className="bg-theme-gray-dark border-theme-gray-light text-white"
                       placeholder="Create a password"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password" className="text-gray-300">
-                      <Lock className="inline w-4 h-4 mr-2" />
-                      Confirm Password
-                    </Label>
-                    <Input
-                      id="signup-confirm-password"
-                      type="password"
-                      value={signUpConfirmPassword}
-                      onChange={(e) => setSignUpConfirmPassword(e.target.value)}
-                      required
-                      className="bg-theme-gray-dark border-theme-gray-light text-white"
-                      placeholder="Confirm your password"
                     />
                   </div>
 
