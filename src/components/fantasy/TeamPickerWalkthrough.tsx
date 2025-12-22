@@ -330,10 +330,13 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
 
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 z-[100] pointer-events-none">
+      {/* Overlay - clicking advances to next step */}
+      <div 
+        className="fixed inset-0 z-[100] cursor-pointer"
+        onClick={handleNext}
+      >
         {/* Semi-transparent backdrop with spotlight effect */}
-        <svg className="absolute inset-0 w-full h-full">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
           <defs>
             <mask id="teampicker-spotlight-mask">
               <rect x="0" y="0" width="100%" height="100%" fill="white" />
@@ -374,7 +377,7 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
         )}
       </div>
 
-      {/* Tooltip Card */}
+      {/* Tooltip Card - stop propagation to prevent advancing when clicking inside */}
       <div
         ref={tooltipRef}
         className={cn(
@@ -383,6 +386,7 @@ export const TeamPickerWalkthrough: React.FC<TeamPickerWalkthroughProps> = ({ on
           "max-h-[calc(100svh-2rem)] overflow-auto",
         )}
         style={getTooltipStyle()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
