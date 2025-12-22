@@ -42,6 +42,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(defaultTab || (hasLoggedInBefore() ? 'signin' : 'signup'));
   const [signInError, setSignInError] = useState('');
   const [signUpError, setSignUpError] = useState('');
   const [resetError, setResetError] = useState('');
@@ -289,7 +290,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
           />
         </DialogHeader>
         
-        <Tabs defaultValue={defaultTab || (hasLoggedInBefore() ? 'signin' : 'signup')} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
             <TabsTrigger 
               value="signin" 
@@ -451,7 +452,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                   ) : null}
                 </div>
                 {fieldErrors.email && (
-                  <p className="text-sm text-red-400">{fieldErrors.email}</p>
+                  <p className="text-sm text-red-400">
+                    {fieldErrors.email}{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("signin");
+                        setSignInEmail(signUpEmail);
+                      }}
+                      className="text-theme-purple hover:text-theme-purple/80 underline"
+                    >
+                      Log in
+                    </button>
+                  </p>
                 )}
               </div>
               

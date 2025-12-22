@@ -76,6 +76,7 @@ const AuthPage: React.FC = () => {
   const redirectTo = searchParams.get("redirect") || "/";
   const tabFromParam = searchParams.get("tab");
   const defaultTab = tabFromParam === "signup" ? "signup" : tabFromParam === "signin" ? "signin" : (hasLoggedInBefore() ? "signin" : "signup");
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Generate dropdown options
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
@@ -334,7 +335,7 @@ const AuthPage: React.FC = () => {
             />
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue={defaultTab} className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 bg-theme-gray-dark">
                 <TabsTrigger
                   value="signin"
@@ -498,7 +499,21 @@ const AuthPage: React.FC = () => {
                         <X className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
                       ) : null}
                     </div>
-                    {fieldErrors.email && <p className="text-sm text-red-400">{fieldErrors.email}</p>}
+                    {fieldErrors.email && (
+                      <p className="text-sm text-red-400">
+                        {fieldErrors.email}{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("signin");
+                            setSignInEmail(signUpEmail);
+                          }}
+                          className="text-theme-purple hover:text-theme-purple/80 underline"
+                        >
+                          Log in
+                        </button>
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password" className="text-gray-300">
