@@ -133,6 +133,11 @@ serve(async () => {
 
       if (existingStatus === apiStatus && !teamsAreDifferent(apiTeams, existingTeams)) continue;
 
+      // If match has a winner_id, it's finished regardless of what status says
+      const apiStatusRaw = match.status ?? null;
+      const hasWinner = match.winner_id != null;
+      const effectiveStatus = (apiStatusRaw === 'cancelled' && hasWinner) ? 'finished' : apiStatusRaw;
+      
       const mapped = {
         match_id,
         esport_type: match.videogame?.name ?? null,
@@ -151,13 +156,13 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at ?? null,
-        status: match.status ?? null,
+        status: effectiveStatus,
         match_type: match.match_type ?? null,
         number_of_games: match.number_of_games ?? null,
         tournament_id: match.tournament?.id?.toString() ?? null,
         tournament_name: match.tournament?.name ?? null,
         league_id: match.league?.id?.toString() ?? null,
-        league_name: match.league?.name ?? null,
+        league_name: match.league?.id?.toString() ?? null,
         serie_id: match.serie?.id?.toString() ?? null,
         serie_name: match.serie?.name ?? null,
         teams: match.opponents ?? [],
