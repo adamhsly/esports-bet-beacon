@@ -614,22 +614,6 @@ const AuthPage: React.FC = () => {
                           Product updates and new features
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="event-notifications"
-                          checked={marketingPreferences.event_notifications}
-                          onCheckedChange={(checked) =>
-                            setMarketingPreferences((prev) => ({
-                              ...prev,
-                              event_notifications: checked as boolean,
-                            }))
-                          }
-                          className="border-theme-gray-light data-[state=checked]:bg-theme-purple"
-                        />
-                        <Label htmlFor="event-notifications" className="text-sm text-gray-300">
-                          Tournament and event notifications
-                        </Label>
-                      </div>
                     </div>
                   </div>
 
