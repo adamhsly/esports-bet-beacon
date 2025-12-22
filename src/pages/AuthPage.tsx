@@ -500,6 +500,21 @@ const AuthPage: React.FC = () => {
                     </div>
                     {fieldErrors.email && <p className="text-sm text-red-400">{fieldErrors.email}</p>}
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password" className="text-gray-300">
+                      <Lock className="inline w-4 h-4 mr-2" />
+                      Password
+                    </Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={signUpPassword}
+                      onChange={(e) => setSignUpPassword(e.target.value)}
+                      required
+                      className="bg-theme-gray-dark border-theme-gray-light text-white"
+                      placeholder="Create a password"
+                    />
+                  </div>
 
                   {/* Date of Birth Field */}
                   <div className="space-y-2">
@@ -547,22 +562,6 @@ const AuthPage: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-gray-300">
-                      <Lock className="inline w-4 h-4 mr-2" />
-                      Password
-                    </Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={signUpPassword}
-                      onChange={(e) => setSignUpPassword(e.target.value)}
-                      required
-                      className="bg-theme-gray-dark border-theme-gray-light text-white"
-                      placeholder="Create a password"
-                    />
                   </div>
 
                   {/* Marketing Preferences */}
