@@ -35,10 +35,10 @@ const WelcomePage = () => {
     localStorage.setItem('hasSeenWelcome', 'true');
   }, []);
 
-  // Redirect authenticated users to main page
+  // Redirect authenticated users to main page (preserve deep-link params like ?roundId=...)
   useEffect(() => {
     if (!loading && user) {
-      navigate("/");
+      navigate("/" + window.location.search);
     }
   }, [user, loading, navigate]);
 
