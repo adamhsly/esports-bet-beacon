@@ -119,13 +119,14 @@ serve(async (req) => {
           proEndDate = roundEnd.toISOString().split('T')[0];
         }
 
-        // Build query with optional esport_type filter
+        // Build query with optional esport_type filter - exclude cancelled matches
         let matchQuery = supabase
           .from("pandascore_matches")
           .select("teams, esport_type, start_time")
           .gte("match_date", proStartDate)
           .lte("match_date", proEndDate)
-          .not("teams", "is", null);
+          .not("teams", "is", null)
+          .not("status", "eq", "canceled");
         
         // Apply game type filter if specified
         if (esportTypeFilter) {
