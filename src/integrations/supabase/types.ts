@@ -2576,6 +2576,8 @@ export type Database = {
           last_login_at: string | null
           marketing_preferences: Json | null
           premium_pass: boolean
+          promo_balance_pence: number | null
+          promo_expires_at: string | null
           referrer_code: string | null
           streak_count: number
           terms_accepted: boolean
@@ -2599,6 +2601,8 @@ export type Database = {
           last_login_at?: string | null
           marketing_preferences?: Json | null
           premium_pass?: boolean
+          promo_balance_pence?: number | null
+          promo_expires_at?: string | null
           referrer_code?: string | null
           streak_count?: number
           terms_accepted?: boolean
@@ -2622,6 +2626,8 @@ export type Database = {
           last_login_at?: string | null
           marketing_preferences?: Json | null
           premium_pass?: boolean
+          promo_balance_pence?: number | null
+          promo_expires_at?: string | null
           referrer_code?: string | null
           streak_count?: number
           terms_accepted?: boolean
@@ -4088,6 +4094,8 @@ export type Database = {
           last_login_at: string | null
           marketing_preferences: Json | null
           premium_pass: boolean
+          promo_balance_pence: number | null
+          promo_expires_at: string | null
           referrer_code: string | null
           streak_count: number
           terms_accepted: boolean
