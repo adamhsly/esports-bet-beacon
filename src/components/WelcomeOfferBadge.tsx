@@ -84,17 +84,20 @@ const WelcomeOfferBadge: React.FC = () => {
     );
   }
 
-  // Active promo balance state
+  // Active promo balance state - show balance and link to join rounds
   if (displayState === 'active' && status.promoBalancePence > 0) {
     return (
       <>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-green-600/30 to-emerald-500/30 border border-green-500/50 rounded-full cursor-pointer hover:border-green-400/70 transition-colors animate-pulse">
+              <div 
+                className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-green-600/30 to-emerald-500/30 border border-green-500/50 rounded-full cursor-pointer hover:border-green-400/70 transition-colors"
+                onClick={() => setModalOpen(true)}
+              >
                 <Gift className="w-3.5 h-3.5 text-green-400" />
                 <span className="text-xs font-bold text-green-300">
-                  {formatPence(status.promoBalancePence)}
+                  {formatPence(status.promoBalancePence)} Balance
                 </span>
                 {daysRemaining !== null && (
                   <div className="flex items-center gap-0.5 text-yellow-400">
@@ -102,17 +105,16 @@ const WelcomeOfferBadge: React.FC = () => {
                     <span className="text-xs font-medium">{daysRemaining}d</span>
                   </div>
                 )}
-                <InfoButton />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-theme-gray-dark border-green-500/30 max-w-xs">
               <div className="flex flex-col gap-1 p-1">
                 <div className="flex items-center gap-2">
                   <Gift className="w-4 h-4 text-green-400" />
-                  <span className="font-semibold text-white">Promo Balance Active!</span>
+                  <span className="font-semibold text-white">Promo Balance</span>
                 </div>
                 <p className="text-sm text-gray-300">
-                  You have {formatPence(status.promoBalancePence)} promo balance to use on paid entries.
+                  {formatPence(status.promoBalancePence)} available for paid entries. Click to join a round!
                 </p>
                 {daysRemaining !== null && (
                   <p className="text-xs text-yellow-400 flex items-center gap-1">
@@ -120,9 +122,6 @@ const WelcomeOfferBadge: React.FC = () => {
                     Expires in {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
                   </p>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
-                  Will be automatically applied at checkout.
-                </p>
               </div>
             </TooltipContent>
           </Tooltip>
