@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-const loginBanner = "/lovable-uploads/Spend_5_Get_10.webp";
+const loginBanner = "/lovable-uploads/Spend_5_Get_10_v2.webp";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -274,7 +274,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
         <DialogHeader className="p-0">
           <img 
             src={loginBanner} 
-            alt="Welcome - Spend $5 Get $10 Free! New users first $5 of paid entries unlocks $10 in bonus credits" 
+            alt="$10 bonus - No deposit required - Have some free plays on us!" 
             className="w-full h-auto rounded-t-lg"
           />
         </DialogHeader>

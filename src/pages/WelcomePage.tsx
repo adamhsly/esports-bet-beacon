@@ -16,7 +16,7 @@ const FaqSection = lazy(() => import("@/components/FaqSection"));
 const pickTeamsImg = "/assets/welcome/pick-teams.png";
 const scorePointsImg = "/assets/welcome/score-points.png";
 import winPrizesImg from "@/assets/welcome/win-prizes.webp";
-const welcomeBanner = "/lovable-uploads/Spend_5_Get_10.webp";
+const welcomeBanner = "/lovable-uploads/Spend_5_Get_10_v2.webp";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
@@ -135,7 +135,7 @@ const WelcomePage = () => {
           <div onClick={handleVariantBClick} className="block w-full cursor-pointer">
             <img 
               src={welcomeBanner} 
-              alt="Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits"
+              alt="$10 bonus - No deposit required - Have some free plays on us!"
               className="w-full h-auto hover:opacity-90 transition-opacity"
               width={1920}
               height={400}
@@ -147,7 +147,7 @@ const WelcomePage = () => {
           <Link to={teamPickerLink} className="block w-full">
             <img 
               src={welcomeBanner} 
-              alt="Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits"
+              alt="$10 bonus - No deposit required - Have some free plays on us!"
               className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
               width={1920}
               height={400}
