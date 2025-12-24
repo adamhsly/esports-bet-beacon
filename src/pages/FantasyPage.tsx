@@ -217,7 +217,8 @@ const FantasyPage: React.FC = () => {
             searchParams.delete('round_id');
             setSearchParams(searchParams, { replace: true });
             
-            // Navigate to in-progress tab
+            // Navigate to in-progress tab and exit team picker view
+            setSelectedRound(null);
             setActiveTab('in-progress');
           }
         } catch (err) {
