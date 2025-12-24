@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { Helmet } from 'react-helmet-async';
 import SearchableNavbar from '@/components/SearchableNavbar';
@@ -28,8 +29,10 @@ import Autoplay from 'embla-carousel-autoplay';
 import { FantasyWalkthrough } from '@/components/fantasy/FantasyWalkthrough';
 import { toast } from 'sonner';
 
+
 const FantasyPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -128,6 +131,9 @@ const FantasyPage: React.FC = () => {
     if (paymentStatus === 'success' && roundId && user) {
       const applyPendingPicks = async () => {
         try {
+          // Ensure promo balance UI updates immediately after promo-covered entry
+          await queryClient.invalidateQueries({ queryKey: ['welcomeOffer'] });
+
           // Check for pending submission in sessionStorage
           const pendingKey = `fantasy:pending_lineup_submit:${roundId}`;
           const raw = sessionStorage.getItem(pendingKey);
