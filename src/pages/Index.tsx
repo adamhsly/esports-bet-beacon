@@ -245,28 +245,36 @@ const Index = () => {
   const [showWelcomeOfferModal, setShowWelcomeOfferModal] = useState(false);
   const welcomeOfferShownRef = useRef(false);
 
-  // Auto-show welcome offer modal on login (max 2 times, with 3 second delay)
+  // Auto-show welcome offer modal on first and second login (session-based tracking)
   useEffect(() => {
     if (!user || loading || welcomeOfferLoading || welcomeOfferShownRef.current) return;
     
     // Check if offer is still active (progress or active state)
     if (displayState !== 'progress' && displayState !== 'active') return;
     
-    // Get view count for this user from localStorage
-    const storageKey = `welcomeOfferViewCount_${user.id}`;
-    const viewCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    // Track login count (persists across sessions) and shown-this-session flag
+    const loginCountKey = `welcomeOfferLoginCount_${user.id}`;
+    const sessionShownKey = `welcomeOfferShownSession_${user.id}`;
     
-    // Only show if viewed less than 2 times
-    if (viewCount >= 2) return;
+    // Check if already shown this session (browser session)
+    const shownThisSession = sessionStorage.getItem(sessionShownKey) === 'true';
+    if (shownThisSession) return;
     
-    // Mark as shown this session to prevent re-triggering
+    // Get login count from localStorage
+    const loginCount = parseInt(localStorage.getItem(loginCountKey) || '0', 10);
+    
+    // Only show if this is the 1st or 2nd login (loginCount < 2)
+    if (loginCount >= 2) return;
+    
+    // Mark as shown this component mount and this session
     welcomeOfferShownRef.current = true;
+    sessionStorage.setItem(sessionShownKey, 'true');
     
     // Show modal after 1 second delay
     const timer = setTimeout(() => {
       setShowWelcomeOfferModal(true);
-      // Increment view count
-      localStorage.setItem(storageKey, String(viewCount + 1));
+      // Increment login count (only counted once per session)
+      localStorage.setItem(loginCountKey, String(loginCount + 1));
     }, 1000);
     
     return () => clearTimeout(timer);
