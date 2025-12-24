@@ -53,7 +53,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
         refetch();
         onOpenChange(false);
         // Navigate to fantasy page with roundId param to open team picker
-        const roundId = data?.round_id;
+        const roundId = data?.auto_entered_round_id ?? data?.round_id;
         navigate(roundId ? `/fantasy?roundId=${roundId}` : '/fantasy');
       }
     } catch (err) {

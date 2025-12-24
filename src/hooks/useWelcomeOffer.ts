@@ -43,13 +43,36 @@ export function useWelcomeOffer() {
           promo_expires_at?: string;
           reward_pence?: number;
         } | null;
-        
+
+        // IMPORTANT: claim_welcome_bonus currently updates public.profiles (welcome_offer_claimed / promo_balance_pence)
+        // while get_welcome_offer_status reads user_promo_balance/user_welcome_spending.
+        // To avoid UI desync, prefer profile values when available.
+        let offerClaimed = result?.offer_claimed || false;
+        let promoBalancePence = result?.promo_balance_pence || 0;
+        let promoExpiresAt: string | null = result?.promo_expires_at || null;
+
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('welcome_offer_claimed, promo_balance_pence, promo_expires_at')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (!profileError && profileData) {
+            offerClaimed = (profileData as any).welcome_offer_claimed ?? offerClaimed;
+            promoBalancePence = (profileData as any).promo_balance_pence ?? promoBalancePence;
+            promoExpiresAt = (profileData as any).promo_expires_at ?? promoExpiresAt;
+          }
+        } catch {
+          // ignore - fall back to RPC values
+        }
+
         setStatus({
           totalSpentPence: result?.total_spent_pence || 0,
           thresholdPence: result?.threshold_pence || 500,
-          offerClaimed: result?.offer_claimed || false,
-          promoBalancePence: result?.promo_balance_pence || 0,
-          promoExpiresAt: result?.promo_expires_at || null,
+          offerClaimed,
+          promoBalancePence,
+          promoExpiresAt,
           rewardPence: result?.reward_pence || 1000,
         });
         setError(null);
