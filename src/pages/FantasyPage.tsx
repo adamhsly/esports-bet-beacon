@@ -55,7 +55,21 @@ const FantasyPage: React.FC = () => {
     }
   }, [navigate]);
 
-  const banners = [
+
+  // Allow deep-linking to a tab via URL (e.g. /fantasy?tab=join)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (!tab) return;
+
+    if (tab === 'join' || tab === 'in-progress' || tab === 'finished' || tab === 'my-private') {
+      setActiveTab(tab);
+    }
+
+    // Clear after applying
+    searchParams.delete('tab');
+    setSearchParams(searchParams);
+  }, [searchParams, setSearchParams]);
+
     {
       src: '/lovable-uploads/Spend_5_Get_10.png',
       alt: 'Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits'
