@@ -188,8 +188,14 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
   // Intro prompt - ask if user wants help
   if (showIntro) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300 text-center">
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        onClick={handleSkipIntro}
+      >
+        <div 
+          className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-2xl p-6 max-w-sm mx-4 border border-[#8B5CF6]/30 shadow-2xl shadow-[#8B5CF6]/20 animate-in fade-in zoom-in duration-300 text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2 className="text-2xl font-bold text-white mb-6">
             Want us to show you around?
           </h2>
