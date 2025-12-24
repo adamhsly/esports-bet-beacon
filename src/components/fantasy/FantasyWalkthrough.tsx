@@ -409,7 +409,7 @@ export const FantasyWalkthrough: React.FC<FantasyWalkthroughProps> = ({ onComple
               variant="outline"
               size="sm"
               onClick={handleNext}
-              className="bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] hover:from-[#A78BFA] hover:to-[#22D3EE] text-white hover:text-white border-transparent flex-shrink-0 h-9 shadow-lg shadow-[#8B5CF6]/30 hover:shadow-[#8B5CF6]/50 transition-all"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white hover:text-white border-transparent flex-shrink-0 h-9"
             >
               {isLastStep ? (
                 <>
