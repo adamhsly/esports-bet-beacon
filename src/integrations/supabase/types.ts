@@ -3674,6 +3674,7 @@ export type Database = {
         Args: { p_email: string; p_full_name: string; p_username: string }
         Returns: Json
       }
+      claim_welcome_bonus: { Args: { p_user_id: string }; Returns: Json }
       daily_match_counts_filtered:
         | {
             Args: {
