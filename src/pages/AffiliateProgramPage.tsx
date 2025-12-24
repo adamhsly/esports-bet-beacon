@@ -37,7 +37,6 @@ const AffiliateProgramPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     creatorName: '',
-    email: '',
     platformLinks: '',
     avgViewers: '',
     discord: '',
@@ -107,11 +106,13 @@ const AffiliateProgramPage = () => {
         .map(link => link.trim())
         .filter(link => link.length > 0);
 
+      const userEmail = user?.email || '';
+      
       const { error } = await supabase
         .from('creator_applications')
         .insert({
           name: formData.creatorName,
-          email: formData.email,
+          email: userEmail,
           platform_links: platformLinksArray,
           avg_viewers: formData.avgViewers,
           discord: formData.discord,
@@ -126,7 +127,7 @@ const AffiliateProgramPage = () => {
         await supabase.functions.invoke('send-affiliate-notification', {
           body: {
             name: formData.creatorName,
-            email: formData.email,
+            email: userEmail,
             platformLinks: platformLinksArray,
             avgViewers: formData.avgViewers,
             discord: formData.discord,
@@ -140,7 +141,6 @@ const AffiliateProgramPage = () => {
 
       setFormData({
         creatorName: '',
-        email: '',
         platformLinks: '',
         avgViewers: '',
         discord: '',
@@ -438,30 +438,16 @@ const AffiliateProgramPage = () => {
               <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30">
                 <CardContent className="pt-6">
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="creatorName" className="text-white">Creator / Channel Name *</Label>
-                        <Input
-                          id="creatorName"
-                          value={formData.creatorName}
-                          onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
-                          placeholder="Your creator name"
-                          required
-                          className="bg-background/50 border-white/10 text-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-white">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="your@email.com"
-                          required
-                          className="bg-background/50 border-white/10 text-white"
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="creatorName" className="text-white">Creator / Channel Name *</Label>
+                      <Input
+                        id="creatorName"
+                        value={formData.creatorName}
+                        onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
+                        placeholder="Your creator name"
+                        required
+                        className="bg-background/50 border-white/10 text-white"
+                      />
                     </div>
 
                     <div className="space-y-2">
