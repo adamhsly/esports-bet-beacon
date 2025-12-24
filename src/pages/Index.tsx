@@ -246,6 +246,7 @@ const Index = () => {
   const welcomeOfferShownRef = useRef(false);
 
   // Auto-show welcome offer modal on first and second login (session-based tracking)
+  // Waits for fantasy walkthrough to complete first
   useEffect(() => {
     if (!user || loading || welcomeOfferLoading || welcomeOfferShownRef.current) return;
     
@@ -266,18 +267,45 @@ const Index = () => {
     // Only show if this is the 1st or 2nd login (loginCount < 2)
     if (loginCount >= 2) return;
     
-    // Mark as shown this component mount and this session
-    welcomeOfferShownRef.current = true;
-    sessionStorage.setItem(sessionShownKey, 'true');
-    
-    // Show modal after 1 second delay
-    const timer = setTimeout(() => {
+    // Function to show the modal
+    const showModal = () => {
+      welcomeOfferShownRef.current = true;
+      sessionStorage.setItem(sessionShownKey, 'true');
       setShowWelcomeOfferModal(true);
-      // Increment login count (only counted once per session)
       localStorage.setItem(loginCountKey, String(loginCount + 1));
-    }, 1000);
+    };
     
-    return () => clearTimeout(timer);
+    // Check if fantasy walkthrough is completed
+    const walkthroughCompleted = localStorage.getItem('fantasy_walkthrough_completed') === 'true';
+    
+    if (walkthroughCompleted) {
+      // Walkthrough already done, show modal after brief delay
+      const timer = setTimeout(showModal, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // Poll for walkthrough completion (user may be going through it now)
+      const pollInterval = setInterval(() => {
+        const completed = localStorage.getItem('fantasy_walkthrough_completed') === 'true';
+        if (completed) {
+          clearInterval(pollInterval);
+          // Show modal shortly after walkthrough completes
+          setTimeout(showModal, 500);
+        }
+      }, 500);
+      
+      // Also set a max timeout - if no walkthrough after 60s, show anyway
+      const maxTimeout = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (!welcomeOfferShownRef.current) {
+          showModal();
+        }
+      }, 60000);
+      
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(maxTimeout);
+      };
+    }
   }, [user, loading, welcomeOfferLoading, displayState]);
 
   const fantasyBanners = [
