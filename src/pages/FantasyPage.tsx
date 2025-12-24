@@ -123,8 +123,8 @@ const FantasyPage: React.FC = () => {
 
   const banners = [
     {
-      src: '/lovable-uploads/Spend_5_Get_10.png',
-      alt: 'Spend $5 - Get $10! New users first $5 of paid entries unlocks $10 in bonus credits'
+      src: '/lovable-uploads/Spend_5_Get_10_v2.webp',
+      alt: '$10 bonus - No deposit required - Have some free plays on us!'
     },
     {
       src: '/lovable-uploads/build_roster_banner.png',
