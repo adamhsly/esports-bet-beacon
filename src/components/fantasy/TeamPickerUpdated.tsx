@@ -20,6 +20,7 @@ import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
+import { usePaidRoundCheckout } from '@/hooks/usePaidRoundCheckout';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 import { TeamPickerWalkthrough, TeamPickerHelpButton } from './TeamPickerWalkthrough';
 import { FantasyRulesModal } from './FantasyRulesModal';
@@ -83,6 +84,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const { user, loading: authLoading } = useAuth();
   const { progressMission } = useRPCActions();
   const { availableCredits: availableBonusCredits, spendBonusCredits } = useBonusCredits();
+  const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
@@ -555,6 +557,26 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
         if (error) throw error;
       } else {
+        // Check if this is a paid round without existing entry - needs checkout first
+        const isPaidRound = round.entry_fee && round.entry_fee > 0;
+        
+        if (isPaidRound) {
+          // Store selection temporarily and go through checkout flow
+          // The checkout will create the pick entry after payment/promo deduction
+          persistPendingSubmission({
+            roundId: round.id,
+            selectedTeams,
+            benchTeam,
+            starTeamId,
+            createdAt: Date.now()
+          });
+          
+          // Initiate checkout which will handle promo balance deduction
+          await initiateCheckout(round.id);
+          setSubmitting(false);
+          return; // Exit early - checkout will redirect appropriately
+        }
+        
         // Insert new pick for free round
         const { error } = await supabase
           .from('fantasy_round_picks')
@@ -855,10 +877,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             clearPersistedPendingSubmission();
             await submitTeams();
           }} 
-          disabled={selectedTeams.length !== 5 || submitting} 
+          disabled={selectedTeams.length !== 5 || submitting || checkoutLoading} 
           className="w-full max-w-md h-14 text-lg font-semibold bg-theme-purple hover:bg-theme-purple/90"
         >
-          {submitting ? 'Submitting...' : (user ? 'Submit Team' : 'Create Account & Submit')}
+          {submitting || checkoutLoading ? 'Processing...' : (user ? 'Submit Team' : 'Create Account & Submit')}
         </Button>
       </div>
 

@@ -26,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { FantasyWalkthrough } from '@/components/fantasy/FantasyWalkthrough';
+import { toast } from 'sonner';
 
 const FantasyPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -118,6 +119,113 @@ const FantasyPage: React.FC = () => {
       fetchRound();
     }
   }, [searchParams, selectedRound, setSearchParams]);
+
+  // Handle payment success - apply pending team picks after promo/payment checkout
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const roundId = searchParams.get('round_id');
+    
+    if (paymentStatus === 'success' && roundId && user) {
+      const applyPendingPicks = async () => {
+        try {
+          // Check for pending submission in sessionStorage
+          const pendingKey = `fantasy:pending_lineup_submit:${roundId}`;
+          const raw = sessionStorage.getItem(pendingKey);
+          
+          if (!raw) {
+            // No pending picks - just show success and load round for team selection
+            setLoadingRoundFromUrl(true);
+            const { data: roundData } = await supabase
+              .from('fantasy_rounds')
+              .select('*')
+              .eq('id', roundId)
+              .single();
+            
+            if (roundData) {
+              setSelectedRound(roundData);
+            }
+            toast.success('Entry successful! Now pick your teams.');
+            setLoadingRoundFromUrl(false);
+            // Clear URL params
+            searchParams.delete('payment');
+            searchParams.delete('round_id');
+            setSearchParams(searchParams, { replace: true });
+            return;
+          }
+
+          const pending = JSON.parse(raw);
+          
+          // Validate pending data
+          if (!pending.selectedTeams || pending.selectedTeams.length === 0) {
+            sessionStorage.removeItem(pendingKey);
+            searchParams.delete('payment');
+            searchParams.delete('round_id');
+            setSearchParams(searchParams, { replace: true });
+            return;
+          }
+
+          // Find the user's pick entry for this round (created by checkout)
+          const { data: pickEntry } = await supabase
+            .from('fantasy_round_picks')
+            .select('id, team_picks')
+            .eq('round_id', roundId)
+            .eq('user_id', user.id)
+            .single();
+
+          if (pickEntry) {
+            // Update the pick with pending teams
+            const teamPicksData = pending.selectedTeams.map((team: any) => ({
+              id: team.id,
+              name: team.name,
+              type: team.type,
+              logo_url: team.logo_url
+            }));
+
+            const benchTeamData = pending.benchTeam ? {
+              id: pending.benchTeam.id,
+              name: pending.benchTeam.name,
+              type: pending.benchTeam.type
+            } : null;
+
+            await supabase
+              .from('fantasy_round_picks')
+              .update({
+                team_picks: teamPicksData,
+                bench_team: benchTeamData,
+                submitted_at: new Date().toISOString()
+              })
+              .eq('id', pickEntry.id);
+
+            // Set star team if one was selected
+            if (pending.starTeamId) {
+              await supabase.functions.invoke('set-star-team', {
+                body: { round_id: roundId, team_id: pending.starTeamId }
+              });
+            }
+
+            toast.success('Teams submitted successfully!');
+            
+            // Clear pending and params
+            sessionStorage.removeItem(pendingKey);
+            searchParams.delete('payment');
+            searchParams.delete('round_id');
+            setSearchParams(searchParams, { replace: true });
+            
+            // Navigate to in-progress tab
+            setActiveTab('in-progress');
+          }
+        } catch (err) {
+          console.error('Error applying pending picks:', err);
+          toast.error('Entry successful but failed to apply team picks. Please select your teams.');
+          searchParams.delete('payment');
+          searchParams.delete('round_id');
+          setSearchParams(searchParams, { replace: true });
+        }
+      };
+
+      applyPendingPicks();
+    }
+  }, [searchParams, user, setSearchParams]);
 
   const fantasySEOContent = {
     title: "Free Fantasy Esports Leagues – Daily, Weekly & Monthly Rounds",
