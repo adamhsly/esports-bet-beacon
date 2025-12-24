@@ -47,20 +47,13 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
       } else if (data?.success === false) {
         toast.error(data.error || 'Failed to claim bonus');
       } else {
-        // Check if user was auto-entered into a round
-        if (data?.auto_entered_round_id) {
-          const entryFee = data.entry_fee_used ? `£${(data.entry_fee_used / 100).toFixed(2)}` : '';
-          toast.success(`${rewardAmount} claimed! You've been entered into ${data.round_name || 'the next paid round'}${entryFee ? ` (${entryFee} entry fee paid)` : ''}`);
-          refetch();
-          onOpenChange(false);
-          // Navigate to the specific round's team picker
-          navigate(`/fantasy/round/${data.auto_entered_round_id}/team-picker?game_type=all&team_type=pro`);
-        } else {
-          toast.success(`${rewardAmount} promo balance added to your account!`);
-          refetch();
-          onOpenChange(false);
-          navigate('/fantasy');
-        }
+        // Show success and navigate to fantasy page
+        const roundName = data?.round_name || 'upcoming paid rounds';
+        toast.success(`${rewardAmount} claimed! Use your promo balance on ${roundName}`);
+        refetch();
+        onOpenChange(false);
+        // Navigate to fantasy page - the user can pick their teams when the round opens
+        navigate('/fantasy');
       }
     } catch (err) {
       console.error('Error claiming bonus:', err);
