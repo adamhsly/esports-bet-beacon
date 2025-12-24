@@ -47,13 +47,14 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
       } else if (data?.success === false) {
         toast.error(data.error || 'Failed to claim bonus');
       } else {
-        // Show success and navigate to fantasy page
+        // Show success and navigate to the round's team picker
         const roundName = data?.round_name || 'upcoming paid rounds';
         toast.success(`${rewardAmount} claimed! Use your promo balance on ${roundName}`);
         refetch();
         onOpenChange(false);
-        // Navigate to fantasy page - the user can pick their teams when the round opens
-        navigate('/fantasy');
+        // Navigate to fantasy page with roundId param to open team picker
+        const roundId = data?.round_id;
+        navigate(roundId ? `/fantasy?roundId=${roundId}` : '/fantasy');
       }
     } catch (err) {
       console.error('Error claiming bonus:', err);
