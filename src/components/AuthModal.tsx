@@ -536,7 +536,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
 
               <Button 
                 type="submit" 
-                className="w-full bg-theme-purple hover:bg-theme-purple/90"
+                className="w-full bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] hover:from-[#A78BFA] hover:to-[#22D3EE] text-white shadow-lg shadow-[#8B5CF6]/30 hover:shadow-[#8B5CF6]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading || Object.values(fieldErrors).some(error => error !== '')}
               >
                 {loading ? 'Creating account...' : 'Create Account'}
