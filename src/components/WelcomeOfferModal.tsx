@@ -38,11 +38,14 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
 
     setClaiming(true);
     try {
-      const { error } = await supabase.rpc('claim_welcome_bonus', { p_user_id: user.id });
+      // Use type assertion as the function was just created
+      const { data, error } = await (supabase.rpc as any)('claim_welcome_bonus', { p_user_id: user.id });
       
       if (error) {
         console.error('Error claiming bonus:', error);
         toast.error(error.message || 'Failed to claim bonus');
+      } else if (data?.success === false) {
+        toast.error(data.error || 'Failed to claim bonus');
       } else {
         toast.success(`${rewardAmount} promo balance added to your account!`);
         refetch();
