@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
 import { Helmet } from 'react-helmet-async';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
@@ -23,6 +24,7 @@ import { FantasyRulesModal } from '@/components/fantasy/FantasyRulesModal';
 import { BookOpen } from 'lucide-react';
 import { useProfilePanel } from '@/components/ProfileSheet';
 import { ProfileSheet } from '@/components/ProfileSheet';
+import WelcomeOfferModal from '@/components/WelcomeOfferModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
@@ -42,8 +44,53 @@ const FantasyPage: React.FC = () => {
   const isMobile = useMobile();
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
   const { user, loading: authLoading } = useAuth();
+  const { displayState, loading: welcomeOfferLoading } = useWelcomeOffer();
   const navigate = useNavigate();
 
+  const [showWelcomeOfferModal, setShowWelcomeOfferModal] = useState(false);
+  const [walkthroughCompletedTick, setWalkthroughCompletedTick] = useState(0);
+  const welcomeOfferAutoPopupArmedRef = useRef(false);
+
+  const handleFantasyWalkthroughComplete = () => {
+    setWalkthroughCompletedTick((v) => v + 1);
+  };
+
+  // Auto-show welcome offer modal on first and second login.
+  // Waits for the FantasyWalkthrough to be completed first.
+  useEffect(() => {
+    if (!user || authLoading || welcomeOfferLoading) return;
+
+    // Eligible states: new-user progress OR active promo balance
+    if (displayState !== 'progress' && displayState !== 'active') return;
+
+    // Must complete the walkthrough first
+    const walkthroughCompleted = localStorage.getItem('fantasy_walkthrough_completed') === 'true';
+    if (!walkthroughCompleted) return;
+
+    const loginCountKey = `welcomeOfferLoginCount_${user.id}`;
+    const sessionShownKey = `welcomeOfferShownSession_${user.id}`;
+
+    // Only once per browser session
+    if (sessionStorage.getItem(sessionShownKey) === 'true') return;
+
+    // Only for first 2 sessions
+    const loginCount = parseInt(localStorage.getItem(loginCountKey) || '0', 10);
+    if (loginCount >= 2) return;
+
+    if (welcomeOfferAutoPopupArmedRef.current) return;
+    welcomeOfferAutoPopupArmedRef.current = true;
+
+    const timer = setTimeout(() => {
+      sessionStorage.setItem(sessionShownKey, 'true');
+      localStorage.setItem(loginCountKey, String(loginCount + 1));
+      setShowWelcomeOfferModal(true);
+    }, 650);
+
+    return () => {
+      clearTimeout(timer);
+      welcomeOfferAutoPopupArmedRef.current = false;
+    };
+  }, [user?.id, authLoading, welcomeOfferLoading, displayState, walkthroughCompletedTick]);
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -401,12 +448,17 @@ const FantasyPage: React.FC = () => {
 
       {/* Fantasy Rules Modal */}
       <FantasyRulesModal open={rulesModalOpen} onOpenChange={setRulesModalOpen} />
+
+      {/* Welcome Offer Modal (auto-shown after walkthrough on first 2 logins) */}
+      <WelcomeOfferModal open={showWelcomeOfferModal} onOpenChange={setShowWelcomeOfferModal} />
       
       {/* Profile Sheet */}
       <ProfileSheet isOpen={isOpen} onOpenChange={closeProfile} />
       
       {/* First-time visitor walkthrough */}
-      {!selectedRound && activeTab === 'join' && <FantasyWalkthrough />}
+      {!selectedRound && activeTab === 'join' && (
+        <FantasyWalkthrough onComplete={handleFantasyWalkthroughComplete} />
+      )}
     </div>
   );
 };
