@@ -64,83 +64,87 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
     }
   };
 
+  // Check if we're in the claimed/active state
+  const hasActiveBalance = displayState === 'active' && status && status.promoBalancePence > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-theme-gray-dark border-green-500/30 max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <Gift className="w-5 h-5 text-green-400" />
-            Welcome Bonus
+            {hasActiveBalance ? 'Promo Balance' : 'Welcome Bonus'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Hero section */}
-          <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
-            <Sparkles className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
-            <h3 className="text-2xl font-bold text-white mb-1">
-              Get {rewardAmount} Free!
-            </h3>
-            <p className="text-sm text-gray-300">
-              New users receive {rewardAmount} promo balance to use on paid fantasy entries
-            </p>
-          </div>
-
-          {/* Already claimed - show active balance */}
-          {status && displayState === 'active' && status.promoBalancePence > 0 && (
-            <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="font-semibold text-green-300">Bonus Claimed!</span>
-              </div>
-              <p className="text-sm text-white">
-                Balance: <span className="font-bold text-green-300">{formatPence(status.promoBalancePence)}</span>
+          {/* Hero section - different based on state */}
+          {hasActiveBalance ? (
+            <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
+              <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+              <h3 className="text-2xl font-bold text-white mb-1">
+                {formatPence(status.promoBalancePence)} Available
+              </h3>
+              <p className="text-sm text-gray-300">
+                Use your promo balance on paid fantasy entries
               </p>
               {daysRemaining !== null && (
-                <p className="text-xs text-yellow-400 flex items-center gap-1 mt-1">
+                <p className="text-xs text-yellow-400 flex items-center justify-center gap-1 mt-2">
                   <Clock className="w-3 h-3" />
                   Expires in {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
                 </p>
               )}
             </div>
+          ) : (
+            <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
+              <Sparkles className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
+              <h3 className="text-2xl font-bold text-white mb-1">
+                Get {rewardAmount} Free!
+              </h3>
+              <p className="text-sm text-gray-300">
+                New users receive {rewardAmount} promo balance to use on paid fantasy entries
+              </p>
+            </div>
           )}
 
-          {/* How it works */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-white">How It Works</h4>
-            
-            <div className="space-y-2">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-green-500/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-green-300">1</span>
+          {/* How it works - only show for unclaimed */}
+          {!hasActiveBalance && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-white">How It Works</h4>
+              
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-green-500/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-green-300">1</span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-white">Claim your {rewardAmount} bonus</p>
+                    <p className="text-xs text-gray-400">Instantly added to your promo balance</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-white">Claim your {rewardAmount} bonus</p>
-                  <p className="text-xs text-gray-400">Instantly added to your promo balance</p>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-500/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-purple-300">2</span>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-purple-500/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-purple-300">2</span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-white">Enter paid fantasy rounds</p>
+                    <p className="text-xs text-gray-400">Promo balance auto-applies at checkout</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-white">Enter paid fantasy rounds</p>
-                  <p className="text-xs text-gray-400">Promo balance auto-applies at checkout</p>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-yellow-500/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-yellow-300">3</span>
-                </div>
-                <div>
-                  <p className="text-sm text-white">Win prizes!</p>
-                  <p className="text-xs text-gray-400">Compete for credits and rewards</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-yellow-500/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-yellow-300">3</span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-white">Win prizes!</p>
+                    <p className="text-xs text-gray-400">Compete for credits and rewards</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* CTA Button */}
           {displayState === 'progress' && !status?.offerClaimed ? (
@@ -165,11 +169,12 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
             <Button 
               onClick={() => {
                 onOpenChange(false);
-                navigate('/fantasy');
+                navigate('/fantasy?tab=join');
               }}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3 text-lg"
             >
-              Play Fantasy
+              <Sparkles className="w-4 h-4 mr-2" />
+              Join a Round
             </Button>
           )}
 
