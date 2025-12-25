@@ -12,11 +12,13 @@ import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
-import { LogOut, User, Settings, Users } from 'lucide-react';
+import { LogOut, User, Settings, Users, BarChart3, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
+const ADMIN_EMAIL = 'adamhsly@googlemail.com';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -106,6 +108,23 @@ const UserMenu: React.FC = () => {
               Partner Dashboard
             </Link>
           </DropdownMenuItem>
+        )}
+        {user.email === ADMIN_EMAIL && (
+          <>
+            <DropdownMenuSeparator className="bg-theme-gray-light" />
+            <DropdownMenuItem asChild>
+              <Link to="/platform-dashboard" className="text-gray-300 hover:text-white cursor-pointer">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Platform Dashboard
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/affiliate-admin" className="text-gray-300 hover:text-white cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                Affiliate Admin
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuSeparator className="bg-theme-gray-light" />
         <DropdownMenuItem 
