@@ -57,5 +57,8 @@ verify_jwt = false
 [functions.send-affiliate-approval]
 verify_jwt = false
 
+[functions.send-affiliate-rejection]
+verify_jwt = false
+
 [functions.track-pageview]
 verify_jwt = false
