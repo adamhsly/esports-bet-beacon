@@ -13,7 +13,8 @@ import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfM
 interface PeriodStats {
   newUsers: number;
   realRoundParticipants: number;
-  roundEntryRevenue: number;
+  roundEntryRealRevenue: number;
+  roundEntryBonusUsed: number;
   battlePassRevenue: number;
   successfulLogins: number;
 }
@@ -26,9 +27,9 @@ const PlatformDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   
-  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRevenue: 0, battlePassRevenue: 0, successfulLogins: 0 });
-  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRevenue: 0, battlePassRevenue: 0, successfulLogins: 0 });
-  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRevenue: 0, battlePassRevenue: 0, successfulLogins: 0 });
+  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0 });
+  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0 });
+  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0 });
   
   const [allTimeStats, setAllTimeStats] = useState({
     totalUsers: 0,
@@ -151,14 +152,15 @@ const PlatformDashboardPage: React.FC = () => {
       realParticipants = count || 0;
     }
 
-    // Round entry revenue
+    // Round entry revenue - split between real funds and bonus used
     const { data: roundEntries } = await supabase
       .from('round_entries')
-      .select('amount_paid')
+      .select('amount_paid, promo_used')
       .gte('created_at', startStr)
       .eq('status', 'completed');
 
-    const roundRevenue = roundEntries?.reduce((sum, e) => sum + (e.amount_paid || 0), 0) || 0;
+    const roundRealRevenue = roundEntries?.reduce((sum, e) => sum + ((e.amount_paid || 0) - (e.promo_used || 0)), 0) || 0;
+    const roundBonusUsed = roundEntries?.reduce((sum, e) => sum + (e.promo_used || 0), 0) || 0;
 
     // Battle pass revenue
     const { data: premiumReceipts } = await supabase
@@ -178,7 +180,8 @@ const PlatformDashboardPage: React.FC = () => {
     return {
       newUsers: newUsers || 0,
       realRoundParticipants: realParticipants,
-      roundEntryRevenue: roundRevenue,
+      roundEntryRealRevenue: roundRealRevenue,
+      roundEntryBonusUsed: roundBonusUsed,
       battlePassRevenue: battlePassRevenue,
       successfulLogins: loginCount || 0,
     };
@@ -398,16 +401,29 @@ const PlatformDashboardPage: React.FC = () => {
                       </CardContent>
                     </Card>
 
-                    {/* Round Entry Revenue */}
+                    {/* Round Entry Real Revenue */}
                     <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-green-400 flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" /> Round Entry Revenue
+                          <DollarSign className="h-4 w-4" /> Real Revenue (Round Entries)
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.roundEntryRevenue)}</p>
-                        <p className="text-xs text-white/50 mt-1">Paid round entries</p>
+                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.roundEntryRealRevenue)}</p>
+                        <p className="text-xs text-white/50 mt-1">Actual money paid</p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Round Entry Bonus Used */}
+                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-orange-500/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-orange-400 flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" /> Bonus Used (Round Entries)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.roundEntryBonusUsed)}</p>
+                        <p className="text-xs text-white/50 mt-1">Promo credits redeemed</p>
                       </CardContent>
                     </Card>
 
@@ -428,14 +444,14 @@ const PlatformDashboardPage: React.FC = () => {
                     <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-emerald-400 flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4" /> Total Revenue ({getPeriodLabel()})
+                          <TrendingUp className="h-4 w-4" /> Total Real Revenue ({getPeriodLabel()})
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-3xl font-bold text-white">
-                          {formatCurrency(currentStats.roundEntryRevenue + currentStats.battlePassRevenue)}
+                          {formatCurrency(currentStats.roundEntryRealRevenue + currentStats.battlePassRevenue)}
                         </p>
-                        <p className="text-xs text-white/50 mt-1">Combined revenue streams</p>
+                        <p className="text-xs text-white/50 mt-1">Real money collected</p>
                       </CardContent>
                     </Card>
                   </div>
