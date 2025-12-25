@@ -393,11 +393,11 @@ const AffiliateAdminPage: React.FC = () => {
                 <CardTitle className="text-purple-400">Creator Applications</CardTitle>
               </CardHeader>
               <CardContent>
-              {applications.length === 0 ? (
-                  <p className="text-white/70">No applications yet</p>
+              {applications.filter(app => app.status === 'pending').length === 0 ? (
+                  <p className="text-white/70">No pending applications</p>
                 ) : (
                   <div className="space-y-4">
-                    {applications.map((app) => (
+                    {applications.filter(app => app.status === 'pending').map((app) => (
                       <div key={app.id} className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-purple-500/40 transition-all">
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div>
