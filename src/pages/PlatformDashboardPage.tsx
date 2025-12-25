@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Shield, Users, DollarSign, TrendingUp, LogIn, Trophy, Calendar, Clock, CreditCard } from 'lucide-react';
+import { Shield, Users, DollarSign, TrendingUp, LogIn, Trophy, Calendar, Clock, CreditCard, Gift } from 'lucide-react';
 import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth } from 'date-fns';
 
 interface PeriodStats {
@@ -17,6 +17,7 @@ interface PeriodStats {
   roundEntryBonusUsed: number;
   battlePassRevenue: number;
   successfulLogins: number;
+  prizesPaidOut: number;
 }
 
 const PlatformDashboardPage: React.FC = () => {
@@ -27,15 +28,17 @@ const PlatformDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   
-  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0 });
-  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0 });
-  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0 });
+  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, prizesPaidOut: 0 });
+  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, prizesPaidOut: 0 });
+  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, prizesPaidOut: 0 });
   
   const [allTimeStats, setAllTimeStats] = useState({
     totalUsers: 0,
     totalRealUsers: 0,
-    totalRevenue: 0,
+    totalRealRevenue: 0,
+    totalBonusUsed: 0,
     totalRounds: 0,
+    totalPrizesPaidOut: 0,
   });
 
   // Check admin role
@@ -177,6 +180,28 @@ const PlatformDashboardPage: React.FC = () => {
       .gte('last_login_at', startStr)
       .or('test.is.null,test.eq.false');
 
+    // Prize payouts to real users (non-test)
+    const { data: winners } = await supabase
+      .from('fantasy_round_winners')
+      .select('user_id, credits_awarded')
+      .gte('awarded_at', startStr);
+
+    // Filter to only real users
+    const winnerUserIds = [...new Set(winners?.map(w => w.user_id) || [])];
+    let prizesPaid = 0;
+    
+    if (winnerUserIds.length > 0) {
+      const { data: realWinnerProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .in('id', winnerUserIds)
+        .or('test.is.null,test.eq.false');
+      
+      const realUserIds = new Set(realWinnerProfiles?.map(p => p.id) || []);
+      prizesPaid = winners?.filter(w => realUserIds.has(w.user_id))
+        .reduce((sum, w) => sum + (w.credits_awarded || 0), 0) || 0;
+    }
+
     return {
       newUsers: newUsers || 0,
       realRoundParticipants: realParticipants,
@@ -184,6 +209,7 @@ const PlatformDashboardPage: React.FC = () => {
       roundEntryBonusUsed: roundBonusUsed,
       battlePassRevenue: battlePassRevenue,
       successfulLogins: loginCount || 0,
+      prizesPaidOut: prizesPaid,
     };
   };
 
@@ -199,17 +225,18 @@ const PlatformDashboardPage: React.FC = () => {
       .select('*', { count: 'exact', head: true })
       .or('test.is.null,test.eq.false');
 
-    // Total revenue from round entries
+    // Total revenue from round entries - split real vs bonus
     const { data: allRoundEntries } = await supabase
       .from('round_entries')
-      .select('amount_paid')
+      .select('amount_paid, promo_used')
       .eq('status', 'completed');
 
     const { data: allPremiumReceipts } = await supabase
       .from('premium_receipts')
       .select('amount_total');
 
-    const roundRevenue = allRoundEntries?.reduce((sum, e) => sum + (e.amount_paid || 0), 0) || 0;
+    const roundRealRevenue = allRoundEntries?.reduce((sum, e) => sum + ((e.amount_paid || 0) - (e.promo_used || 0)), 0) || 0;
+    const roundBonusUsed = allRoundEntries?.reduce((sum, e) => sum + (e.promo_used || 0), 0) || 0;
     const premiumRevenue = allPremiumReceipts?.reduce((sum, r) => sum + (r.amount_total || 0), 0) || 0;
 
     // Total rounds
@@ -217,11 +244,33 @@ const PlatformDashboardPage: React.FC = () => {
       .from('fantasy_rounds')
       .select('*', { count: 'exact', head: true });
 
+    // Total prize payouts to real users
+    const { data: allWinners } = await supabase
+      .from('fantasy_round_winners')
+      .select('user_id, credits_awarded');
+
+    const allWinnerUserIds = [...new Set(allWinners?.map(w => w.user_id) || [])];
+    let totalPrizes = 0;
+    
+    if (allWinnerUserIds.length > 0) {
+      const { data: realWinnerProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .in('id', allWinnerUserIds)
+        .or('test.is.null,test.eq.false');
+      
+      const realUserIds = new Set(realWinnerProfiles?.map(p => p.id) || []);
+      totalPrizes = allWinners?.filter(w => realUserIds.has(w.user_id))
+        .reduce((sum, w) => sum + (w.credits_awarded || 0), 0) || 0;
+    }
+
     return {
       totalUsers: totalUsers || 0,
       totalRealUsers: totalRealUsers || 0,
-      totalRevenue: roundRevenue + premiumRevenue,
+      totalRealRevenue: roundRealRevenue + premiumRevenue,
+      totalBonusUsed: roundBonusUsed,
       totalRounds: totalRounds || 0,
+      totalPrizesPaidOut: totalPrizes,
     };
   };
 
@@ -287,7 +336,7 @@ const PlatformDashboardPage: React.FC = () => {
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
           {/* All-Time Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-8">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30 hover:border-emerald-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
@@ -315,8 +364,30 @@ const PlatformDashboardPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(allTimeStats.totalRevenue)}</p>
-                    <p className="text-xs md:text-sm text-white/70">Total Revenue</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(allTimeStats.totalRealRevenue)}</p>
+                    <p className="text-xs md:text-sm text-white/70">Real Revenue</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-orange-500/30 hover:border-orange-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-6 w-6 md:h-8 md:w-8 text-orange-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(allTimeStats.totalBonusUsed)}</p>
+                    <p className="text-xs md:text-sm text-white/70">Bonus Used</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-red-500/30 hover:border-red-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Gift className="h-6 w-6 md:h-8 md:w-8 text-red-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(allTimeStats.totalPrizesPaidOut)}</p>
+                    <p className="text-xs md:text-sm text-white/70">Prizes Paid</p>
                   </div>
                 </div>
               </CardContent>
@@ -437,6 +508,19 @@ const PlatformDashboardPage: React.FC = () => {
                       <CardContent>
                         <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.battlePassRevenue)}</p>
                         <p className="text-xs text-white/50 mt-1">Premium pass purchases</p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Prizes Paid Out */}
+                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-red-500/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-red-400 flex items-center gap-2">
+                          <Gift className="h-4 w-4" /> Prizes Paid Out
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.prizesPaidOut)}</p>
+                        <p className="text-xs text-white/50 mt-1">Real user winnings</p>
                       </CardContent>
                     </Card>
 
