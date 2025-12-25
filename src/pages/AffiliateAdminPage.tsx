@@ -217,6 +217,43 @@ const AffiliateAdminPage: React.FC = () => {
     }
   };
 
+  const declineApplication = async (application: CreatorApplication) => {
+    try {
+      // Update application status to rejected
+      const { error: updateError } = await supabase
+        .from('creator_applications')
+        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+        .eq('id', application.id);
+
+      if (updateError) throw updateError;
+
+      // Send rejection email
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-affiliate-rejection', {
+          body: {
+            name: application.name,
+            email: application.email,
+          },
+        });
+
+        if (emailError) {
+          console.error('Error sending rejection email:', emailError);
+          toast.warning(`Declined ${application.name}, but failed to send email notification`);
+        } else {
+          toast.success(`Declined ${application.name}. Rejection email sent.`);
+        }
+      } catch (emailErr) {
+        console.error('Error invoking email function:', emailErr);
+        toast.warning(`Declined ${application.name}, but email notification failed`);
+      }
+
+      fetchData();
+    } catch (err: any) {
+      console.error('Error declining application:', err);
+      toast.error('Failed to decline application: ' + err.message);
+    }
+  };
+
   const updateAffiliateTier = async (affiliateId: string, tier: string, revShare: number) => {
     try {
       const { error } = await supabase
@@ -393,8 +430,8 @@ const AffiliateAdminPage: React.FC = () => {
                                 <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white" onClick={() => approveApplication(app)}>
                                   <Check className="h-4 w-4 mr-1" /> Approve
                                 </Button>
-                                <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
-                                  <X className="h-4 w-4" />
+                                <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={() => declineApplication(app)}>
+                                  <X className="h-4 w-4 mr-1" /> Decline
                                 </Button>
                               </>
                             )}
