@@ -127,150 +127,58 @@ const PlatformDashboardPage: React.FC = () => {
   };
 
   const fetchPeriodStats = async (startDate: Date): Promise<PeriodStats> => {
-    const startStr = startDate.toISOString();
+    const { data, error } = await (supabase.rpc as any)('get_platform_period_stats', {
+      p_start: startDate.toISOString(),
+    });
 
-    // New users (non-test accounts)
-    const { count: newUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', startStr)
-      .or('test.is.null,test.eq.false');
-
-    // Real users who joined rounds (non-test)
-    const { data: roundPicks } = await supabase
-      .from('fantasy_round_picks')
-      .select('user_id')
-      .gte('created_at', startStr);
-
-    // Get unique user IDs and check if they're real users
-    const userIds = [...new Set(roundPicks?.map(p => p.user_id) || [])];
-    let realParticipants = 0;
-    
-    if (userIds.length > 0) {
-      const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .in('id', userIds)
-        .or('test.is.null,test.eq.false');
-      realParticipants = count || 0;
+    if (error) {
+      console.error('fetchPeriodStats RPC error:', error);
+      return {
+        newUsers: 0,
+        realRoundParticipants: 0,
+        roundEntryRealRevenue: 0,
+        roundEntryBonusUsed: 0,
+        battlePassRevenue: 0,
+        successfulLogins: 0,
+        prizesPaidOut: 0,
+      };
     }
 
-    // Round entry revenue - split between real funds and bonus used
-    const { data: roundEntries } = await supabase
-      .from('round_entries')
-      .select('amount_paid, promo_used')
-      .gte('created_at', startStr)
-      .eq('status', 'completed');
-
-    const roundRealRevenue = roundEntries?.reduce((sum, e) => sum + ((e.amount_paid || 0) - (e.promo_used || 0)), 0) || 0;
-    const roundBonusUsed = roundEntries?.reduce((sum, e) => sum + (e.promo_used || 0), 0) || 0;
-
-    // Battle pass revenue
-    const { data: premiumReceipts } = await supabase
-      .from('premium_receipts')
-      .select('amount_total')
-      .gte('created_at', startStr);
-
-    const battlePassRevenue = premiumReceipts?.reduce((sum, r) => sum + (r.amount_total || 0), 0) || 0;
-
-    // Successful logins (users who logged in during this period)
-    const { count: loginCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('last_login_at', startStr)
-      .or('test.is.null,test.eq.false');
-
-    // Prize payouts to real users (non-test)
-    const { data: winners } = await supabase
-      .from('fantasy_round_winners')
-      .select('user_id, credits_awarded')
-      .gte('awarded_at', startStr);
-
-    // Filter to only real users
-    const winnerUserIds = [...new Set(winners?.map(w => w.user_id) || [])];
-    let prizesPaid = 0;
-    
-    if (winnerUserIds.length > 0) {
-      const { data: realWinnerProfiles } = await supabase
-        .from('profiles')
-        .select('id')
-        .in('id', winnerUserIds)
-        .or('test.is.null,test.eq.false');
-      
-      const realUserIds = new Set(realWinnerProfiles?.map(p => p.id) || []);
-      prizesPaid = winners?.filter(w => realUserIds.has(w.user_id))
-        .reduce((sum, w) => sum + (w.credits_awarded || 0), 0) || 0;
-    }
-
+    const row = Array.isArray(data) ? data[0] : data;
     return {
-      newUsers: newUsers || 0,
-      realRoundParticipants: realParticipants,
-      roundEntryRealRevenue: roundRealRevenue,
-      roundEntryBonusUsed: roundBonusUsed,
-      battlePassRevenue: battlePassRevenue,
-      successfulLogins: loginCount || 0,
-      prizesPaidOut: prizesPaid,
+      newUsers: Number(row?.new_users ?? 0),
+      realRoundParticipants: Number(row?.real_round_participants ?? 0),
+      roundEntryRealRevenue: Number(row?.round_entry_real_revenue ?? 0),
+      roundEntryBonusUsed: Number(row?.round_entry_bonus_used ?? 0),
+      battlePassRevenue: Number(row?.battle_pass_revenue ?? 0),
+      successfulLogins: Number(row?.successful_logins ?? 0),
+      prizesPaidOut: Number(row?.prizes_paid_out ?? 0),
     };
   };
 
   const fetchAllTimeStats = async () => {
-    // Total users
-    const { count: totalUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true });
+    const { data, error } = await (supabase.rpc as any)('get_platform_all_time_stats');
 
-    // Total real users (non-test)
-    const { count: totalRealUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .or('test.is.null,test.eq.false');
-
-    // Total revenue from round entries - split real vs bonus
-    const { data: allRoundEntries } = await supabase
-      .from('round_entries')
-      .select('amount_paid, promo_used')
-      .eq('status', 'completed');
-
-    const { data: allPremiumReceipts } = await supabase
-      .from('premium_receipts')
-      .select('amount_total');
-
-    const roundRealRevenue = allRoundEntries?.reduce((sum, e) => sum + ((e.amount_paid || 0) - (e.promo_used || 0)), 0) || 0;
-    const roundBonusUsed = allRoundEntries?.reduce((sum, e) => sum + (e.promo_used || 0), 0) || 0;
-    const premiumRevenue = allPremiumReceipts?.reduce((sum, r) => sum + (r.amount_total || 0), 0) || 0;
-
-    // Total rounds
-    const { count: totalRounds } = await supabase
-      .from('fantasy_rounds')
-      .select('*', { count: 'exact', head: true });
-
-    // Total prize payouts to real users
-    const { data: allWinners } = await supabase
-      .from('fantasy_round_winners')
-      .select('user_id, credits_awarded');
-
-    const allWinnerUserIds = [...new Set(allWinners?.map(w => w.user_id) || [])];
-    let totalPrizes = 0;
-    
-    if (allWinnerUserIds.length > 0) {
-      const { data: realWinnerProfiles } = await supabase
-        .from('profiles')
-        .select('id')
-        .in('id', allWinnerUserIds)
-        .or('test.is.null,test.eq.false');
-      
-      const realUserIds = new Set(realWinnerProfiles?.map(p => p.id) || []);
-      totalPrizes = allWinners?.filter(w => realUserIds.has(w.user_id))
-        .reduce((sum, w) => sum + (w.credits_awarded || 0), 0) || 0;
+    if (error) {
+      console.error('fetchAllTimeStats RPC error:', error);
+      return {
+        totalUsers: 0,
+        totalRealUsers: 0,
+        totalRealRevenue: 0,
+        totalBonusUsed: 0,
+        totalRounds: 0,
+        totalPrizesPaidOut: 0,
+      };
     }
 
+    const row = Array.isArray(data) ? data[0] : data;
     return {
-      totalUsers: totalUsers || 0,
-      totalRealUsers: totalRealUsers || 0,
-      totalRealRevenue: roundRealRevenue + premiumRevenue,
-      totalBonusUsed: roundBonusUsed,
-      totalRounds: totalRounds || 0,
-      totalPrizesPaidOut: totalPrizes,
+      totalUsers: Number(row?.total_users ?? 0),
+      totalRealUsers: Number(row?.total_real_users ?? 0),
+      totalRealRevenue: Number(row?.total_real_revenue ?? 0),
+      totalBonusUsed: Number(row?.total_bonus_used ?? 0),
+      totalRounds: Number(row?.total_rounds ?? 0),
+      totalPrizesPaidOut: Number(row?.total_prizes_paid_out ?? 0),
     };
   };
 
