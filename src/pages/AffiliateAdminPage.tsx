@@ -155,6 +155,37 @@ const AffiliateAdminPage: React.FC = () => {
 
   const approveApplication = async (application: CreatorApplication) => {
     try {
+      // Check if this application is still pending (prevent double-click)
+      const { data: currentApp } = await supabase
+        .from('creator_applications')
+        .select('status')
+        .eq('id', application.id)
+        .single();
+
+      if (currentApp?.status !== 'pending') {
+        toast.error('This application has already been processed');
+        fetchData();
+        return;
+      }
+
+      // Check if an affiliate already exists for this email
+      const { data: existingAffiliate } = await supabase
+        .from('creator_affiliates')
+        .select('id, email')
+        .eq('email', application.email)
+        .maybeSingle();
+
+      if (existingAffiliate) {
+        toast.error(`An affiliate already exists for ${application.email}`);
+        // Still mark the application as approved to prevent re-processing
+        await supabase
+          .from('creator_applications')
+          .update({ status: 'approved', updated_at: new Date().toISOString() })
+          .eq('id', application.id);
+        fetchData();
+        return;
+      }
+
       // Generate unique referral code
       const referralCode = `${application.name.toLowerCase().replace(/\s+/g, '')}_${Math.random().toString(36).substr(2, 6)}`;
       const tier = 'bronze';
@@ -219,6 +250,19 @@ const AffiliateAdminPage: React.FC = () => {
 
   const declineApplication = async (application: CreatorApplication) => {
     try {
+      // Check if this application is still pending (prevent double-click)
+      const { data: currentApp } = await supabase
+        .from('creator_applications')
+        .select('status')
+        .eq('id', application.id)
+        .single();
+
+      if (currentApp?.status !== 'pending') {
+        toast.error('This application has already been processed');
+        fetchData();
+        return;
+      }
+
       // Update application status to rejected
       const { error: updateError } = await supabase
         .from('creator_applications')
