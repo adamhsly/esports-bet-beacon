@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
@@ -8,7 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Shield, Users, DollarSign, TrendingUp, LogIn, Trophy, Calendar, Clock, CreditCard, Gift } from 'lucide-react';
-import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth } from 'date-fns';
+import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { cn } from '@/lib/utils';
 
 interface PeriodStats {
   newUsers: number;
@@ -23,6 +25,34 @@ interface PeriodStats {
   creditPrizesPaid: number;
 }
 
+interface DailyDataPoint {
+  date: string;
+  displayDate: string;
+  newUsers: number;
+  freeRoundEntries: number;
+  paidRoundEntries: number;
+  successfulLogins: number;
+  roundEntryRealRevenue: number;
+  roundEntryBonusUsed: number;
+  battlePassRevenue: number;
+  voucherPrizesPaid: number;
+  creditPrizesPaid: number;
+}
+
+type MetricKey = 'newUsers' | 'freeRoundEntries' | 'paidRoundEntries' | 'successfulLogins' | 
+  'roundEntryRealRevenue' | 'roundEntryBonusUsed' | 'battlePassRevenue' | 'voucherPrizesPaid' | 'creditPrizesPaid' | 'totalRevenue';
+
+interface StatConfig {
+  key: MetricKey;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+  borderColor: string;
+  chartColor: string;
+  isCurrency?: boolean;
+  getValue: (stats: PeriodStats) => number;
+}
+
 const PlatformDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -30,6 +60,9 @@ const PlatformDashboardPage: React.FC = () => {
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
+  const [dailyData, setDailyData] = useState<DailyDataPoint[]>([]);
+  const [loadingChart, setLoadingChart] = useState(false);
   
   const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, freeRoundEntries: 0, paidRoundEntries: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
   const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, freeRoundEntries: 0, paidRoundEntries: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
@@ -45,6 +78,19 @@ const PlatformDashboardPage: React.FC = () => {
     totalVoucherPrizesPaid: 0,
     totalCreditPrizesPaid: 0,
   });
+
+  const statConfigs: StatConfig[] = useMemo(() => [
+    { key: 'newUsers', label: 'New Users', icon: <Users className="h-4 w-4" />, color: 'text-emerald-400', borderColor: 'border-emerald-500/30', chartColor: '#10b981', getValue: (s) => s.newUsers },
+    { key: 'freeRoundEntries', label: 'Free Entries', icon: <Trophy className="h-4 w-4" />, color: 'text-blue-400', borderColor: 'border-blue-500/30', chartColor: '#3b82f6', getValue: (s) => s.freeRoundEntries },
+    { key: 'paidRoundEntries', label: 'Paid Entries', icon: <Trophy className="h-4 w-4" />, color: 'text-cyan-400', borderColor: 'border-cyan-500/30', chartColor: '#06b6d4', getValue: (s) => s.paidRoundEntries },
+    { key: 'successfulLogins', label: 'Logins', icon: <LogIn className="h-4 w-4" />, color: 'text-yellow-400', borderColor: 'border-yellow-500/30', chartColor: '#eab308', getValue: (s) => s.successfulLogins },
+    { key: 'roundEntryRealRevenue', label: 'Real Revenue', icon: <DollarSign className="h-4 w-4" />, color: 'text-green-400', borderColor: 'border-green-500/30', chartColor: '#22c55e', isCurrency: true, getValue: (s) => s.roundEntryRealRevenue },
+    { key: 'roundEntryBonusUsed', label: 'Bonus Used', icon: <CreditCard className="h-4 w-4" />, color: 'text-orange-400', borderColor: 'border-orange-500/30', chartColor: '#f97316', isCurrency: true, getValue: (s) => s.roundEntryBonusUsed },
+    { key: 'battlePassRevenue', label: 'Battle Pass', icon: <CreditCard className="h-4 w-4" />, color: 'text-purple-400', borderColor: 'border-purple-500/30', chartColor: '#a855f7', isCurrency: true, getValue: (s) => s.battlePassRevenue },
+    { key: 'voucherPrizesPaid', label: 'Vouchers Paid', icon: <Gift className="h-4 w-4" />, color: 'text-red-400', borderColor: 'border-red-500/30', chartColor: '#ef4444', isCurrency: true, getValue: (s) => s.voucherPrizesPaid },
+    { key: 'creditPrizesPaid', label: 'Credits Paid', icon: <CreditCard className="h-4 w-4" />, color: 'text-pink-400', borderColor: 'border-pink-500/30', chartColor: '#ec4899', getValue: (s) => s.creditPrizesPaid },
+    { key: 'totalRevenue', label: 'Total Revenue', icon: <TrendingUp className="h-4 w-4" />, color: 'text-emerald-400', borderColor: 'border-emerald-500/30', chartColor: '#10b981', isCurrency: true, getValue: (s) => s.roundEntryRealRevenue + s.battlePassRevenue },
+  ], []);
 
   // Check admin role
   useEffect(() => {
@@ -97,6 +143,13 @@ const PlatformDashboardPage: React.FC = () => {
       fetchAllStats();
     }
   }, [isAdmin]);
+
+  // Fetch chart data when metric is selected
+  useEffect(() => {
+    if (selectedMetric && isAdmin) {
+      fetchDailyData();
+    }
+  }, [selectedMetric, selectedPeriod, isAdmin]);
 
   const fetchAllStats = async () => {
     setLoading(true);
@@ -197,8 +250,65 @@ const PlatformDashboardPage: React.FC = () => {
     };
   };
 
+  const fetchDailyData = async () => {
+    setLoadingChart(true);
+    try {
+      const now = new Date();
+      let startDate: Date;
+      
+      switch (selectedPeriod) {
+        case 'day':
+          startDate = startOfDay(now);
+          break;
+        case 'week':
+          startDate = startOfWeek(now, { weekStartsOn: 1 });
+          break;
+        case 'month':
+          startDate = startOfMonth(now);
+          break;
+      }
+
+      const { data, error } = await (supabase.rpc as any)('get_platform_daily_stats', {
+        p_start: startDate.toISOString(),
+        p_end: now.toISOString(),
+      });
+
+      if (error) {
+        console.error('fetchDailyData RPC error:', error);
+        setDailyData([]);
+        return;
+      }
+
+      const formattedData: DailyDataPoint[] = (data || []).map((row: any) => ({
+        date: row.stat_date,
+        displayDate: format(new Date(row.stat_date), selectedPeriod === 'day' ? 'HH:mm' : 'MMM d'),
+        newUsers: Number(row.new_users ?? 0),
+        freeRoundEntries: Number(row.free_round_entries ?? 0),
+        paidRoundEntries: Number(row.paid_round_entries ?? 0),
+        successfulLogins: Number(row.successful_logins ?? 0),
+        roundEntryRealRevenue: Number(row.round_entry_real_revenue ?? 0),
+        roundEntryBonusUsed: Number(row.round_entry_bonus_used ?? 0),
+        battlePassRevenue: Number(row.battle_pass_revenue ?? 0),
+        voucherPrizesPaid: Number(row.voucher_prizes_paid ?? 0),
+        creditPrizesPaid: Number(row.credit_prizes_paid ?? 0),
+      }));
+
+      setDailyData(formattedData);
+    } catch (err) {
+      console.error('Error fetching daily data:', err);
+      setDailyData([]);
+    } finally {
+      setLoadingChart(false);
+    }
+  };
+
   const formatCurrency = (pence: number) => {
     return `£${(pence / 100).toFixed(2)}`;
+  };
+
+  const formatValue = (value: number, isCurrency?: boolean) => {
+    if (isCurrency) return formatCurrency(value);
+    return value.toLocaleString();
   };
 
   const getCurrentStats = () => {
@@ -216,6 +326,17 @@ const PlatformDashboardPage: React.FC = () => {
       case 'month': return 'This Month';
     }
   };
+
+  const handleMetricClick = (key: MetricKey) => {
+    setSelectedMetric(selectedMetric === key ? null : key);
+  };
+
+  const getChartDataKey = (key: MetricKey): string => {
+    if (key === 'totalRevenue') return 'roundEntryRealRevenue'; // We'll compute this differently
+    return key;
+  };
+
+  const selectedConfig = statConfigs.find(c => c.key === selectedMetric);
 
   // Show loading while auth or admin status is being checked
   if (authLoading || checkingAdmin) {
@@ -346,7 +467,7 @@ const PlatformDashboardPage: React.FC = () => {
         <div className="container mx-auto px-3 max-w-full">
           
           {/* Period Selector */}
-          <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'day' | 'week' | 'month')} className="space-y-6">
+          <Tabs value={selectedPeriod} onValueChange={(v) => { setSelectedPeriod(v as 'day' | 'week' | 'month'); setSelectedMetric(null); }} className="space-y-6">
             <TabsList className="bg-[#0B0F14] border border-border/50">
               <TabsTrigger value="day" className="text-white data-[state=active]:text-white data-[state=active]:bg-emerald-600">
                 <Calendar className="h-4 w-4 mr-2" /> Today
@@ -366,139 +487,110 @@ const PlatformDashboardPage: React.FC = () => {
                     <div className="animate-pulse text-muted-foreground">Loading stats...</div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* New Users */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-emerald-400 flex items-center gap-2">
-                          <Users className="h-4 w-4" /> New Users
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{currentStats.newUsers.toLocaleString()}</p>
-                        <p className="text-xs text-white/50 mt-1">Real accounts (non-test)</p>
-                      </CardContent>
-                    </Card>
+                  <>
+                    {/* Condensed Stats Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
+                      {statConfigs.map((config) => (
+                        <button
+                          key={config.key}
+                          onClick={() => handleMetricClick(config.key)}
+                          className={cn(
+                            "text-left p-3 rounded-lg border transition-all duration-200",
+                            "bg-gradient-to-br from-[#0B0F14] to-[#12161C]",
+                            selectedMetric === config.key 
+                              ? `${config.borderColor.replace('/30', '')} ring-2 ring-offset-2 ring-offset-background` 
+                              : `${config.borderColor} hover:border-opacity-60`,
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={config.color}>{config.icon}</span>
+                            <span className="text-xs text-white/60 truncate">{config.label}</span>
+                          </div>
+                          <p className={cn("text-lg md:text-xl font-bold text-white")}>
+                            {formatValue(config.getValue(currentStats), config.isCurrency)}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
 
-                    {/* Round Participants */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-blue-400 flex items-center gap-2">
-                          <Trophy className="h-4 w-4" /> Free Round Entries
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{currentStats.freeRoundEntries.toLocaleString()}</p>
-                        <p className="text-xs text-white/50 mt-1">Entries in free rounds</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Paid Round Entries */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-cyan-400 flex items-center gap-2">
-                          <Trophy className="h-4 w-4" /> Paid Round Entries
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{currentStats.paidRoundEntries.toLocaleString()}</p>
-                        <p className="text-xs text-white/50 mt-1">Entries in paid rounds</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Successful Logins */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-yellow-400 flex items-center gap-2">
-                          <LogIn className="h-4 w-4" /> Successful Logins
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{currentStats.successfulLogins.toLocaleString()}</p>
-                        <p className="text-xs text-white/50 mt-1">Real users who logged in</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Round Entry Real Revenue */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-green-400 flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" /> Real Revenue (Round Entries)
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.roundEntryRealRevenue)}</p>
-                        <p className="text-xs text-white/50 mt-1">Actual money paid</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Round Entry Bonus Used */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-orange-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-orange-400 flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" /> Bonus Used (Round Entries)
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.roundEntryBonusUsed)}</p>
-                        <p className="text-xs text-white/50 mt-1">Promo credits redeemed</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Battle Pass Revenue */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-purple-400 flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" /> Battle Pass Revenue
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.battlePassRevenue)}</p>
-                        <p className="text-xs text-white/50 mt-1">Premium pass purchases</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Steam Voucher Prizes */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-red-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-red-400 flex items-center gap-2">
-                          <Gift className="h-4 w-4" /> Steam Vouchers Paid
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.voucherPrizesPaid)}</p>
-                        <p className="text-xs text-white/50 mt-1">Voucher prizes (from paid rounds)</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Credit Prizes */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-pink-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-pink-400 flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" /> Credits Paid
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">{currentStats.creditPrizesPaid.toLocaleString()}</p>
-                        <p className="text-xs text-white/50 mt-1">In-game credits awarded</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Total Period Revenue */}
-                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-emerald-400 flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4" /> Total Real Revenue ({getPeriodLabel()})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-white">
-                          {formatCurrency(currentStats.roundEntryRealRevenue + currentStats.battlePassRevenue)}
-                        </p>
-                        <p className="text-xs text-white/50 mt-1">Real money collected</p>
-                      </CardContent>
-                    </Card>
-                  </div>
+                    {/* Chart Section */}
+                    {selectedMetric && selectedConfig && (
+                      <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-border/30">
+                        <CardHeader className="pb-2">
+                          <CardTitle className={cn("text-sm flex items-center gap-2", selectedConfig.color)}>
+                            {selectedConfig.icon}
+                            {selectedConfig.label} - {getPeriodLabel()}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {loadingChart ? (
+                            <div className="h-64 flex items-center justify-center">
+                              <div className="animate-pulse text-muted-foreground">Loading chart...</div>
+                            </div>
+                          ) : dailyData.length === 0 ? (
+                            <div className="h-64 flex items-center justify-center text-muted-foreground">
+                              No data available for this period
+                            </div>
+                          ) : (
+                            <div className="h-64">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                  <defs>
+                                    <linearGradient id={`gradient-${selectedMetric}`} x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor={selectedConfig.chartColor} stopOpacity={0.3} />
+                                      <stop offset="95%" stopColor={selectedConfig.chartColor} stopOpacity={0} />
+                                    </linearGradient>
+                                  </defs>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                  <XAxis 
+                                    dataKey="displayDate" 
+                                    stroke="#666" 
+                                    fontSize={12}
+                                    tickLine={false}
+                                  />
+                                  <YAxis 
+                                    stroke="#666" 
+                                    fontSize={12}
+                                    tickLine={false}
+                                    tickFormatter={(value) => selectedConfig.isCurrency ? `£${(value/100).toFixed(0)}` : value.toString()}
+                                  />
+                                  <Tooltip 
+                                    contentStyle={{ 
+                                      backgroundColor: '#0B0F14', 
+                                      border: '1px solid #333',
+                                      borderRadius: '8px',
+                                    }}
+                                    labelStyle={{ color: '#fff' }}
+                                    formatter={(value: number) => [
+                                      formatValue(value, selectedConfig.isCurrency),
+                                      selectedConfig.label
+                                    ]}
+                                  />
+                                  {selectedMetric === 'totalRevenue' ? (
+                                    <Area
+                                      type="monotone"
+                                      dataKey={(d: DailyDataPoint) => d.roundEntryRealRevenue + d.battlePassRevenue}
+                                      stroke={selectedConfig.chartColor}
+                                      strokeWidth={2}
+                                      fill={`url(#gradient-${selectedMetric})`}
+                                    />
+                                  ) : (
+                                    <Area
+                                      type="monotone"
+                                      dataKey={getChartDataKey(selectedMetric)}
+                                      stroke={selectedConfig.chartColor}
+                                      strokeWidth={2}
+                                      fill={`url(#gradient-${selectedMetric})`}
+                                    />
+                                  )}
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
                 )}
               </TabsContent>
             ))}
