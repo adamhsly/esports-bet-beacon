@@ -17,7 +17,8 @@ interface PeriodStats {
   roundEntryBonusUsed: number;
   battlePassRevenue: number;
   successfulLogins: number;
-  prizesPaidOut: number;
+  voucherPrizesPaid: number;
+  creditPrizesPaid: number;
 }
 
 const PlatformDashboardPage: React.FC = () => {
@@ -28,9 +29,9 @@ const PlatformDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   
-  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, prizesPaidOut: 0 });
-  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, prizesPaidOut: 0 });
-  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, prizesPaidOut: 0 });
+  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
+  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
+  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
   
   const [allTimeStats, setAllTimeStats] = useState({
     totalUsers: 0,
@@ -38,7 +39,8 @@ const PlatformDashboardPage: React.FC = () => {
     totalRealRevenue: 0,
     totalBonusUsed: 0,
     totalRounds: 0,
-    totalPrizesPaidOut: 0,
+    totalVoucherPrizesPaid: 0,
+    totalCreditPrizesPaid: 0,
   });
 
   // Check admin role
@@ -140,7 +142,8 @@ const PlatformDashboardPage: React.FC = () => {
         roundEntryBonusUsed: 0,
         battlePassRevenue: 0,
         successfulLogins: 0,
-        prizesPaidOut: 0,
+        voucherPrizesPaid: 0,
+        creditPrizesPaid: 0,
       };
     }
 
@@ -152,7 +155,8 @@ const PlatformDashboardPage: React.FC = () => {
       roundEntryBonusUsed: Number(row?.round_entry_bonus_used ?? 0),
       battlePassRevenue: Number(row?.battle_pass_revenue ?? 0),
       successfulLogins: Number(row?.successful_logins ?? 0),
-      prizesPaidOut: Number(row?.prizes_paid_out ?? 0),
+      voucherPrizesPaid: Number(row?.voucher_prizes_paid ?? 0),
+      creditPrizesPaid: Number(row?.credit_prizes_paid ?? 0),
     };
   };
 
@@ -167,7 +171,8 @@ const PlatformDashboardPage: React.FC = () => {
         totalRealRevenue: 0,
         totalBonusUsed: 0,
         totalRounds: 0,
-        totalPrizesPaidOut: 0,
+        totalVoucherPrizesPaid: 0,
+        totalCreditPrizesPaid: 0,
       };
     }
 
@@ -178,7 +183,8 @@ const PlatformDashboardPage: React.FC = () => {
       totalRealRevenue: Number(row?.total_real_revenue ?? 0),
       totalBonusUsed: Number(row?.total_bonus_used ?? 0),
       totalRounds: Number(row?.total_rounds ?? 0),
-      totalPrizesPaidOut: Number(row?.total_prizes_paid_out ?? 0),
+      totalVoucherPrizesPaid: Number(row?.total_voucher_prizes_paid ?? 0),
+      totalCreditPrizesPaid: Number(row?.total_credit_prizes_paid ?? 0),
     };
   };
 
@@ -244,7 +250,7 @@ const PlatformDashboardPage: React.FC = () => {
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
           {/* All-Time Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30 hover:border-emerald-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
@@ -294,8 +300,19 @@ const PlatformDashboardPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Gift className="h-6 w-6 md:h-8 md:w-8 text-red-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(allTimeStats.totalPrizesPaidOut)}</p>
-                    <p className="text-xs md:text-sm text-white/70">Prizes Paid</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(allTimeStats.totalVoucherPrizesPaid)}</p>
+                    <p className="text-xs md:text-sm text-white/70">Steam Vouchers</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-pink-500/30 hover:border-pink-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-6 w-6 md:h-8 md:w-8 text-pink-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">{allTimeStats.totalCreditPrizesPaid.toLocaleString()}</p>
+                    <p className="text-xs md:text-sm text-white/70">Credits Paid</p>
                   </div>
                 </div>
               </CardContent>
@@ -419,16 +436,29 @@ const PlatformDashboardPage: React.FC = () => {
                       </CardContent>
                     </Card>
 
-                    {/* Prizes Paid Out */}
+                    {/* Steam Voucher Prizes */}
                     <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-red-500/30">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-red-400 flex items-center gap-2">
-                          <Gift className="h-4 w-4" /> Prizes Paid Out
+                          <Gift className="h-4 w-4" /> Steam Vouchers Paid
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.prizesPaidOut)}</p>
-                        <p className="text-xs text-white/50 mt-1">Real user winnings</p>
+                        <p className="text-3xl font-bold text-white">{formatCurrency(currentStats.voucherPrizesPaid)}</p>
+                        <p className="text-xs text-white/50 mt-1">Voucher prizes (from paid rounds)</p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Credit Prizes */}
+                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-pink-500/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-pink-400 flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" /> Credits Paid
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-white">{currentStats.creditPrizesPaid.toLocaleString()}</p>
+                        <p className="text-xs text-white/50 mt-1">In-game credits awarded</p>
                       </CardContent>
                     </Card>
 
