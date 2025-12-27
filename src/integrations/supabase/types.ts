@@ -3936,22 +3936,25 @@ export type Database = {
       get_platform_all_time_stats: {
         Args: never
         Returns: {
+          total_bonus_used: number
           total_credit_prizes_paid: number
-          total_paid_entries: number
-          total_revenue_pence: number
-          total_round_participants: number
+          total_real_revenue: number
+          total_real_users: number
+          total_rounds: number
           total_users: number
           total_voucher_prizes_paid: number
         }[]
       }
       get_platform_period_stats: {
-        Args: { period_end: string; period_start: string }
+        Args: { p_end?: string; p_start: string }
         Returns: {
+          battle_pass_revenue: number
           credit_prizes_paid: number
           new_users: number
-          paid_entries: number
-          revenue_pence: number
-          round_participants: number
+          real_round_participants: number
+          round_entry_bonus_used: number
+          round_entry_real_revenue: number
+          successful_logins: number
           voucher_prizes_paid: number
         }[]
       }
