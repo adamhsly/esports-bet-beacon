@@ -250,7 +250,7 @@ const PlatformDashboardPage: React.FC = () => {
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
           {/* All-Time Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-8">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30 hover:border-emerald-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
@@ -313,17 +313,6 @@ const PlatformDashboardPage: React.FC = () => {
                   <div>
                     <p className="text-xl md:text-2xl font-bold text-white">{allTimeStats.totalCreditPrizesPaid.toLocaleString()}</p>
                     <p className="text-xs md:text-sm text-white/70">Credits Paid</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all">
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center gap-3">
-                  <Users className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{allTimeStats.totalUsers.toLocaleString()}</p>
-                    <p className="text-xs md:text-sm text-white/70">All Accounts</p>
                   </div>
                 </div>
               </CardContent>
