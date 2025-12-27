@@ -3946,7 +3946,7 @@ export type Database = {
         }[]
       }
       get_platform_period_stats: {
-        Args: { p_end?: string; p_start: string }
+        Args: { p_start: string }
         Returns: {
           battle_pass_revenue: number
           credit_prizes_paid: number
