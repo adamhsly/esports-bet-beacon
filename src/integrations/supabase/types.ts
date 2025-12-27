@@ -3946,6 +3946,21 @@ export type Database = {
           total_voucher_prizes_paid: number
         }[]
       }
+      get_platform_daily_stats: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          battle_pass_revenue: number
+          credit_prizes_paid: number
+          free_round_entries: number
+          new_users: number
+          paid_round_entries: number
+          round_entry_bonus_used: number
+          round_entry_real_revenue: number
+          stat_date: string
+          successful_logins: number
+          voucher_prizes_paid: number
+        }[]
+      }
       get_platform_period_stats: {
         Args: { p_start: string }
         Returns: {
