@@ -15,6 +15,8 @@ interface PeriodStats {
   realRoundParticipants: number;
   roundEntryRealRevenue: number;
   roundEntryBonusUsed: number;
+  freeRoundEntries: number;
+  paidRoundEntries: number;
   battlePassRevenue: number;
   successfulLogins: number;
   voucherPrizesPaid: number;
@@ -29,16 +31,17 @@ const PlatformDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   
-  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
-  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
-  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
+  const [dailyStats, setDailyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, freeRoundEntries: 0, paidRoundEntries: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
+  const [weeklyStats, setWeeklyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, freeRoundEntries: 0, paidRoundEntries: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
+  const [monthlyStats, setMonthlyStats] = useState<PeriodStats>({ newUsers: 0, realRoundParticipants: 0, roundEntryRealRevenue: 0, roundEntryBonusUsed: 0, freeRoundEntries: 0, paidRoundEntries: 0, battlePassRevenue: 0, successfulLogins: 0, voucherPrizesPaid: 0, creditPrizesPaid: 0 });
   
   const [allTimeStats, setAllTimeStats] = useState({
     totalUsers: 0,
     totalRealUsers: 0,
     totalRealRevenue: 0,
     totalBonusUsed: 0,
-    totalRounds: 0,
+    totalFreeRoundEntries: 0,
+    totalPaidRoundEntries: 0,
     totalVoucherPrizesPaid: 0,
     totalCreditPrizesPaid: 0,
   });
@@ -140,6 +143,8 @@ const PlatformDashboardPage: React.FC = () => {
         realRoundParticipants: 0,
         roundEntryRealRevenue: 0,
         roundEntryBonusUsed: 0,
+        freeRoundEntries: 0,
+        paidRoundEntries: 0,
         battlePassRevenue: 0,
         successfulLogins: 0,
         voucherPrizesPaid: 0,
@@ -153,6 +158,8 @@ const PlatformDashboardPage: React.FC = () => {
       realRoundParticipants: Number(row?.real_round_participants ?? 0),
       roundEntryRealRevenue: Number(row?.round_entry_real_revenue ?? 0),
       roundEntryBonusUsed: Number(row?.round_entry_bonus_used ?? 0),
+      freeRoundEntries: Number(row?.free_round_entries ?? 0),
+      paidRoundEntries: Number(row?.paid_round_entries ?? 0),
       battlePassRevenue: Number(row?.battle_pass_revenue ?? 0),
       successfulLogins: Number(row?.successful_logins ?? 0),
       voucherPrizesPaid: Number(row?.voucher_prizes_paid ?? 0),
@@ -170,7 +177,8 @@ const PlatformDashboardPage: React.FC = () => {
         totalRealUsers: 0,
         totalRealRevenue: 0,
         totalBonusUsed: 0,
-        totalRounds: 0,
+        totalFreeRoundEntries: 0,
+        totalPaidRoundEntries: 0,
         totalVoucherPrizesPaid: 0,
         totalCreditPrizesPaid: 0,
       };
@@ -182,7 +190,8 @@ const PlatformDashboardPage: React.FC = () => {
       totalRealUsers: Number(row?.total_real_users ?? 0),
       totalRealRevenue: Number(row?.total_real_revenue ?? 0),
       totalBonusUsed: Number(row?.total_bonus_used ?? 0),
-      totalRounds: Number(row?.total_rounds ?? 0),
+      totalFreeRoundEntries: Number(row?.total_free_round_entries ?? 0),
+      totalPaidRoundEntries: Number(row?.total_paid_round_entries ?? 0),
       totalVoucherPrizesPaid: Number(row?.total_voucher_prizes_paid ?? 0),
       totalCreditPrizesPaid: Number(row?.total_credit_prizes_paid ?? 0),
     };
@@ -250,7 +259,7 @@ const PlatformDashboardPage: React.FC = () => {
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
           {/* All-Time Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30 hover:border-emerald-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
@@ -267,8 +276,19 @@ const PlatformDashboardPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Trophy className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{allTimeStats.totalRounds.toLocaleString()}</p>
-                    <p className="text-xs md:text-sm text-white/70">Total Rounds</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{allTimeStats.totalFreeRoundEntries.toLocaleString()}</p>
+                    <p className="text-xs md:text-sm text-white/70">Free Round Entries</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30 hover:border-cyan-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Trophy className="h-6 w-6 md:h-8 md:w-8 text-cyan-400" />
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-white">{allTimeStats.totalPaidRoundEntries.toLocaleString()}</p>
+                    <p className="text-xs md:text-sm text-white/70">Paid Round Entries</p>
                   </div>
                 </div>
               </CardContent>
@@ -364,12 +384,25 @@ const PlatformDashboardPage: React.FC = () => {
                     <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-blue-400 flex items-center gap-2">
-                          <Trophy className="h-4 w-4" /> Round Participants
+                          <Trophy className="h-4 w-4" /> Free Round Entries
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-3xl font-bold text-white">{currentStats.realRoundParticipants.toLocaleString()}</p>
-                        <p className="text-xs text-white/50 mt-1">Unique real users who joined a round</p>
+                        <p className="text-3xl font-bold text-white">{currentStats.freeRoundEntries.toLocaleString()}</p>
+                        <p className="text-xs text-white/50 mt-1">Entries in free rounds</p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Paid Round Entries */}
+                    <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-cyan-400 flex items-center gap-2">
+                          <Trophy className="h-4 w-4" /> Paid Round Entries
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-white">{currentStats.paidRoundEntries.toLocaleString()}</p>
+                        <p className="text-xs text-white/50 mt-1">Entries in paid rounds</p>
                       </CardContent>
                     </Card>
 

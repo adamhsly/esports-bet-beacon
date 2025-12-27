@@ -3938,6 +3938,8 @@ export type Database = {
         Returns: {
           total_bonus_used: number
           total_credit_prizes_paid: number
+          total_free_round_entries: number
+          total_paid_round_entries: number
           total_real_revenue: number
           total_real_users: number
           total_round_participants: number
@@ -3948,7 +3950,9 @@ export type Database = {
         Args: { p_start: string }
         Returns: {
           credit_prizes_paid: number
+          free_round_entries: number
           new_users: number
+          paid_round_entries: number
           real_round_participants: number
           round_entry_bonus_used: number
           round_entry_real_revenue: number
