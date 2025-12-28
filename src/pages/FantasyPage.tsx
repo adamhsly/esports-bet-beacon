@@ -77,13 +77,18 @@ const FantasyPage: React.FC = () => {
     if (!justUnlockedTier2) return;
 
     tier2PopupShownRef.current = true;
-    markTier2UnlockSeen();
 
-    const timer = setTimeout(() => {
+    let fired = false;
+    const timer = window.setTimeout(() => {
+      fired = true;
+      markTier2UnlockSeen();
       setShowWelcomeOfferModal(true);
     }, 650);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (!fired) tier2PopupShownRef.current = false;
+    };
   }, [user?.id, authLoading, welcomeOfferLoading, justUnlockedTier2, markTier2UnlockSeen]);
 
   // Tier 2: show again on the next login only
@@ -92,13 +97,18 @@ const FantasyPage: React.FC = () => {
     if (!shouldShowTier2OnLogin) return;
 
     tier2PopupShownRef.current = true;
-    markTier2LoginShown();
 
-    const timer = setTimeout(() => {
+    let fired = false;
+    const timer = window.setTimeout(() => {
+      fired = true;
+      markTier2LoginShown();
       setShowWelcomeOfferModal(true);
     }, 650);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (!fired) tier2PopupShownRef.current = false;
+    };
   }, [user?.id, authLoading, welcomeOfferLoading, shouldShowTier2OnLogin, markTier2LoginShown]);
 
   // Auto-show welcome offer modal on first and second login.
