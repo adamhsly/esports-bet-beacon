@@ -231,7 +231,15 @@ function groupMatchesByLeague(matches: MatchInfo[]) {
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { displayState, loading: welcomeOfferLoading } = useWelcomeOffer();
+  const { 
+    displayState, 
+    loading: welcomeOfferLoading, 
+    justUnlockedTier2, 
+    markTier2UnlockSeen,
+    shouldShowTier2OnLogin,
+    markTier2LoginShown,
+    status: welcomeOfferStatus
+  } = useWelcomeOffer();
   
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
@@ -244,11 +252,44 @@ const Index = () => {
   // Welcome offer modal auto-show state
   const [showWelcomeOfferModal, setShowWelcomeOfferModal] = useState(false);
   const welcomeOfferShownRef = useRef(false);
+  const tier2PopupShownRef = useRef(false);
 
-  // Auto-show welcome offer modal on first and second login (session-based tracking)
+  // Auto-show tier 2 popup when user just unlocked it
+  useEffect(() => {
+    if (!user || loading || welcomeOfferLoading || tier2PopupShownRef.current) return;
+    
+    if (justUnlockedTier2) {
+      tier2PopupShownRef.current = true;
+      markTier2UnlockSeen();
+      // Small delay to ensure page is ready
+      const timer = setTimeout(() => {
+        setShowWelcomeOfferModal(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading, welcomeOfferLoading, justUnlockedTier2, markTier2UnlockSeen]);
+
+  // Auto-show tier 2 popup on next login (2nd time)
+  useEffect(() => {
+    if (!user || loading || welcomeOfferLoading || tier2PopupShownRef.current) return;
+    
+    if (shouldShowTier2OnLogin) {
+      tier2PopupShownRef.current = true;
+      markTier2LoginShown();
+      const timer = setTimeout(() => {
+        setShowWelcomeOfferModal(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading, welcomeOfferLoading, shouldShowTier2OnLogin, markTier2LoginShown]);
+
+  // Auto-show tier 1 welcome offer modal on first and second login (session-based tracking)
   // Waits for fantasy walkthrough to complete first
   useEffect(() => {
     if (!user || loading || welcomeOfferLoading || welcomeOfferShownRef.current) return;
+    
+    // Skip if this is tier 2 (handled separately above)
+    if (welcomeOfferStatus?.tier === 2) return;
     
     // Check if offer is still active (progress or active state)
     if (displayState !== 'progress' && displayState !== 'active') return;
@@ -306,7 +347,7 @@ const Index = () => {
         clearTimeout(maxTimeout);
       };
     }
-  }, [user, loading, welcomeOfferLoading, displayState]);
+  }, [user, loading, welcomeOfferLoading, displayState, welcomeOfferStatus?.tier]);
 
   const fantasyBanners = [
     {
