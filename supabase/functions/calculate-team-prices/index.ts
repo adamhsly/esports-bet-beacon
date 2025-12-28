@@ -229,19 +229,19 @@ serve(async (req) => {
           let amateurStartDate: string;
           let amateurEndDate: string;
           
-          // For scheduled/future rounds, use lookback from today
+          // For scheduled/future rounds, use 30-day lookback from today (optimized for performance)
           if (isScheduledRound) {
             prevEnd = now;
-            prevStart = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+            prevStart = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
             amateurStartDate = prevStart.toISOString().split('T')[0];
             amateurEndDate = prevEnd.toISOString().split('T')[0];
-            console.log("Using 3-month lookback from today for scheduled round amateur pricing");
+            console.log("Using 30-day lookback from today for scheduled round amateur pricing");
           } else if (r.is_private || r.type === 'private') {
             prevEnd = start;
-            prevStart = new Date(start.getTime() - (90 * 24 * 60 * 60 * 1000));
+            prevStart = new Date(start.getTime() - (30 * 24 * 60 * 60 * 1000));
             amateurStartDate = start.toISOString().split('T')[0];
             amateurEndDate = end.toISOString().split('T')[0];
-            console.log("Using 3-month lookback for private round amateur pricing");
+            console.log("Using 30-day lookback for private round amateur pricing");
           } else {
             prevEnd = start;
             prevStart = new Date(start.getTime() - (end.getTime() - start.getTime()));
