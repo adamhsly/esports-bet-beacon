@@ -80,20 +80,19 @@ export function useWelcomeOffer() {
 
   const status = query.data ?? null;
 
-  // Detect when user just unlocked tier 2 (transitions from tier 1 to tier 2)
+  // Detect when user just unlocked tier 2 (first time showing tier 2 info)
   const justUnlockedTier2 = useMemo(() => {
     if (!user?.id || !status) return false;
-    
+
+    // Don't show unlock popup if they already claimed tier 2
+    if (status.tier === 2 && status.offerClaimed) return false;
+
     // Check if we've stored that this user has already seen the tier 2 unlock popup
     const tier2UnlockSeenKey = `tier2UnlockSeen_${user.id}`;
     const tier2UnlockSeen = localStorage.getItem(tier2UnlockSeenKey) === 'true';
-    
+
     // If tier 2 and not yet seen the unlock popup
-    if (status.tier === 2 && !tier2UnlockSeen) {
-      return true;
-    }
-    
-    return false;
+    return status.tier === 2 && !tier2UnlockSeen;
   }, [status, user?.id]);
 
   // Track when tier 2 popup is shown
@@ -103,21 +102,24 @@ export function useWelcomeOffer() {
     }
   };
 
-  // Check if we should show tier 2 popup on login
+  // Check if we should show tier 2 popup on login (2nd time)
   const shouldShowTier2OnLogin = useMemo(() => {
     if (!user?.id || !status || status.tier !== 2) return false;
-    
-    // Don't show if offer is already claimed
+
+    // Don't show login popup if they already claimed tier 2
     if (status.offerClaimed) return false;
-    
+
+    // Only show if tier 2 unlock was seen but this is a new login/session
+    const tier2UnlockSeenKey = `tier2UnlockSeen_${user.id}`;
     const tier2LoginShownKey = `tier2LoginShown_${user.id}`;
     const tier2SessionKey = `tier2ShownThisSession_${user.id}`;
-    
+
+    const tier2UnlockSeen = localStorage.getItem(tier2UnlockSeenKey) === 'true';
     const tier2LoginShown = localStorage.getItem(tier2LoginShownKey) === 'true';
     const shownThisSession = sessionStorage.getItem(tier2SessionKey) === 'true';
-    
-    // Show if: tier 2, not yet shown on login, and not shown this session
-    return !tier2LoginShown && !shownThisSession;
+
+    // Show if: unlock was seen, haven't shown on login yet, and not shown this session
+    return tier2UnlockSeen && !tier2LoginShown && !shownThisSession;
   }, [status, user?.id]);
 
   // Mark tier 2 login popup as shown

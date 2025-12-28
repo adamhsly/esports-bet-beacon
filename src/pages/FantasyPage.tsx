@@ -44,21 +44,70 @@ const FantasyPage: React.FC = () => {
   const isMobile = useMobile();
   const { isOpen, openProfile, closeProfile } = useProfilePanel();
   const { user, loading: authLoading } = useAuth();
-  const { displayState, loading: welcomeOfferLoading } = useWelcomeOffer();
+  const {
+    status: welcomeOfferStatus,
+    displayState,
+    loading: welcomeOfferLoading,
+    justUnlockedTier2,
+    markTier2UnlockSeen,
+    shouldShowTier2OnLogin,
+    markTier2LoginShown,
+  } = useWelcomeOffer();
   const navigate = useNavigate();
 
   const [showWelcomeOfferModal, setShowWelcomeOfferModal] = useState(false);
   const [walkthroughCompletedTick, setWalkthroughCompletedTick] = useState(0);
   const welcomeOfferAutoPopupArmedRef = useRef(false);
+  const tier2PopupShownRef = useRef(false);
 
   const handleFantasyWalkthroughComplete = () => {
     setWalkthroughCompletedTick((v) => v + 1);
   };
 
+  // Reset tier-specific popup guard when user signs out (so a new login can trigger the 2nd popup)
+  useEffect(() => {
+    if (!user) {
+      tier2PopupShownRef.current = false;
+    }
+  }, [user]);
+
+  // Tier 2: show immediately when unlocked (or first time we detect tier 2 without a prior popup)
+  useEffect(() => {
+    if (!user || authLoading || welcomeOfferLoading || tier2PopupShownRef.current) return;
+    if (!justUnlockedTier2) return;
+
+    tier2PopupShownRef.current = true;
+    markTier2UnlockSeen();
+
+    const timer = setTimeout(() => {
+      setShowWelcomeOfferModal(true);
+    }, 650);
+
+    return () => clearTimeout(timer);
+  }, [user?.id, authLoading, welcomeOfferLoading, justUnlockedTier2, markTier2UnlockSeen]);
+
+  // Tier 2: show again on the next login only
+  useEffect(() => {
+    if (!user || authLoading || welcomeOfferLoading || tier2PopupShownRef.current) return;
+    if (!shouldShowTier2OnLogin) return;
+
+    tier2PopupShownRef.current = true;
+    markTier2LoginShown();
+
+    const timer = setTimeout(() => {
+      setShowWelcomeOfferModal(true);
+    }, 650);
+
+    return () => clearTimeout(timer);
+  }, [user?.id, authLoading, welcomeOfferLoading, shouldShowTier2OnLogin, markTier2LoginShown]);
+
   // Auto-show welcome offer modal on first and second login.
   // Waits for the FantasyWalkthrough to be completed first.
   useEffect(() => {
     if (!user || authLoading || welcomeOfferLoading) return;
+
+    // Tier 2 has its own popup rules (handled above)
+    if (welcomeOfferStatus?.tier === 2) return;
 
     // Eligible states: new-user progress OR active promo balance
     if (displayState !== 'progress' && displayState !== 'active') return;
@@ -90,7 +139,7 @@ const FantasyPage: React.FC = () => {
       clearTimeout(timer);
       welcomeOfferAutoPopupArmedRef.current = false;
     };
-  }, [user?.id, authLoading, welcomeOfferLoading, displayState, walkthroughCompletedTick]);
+  }, [user?.id, authLoading, welcomeOfferLoading, displayState, welcomeOfferStatus?.tier, walkthroughCompletedTick]);
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
