@@ -103,21 +103,21 @@ export function useWelcomeOffer() {
     }
   };
 
-  // Check if we should show tier 2 popup on login (2nd time)
+  // Check if we should show tier 2 popup on login
   const shouldShowTier2OnLogin = useMemo(() => {
     if (!user?.id || !status || status.tier !== 2) return false;
     
-    // Only show if tier 2 unlock was seen but this is a new session
-    const tier2UnlockSeenKey = `tier2UnlockSeen_${user.id}`;
+    // Don't show if offer is already claimed
+    if (status.offerClaimed) return false;
+    
     const tier2LoginShownKey = `tier2LoginShown_${user.id}`;
     const tier2SessionKey = `tier2ShownThisSession_${user.id}`;
     
-    const tier2UnlockSeen = localStorage.getItem(tier2UnlockSeenKey) === 'true';
     const tier2LoginShown = localStorage.getItem(tier2LoginShownKey) === 'true';
     const shownThisSession = sessionStorage.getItem(tier2SessionKey) === 'true';
     
-    // Show if: unlock was seen, haven't shown on login yet, and not shown this session
-    return tier2UnlockSeen && !tier2LoginShown && !shownThisSession;
+    // Show if: tier 2, not yet shown on login, and not shown this session
+    return !tier2LoginShown && !shownThisSession;
   }, [status, user?.id]);
 
   // Mark tier 2 login popup as shown
