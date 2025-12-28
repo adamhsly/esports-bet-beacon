@@ -2627,6 +2627,7 @@ export type Database = {
           updated_at: string
           username: string | null
           welcome_offer_claimed: boolean | null
+          welcome_offer_tier: number | null
           welcome_pack_claimed: boolean | null
         }
         Insert: {
@@ -2652,6 +2653,7 @@ export type Database = {
           updated_at?: string
           username?: string | null
           welcome_offer_claimed?: boolean | null
+          welcome_offer_tier?: number | null
           welcome_pack_claimed?: boolean | null
         }
         Update: {
@@ -2677,6 +2679,7 @@ export type Database = {
           updated_at?: string
           username?: string | null
           welcome_offer_claimed?: boolean | null
+          welcome_offer_tier?: number | null
           welcome_pack_claimed?: boolean | null
         }
         Relationships: []
@@ -4186,6 +4189,7 @@ export type Database = {
           updated_at: string
           username: string | null
           welcome_offer_claimed: boolean | null
+          welcome_offer_tier: number | null
           welcome_pack_claimed: boolean | null
         }
         SetofOptions: {
