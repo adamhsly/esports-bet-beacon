@@ -1128,6 +1128,47 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_round_consolations: {
+        Row: {
+          created_at: string | null
+          credits_awarded: number
+          finish_position: number | null
+          id: string
+          notification_sent: boolean | null
+          round_id: string
+          total_score: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_awarded?: number
+          finish_position?: number | null
+          id?: string
+          notification_sent?: boolean | null
+          round_id: string
+          total_score?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_awarded?: number
+          finish_position?: number | null
+          id?: string
+          notification_sent?: boolean | null
+          round_id?: string
+          total_score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_round_consolations_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fantasy_round_picks: {
         Row: {
           bench_team: Json | null

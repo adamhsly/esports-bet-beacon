@@ -28,7 +28,7 @@ serve(async (req) => {
     
     const { data: recentlyFinishedRounds, error: roundsError } = await supabase
       .from('fantasy_rounds')
-      .select('id, type, end_date, round_name, prize_type, prize_1st, prize_2nd, prize_3rd')
+      .select('id, type, end_date, round_name, prize_type, prize_1st, prize_2nd, prize_3rd, is_paid')
       .eq('status', 'closed')
       .gte('end_date', today.toISOString());
 
@@ -45,6 +45,7 @@ serve(async (req) => {
 
     let totalWinnersAwarded = 0;
     let totalEmailsSent = 0;
+    let totalConsolationEmailsSent = 0;
 
     for (const round of roundsToProcess) {
       console.log(`Processing round ${round.id} (${round.type})`);
@@ -58,7 +59,7 @@ serve(async (req) => {
         continue;
       }
 
-      // Query for winners who haven't received email notifications yet (without profile join)
+      // Query for winners who haven't received email notifications yet
       const { data: unsentWinnersRaw, error: winnersError } = await supabase
         .from('fantasy_round_winners')
         .select('id, user_id, finish_position, total_score, credits_awarded')
@@ -70,123 +71,247 @@ serve(async (req) => {
         continue;
       }
 
-      if (!unsentWinnersRaw || unsentWinnersRaw.length === 0) {
-        console.log(`No unsent notifications for round ${round.id}`);
-        continue;
-      }
-
-      // Enrich each winner with profile data (fetched separately to avoid FK join issues)
-      const unsentWinners = [];
-      for (const winner of unsentWinnersRaw) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, full_name, test')
-          .eq('id', winner.user_id)
-          .single();
-        
-        unsentWinners.push({
-          ...winner,
-          profiles: profile || { username: null, full_name: null, test: false }
-        });
-      }
-
-      console.log(`Found ${unsentWinners.length} unsent notifications for round ${round.id}`);
-      totalWinnersAwarded += unsentWinners.length;
-
-      // Collect winner data for team summary email
-      const winnersForSummary: any[] = [];
-
-      // Send email notifications to winners
-      for (const winner of unsentWinners) {
-        try {
-          // Get user email from auth.users
-          const { data: authUser } = await supabase.auth.admin.getUserById(winner.user_id);
-          const userEmail = authUser?.user?.email;
-
-          if (!userEmail) {
-            console.error(`No email found for winner ${winner.id}`);
-            continue;
-          }
-
-          const isTestUser = winner.profiles?.test === true;
-          const prizeAmount = getPrizeAmount(winner.finish_position, round);
-          const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
-
-          const winnerData = {
-            finish_position: winner.finish_position,
-            total_score: winner.total_score,
-            credits_awarded: winner.credits_awarded,
-            username: winner.profiles?.username || winner.profiles?.full_name || 'Player',
-            user_email: userEmail,
-            is_test_user: isTestUser,
-            prize_amount: prizeAmount,
-            prize_type: prizeType,
-          };
-
-          // Add to summary list
-          winnersForSummary.push(winnerData);
-
-          const emailSubject = getEmailSubject(winner.finish_position, round.type);
-          const emailHtml = generateWinnerEmail(winnerData, round);
+      if (unsentWinnersRaw && unsentWinnersRaw.length > 0) {
+        // Enrich each winner with profile data
+        const unsentWinners = [];
+        for (const winner of unsentWinnersRaw) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, full_name, test')
+            .eq('id', winner.user_id)
+            .single();
           
-          const { error: emailError } = await resend.emails.send({
-            from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
-            to: [userEmail],
-            subject: emailSubject,
-            html: emailHtml,
+          unsentWinners.push({
+            ...winner,
+            profiles: profile || { username: null, full_name: null, test: false }
           });
+        }
 
-          if (emailError) {
-            console.error(`Failed to send email to ${userEmail}:`, emailError);
-          } else {
-            // Mark as sent ONLY after successful email delivery
-            const { error: updateError } = await supabase
-              .from('fantasy_round_winners')
-              .update({ notification_sent: true })
-              .eq('id', winner.id);
+        console.log(`Found ${unsentWinners.length} unsent notifications for round ${round.id}`);
+        totalWinnersAwarded += unsentWinners.length;
 
-            if (updateError) {
-              console.error(`Failed to mark notification as sent for winner ${winner.id}:`, updateError);
+        // Collect winner data for team summary email
+        const winnersForSummary: any[] = [];
+
+        // Send email notifications to winners
+        for (const winner of unsentWinners) {
+          try {
+            const { data: authUser } = await supabase.auth.admin.getUserById(winner.user_id);
+            const userEmail = authUser?.user?.email;
+
+            if (!userEmail) {
+              console.error(`No email found for winner ${winner.id}`);
+              continue;
+            }
+
+            const isTestUser = winner.profiles?.test === true;
+            const prizeAmount = getPrizeAmount(winner.finish_position, round);
+            const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+
+            const winnerData = {
+              finish_position: winner.finish_position,
+              total_score: winner.total_score,
+              credits_awarded: winner.credits_awarded,
+              username: winner.profiles?.username || winner.profiles?.full_name || 'Player',
+              user_email: userEmail,
+              is_test_user: isTestUser,
+              prize_amount: prizeAmount,
+              prize_type: prizeType,
+            };
+
+            winnersForSummary.push(winnerData);
+
+            const emailSubject = getEmailSubject(winner.finish_position, round.type);
+            const emailHtml = generateWinnerEmail(winnerData, round);
+            
+            const { error: emailError } = await resend.emails.send({
+              from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+              to: [userEmail],
+              subject: emailSubject,
+              html: emailHtml,
+            });
+
+            if (emailError) {
+              console.error(`Failed to send email to ${userEmail}:`, emailError);
             } else {
-              totalEmailsSent++;
-              // Rate limit: wait 600ms between emails to stay under Resend's 2/sec limit
+              const { error: updateError } = await supabase
+                .from('fantasy_round_winners')
+                .update({ notification_sent: true })
+                .eq('id', winner.id);
+
+              if (updateError) {
+                console.error(`Failed to mark notification as sent for winner ${winner.id}:`, updateError);
+              } else {
+                totalEmailsSent++;
+                await new Promise(resolve => setTimeout(resolve, 600));
+                console.log(`✅ Email sent to ${winnerData.username} (${userEmail})`);
+              }
+            }
+          } catch (emailError) {
+            console.error(`Error sending email for winner ${winner.id}:`, emailError);
+          }
+        }
+
+        // Send team summary email
+        if (winnersForSummary.length > 0) {
+          try {
+            const summaryEmailHtml = generateTeamSummaryEmail(round, winnersForSummary);
+            const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+            
+            const { error: summaryEmailError } = await resend.emails.send({
+              from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+              to: ["theteam@fragsandfortunes.com"],
+              subject: `🏆 Round Finished: ${roundName} - Winners Summary`,
+              html: summaryEmailHtml,
+            });
+
+            if (summaryEmailError) {
+              console.error(`Failed to send team summary email:`, summaryEmailError);
+            } else {
+              console.log(`✅ Team summary email sent for round ${round.id}`);
               await new Promise(resolve => setTimeout(resolve, 600));
-              console.log(`✅ Email sent to ${winnerData.username} (${userEmail})`);
+            }
+          } catch (summaryError) {
+            console.error(`Error sending team summary email:`, summaryError);
+          }
+        }
+
+        console.log(`Winners processed for round ${round.id}: ${unsentWinners.length} winners`);
+      } else {
+        console.log(`No unsent notifications for round ${round.id}`);
+      }
+
+      // ========== CONSOLATION PRIZES FOR PAID ROUNDS ==========
+      if (round.is_paid === true) {
+        console.log(`📧 Processing consolation prizes for paid round ${round.id}`);
+        
+        // Get all winner user_ids for this round
+        const { data: winnerUsers } = await supabase
+          .from('fantasy_round_winners')
+          .select('user_id')
+          .eq('round_id', round.id);
+        
+        const winnerUserIds = new Set((winnerUsers || []).map(w => w.user_id));
+        
+        // Get all users who already received consolation
+        const { data: existingConsolations } = await supabase
+          .from('fantasy_round_consolations')
+          .select('user_id')
+          .eq('round_id', round.id);
+        
+        const consoledUserIds = new Set((existingConsolations || []).map(c => c.user_id));
+        
+        // Get all picks for this round ordered by score
+        const { data: allPicks, error: picksError } = await supabase
+          .from('fantasy_round_picks')
+          .select('user_id, total_score')
+          .eq('round_id', round.id)
+          .order('total_score', { ascending: false });
+        
+        if (picksError) {
+          console.error(`Error fetching picks for consolation:`, picksError);
+        } else if (allPicks && allPicks.length > 0) {
+          // Find non-winners who haven't been consoled yet
+          const nonWinnerPicks = allPicks
+            .map((pick, index) => ({ ...pick, position: index + 1 }))
+            .filter(pick => !winnerUserIds.has(pick.user_id) && !consoledUserIds.has(pick.user_id));
+          
+          console.log(`Found ${nonWinnerPicks.length} users eligible for consolation prizes`);
+          
+          for (const pick of nonWinnerPicks) {
+            try {
+              // Get profile to check if test user
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('username, full_name, test')
+                .eq('id', pick.user_id)
+                .single();
+              
+              // Skip test users
+              if (profile?.test === true) {
+                console.log(`Skipping test user ${pick.user_id} for consolation`);
+                continue;
+              }
+              
+              // Get user email
+              const { data: authUser } = await supabase.auth.admin.getUserById(pick.user_id);
+              const userEmail = authUser?.user?.email;
+              
+              if (!userEmail) {
+                console.log(`No email found for user ${pick.user_id}, skipping consolation`);
+                continue;
+              }
+              
+              const username = profile?.username || profile?.full_name || 'Player';
+              
+              // Grant 10 bonus credits
+              const { error: creditError } = await supabase.rpc('grant_bonus_credits', {
+                p_user_id: pick.user_id,
+                p_amount: 10,
+                p_source: 'paid_round_consolation'
+              });
+              
+              if (creditError) {
+                console.error(`Failed to grant consolation credits to ${pick.user_id}:`, creditError);
+                continue;
+              }
+              
+              // Insert consolation record
+              const { error: insertError } = await supabase
+                .from('fantasy_round_consolations')
+                .insert({
+                  round_id: round.id,
+                  user_id: pick.user_id,
+                  finish_position: pick.position,
+                  total_score: pick.total_score,
+                  credits_awarded: 10,
+                  notification_sent: false
+                });
+              
+              if (insertError) {
+                console.error(`Failed to insert consolation record:`, insertError);
+                continue;
+              }
+              
+              // Send consolation email
+              const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+              const emailSubject = `💪 Keep Going! You finished ${getOrdinal(pick.position)} in the ${roundName} - Here's 10 Bonus Credits!`;
+              const emailHtml = generateConsolationEmail({
+                username,
+                finish_position: pick.position,
+                total_score: pick.total_score,
+                round_name: roundName,
+                round_type: round.type
+              });
+              
+              const { error: emailError } = await resend.emails.send({
+                from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+                to: [userEmail],
+                subject: emailSubject,
+                html: emailHtml,
+              });
+              
+              if (emailError) {
+                console.error(`Failed to send consolation email to ${userEmail}:`, emailError);
+              } else {
+                await supabase
+                  .from('fantasy_round_consolations')
+                  .update({ notification_sent: true })
+                  .eq('round_id', round.id)
+                  .eq('user_id', pick.user_id);
+                
+                totalConsolationEmailsSent++;
+                console.log(`✅ Consolation email sent to ${username} (${userEmail}) - ${getOrdinal(pick.position)} place`);
+                await new Promise(resolve => setTimeout(resolve, 600));
+              }
+            } catch (err) {
+              console.error(`Error processing consolation for user ${pick.user_id}:`, err);
             }
           }
-        } catch (emailError) {
-          console.error(`Error sending email for winner ${winner.id}:`, emailError);
         }
       }
 
-      // Send team summary email
-      if (winnersForSummary.length > 0) {
-        try {
-          const summaryEmailHtml = generateTeamSummaryEmail(round, winnersForSummary);
-          const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
-          
-          const { error: summaryEmailError } = await resend.emails.send({
-            from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
-            to: ["theteam@fragsandfortunes.com"],
-            subject: `🏆 Round Finished: ${roundName} - Winners Summary`,
-            html: summaryEmailHtml,
-          });
-
-          if (summaryEmailError) {
-            console.error(`Failed to send team summary email:`, summaryEmailError);
-          } else {
-            console.log(`✅ Team summary email sent for round ${round.id}`);
-            // Rate limit: wait 600ms after summary email
-            await new Promise(resolve => setTimeout(resolve, 600));
-          }
-        } catch (summaryError) {
-          console.error(`Error sending team summary email:`, summaryError);
-        }
-      }
-
-      console.log(`Winners processed for round ${round.id}: ${unsentWinners.length} winners`);
-
-      // Mark round as 'finished' after successfully processing winners
+      // Mark round as 'finished' after successfully processing
       const { error: statusError } = await supabase
         .from('fantasy_rounds')
         .update({ status: 'finished', updated_at: new Date().toISOString() })
@@ -205,6 +330,7 @@ serve(async (req) => {
         rounds_processed: recentlyFinishedRounds?.length || 0,
         winners_awarded: totalWinnersAwarded,
         emails_sent: totalEmailsSent,
+        consolation_emails_sent: totalConsolationEmailsSent,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
@@ -218,10 +344,15 @@ serve(async (req) => {
   }
 });
 
+function getOrdinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 function getPrizeAmount(position: number, round: any): string {
   const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
   
-  // Use dynamic prize values from round if available
   if (position === 1 && round.prize_1st !== null) {
     return prizeType === 'vouchers' ? formatPence(round.prize_1st) : `${round.prize_1st}`;
   }
@@ -232,13 +363,11 @@ function getPrizeAmount(position: number, round: any): string {
     return prizeType === 'vouchers' ? formatPence(round.prize_3rd) : `${round.prize_3rd}`;
   }
   
-  // Fallback to legacy monthly prizes
   if (round.type === 'monthly') {
     const monthlyPrizes: Record<number, string> = { 1: '£100', 2: '£30', 3: '£5' };
     return monthlyPrizes[position] || '£0';
   }
   
-  // Default credit prizes
   const defaultCredits: Record<number, number> = { 1: 200, 2: 100, 3: 50 };
   return `${defaultCredits[position] || 0}`;
 }
@@ -266,7 +395,6 @@ function generateTeamSummaryEmail(round: any, winners: any[]): string {
   const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
   const prizeTypeLabel = prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits';
   
-  // Sort winners by position
   const sortedWinners = [...winners].sort((a, b) => a.finish_position - b.finish_position);
   
   const winnersHtml = sortedWinners.map(winner => {
@@ -280,21 +408,11 @@ function generateTeamSummaryEmail(round: any, winners: any[]): string {
     
     return `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
-          ${medals[position]} ${places[position]}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
-          ${winner.username}${testUserBadge}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
-          ${winner.user_email}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
-          ${winner.total_score} pts
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">
-          <strong>${prizeDisplay}</strong>
-        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">${medals[position]} ${places[position]}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">${winner.username}${testUserBadge}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">${winner.user_email}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;">${winner.total_score} pts</td>
+        <td style="padding: 12px; border-bottom: 1px solid #E2E8F0;"><strong>${prizeDisplay}</strong></td>
       </tr>
     `;
   }).join('');
@@ -329,77 +447,35 @@ function generateTeamSummaryEmail(round: any, winners: any[]): string {
         
         <div class="content">
           <div class="info-box">
-            <div class="info-row">
-              <span><strong>Round Name:</strong></span>
-              <span>${roundName}</span>
-            </div>
-            <div class="info-row">
-              <span><strong>Round Type:</strong></span>
-              <span>${roundType}</span>
-            </div>
-            <div class="info-row">
-              <span><strong>Prize Type:</strong></span>
-              <span>${prizeTypeLabel}</span>
-            </div>
-            <div class="info-row">
-              <span><strong>End Date:</strong></span>
-              <span>${new Date(round.end_date).toLocaleDateString('en-GB', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
-            </div>
+            <div class="info-row"><span><strong>Round Name:</strong></span><span>${roundName}</span></div>
+            <div class="info-row"><span><strong>Round Type:</strong></span><span>${roundType}</span></div>
+            <div class="info-row"><span><strong>Prize Type:</strong></span><span>${prizeTypeLabel}</span></div>
+            <div class="info-row"><span><strong>End Date:</strong></span><span>${new Date(round.end_date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
           </div>
 
           ${testUserCount > 0 ? `
-          <div class="warning-box">
-            ⚠️ <strong>${testUserCount} of ${sortedWinners.length} winners are TEST USERS</strong> - No action required for test user prizes.
-          </div>
+          <div class="warning-box">⚠️ <strong>${testUserCount} of ${sortedWinners.length} winners are TEST USERS</strong> - No action required for test user prizes.</div>
           ` : `
-          <div class="success-box">
-            ✅ <strong>All ${sortedWinners.length} winners are real users</strong> - ${prizeType === 'vouchers' ? 'Steam vouchers need to be sent.' : 'Credits have been awarded automatically.'}
-          </div>
+          <div class="success-box">✅ <strong>All ${sortedWinners.length} winners are real users</strong> - ${prizeType === 'vouchers' ? 'Steam vouchers need to be sent.' : 'Credits have been awarded automatically.'}</div>
           `}
 
           <h2>🏅 Winners</h2>
           <table>
-            <thead>
-              <tr>
-                <th>Position</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Score</th>
-                <th>Prize</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${winnersHtml}
-            </tbody>
+            <thead><tr><th>Position</th><th>Username</th><th>Email</th><th>Score</th><th>Prize</th></tr></thead>
+            <tbody>${winnersHtml}</tbody>
           </table>
 
           ${prizeType === 'vouchers' && realUserCount > 0 ? `
-          <div class="warning-box">
-            📧 <strong>Action Required:</strong> Please send Steam vouchers to the ${realUserCount} real user(s) listed above.
-          </div>
+          <div class="warning-box">📧 <strong>Action Required:</strong> Please send Steam vouchers to the ${realUserCount} real user(s) listed above.</div>
           ` : ''}
 
-          <p style="color: #718096; font-size: 14px; margin-top: 30px;">
-            This is an automated notification from Frags & Fortunes.
-          </p>
+          <p style="color: #718096; font-size: 14px; margin-top: 30px;">This is an automated notification from Frags & Fortunes.</p>
         </div>
       </div>
     </body>
     </html>
   `;
 }
-
-// Monthly Steam voucher prizes (legacy fallback)
-const MONTHLY_STEAM_PRIZES: Record<number, string> = {
-  1: '£100',
-  2: '£30',
-  3: '£5',
-};
 
 function generateWinnerEmail(winner: any, round: any): string {
   const medals = ['🥇', '🥈', '🥉'];
@@ -419,12 +495,8 @@ function generateWinnerEmail(winner: any, round: any): string {
           </div>
           
           <div style="background: #EBF8FF; border: 2px solid #63B3ED; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
-            <p style="margin: 0; color: #2B6CB0; font-size: 16px;">
-              🎮 <strong>We'll be in contact shortly to process your Steam voucher prize!</strong>
-            </p>
-            <p style="margin: 10px 0 0 0; color: #4A5568; font-size: 14px;">
-              Please keep an eye on your inbox for further details.
-            </p>
+            <p style="margin: 0; color: #2B6CB0; font-size: 16px;">🎮 <strong>We'll be in contact shortly to process your Steam voucher prize!</strong></p>
+            <p style="margin: 10px 0 0 0; color: #4A5568; font-size: 14px;">Please keep an eye on your inbox for further details.</p>
           </div>
   ` : `
           <div class="prize-box">
@@ -470,32 +542,86 @@ function generateWinnerEmail(winner: any, round: any): string {
           ${prizeSection}
           
           <div class="stats">
-            <div class="stat-row">
-              <span><strong>Your Position:</strong></span>
-              <span>${places[position]} Place</span>
-            </div>
-            <div class="stat-row">
-              <span><strong>Final Score:</strong></span>
-              <span>${winner.total_score} points</span>
-            </div>
-            <div class="stat-row">
-              <span><strong>Round Type:</strong></span>
-              <span>${roundTypeTitle}</span>
-            </div>
-            <div class="stat-row" style="border-bottom: none;">
-              <span><strong>Prize:</strong></span>
-              <span>${isVoucherPrize ? winner.prize_amount + ' Steam Voucher' : winner.credits_awarded + ' Credits'}</span>
-            </div>
+            <div class="stat-row"><span><strong>Your Position:</strong></span><span>${places[position]} Place</span></div>
+            <div class="stat-row"><span><strong>Final Score:</strong></span><span>${winner.total_score} points</span></div>
+            <div class="stat-row"><span><strong>Round Type:</strong></span><span>${roundTypeTitle}</span></div>
+            <div class="stat-row" style="border-bottom: none;"><span><strong>Prize:</strong></span><span>${isVoucherPrize ? winner.prize_amount + ' Steam Voucher' : winner.credits_awarded + ' Credits'}</span></div>
           </div>
           
           <p>${closingText}</p>
           
-          <center>
-            <a href="https://fragsandfortunes.com/fantasy" class="cta-button">View Leaderboard</a>
-          </center>
+          <center><a href="https://fragsandfortunes.com/fantasy" class="cta-button">View Leaderboard</a></center>
           
           <div class="footer">
             <p>Keep up the great work and see you in the next round!</p>
+            <p>- The Frags & Fortunes Team</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateConsolationEmail(data: { username: string; finish_position: number; total_score: number; round_name: string; round_type: string }): string {
+  const { username, finish_position, total_score, round_name, round_type } = data;
+  const roundTypeTitle = round_type.charAt(0).toUpperCase() + round_type.slice(1);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%); color: white; border-radius: 10px 10px 0 0; }
+        .emoji { font-size: 64px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .prize-box { background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%); color: white; padding: 30px; text-align: center; border-radius: 10px; margin: 30px 0; }
+        .prize-amount { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .stats { background: #f7fafc; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
+        .info-box { background: #EDE9FE; border: 2px solid #A855F7; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .cta-button { display: inline-block; background: #7C3AED; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold; }
+        .footer { text-align: center; color: #718096; margin-top: 40px; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="emoji">💪</div>
+          <h1>Keep Fighting, ${username}!</h1>
+          <p style="font-size: 20px; margin: 10px 0;">You finished ${getOrdinal(finish_position)} in the ${round_name}</p>
+        </div>
+        
+        <div class="content">
+          <p style="font-size: 18px;">Thanks for competing in the <strong>${roundTypeTitle} Fantasy Round</strong>! You didn't make the podium this time, but we appreciate your participation.</p>
+          
+          <div class="prize-box">
+            <p style="margin: 0; font-size: 20px;">Here's a gift from us</p>
+            <div class="prize-amount">10</div>
+            <p style="margin: 0; font-size: 20px;">Bonus Credits!</p>
+          </div>
+          
+          <div class="info-box">
+            <h3 style="margin: 0 0 15px 0; color: #7C3AED;">💡 How Bonus Credits Help You Win</h3>
+            <p style="margin: 0; color: #5B21B6;">
+              <strong>More credits = higher budget cap!</strong> With extra budget, you can pick stronger, higher-ranked teams for your roster. Better teams score more points, giving you a much better chance of finishing on the podium next time!
+            </p>
+          </div>
+          
+          <div class="stats">
+            <div class="stat-row"><span><strong>Your Position:</strong></span><span>${getOrdinal(finish_position)} Place</span></div>
+            <div class="stat-row"><span><strong>Final Score:</strong></span><span>${total_score} points</span></div>
+            <div class="stat-row" style="border-bottom: none;"><span><strong>Consolation Prize:</strong></span><span>10 Bonus Credits</span></div>
+          </div>
+          
+          <p>Don't give up! Use your bonus credits in the next round and aim for the podium. Every round is a fresh start!</p>
+          
+          <center><a href="https://fragsandfortunes.com/fantasy" class="cta-button">Try Again</a></center>
+          
+          <div class="footer">
+            <p>See you in the next round!</p>
             <p>- The Frags & Fortunes Team</p>
           </div>
         </div>
