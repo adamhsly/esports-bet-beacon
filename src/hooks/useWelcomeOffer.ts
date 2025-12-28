@@ -4,12 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface WelcomeOfferStatus {
+  tier: number;
   totalSpentPence: number;
   thresholdPence: number;
   offerClaimed: boolean;
   promoBalancePence: number;
   promoExpiresAt: string | null;
   rewardPence: number;
+  tier1Complete: boolean;
 }
 
 async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStatus> {
@@ -22,18 +24,18 @@ async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStat
 
   const result = data as
     | {
+        tier?: number;
         total_spent_pence?: number;
         threshold_pence?: number;
         offer_claimed?: boolean;
         promo_balance_pence?: number;
         promo_expires_at?: string;
         reward_pence?: number;
+        tier1_complete?: boolean;
       }
     | null;
 
   // Prefer profile values when available.
-  // claim_welcome_bonus updates public.profiles (welcome_offer_claimed / promo_balance_pence).
-  // get_welcome_offer_status historically read user_promo_balance/user_welcome_spending.
   let offerClaimed = result?.offer_claimed ?? false;
   let promoBalancePence = result?.promo_balance_pence ?? 0;
   let promoExpiresAt: string | null = result?.promo_expires_at ?? null;
@@ -55,12 +57,14 @@ async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStat
   }
 
   return {
+    tier: result?.tier ?? 1,
     totalSpentPence: result?.total_spent_pence ?? 0,
-    thresholdPence: result?.threshold_pence ?? 500,
+    thresholdPence: result?.threshold_pence ?? 0,
     offerClaimed,
     promoBalancePence,
     promoExpiresAt,
     rewardPence: result?.reward_pence ?? 1000,
+    tier1Complete: result?.tier1_complete ?? false,
   };
 }
 
@@ -76,7 +80,8 @@ export function useWelcomeOffer() {
   const status = query.data ?? null;
 
   const progressPercent = useMemo(() => {
-    return status ? Math.min(100, Math.round((status.totalSpentPence / status.thresholdPence) * 100)) : 0;
+    if (!status || status.thresholdPence === 0) return 0;
+    return Math.min(100, Math.round((status.totalSpentPence / status.thresholdPence) * 100));
   }, [status]);
 
   const daysRemaining = useMemo(() => {
@@ -92,16 +97,48 @@ export function useWelcomeOffer() {
     return status?.promoExpiresAt ? new Date(status.promoExpiresAt).getTime() < Date.now() : false;
   }, [status?.promoExpiresAt]);
 
-  const displayState: 'progress' | 'active' | 'expired' | 'completed' | null =
-    !status
-      ? null
-      : status.promoBalancePence > 0 && !isExpired
-        ? 'active'
-        : status.promoBalancePence > 0 && isExpired
-          ? 'expired'
-          : status.offerClaimed && status.promoBalancePence === 0
-            ? 'completed'
-            : 'progress';
+  // Display state logic considering tiers
+  const displayState: 'progress' | 'active' | 'expired' | 'completed' | null = useMemo(() => {
+    if (!status) return null;
+    
+    // Has active promo balance and not expired
+    if (status.promoBalancePence > 0 && !isExpired) {
+      return 'active';
+    }
+    
+    // Has promo balance but expired
+    if (status.promoBalancePence > 0 && isExpired) {
+      return 'expired';
+    }
+    
+    // Tier 1: Free bonus not yet claimed
+    if (status.tier === 1 && !status.offerClaimed) {
+      return 'progress';
+    }
+    
+    // Tier 2: Spend $5 to unlock bonus
+    if (status.tier === 2 && !status.offerClaimed) {
+      return 'progress';
+    }
+    
+    // Fully completed (claimed and used up, no more tiers)
+    if (status.offerClaimed && status.promoBalancePence === 0) {
+      // For tier 2, this means they're done
+      if (status.tier === 2) {
+        return 'completed';
+      }
+      // For tier 1, they might be transitioning to tier 2 (handled by DB)
+      return 'completed';
+    }
+    
+    return null;
+  }, [status, isExpired]);
+
+  // Can claim tier 2 when threshold is met
+  const canClaimTier2 = useMemo(() => {
+    if (!status || status.tier !== 2) return false;
+    return status.totalSpentPence >= status.thresholdPence && !status.offerClaimed;
+  }, [status]);
 
   return {
     status,
@@ -112,5 +149,6 @@ export function useWelcomeOffer() {
     daysRemaining,
     isExpired,
     displayState,
+    canClaimTier2,
   };
 }
