@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.track-pageview]
 verify_jwt = false
+
+[functions.daily-round-report]
+verify_jwt = false
