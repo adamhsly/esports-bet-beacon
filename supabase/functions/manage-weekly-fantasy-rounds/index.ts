@@ -90,11 +90,40 @@ Deno.serve(async (_req) => {
 
     console.log(`🆕 Created ${newRounds?.length || 0} weekly rounds for ${dateLabel}`);
 
+    // Calculate team prices for each new round
+    const priceResults: any[] = [];
+    for (const round of newRounds || []) {
+      console.log(`💰 Calculating team prices for round: ${round.round_name} (${round.id})`);
+      try {
+        const priceResponse = await fetch(`${supabaseUrl}/functions/v1/calculate-team-prices`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({ round_id: round.id }),
+        });
+        
+        if (!priceResponse.ok) {
+          console.error(`❌ Failed to calculate prices for ${round.round_name}: ${priceResponse.status}`);
+          priceResults.push({ round_id: round.id, success: false, error: `HTTP ${priceResponse.status}` });
+        } else {
+          const result = await priceResponse.json();
+          console.log(`✅ Calculated ${result.updated || 0} team prices for ${round.round_name}`);
+          priceResults.push({ round_id: round.id, success: true, teams_priced: result.updated || 0 });
+        }
+      } catch (err: any) {
+        console.error(`❌ Error calculating prices for ${round.round_name}:`, err);
+        priceResults.push({ round_id: round.id, success: false, error: err?.message || String(err) });
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         created_rounds: newRounds?.length || 0,
         date_range: `${startDate.toISOString()} → ${endDate.toISOString()}`,
+        price_calculations: priceResults,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
