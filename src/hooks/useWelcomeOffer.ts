@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +70,7 @@ async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStat
 
 export function useWelcomeOffer() {
   const { user } = useAuth();
+  const previousTierRef = useRef<number | null>(null);
 
   const query = useQuery({
     queryKey: ['welcomeOffer', user?.id],
@@ -78,6 +79,54 @@ export function useWelcomeOffer() {
   });
 
   const status = query.data ?? null;
+
+  // Detect when user just unlocked tier 2 (transitions from tier 1 to tier 2)
+  const justUnlockedTier2 = useMemo(() => {
+    if (!user?.id || !status) return false;
+    
+    // Check if we've stored that this user has already seen the tier 2 unlock popup
+    const tier2UnlockSeenKey = `tier2UnlockSeen_${user.id}`;
+    const tier2UnlockSeen = localStorage.getItem(tier2UnlockSeenKey) === 'true';
+    
+    // If tier 2 and not yet seen the unlock popup
+    if (status.tier === 2 && !tier2UnlockSeen) {
+      return true;
+    }
+    
+    return false;
+  }, [status, user?.id]);
+
+  // Track when tier 2 popup is shown
+  const markTier2UnlockSeen = () => {
+    if (user?.id) {
+      localStorage.setItem(`tier2UnlockSeen_${user.id}`, 'true');
+    }
+  };
+
+  // Check if we should show tier 2 popup on login (2nd time)
+  const shouldShowTier2OnLogin = useMemo(() => {
+    if (!user?.id || !status || status.tier !== 2) return false;
+    
+    // Only show if tier 2 unlock was seen but this is a new session
+    const tier2UnlockSeenKey = `tier2UnlockSeen_${user.id}`;
+    const tier2LoginShownKey = `tier2LoginShown_${user.id}`;
+    const tier2SessionKey = `tier2ShownThisSession_${user.id}`;
+    
+    const tier2UnlockSeen = localStorage.getItem(tier2UnlockSeenKey) === 'true';
+    const tier2LoginShown = localStorage.getItem(tier2LoginShownKey) === 'true';
+    const shownThisSession = sessionStorage.getItem(tier2SessionKey) === 'true';
+    
+    // Show if: unlock was seen, haven't shown on login yet, and not shown this session
+    return tier2UnlockSeen && !tier2LoginShown && !shownThisSession;
+  }, [status, user?.id]);
+
+  // Mark tier 2 login popup as shown
+  const markTier2LoginShown = () => {
+    if (user?.id) {
+      localStorage.setItem(`tier2LoginShown_${user.id}`, 'true');
+      sessionStorage.setItem(`tier2ShownThisSession_${user.id}`, 'true');
+    }
+  };
 
   const progressPercent = useMemo(() => {
     if (!status || status.thresholdPence === 0) return 0;
@@ -150,5 +199,9 @@ export function useWelcomeOffer() {
     isExpired,
     displayState,
     canClaimTier2,
+    justUnlockedTier2,
+    markTier2UnlockSeen,
+    shouldShowTier2OnLogin,
+    markTier2LoginShown,
   };
 }

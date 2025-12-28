@@ -218,7 +218,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                   </div>
                   <div>
                     <p className="text-sm text-white">Claim your {rewardAmount}</p>
-                    <p className="text-xs text-gray-400">Added to your promo balance for 30 days</p>
+                    <p className="text-xs text-gray-400">Added to your promo balance for 2 days</p>
                   </div>
                 </div>
               </div>
@@ -269,7 +269,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
           <div className="border-t border-gray-700 pt-3">
             <p className="text-xs text-gray-500">
               {status?.tier === 2 
-                ? `Spend ${thresholdAmount} on paid entries to unlock ${rewardAmount} bonus. Promo balance valid for 30 days after claiming.`
+                ? `Spend ${thresholdAmount} on paid entries to unlock ${rewardAmount} bonus. Promo balance valid for 2 days after claiming.`
                 : `Promo balance is valid for 30 days after claiming. Can only be used on paid fantasy round entries. One welcome bonus per account.`
               }
             </p>
