@@ -207,11 +207,12 @@ serve(async (req)=>{
     const FACEIT_DAYS_LOOKBACK = Number(body?.FACEIT_DAYS_LOOKBACK ?? DEFAULTS.FACEIT_DAYS_LOOKBACK);
     const PANDASCORE_DAYS_LOOKBACK = Number(body?.PANDASCORE_DAYS_LOOKBACK ?? DEFAULTS.PANDASCORE_DAYS_LOOKBACK);
     
-    // Fetch all open/active rounds (optionally filter by type)
+    // Fetch all open/active/scheduled rounds (optionally filter by type)
     // ✅ FIX #2: Filter out private rounds
+    // ✅ FIX #3: Include 'scheduled' status so upcoming rounds get test picks
     let q = supabase.from("fantasy_rounds")
-      .select("id, type, start_date, end_date, status, is_private")
-      .in("status", ["open", "active"])
+      .select("id, type, start_date, end_date, status, is_private, round_name")
+      .in("status", ["open", "active", "scheduled"])
       .eq("is_private", false)  // Only public rounds
       .order("start_date", { ascending: false });
     if (ROUND_TYPE) q = q.eq("type", ROUND_TYPE);
