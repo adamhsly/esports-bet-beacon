@@ -109,11 +109,6 @@ const WelcomeOfferBadge: React.FC = () => {
                     : `Spend ${thresholdAmount} Get ${formatPence(status.rewardPence)}`
                   }
                 </span>
-                {!canClaimTier2 && (
-                  <span className="text-xs text-gray-400">
-                    ({spentAmount}/{thresholdAmount})
-                  </span>
-                )}
                 <InfoButton />
               </div>
             </TooltipTrigger>
