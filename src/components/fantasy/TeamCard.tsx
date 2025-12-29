@@ -113,41 +113,38 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               </div>
             </div>
             
-            {/* Stats Button and Price */}
-            <div className="flex items-center gap-2 ml-4">
-              {/* Stats Button - For both Pro and Amateur teams */}
-              {onStatsClick && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatsClick(team);
-                  }}
-                  className={`h-8 px-2 text-xs ${isAmateur ? 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-400/10'}`}
-                >
-                  <BarChart3 className="w-3 h-3 mr-1" />
-                  Stats
-                </Button>
-              )}
-              
-              {/* Price */}
-              {showPrice && <div className="text-right">
-                  <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
-                    {team.price ?? 0}
-                  </div>
-                  <div className="text-xs text-gray-400">credits</div>
-                </div>}
-            </div>
+            {/* Price */}
+            {showPrice && <div className="text-right ml-4">
+                <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+                  {team.price ?? 0}
+                </div>
+                <div className="text-xs text-gray-400">credits</div>
+              </div>}
           </div>
           
           {/* Stats Row with Add/Remove Button */}
           <div className="mt-3 flex items-center justify-between text-xs">
-            <div>
-              <span className="text-gray-400">Matches:</span>
-              <span className="ml-1 text-white font-medium">
-                {team.match_volume ?? 0}
-              </span>
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="text-gray-400">Matches:</span>
+                <span className="ml-1 text-white font-medium">
+                  {team.match_volume ?? 0}
+                </span>
+              </div>
+              
+              {/* Stats Link */}
+              {onStatsClick && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStatsClick(team);
+                  }}
+                  className={`flex items-center gap-1 hover:underline ${isAmateur ? 'text-orange-400 hover:text-orange-300' : 'text-blue-400 hover:text-blue-300'}`}
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  Stats
+                </button>
+              )}
             </div>
             
             {/* Add/Remove Team Button */}
