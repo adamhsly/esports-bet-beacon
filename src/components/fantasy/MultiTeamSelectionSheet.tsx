@@ -326,7 +326,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     ? tempSelectedTeams.length === 1 
     : (tempSelectedTeams.length <= 5 && tempBudgetSpent <= effectiveTotalBudget);
   return <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-l border-gray-700/50">
+      <SheetContent side="right" className="w-full sm:max-w-2xl bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-l border-gray-700/50 flex flex-col h-full overflow-hidden">
         <SheetHeader className="border-b border-gray-700/50 pb-6">
           
           {/* Budget & Selection Status */}
@@ -365,8 +365,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         </SheetHeader>
 
         {/* Tabs */}
-        <div className="mt-6">
-          <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'pro' | 'amateur')} className="flex-1">
+        <div className="mt-6 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'pro' | 'amateur')} className="flex-1 flex flex-col min-h-0">
             {round.team_type === 'both' || !round.team_type ? (
               <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
                 <TabsTrigger value="pro" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
@@ -382,7 +382,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
             {/* Pro Teams Tab */}
             {(!round.team_type || round.team_type === 'both' || round.team_type === 'pro') && (
-            <TabsContent value="pro" className="mt-6 space-y-4">
+            <TabsContent value="pro" className="mt-6 space-y-4 flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Pro Filters */}
               <div className="space-y-4">
                 <div className="relative">
@@ -436,7 +436,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
               
               {/* Pro Team List */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 flex-1 overflow-y-auto min-h-0 pb-4">
                 {filteredProTeams.map(team => {
                 const isSelected = tempSelectedTeams.find(t => t.id === team.id);
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
@@ -454,7 +454,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
             {/* Amateur Teams Tab */}
             {(!round.team_type || round.team_type === 'both' || round.team_type === 'amateur') && (
-            <TabsContent value="amateur" className="mt-6 space-y-4">
+            <TabsContent value="amateur" className="mt-6 space-y-4 flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Amateur Warning Banner */}
               
               
@@ -537,7 +537,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
               
               {/* Amateur Team List */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 flex-1 overflow-y-auto min-h-0 pb-4">
                 {filteredAmateurTeams.map(team => {
                 const isSelected = tempSelectedTeams.find(t => t.id === team.id);
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
