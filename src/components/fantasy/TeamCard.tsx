@@ -141,14 +141,32 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             </div>
           </div>
           
-          {/* Stats */}
-          <div className="mt-3 grid grid-cols-1 gap-2 text-xs">
+          {/* Stats Row with Add/Remove Button */}
+          <div className="mt-3 flex items-center justify-between text-xs">
             <div>
               <span className="text-gray-400">Matches:</span>
               <span className="ml-1 text-white font-medium">
                 {team.match_volume ?? 0}
               </span>
             </div>
+            
+            {/* Add/Remove Team Button */}
+            <Button
+              variant={isSelected ? "outline" : "default"}
+              size="sm"
+              className={`h-7 px-3 text-xs font-semibold transition-all ${
+                isSelected 
+                  ? 'border-red-500/70 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400' 
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_15px_rgba(168,85,247,0.6)]'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (canAfford) onClick();
+              }}
+              disabled={!canAfford && !isSelected}
+            >
+              {isSelected ? 'Remove Team' : 'Add Team'}
+            </Button>
           </div>
 
           {/* Star Team Double Points Label */}
