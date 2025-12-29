@@ -94,7 +94,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
 
   // Selection modal variant (rich styling)
   if (variant === 'selection') {
-    return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : `hover:shadow-md ${canAfford ? 'hover:ring-1 hover:ring-gray-400/30' : 'opacity-50 cursor-not-allowed'}`} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={canAfford ? onClick : undefined}>
+    return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : `${canAfford ? 'border-2 border-purple-500/70 shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:border-purple-400 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'opacity-50 cursor-not-allowed border-gray-700/50'}`} bg-gradient-to-br from-gray-900/90 to-gray-800/90`} onClick={canAfford ? onClick : undefined}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             {/* Team Logo */}
