@@ -165,7 +165,7 @@ const PlaceholderCard: React.FC<{
         </div>
 
         {/* Add Team Button */}
-        <button className="h-7 px-4 text-xs font-semibold rounded-md bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all relative z-10">
+        <button className="h-7 px-4 text-xs font-semibold rounded-md bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all relative z-10 mb-2">
           Add Team
         </button>
         
