@@ -149,33 +149,33 @@ const PlaceholderCard: React.FC<{
   onClick
 }) => {
   return <div 
-    className="relative rounded-xl w-full h-full border-2 border-dashed border-gray-600/30 p-[2px] transition-all duration-500 hover:border-gray-500/50 hover:shadow-[0_0_20px_rgba(107,114,128,0.3)] group cursor-pointer"
+    className="relative rounded-xl w-full h-full border-2 border-purple-500/60 p-[2px] transition-all duration-500 hover:border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] group cursor-pointer"
     onClick={onClick}
   >
       <div className="relative rounded-[10px] bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 p-4 h-full flex flex-col justify-center items-center backdrop-blur-sm overflow-hidden">
         {/* Animated background particles */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-3 right-3 w-1 h-1 rounded-full bg-gray-400 animate-ping"></div>
-          <div className="absolute bottom-5 left-5 w-0.5 h-0.5 rounded-full bg-gray-500 animate-ping delay-700"></div>
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-3 right-3 w-1 h-1 rounded-full bg-purple-400 animate-ping"></div>
+          <div className="absolute bottom-5 left-5 w-0.5 h-0.5 rounded-full bg-blue-400 animate-ping delay-700"></div>
         </div>
 
         {/* Placeholder Icon */}
-        <div className="w-14 h-14 rounded-lg border border-gray-600/30 bg-gray-800/20 backdrop-blur-sm flex items-center justify-center mb-6 relative z-10 transition-all duration-300 group-hover:border-gray-500/50 group-hover:bg-gray-700/30">
-          <Star className="w-7 h-7 text-gray-500 group-hover:text-gray-400 transition-colors duration-300" />
+        <div className="w-14 h-14 rounded-lg border border-purple-500/40 bg-purple-500/10 backdrop-blur-sm flex items-center justify-center mb-6 relative z-10 transition-all duration-300 group-hover:border-purple-400/60 group-hover:bg-purple-500/20">
+          <Star className="w-7 h-7 text-purple-300 group-hover:text-purple-200 transition-colors duration-300" />
         </div>
 
         {/* Placeholder Text */}
-        <div className="text-gray-400 font-bold text-sm text-center tracking-widest mb-2 relative z-10 group-hover:text-gray-300 transition-colors duration-300">
+        <div className="text-white font-bold text-sm text-center tracking-widest mb-2 relative z-10">
           SELECT TEAM
         </div>
         
         {/* Slot Number */}
-        <div className="text-gray-600 text-xs tracking-wide relative z-10 group-hover:text-gray-500 transition-colors duration-300">
+        <div className="text-gray-300 text-xs tracking-wide relative z-10 group-hover:text-white transition-colors duration-300">
           Slot {index + 1}
         </div>
 
         {/* Hover effect overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-700/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
     </div>;
 };
