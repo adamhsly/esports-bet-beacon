@@ -9,7 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
-import { Search, Filter, Trophy, Users, AlertTriangle, X, Plus, Trash2 } from 'lucide-react';
+import { Search, Filter, Trophy, Users, AlertTriangle, X, Plus, Trash2, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useDebounce } from '@/hooks/useDebounce';
 import { TeamCard } from './TeamCard';
 import { Progress } from '@/components/ui/progress';
@@ -412,15 +413,27 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 
               </div>
               
-              {/* Pro Teams Pricing Explanation */}
-              <div className="text-xs italic text-gray-400 mb-3 px-1">
-                Match count shows games scheduled during this round's period. 
-                Credits are based on recent win rate and match volume.
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                  Pick your teams ({tempSelectedTeams.length}/5)
+                </h3>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="w-5 h-5 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors">
+                      <Info className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md bg-gradient-to-br from-[#1B1F28] to-[#0B0F14] border-gray-700/50">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Team Pricing Info</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-gray-300">
+                      Match count shows games scheduled during this round's period. 
+                      Credits are based on recent win rate and match volume.
+                    </p>
+                  </DialogContent>
+                </Dialog>
               </div>
-              
-              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                Pick your teams ({tempSelectedTeams.length}/5)
-              </h3>
               
               {/* Pro Team List */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -492,24 +505,36 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 </div>
               </div>
               
-              {/* Amateur Teams Pricing Explanation */}
-              <div className="text-xs italic text-gray-400 mb-3 px-1">
-                {round.is_private || round.type === 'private' ? (
-                  <>
-                    Match count shows games played in the last 3 months before this round. 
-                    Credits are based on win rate and abandon rate during that period.
-                  </>
-                ) : (
-                  <>
-                    Match count shows games played in the previous {round.type} period. 
-                    Credits are based on win rate and abandon rate from that timeframe.
-                  </>
-                )}
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                  Pick your teams ({tempSelectedTeams.length}/5)
+                </h3>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="w-5 h-5 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors">
+                      <Info className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md bg-gradient-to-br from-[#1B1F28] to-[#0B0F14] border-gray-700/50">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Team Pricing Info</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-gray-300">
+                      {round.is_private || round.type === 'private' ? (
+                        <>
+                          Match count shows games played in the last 3 months before this round. 
+                          Credits are based on win rate and abandon rate during that period.
+                        </>
+                      ) : (
+                        <>
+                          Match count shows games played in the previous {round.type} period. 
+                          Credits are based on win rate and abandon rate from that timeframe.
+                        </>
+                      )}
+                    </p>
+                  </DialogContent>
+                </Dialog>
               </div>
-              
-              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                Pick your teams ({tempSelectedTeams.length}/5)
-              </h3>
               
               {/* Amateur Team List */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
