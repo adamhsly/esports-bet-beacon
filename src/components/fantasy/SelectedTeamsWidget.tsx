@@ -164,10 +164,10 @@ const PlaceholderCard: React.FC<{
           <Star className="w-7 h-7 text-purple-300 group-hover:text-purple-200 transition-colors duration-300" />
         </div>
 
-        {/* Placeholder Text */}
-        <div className="text-white font-bold text-sm text-center tracking-widest mb-2 relative z-10">
-          SELECT TEAM
-        </div>
+        {/* Add Team Button */}
+        <button className="h-7 px-4 text-xs font-semibold rounded-md bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all relative z-10">
+          Add Team
+        </button>
         
         {/* Slot Number */}
         <div className="text-gray-300 text-xs tracking-wide relative z-10 group-hover:text-white transition-colors duration-300">
