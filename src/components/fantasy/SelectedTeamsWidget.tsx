@@ -95,10 +95,10 @@ const TeamCard: React.FC<{
         </div>
 
         {/* Team Name - Larger than other data */}
-        <h3 className={`font-bold text-sm text-center mb-2 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
+        <h3 className={`font-bold text-xs text-center mb-2 line-clamp-2 leading-tight tracking-wide ${isAmateur ? 'text-orange-100' : 'text-purple-100'} drop-shadow-lg`}>
           {team.name.toUpperCase()}
           {isStarred && (
-            <span className="block text-[10px] text-yellow-300 font-bold tracking-wider mt-1">
+            <span className="block text-[9px] text-yellow-300 font-bold tracking-wider mt-0.5">
               DOUBLE POINTS
             </span>
           )}
