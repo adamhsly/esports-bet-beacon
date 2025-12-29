@@ -121,6 +121,17 @@ serve(async (req) => {
 
             winnersForSummary.push(winnerData);
 
+            // Skip sending emails to test users
+            if (isTestUser) {
+              console.log(`⏭️ Skipping email for test user ${winnerData.username} (${userEmail})`);
+              // Still mark notification as sent to avoid reprocessing
+              await supabase
+                .from('fantasy_round_winners')
+                .update({ notification_sent: true })
+                .eq('id', winner.id);
+              continue;
+            }
+
             const emailSubject = getEmailSubject(winner.finish_position, round.type);
             const emailHtml = generateWinnerEmail(winnerData, round);
             
