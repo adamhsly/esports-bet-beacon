@@ -335,6 +335,159 @@ serve(async (req) => {
       }
     }
 
+    // ========== BACKFILL: Process finished paid rounds that need consolation ==========
+    console.log('🔄 Checking for finished paid rounds needing consolation backfill...');
+    
+    // Find paid rounds that are finished but have no consolation records yet
+    const { data: finishedPaidRounds, error: finishedError } = await supabase
+      .from('fantasy_rounds')
+      .select('id, type, round_name, is_paid')
+      .eq('status', 'finished')
+      .eq('is_paid', true)
+      .limit(5); // Process max 5 per run to avoid timeouts
+    
+    if (finishedError) {
+      console.error('Error fetching finished paid rounds:', finishedError);
+    } else if (finishedPaidRounds && finishedPaidRounds.length > 0) {
+      for (const round of finishedPaidRounds) {
+        // Check if this round already has consolation records
+        const { count: consolationCount } = await supabase
+          .from('fantasy_round_consolations')
+          .select('id', { count: 'exact', head: true })
+          .eq('round_id', round.id);
+        
+        if (consolationCount && consolationCount > 0) {
+          console.log(`Round ${round.id} already has ${consolationCount} consolation records, skipping`);
+          continue;
+        }
+        
+        console.log(`📧 Backfill: Processing consolation prizes for finished paid round ${round.id}`);
+        
+        // Get all winner user_ids for this round
+        const { data: winnerUsers } = await supabase
+          .from('fantasy_round_winners')
+          .select('user_id')
+          .eq('round_id', round.id);
+        
+        const winnerUserIds = new Set((winnerUsers || []).map(w => w.user_id));
+        
+        // Get all picks for this round ordered by score
+        const { data: allPicks, error: picksError } = await supabase
+          .from('fantasy_round_picks')
+          .select('user_id, total_score')
+          .eq('round_id', round.id)
+          .order('total_score', { ascending: false });
+        
+        if (picksError) {
+          console.error(`Error fetching picks for backfill consolation:`, picksError);
+          continue;
+        }
+        
+        if (!allPicks || allPicks.length === 0) {
+          console.log(`No picks found for round ${round.id}`);
+          continue;
+        }
+        
+        // Find non-winners
+        const nonWinnerPicks = allPicks
+          .map((pick, index) => ({ ...pick, position: index + 1 }))
+          .filter(pick => !winnerUserIds.has(pick.user_id));
+        
+        console.log(`Found ${nonWinnerPicks.length} users eligible for consolation prizes (backfill)`);
+        
+        for (const pick of nonWinnerPicks) {
+          try {
+            // Get profile to check if test user
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('username, full_name, test')
+              .eq('id', pick.user_id)
+              .single();
+            
+            // Skip test users entirely - don't even create records
+            if (profile?.test === true) {
+              console.log(`⏭️ Skipping test user ${pick.user_id} for consolation (backfill)`);
+              continue;
+            }
+            
+            // Get user email
+            const { data: authUser } = await supabase.auth.admin.getUserById(pick.user_id);
+            const userEmail = authUser?.user?.email;
+            
+            if (!userEmail) {
+              console.log(`No email found for user ${pick.user_id}, skipping consolation (backfill)`);
+              continue;
+            }
+            
+            const username = profile?.username || profile?.full_name || 'Player';
+            
+            // Grant 10 bonus credits
+            const { error: creditError } = await supabase.rpc('grant_bonus_credits', {
+              p_user_id: pick.user_id,
+              p_amount: 10,
+              p_source: 'paid_round_consolation'
+            });
+            
+            if (creditError) {
+              console.error(`Failed to grant consolation credits to ${pick.user_id}:`, creditError);
+              continue;
+            }
+            
+            // Insert consolation record
+            const { error: insertError } = await supabase
+              .from('fantasy_round_consolations')
+              .insert({
+                round_id: round.id,
+                user_id: pick.user_id,
+                finish_position: pick.position,
+                total_score: pick.total_score,
+                credits_awarded: 10,
+                notification_sent: false
+              });
+            
+            if (insertError) {
+              console.error(`Failed to insert consolation record (backfill):`, insertError);
+              continue;
+            }
+            
+            // Send consolation email
+            const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+            const emailSubject = `💪 Keep Going! You finished ${getOrdinal(pick.position)} in the ${roundName} - Here's 10 Bonus Credits!`;
+            const emailHtml = generateConsolationEmail({
+              username,
+              finish_position: pick.position,
+              total_score: pick.total_score,
+              round_name: roundName,
+              round_type: round.type
+            });
+            
+            const { error: emailError } = await resend.emails.send({
+              from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+              to: [userEmail],
+              subject: emailSubject,
+              html: emailHtml,
+            });
+            
+            if (emailError) {
+              console.error(`Failed to send consolation email to ${userEmail} (backfill):`, emailError);
+            } else {
+              await supabase
+                .from('fantasy_round_consolations')
+                .update({ notification_sent: true })
+                .eq('round_id', round.id)
+                .eq('user_id', pick.user_id);
+              
+              totalConsolationEmailsSent++;
+              console.log(`✅ Consolation email sent (backfill) to ${username} (${userEmail}) - ${getOrdinal(pick.position)} place`);
+              await new Promise(resolve => setTimeout(resolve, 600));
+            }
+          } catch (err) {
+            console.error(`Error processing backfill consolation for user ${pick.user_id}:`, err);
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
