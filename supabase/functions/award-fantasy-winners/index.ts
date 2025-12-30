@@ -257,7 +257,7 @@ serve(async (req) => {
               
               // Grant 10 bonus credits
               const { error: creditError } = await supabase.rpc('grant_bonus_credits', {
-                p_user_id: pick.user_id,
+                p_user: pick.user_id,
                 p_amount: 10,
                 p_source: 'paid_round_consolation'
               });
@@ -336,32 +336,33 @@ serve(async (req) => {
     }
 
     // ========== BACKFILL: Process finished paid rounds that need consolation ==========
-    console.log('🔄 Checking for finished paid rounds needing consolation backfill...');
+    console.log('🔄 Checking for finished paid rounds needing consolation backfill (past week only)...');
     
-    // Find paid rounds that are finished but have no consolation records yet
+    // Calculate date 7 days ago
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    // Find paid rounds that are finished from the past week
     const { data: finishedPaidRounds, error: finishedError } = await supabase
       .from('fantasy_rounds')
-      .select('id, type, round_name, is_paid')
+      .select('id, type, round_name, is_paid, end_date')
       .eq('status', 'finished')
       .eq('is_paid', true)
-      .limit(5); // Process max 5 per run to avoid timeouts
+      .gte('end_date', oneWeekAgo.toISOString())
+      .lte('end_date', new Date().toISOString())
+      .order('end_date', { ascending: false })
+      .limit(10); // Process max 10 per run
     
     if (finishedError) {
       console.error('Error fetching finished paid rounds:', finishedError);
     } else if (finishedPaidRounds && finishedPaidRounds.length > 0) {
+      console.log(`Found ${finishedPaidRounds.length} finished paid rounds from past week to check`);
+      
+      // Track users who have already received a consolation email this run to avoid spam
+      const usersEmailedThisRun = new Set<string>();
+      
       for (const round of finishedPaidRounds) {
-        // Check if this round already has consolation records
-        const { count: consolationCount } = await supabase
-          .from('fantasy_round_consolations')
-          .select('id', { count: 'exact', head: true })
-          .eq('round_id', round.id);
-        
-        if (consolationCount && consolationCount > 0) {
-          console.log(`Round ${round.id} already has ${consolationCount} consolation records, skipping`);
-          continue;
-        }
-        
-        console.log(`📧 Backfill: Processing consolation prizes for finished paid round ${round.id}`);
+        console.log(`📧 Backfill: Checking round ${round.id} (${round.round_name || round.type})`);
         
         // Get all winner user_ids for this round
         const { data: winnerUsers } = await supabase
@@ -370,6 +371,14 @@ serve(async (req) => {
           .eq('round_id', round.id);
         
         const winnerUserIds = new Set((winnerUsers || []).map(w => w.user_id));
+        
+        // Get users who already received consolation for this round
+        const { data: existingConsolations } = await supabase
+          .from('fantasy_round_consolations')
+          .select('user_id')
+          .eq('round_id', round.id);
+        
+        const consoledUserIds = new Set((existingConsolations || []).map(c => c.user_id));
         
         // Get all picks for this round ordered by score
         const { data: allPicks, error: picksError } = await supabase
@@ -388,12 +397,12 @@ serve(async (req) => {
           continue;
         }
         
-        // Find non-winners
+        // Find non-winners who haven't received consolation yet
         const nonWinnerPicks = allPicks
           .map((pick, index) => ({ ...pick, position: index + 1 }))
-          .filter(pick => !winnerUserIds.has(pick.user_id));
+          .filter(pick => !winnerUserIds.has(pick.user_id) && !consoledUserIds.has(pick.user_id));
         
-        console.log(`Found ${nonWinnerPicks.length} users eligible for consolation prizes (backfill)`);
+        console.log(`Found ${nonWinnerPicks.length} users eligible for consolation prizes (backfill) in round ${round.id}`);
         
         for (const pick of nonWinnerPicks) {
           try {
@@ -423,7 +432,7 @@ serve(async (req) => {
             
             // Grant 10 bonus credits
             const { error: creditError } = await supabase.rpc('grant_bonus_credits', {
-              p_user_id: pick.user_id,
+              p_user: pick.user_id,
               p_amount: 10,
               p_source: 'paid_round_consolation'
             });
@@ -447,6 +456,18 @@ serve(async (req) => {
             
             if (insertError) {
               console.error(`Failed to insert consolation record (backfill):`, insertError);
+              continue;
+            }
+            
+            // Only send email if this user hasn't been emailed in this run (avoid spam)
+            if (usersEmailedThisRun.has(pick.user_id)) {
+              console.log(`⏭️ Skipping email for ${username} - already emailed this run (avoiding spam)`);
+              // Still mark as sent since they got an email for another round
+              await supabase
+                .from('fantasy_round_consolations')
+                .update({ notification_sent: true })
+                .eq('round_id', round.id)
+                .eq('user_id', pick.user_id);
               continue;
             }
             
@@ -477,8 +498,9 @@ serve(async (req) => {
                 .eq('round_id', round.id)
                 .eq('user_id', pick.user_id);
               
+              usersEmailedThisRun.add(pick.user_id);
               totalConsolationEmailsSent++;
-              console.log(`✅ Consolation email sent (backfill) to ${username} (${userEmail}) - ${getOrdinal(pick.position)} place`);
+              console.log(`✅ Consolation email sent (backfill) to ${username} (${userEmail}) - ${getOrdinal(pick.position)} place in ${roundName}`);
               await new Promise(resolve => setTimeout(resolve, 600));
             }
           } catch (err) {
