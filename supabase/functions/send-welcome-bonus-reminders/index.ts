@@ -35,27 +35,31 @@ const getDay2EmailHtml = (username: string, balancePounds: string, expiresDate: 
       <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 16px 0;">Hey ${username}! 👋</h2>
       
       <p style="color: #a0a0b0; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-        Just a friendly reminder - you've got <strong style="color: #8B5CF6;">£${balancePounds} in free bonus credits</strong> waiting for you!
+        Just a friendly reminder - you've got a <strong style="color: #22c55e;">free paid round entry</strong> waiting for you!
       </p>
       
-      <div style="background: rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid rgba(139, 92, 246, 0.3);">
+      <div style="background: rgba(34, 197, 94, 0.15); border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid rgba(34, 197, 94, 0.3);">
         <div style="text-align: center;">
-          <span style="color: #8B5CF6; font-size: 36px; font-weight: bold;">£${balancePounds}</span>
-          <p style="color: #a0a0b0; margin: 8px 0 0 0; font-size: 14px;">Free Bonus Credits</p>
+          <span style="color: #22c55e; font-size: 36px; font-weight: bold;">1 FREE ENTRY</span>
+          <p style="color: #a0a0b0; margin: 8px 0 0 0; font-size: 14px;">$${balancePounds} promo balance</p>
         </div>
       </div>
       
       <p style="color: #a0a0b0; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-        Use them to enter fantasy esports rounds and compete for real prizes! Pick your favorite CS2, Valorant, League of Legends, or Dota 2 teams and climb the leaderboard.
+        Use it to enter a paid fantasy round and compete for real prizes! Pick your favorite CS2, Valorant, League of Legends, or Dota 2 teams.
+      </p>
+      
+      <p style="color: #8B5CF6; font-size: 14px; margin: 0 0 8px 0; font-weight: 600;">
+        🎁 Complete your free entry to unlock: Spend $5 Get $10 bonus!
       </p>
       
       <p style="color: #ff6b6b; font-size: 14px; margin: 0 0 24px 0;">
-        ⏰ Your bonus expires on <strong>${expiresDate}</strong> - don't let it go to waste!
+        ⏰ Your free entry expires on <strong>${expiresDate}</strong> - don't miss out!
       </p>
       
       <div style="text-align: center;">
-        <a href="https://fragsandfortunes.com/fantasy" style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #6366f1 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-          Join a Round Now 🎯
+        <a href="https://fragsandfortunes.com/fantasy" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+          Use My Free Entry 🎯
         </a>
       </div>
     </div>
@@ -88,25 +92,25 @@ const getDay5EmailHtml = (username: string, balancePounds: string, expiresDate: 
       <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 16px 0;">⚠️ Don't Miss Out, ${username}!</h2>
       
       <p style="color: #a0a0b0; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-        Your <strong style="color: #ff6b6b;">£${balancePounds} welcome bonus</strong> is still unused! Time is running out to put it to good use.
+        Your <strong style="color: #ff6b6b;">free paid round entry</strong> is still unused! Time is running out.
       </p>
       
       <div style="background: rgba(255, 107, 107, 0.15); border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid rgba(255, 107, 107, 0.3);">
         <div style="text-align: center;">
-          <span style="color: #ff6b6b; font-size: 36px; font-weight: bold;">£${balancePounds}</span>
-          <p style="color: #a0a0b0; margin: 8px 0 0 0; font-size: 14px;">Waiting to be used!</p>
+          <span style="color: #ff6b6b; font-size: 36px; font-weight: bold;">FREE ENTRY</span>
+          <p style="color: #a0a0b0; margin: 8px 0 0 0; font-size: 14px;">$${balancePounds} waiting to be used!</p>
         </div>
       </div>
       
       <p style="color: #a0a0b0; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-        <strong style="color: #ffffff;">Here's what you're missing:</strong>
+        <strong style="color: #ffffff;">Use your free entry to:</strong>
       </p>
       
       <ul style="color: #a0a0b0; font-size: 15px; line-height: 1.8; padding-left: 20px; margin: 0 0 20px 0;">
         <li>🏆 Compete against other players for prizes</li>
         <li>⭐ Pick your Star Team for double points</li>
+        <li>🎁 Unlock the Spend $5 Get $10 bonus</li>
         <li>🎮 Cover CS2, Valorant, LoL, and Dota 2</li>
-        <li>📊 Track your teams' performance live</li>
       </ul>
       
       <p style="color: #ff6b6b; font-size: 14px; margin: 0 0 24px 0; font-weight: 600;">
@@ -115,7 +119,7 @@ const getDay5EmailHtml = (username: string, balancePounds: string, expiresDate: 
       
       <div style="text-align: center;">
         <a href="https://fragsandfortunes.com/fantasy" style="display: inline-block; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-          Use My Bonus Now 🚀
+          Use My Free Entry Now 🚀
         </a>
       </div>
     </div>
@@ -226,7 +230,7 @@ serve(async (req: Request) => {
         const emailResult = await resend.emails.send({
           from: "Frags & Fortunes <noreply@fragsandfortunes.com>",
           to: [authUser.user.email],
-          subject: `💰 ${user.username}, your £${balancePounds} bonus is waiting!`,
+          subject: `🎮 ${user.username}, your free paid entry is waiting!`,
           html: getDay2EmailHtml(user.username || "Player", balancePounds, expiresDate),
         });
 
@@ -286,7 +290,7 @@ serve(async (req: Request) => {
         const emailResult = await resend.emails.send({
           from: "Frags & Fortunes <noreply@fragsandfortunes.com>",
           to: [authUser.user.email],
-          subject: `⚠️ Last chance ${user.username}! Your £${balancePounds} bonus expires soon`,
+          subject: `⚠️ Last chance ${user.username}! Your free entry expires soon`,
           html: getDay5EmailHtml(user.username || "Player", balancePounds, expiresDate),
         });
 

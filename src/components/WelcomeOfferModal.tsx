@@ -148,10 +148,10 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
             <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
               <Sparkles className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
               <h3 className="text-2xl font-bold text-white mb-1">
-                Get {rewardAmount} Free!
+                1 Free Paid Entry!
               </h3>
               <p className="text-sm text-gray-300">
-                New users receive {rewardAmount} promo balance to use on paid fantasy entries
+                New users get {rewardAmount} to enter any paid fantasy round for free
               </p>
             </div>
           )}
@@ -167,8 +167,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                     <span className="text-xs font-bold text-green-300">1</span>
                   </div>
                   <div>
-                    <p className="text-sm text-white">Claim your {rewardAmount} bonus</p>
-                    <p className="text-xs text-gray-400">Instantly added to your promo balance</p>
+                    <p className="text-sm text-white">Claim your free entry</p>
+                    <p className="text-xs text-gray-400">{rewardAmount} added to your promo balance</p>
                   </div>
                 </div>
 
@@ -177,8 +177,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                     <span className="text-xs font-bold text-purple-300">2</span>
                   </div>
                   <div>
-                    <p className="text-sm text-white">Enter paid fantasy rounds</p>
-                    <p className="text-xs text-gray-400">Promo balance auto-applies at checkout</p>
+                    <p className="text-sm text-white">Enter a paid daily round</p>
+                    <p className="text-xs text-gray-400">Your entry fee is covered automatically</p>
                   </div>
                 </div>
 
@@ -187,8 +187,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                     <span className="text-xs font-bold text-yellow-300">3</span>
                   </div>
                   <div>
-                    <p className="text-sm text-white">Win prizes!</p>
-                    <p className="text-xs text-gray-400">Compete for credits and rewards</p>
+                    <p className="text-sm text-white">Win prizes & unlock more!</p>
+                    <p className="text-xs text-gray-400">Complete to unlock Spend $5 Get $10 offer</p>
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
             <p className="text-xs text-gray-500">
               {status?.tier === 2 
                 ? `Spend ${thresholdAmount} on paid entries to unlock ${rewardAmount} bonus. Promo balance valid for 2 days after claiming.`
-                : `Promo balance is valid for 30 days after claiming. Can only be used on paid fantasy round entries. One welcome bonus per account.`
+                : `Free entry valid for 30 days. Use it to enter any paid round. Complete to unlock the Spend $5 Get $10 bonus!`
               }
             </p>
           </div>
