@@ -258,7 +258,8 @@ const RoundCard: React.FC<{
               </span>
             </div>
             <Button
-              className={`w-full font-medium text-sm py-2.5 !rounded-t-none rounded-b-lg ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              className={`w-full font-medium text-sm py-2.5 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
               disabled={isPaidCheckoutLoading}
             >
               {getButtonText()}
@@ -301,7 +302,8 @@ const RoundCard: React.FC<{
               </span>
             </div>
             <Button
-              className={`w-full font-medium text-sm !rounded-t-none rounded-b-lg ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              className={`w-full font-medium text-sm ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
               disabled={isPaidCheckoutLoading}
             >
               {getButtonText()}
