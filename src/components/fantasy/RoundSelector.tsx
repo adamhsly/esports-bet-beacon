@@ -36,6 +36,16 @@ const formatPrize = (amount: number, prizeType: "credits" | "vouchers" = "credit
   }
   return amount.toString();
 };
+
+// Format total prize pot
+const formatTotalPrize = (prize1st: number, prize2nd: number, prize3rd: number, prizeType: "credits" | "vouchers" = "credits") => {
+  const total = prize1st + prize2nd + prize3rd;
+  if (prizeType === "vouchers") {
+    const dollars = total / 100;
+    return `$${dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2)} Prizes`;
+  }
+  return `${total} Credits`;
+};
 const SectionHeading: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => (
@@ -234,7 +244,7 @@ const RoundCard: React.FC<{
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
               <Trophy className="h-3 w-3" />
-              {prizeType === "vouchers" ? `$${((round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)) / 100}` : `${(round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)}`} {prizeType === "vouchers" ? "Vouchers" : "Credits"}
+              {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
             </span>
             <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
@@ -271,7 +281,7 @@ const RoundCard: React.FC<{
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
               <Trophy className="h-3 w-3" />
-              {prizeType === "vouchers" ? `$${((round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)) / 100}` : `${(round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)}`} {prizeType === "vouchers" ? "Vouchers" : "Credits"}
+              {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
             </span>
             <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
