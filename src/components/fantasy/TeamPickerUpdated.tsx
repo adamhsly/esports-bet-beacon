@@ -928,40 +928,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         </Button>
       </div>
 
-      {/* Star Team Summary */}
-      {selectedTeams.length > 0 && (
-        <div data-walkthrough="star-team-info" className="bg-muted/30 rounded-lg p-4 border border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Star className={`h-5 w-5 ${starTeamId ? 'text-[#F5C042] fill-current' : 'text-muted-foreground'}`} />
-              <div>
-                <div className="font-medium">
-                  {getStarredTeamName() ? (
-                    <>Star Team: <span className="text-[#F5C042]">{getStarredTeamName()}</span> (Double Points)</>
-                  ) : (
-                    'No Star Team selected'
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Your Star Team scores double points this round. Choose wisely!
-                </div>
-              </div>
-            </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                    <Info className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Your Star Team scores double points. You can still pick it once after the round starts, but only one change is allowed.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      )}
 
       {/* Modals */}
       <StarTeamConfirmModal 
