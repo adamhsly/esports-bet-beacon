@@ -1,7 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUpcomingDailyRound } from "@/hooks/useUpcomingDailyRound";
+import { useUpcomingProRound } from "@/hooks/useUpcomingProRound";
 import { useABTest } from "@/hooks/useABTest";
 import SearchableNavbar from "@/components/SearchableNavbar";
 import AuthModal from "@/components/AuthModal";
@@ -20,14 +20,15 @@ const welcomeBanner = "/lovable-uploads/Spend_5_Get_10_v2.webp";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
-  const { round: upcomingDailyRound } = useUpcomingDailyRound();
+  // Use the smart hook that falls back to weekly if no daily pro round exists
+  const { round: upcomingProRound } = useUpcomingProRound({ isPaid: false });
   const navigate = useNavigate();
   const variant = useABTest('welcome_signup_cta');
   const [showAuthModal, setShowAuthModal] = useState(false);
   
-  // Build the team picker link for the upcoming daily round
-  const teamPickerLink = upcomingDailyRound 
-    ? `/fantasy?roundId=${upcomingDailyRound.id}` 
+  // Build the team picker link for the upcoming pro round (daily or weekly)
+  const teamPickerLink = upcomingProRound 
+    ? `/fantasy?roundId=${upcomingProRound.id}` 
     : "/fantasy";
 
   // Mark welcome page as seen on mount
