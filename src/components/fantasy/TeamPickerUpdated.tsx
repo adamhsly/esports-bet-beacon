@@ -905,40 +905,6 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         </div>
       )}
 
-      {/* Bonus Credits Info - Auto-deducted (only show for authenticated users with bonus credits) */}
-      {user && availableBonusCredits > 0 && (
-        <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 border-orange-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-orange-300">Bonus Credits Available</h3>
-                  <p className="text-sm text-orange-400">
-                    {availableBonusCredits > 0 
-                      ? `${availableBonusCredits} credits earned from XP rewards`
-                      : 'No bonus credits available'
-                    }
-                  </p>
-                </div>
-              </div>
-              {budgetSpent > SALARY_CAP && (
-                <div className="text-right">
-                  <p className="text-sm text-orange-300 font-medium">
-                    Auto-deducting: {budgetSpent - SALARY_CAP} credits
-                  </p>
-                  <p className="text-xs text-orange-400">
-                    Required for your current selection
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Modals */}
       <StarTeamConfirmModal 
         open={showNoStarModal} 
