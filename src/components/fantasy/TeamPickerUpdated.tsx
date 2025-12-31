@@ -813,7 +813,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       />
 
       {/* Pick For Me Button */}
-      <div className="flex justify-center">
+      <div className="flex justify-center pt-4">
         <Button
           onClick={() => {
             // Combine all available teams based on round's team_type
