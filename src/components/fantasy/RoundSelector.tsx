@@ -250,17 +250,20 @@ const RoundCard: React.FC<{
             </span>
           </div>
 
-          <span className="px-4 py-1.5 text-base font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
-          </span>
-
-          <Button
-            className={`w-full font-medium text-sm py-2 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-            disabled={isPaidCheckoutLoading}
-          >
-            {getButtonText()}
-          </Button>
+          <div className="w-full flex flex-col items-center">
+            <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-t-lg px-4 py-2 flex items-center justify-center gap-2">
+              <Trophy className="h-5 w-5 text-emerald-300" />
+              <span className="text-base font-bold text-emerald-300">
+                {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
+              </span>
+            </div>
+            <Button
+              className={`w-full font-medium text-sm py-2.5 rounded-t-none ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              disabled={isPaidCheckoutLoading}
+            >
+              {getButtonText()}
+            </Button>
+          </div>
         </div>
       </CardContent>
 
@@ -289,17 +292,21 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        <div className="p-4 flex flex-col items-center justify-center gap-2">
-          <span className="px-4 py-1.5 text-base font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
-          </span>
-          <Button
-            className={`font-medium text-sm px-6 flex-shrink-0 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-            disabled={isPaidCheckoutLoading}
-          >
-            {getButtonText()}
-          </Button>
+        <div className="p-4 flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
+              <Trophy className="h-5 w-5 text-emerald-300" />
+              <span className="text-base font-bold text-emerald-300">
+                {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
+              </span>
+            </div>
+            <Button
+              className={`font-medium text-sm px-6 rounded-t-none flex-shrink-0 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              disabled={isPaidCheckoutLoading}
+            >
+              {getButtonText()}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
