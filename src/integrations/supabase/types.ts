@@ -3438,6 +3438,27 @@ export type Database = {
         }
         Relationships: []
       }
+      welcome_bonus_reminders: {
+        Row: {
+          id: string
+          reminder_day: number
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          reminder_day: number
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          reminder_day?: number
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       xp_rules: {
         Row: {
           kind: string
