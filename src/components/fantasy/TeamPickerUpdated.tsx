@@ -863,7 +863,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             toast.success('Random lineup selected!');
           }}
           disabled={loading || proTeams.length + amateurTeams.length < 5}
-          className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
+          className="w-full max-w-md flex items-center justify-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
         >
           <RefreshCw className="h-4 w-4" />
           Pick for me
