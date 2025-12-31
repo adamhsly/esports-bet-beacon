@@ -755,10 +755,18 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     return amount.toString();
   };
 
+  // Format total prize pot (same as RoundSelector)
+  const formatTotalPrize = (prize1st: number, prize2nd: number, prize3rd: number, prizeType: 'credits' | 'vouchers' = 'credits') => {
+    const total = prize1st + prize2nd + prize3rd;
+    if (prizeType === 'vouchers') {
+      const dollars = total / 100;
+      return `$${dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2)} Prizes`;
+    }
+    return `${total} Credits`;
+  };
+
   const prizeType = round.prize_type || 'credits';
-  const prize1st = formatPrize(round.prize_1st ?? 200, prizeType);
-  const prize2nd = formatPrize(round.prize_2nd ?? 100, prizeType);
-  const prize3rd = formatPrize(round.prize_3rd ?? 50, prizeType);
+  const totalPrizeDisplay = formatTotalPrize(round.prize_1st ?? 200, round.prize_2nd ?? 100, round.prize_3rd ?? 50, prizeType);
 
   return (
     <div className="space-y-4">
@@ -778,37 +786,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           </button>
         </div>
         
-        {/* Prize Display */}
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center justify-center gap-4 text-xl font-bold">
-            <span className="flex items-center gap-1">
-              <span className="text-yellow-400">🥇</span>
-              <span className="text-gray-200">{prize1st}</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="text-gray-400">🥈</span>
-              <span className="text-gray-200">{prize2nd}</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="text-orange-400">🥉</span>
-              <span className="text-gray-200">{prize3rd}</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span>Prize type: {prizeType === 'vouchers' ? 'Steam Vouchers' : 'Credits'}</span>
-            {round.game_type && round.game_type !== 'all' && (
-              <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-400">
-                {round.game_type}
-              </Badge>
-            )}
-            {round.team_type && round.team_type !== 'both' && (
-              <Badge variant="outline" className={round.team_type === 'pro' 
-                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
-                : 'bg-orange-500/10 border-orange-500/30 text-orange-400'}>
-                {round.team_type === 'pro' ? 'Pro Teams Only' : 'Amateur Teams Only'}
-              </Badge>
-            )}
-          </div>
+        {/* Prize Display - Aggregated like RoundSelector */}
+        <div className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg px-4 py-2">
+          <Trophy className="h-5 w-5 text-emerald-300" />
+          <span className="text-base font-bold text-emerald-300">{totalPrizeDisplay}</span>
         </div>
       </div>
 
