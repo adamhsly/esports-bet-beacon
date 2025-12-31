@@ -760,7 +760,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     const total = prize1st + prize2nd + prize3rd;
     if (prizeType === 'vouchers') {
       const dollars = total / 100;
-      return `$${dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2)} Prizes`;
+      return `$${dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2)}`;
     }
     return `${total} Credits`;
   };
@@ -789,7 +789,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         {/* Prize Display - Aggregated like RoundSelector */}
         <div className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg px-4 py-2">
           <Trophy className="h-5 w-5 text-emerald-300" />
-          <span className="text-base font-bold text-emerald-300">{totalPrizeDisplay}</span>
+          <span className="text-base font-bold text-emerald-300">{totalPrizeDisplay} in prizes</span>
         </div>
       </div>
 
