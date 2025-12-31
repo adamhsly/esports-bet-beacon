@@ -292,7 +292,7 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        <div className="p-4 flex flex-col items-center justify-center">
+        <div className="p-4 pt-8 flex flex-col items-center justify-center">
           <div className="w-full min-w-[140px]">
             <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
