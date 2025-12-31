@@ -61,7 +61,7 @@ const WelcomeOfferBadge: React.FC = () => {
               >
                 <Gift className="w-3.5 h-3.5 text-green-400" />
                 <span className="text-xs font-bold text-green-300">
-                  Claim {formatPence(status.rewardPence)} Free!
+                  Free Paid Entry!
                 </span>
                 <InfoButton />
               </div>
@@ -70,10 +70,10 @@ const WelcomeOfferBadge: React.FC = () => {
               <div className="flex flex-col gap-1 p-1">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="font-semibold text-white">Welcome Bonus!</span>
+                  <span className="font-semibold text-white">Free Paid Entry!</span>
                 </div>
                 <p className="text-sm text-gray-300">
-                  New users get {formatPence(status.rewardPence)} promo balance free! Click to claim.
+                  New users get 1 free paid round entry! Click to claim.
                 </p>
               </div>
             </TooltipContent>
