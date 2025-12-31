@@ -61,7 +61,7 @@ const WelcomeOfferBadge: React.FC = () => {
               >
                 <Gift className="w-3.5 h-3.5 text-green-400" />
                 <span className="text-xs font-bold text-green-300">
-                  Free Paid Entry!
+                  Claim Free Entry
                 </span>
                 <InfoButton />
               </div>
