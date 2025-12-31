@@ -6,8 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const WEEKLY_STRIPE_PRICE_ID = 'price_1ScUosFkrjLxsbmbcAWqGN6U';
-
 interface RoundVariant {
   team_type: 'pro' | 'amateur' | 'both';
   is_paid: boolean;
@@ -21,13 +19,12 @@ interface RoundVariant {
   name_suffix: string;
 }
 
+// Only create weekly pro free round
 const WEEKLY_VARIANTS: RoundVariant[] = [
-  { team_type: 'pro', is_paid: true, entry_fee: 250, stripe_price_id: WEEKLY_STRIPE_PRICE_ID, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun - Paid', name_suffix: 'Pro - Paid' },
   { team_type: 'pro', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Pro - Free' },
-  { team_type: 'amateur', is_paid: true, entry_fee: 250, stripe_price_id: WEEKLY_STRIPE_PRICE_ID, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Fun - Paid', name_suffix: 'Amateur - Paid' },
-  { team_type: 'amateur', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Amateur - Free' },
-  { team_type: 'both', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Mixed - Free' },
 ];
+
+const MIN_PRO_MATCHES = 3;
 
 Deno.serve(async (_req) => {
   if (_req.method === 'OPTIONS') {
@@ -63,7 +60,36 @@ Deno.serve(async (_req) => {
       );
     }
 
-    // Create all 5 variants
+    // Count pro matches scheduled in the round window (from pandascore_matches)
+    const { count: proMatchCount, error: countError } = await supabase
+      .from('pandascore_matches')
+      .select('*', { count: 'exact', head: true })
+      .gte('start_time', startDate.toISOString())
+      .lt('start_time', endDate.toISOString())
+      .in('status', ['not_started', 'running']);
+
+    if (countError) {
+      console.error('Error counting pro matches:', countError);
+    }
+
+    const hasEnoughProMatches = (proMatchCount ?? 0) >= MIN_PRO_MATCHES;
+    console.log(`📊 Pro match count for ${dateLabel}: ${proMatchCount ?? 0} (minimum: ${MIN_PRO_MATCHES})`);
+
+    if (!hasEnoughProMatches) {
+      console.log(`⏭️ Skipping weekly pro round creation - insufficient pro matches (${proMatchCount ?? 0} < ${MIN_PRO_MATCHES})`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          skipped: true, 
+          reason: 'Insufficient pro matches for round creation',
+          pro_match_count: proMatchCount ?? 0,
+          min_required: MIN_PRO_MATCHES
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create the weekly pro free round
     const roundsToCreate = WEEKLY_VARIANTS.map(variant => ({
       type: 'weekly',
       start_date: startDate.toISOString(),
@@ -122,6 +148,8 @@ Deno.serve(async (_req) => {
       JSON.stringify({
         success: true,
         created_rounds: newRounds?.length || 0,
+        pro_match_count: proMatchCount ?? 0,
+        min_required: MIN_PRO_MATCHES,
         date_range: `${startDate.toISOString()} → ${endDate.toISOString()}`,
         price_calculations: priceResults,
       }),

@@ -20,8 +20,8 @@ const welcomeBanner = "/lovable-uploads/Spend_5_Get_10_v2.webp";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
-  // Use the smart hook that falls back to weekly if no daily pro round exists (paid for acquisition)
-  const { round: upcomingProRound } = useUpcomingProRound({ isPaid: true });
+  // Use the smart hook that falls back to weekly if no daily pro round exists (free rounds only)
+  const { round: upcomingProRound } = useUpcomingProRound({ isPaid: false });
   const navigate = useNavigate();
   const variant = useABTest('welcome_signup_cta');
   const [showAuthModal, setShowAuthModal] = useState(false);

@@ -19,14 +19,9 @@ interface RoundVariant {
   stripe_price_id: string | null;
 }
 
-const DAILY_STRIPE_PRICE_ID = 'price_1ScUb9FkrjLxsbmbtJ2Iw0I1';
-
+// Only create daily pro free round
 const DAILY_VARIANTS: RoundVariant[] = [
-  { team_type: 'pro', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire - Paid', name_suffix: 'Pro - Paid', stripe_price_id: DAILY_STRIPE_PRICE_ID },
   { team_type: 'pro', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Pro - Free', stripe_price_id: null },
-  { team_type: 'amateur', is_paid: true, entry_fee: 150, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 400, section_name: 'Quick Fire - Paid', name_suffix: 'Amateur - Paid', stripe_price_id: DAILY_STRIPE_PRICE_ID },
-  { team_type: 'amateur', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Amateur - Free', stripe_price_id: null },
-  { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Mixed - Free', stripe_price_id: null },
 ];
 
 const MIN_PRO_MATCHES = 3;
