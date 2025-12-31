@@ -211,8 +211,7 @@ const RoundCard: React.FC<{
 
   return (
     <Card
-      className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.01] hover:shadow-md overflow-hidden ${getNeonBorderClass()} ${isPaid ? "bg-gradient-to-br from-amber-900/30 to-slate-700" : "bg-slate-700"}`}
-      onClick={handleClick}
+      className={`relative transition-all duration-250 overflow-hidden ${getNeonBorderClass()} ${isPaid ? "bg-gradient-to-br from-amber-900/30 to-slate-700" : "bg-slate-700"}`}
     >
       {/* Status Pills */}
       <div className="absolute top-2 right-2 z-10 flex gap-2 flex-wrap justify-end">
@@ -265,7 +264,7 @@ const RoundCard: React.FC<{
             </span>
           </div>
 
-          <div className="w-full">
+          <div className="w-full cursor-pointer hover:scale-[1.02] transition-transform" onClick={handleClick}>
             <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-4 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
               <span className="text-base font-bold text-emerald-300">
@@ -321,7 +320,7 @@ const RoundCard: React.FC<{
         </div>
 
         <div className="p-4 pt-8 flex flex-col items-center justify-center">
-          <div className="w-full min-w-[140px]">
+          <div className="w-full min-w-[140px] cursor-pointer hover:scale-[1.02] transition-transform" onClick={handleClick}>
             <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
               <span className="text-base font-bold text-emerald-300">
