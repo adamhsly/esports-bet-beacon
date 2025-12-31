@@ -90,7 +90,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
             ) : (
               <Gift className="w-5 h-5 text-green-400" />
             )}
-            {hasActiveBalance ? 'Promo Balance' : status?.tier === 2 ? 'Spend & Earn Bonus' : 'Welcome Bonus'}
+            {hasActiveBalance ? 'Promo Balance' : status?.tier === 2 ? 'Spend & Earn Bonus' : 'Free Paid Entry'}
           </DialogTitle>
         </DialogHeader>
 
@@ -151,7 +151,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 1 Free Paid Entry!
               </h3>
               <p className="text-sm text-gray-300">
-                New users get {rewardAmount} to enter any paid fantasy round for free
+                New users get a free entry to any paid fantasy round
               </p>
             </div>
           )}
@@ -168,7 +168,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                   </div>
                   <div>
                     <p className="text-sm text-white">Claim your free entry</p>
-                    <p className="text-xs text-gray-400">{rewardAmount} added to your promo balance</p>
+                    <p className="text-xs text-gray-400">Entry credit added to your promo balance</p>
                   </div>
                 </div>
 
@@ -253,7 +253,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
               ) : (
                 <>
                   <Gift className="w-4 h-4 mr-2" />
-                  Claim {rewardAmount} Now
+                  {isTier2Ready ? `Claim ${rewardAmount} Now` : 'Claim Free Entry'}
                 </>
               )}
             </Button>
