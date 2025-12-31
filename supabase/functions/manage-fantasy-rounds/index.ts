@@ -29,6 +29,8 @@ const DAILY_VARIANTS: RoundVariant[] = [
   { team_type: 'both', is_paid: false, entry_fee: null, prize_type: 'credits', prize_1st: 25, prize_2nd: 10, prize_3rd: 5, section_name: 'Quick Fire - Free', name_suffix: 'Mixed - Free', stripe_price_id: null },
 ];
 
+const MIN_PRO_MATCHES = 3;
+
 Deno.serve(async (_req) => {
   if (_req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,8 +65,46 @@ Deno.serve(async (_req) => {
       );
     }
 
-    // Create all 5 variants
-    const roundsToCreate = DAILY_VARIANTS.map(variant => ({
+    // Count pro matches scheduled in the round window (from pandascore_matches)
+    const { count: proMatchCount, error: countError } = await supabase
+      .from('pandascore_matches')
+      .select('*', { count: 'exact', head: true })
+      .gte('start_time', startDate.toISOString())
+      .lt('start_time', endDate.toISOString())
+      .in('status', ['not_started', 'running']);
+
+    if (countError) {
+      console.error('Error counting pro matches:', countError);
+    }
+
+    const hasEnoughProMatches = (proMatchCount ?? 0) >= MIN_PRO_MATCHES;
+    console.log(`📊 Pro match count for ${dateLabel}: ${proMatchCount ?? 0} (minimum: ${MIN_PRO_MATCHES})`);
+
+    // Filter variants - skip pro rounds if not enough matches
+    const variantsToCreate = DAILY_VARIANTS.filter(variant => {
+      if (variant.team_type === 'pro' && !hasEnoughProMatches) {
+        console.log(`⏭️ Skipping ${variant.name_suffix} - insufficient pro matches (${proMatchCount ?? 0} < ${MIN_PRO_MATCHES})`);
+        return false;
+      }
+      return true;
+    });
+
+    if (variantsToCreate.length === 0) {
+      console.log(`⏭️ No rounds to create for ${dateLabel} - all variants skipped`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          skipped: true, 
+          reason: 'No variants met creation criteria',
+          pro_match_count: proMatchCount ?? 0,
+          min_required: MIN_PRO_MATCHES
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create filtered variants
+    const roundsToCreate = variantsToCreate.map(variant => ({
       type: 'daily',
       start_date: startDate.toISOString(),
       end_date: endDate.toISOString(),
@@ -88,7 +128,7 @@ Deno.serve(async (_req) => {
 
     if (insertError) throw insertError;
 
-    console.log(`🆕 Created ${newRounds?.length || 0} daily rounds for ${dateLabel}`);
+    console.log(`🆕 Created ${newRounds?.length || 0} daily rounds for ${dateLabel} (skipped pro: ${!hasEnoughProMatches})`);
 
     // Calculate team prices for each new round
     const priceResults: any[] = [];
@@ -122,6 +162,9 @@ Deno.serve(async (_req) => {
       JSON.stringify({
         success: true,
         created_rounds: newRounds?.length || 0,
+        skipped_pro_rounds: !hasEnoughProMatches,
+        pro_match_count: proMatchCount ?? 0,
+        min_required: MIN_PRO_MATCHES,
         date_range: `${startDate.toISOString()} → ${endDate.toISOString()}`,
         price_calculations: priceResults,
       }),

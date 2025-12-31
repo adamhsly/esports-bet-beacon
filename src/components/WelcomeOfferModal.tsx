@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Gift, Clock, CheckCircle, Sparkles, Loader2, DollarSign, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,35 +12,7 @@ import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-// Hook to fetch the upcoming PAID daily round
-const useUpcomingPaidDailyRound = () => {
-  const [roundId, setRoundId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const fetchRound = async () => {
-      try {
-        const { data } = await supabase
-          .from('fantasy_rounds')
-          .select('id')
-          .eq('type', 'daily')
-          .eq('status', 'scheduled')
-          .eq('is_private', false)
-          .eq('is_paid', true)
-          .order('start_date', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        
-        setRoundId(data?.id ?? null);
-      } catch (err) {
-        console.error('Error fetching paid daily round:', err);
-      }
-    };
-    fetchRound();
-  }, []);
-  
-  return roundId;
-};
+import { useUpcomingProRound } from '@/hooks/useUpcomingProRound';
 
 interface WelcomeOfferModalProps {
   open: boolean;
@@ -52,11 +24,13 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
   const { user } = useAuth();
   const { status, daysRemaining, displayState, refetch, progressPercent, canClaimTier2 } = useWelcomeOffer();
   const [claiming, setClaiming] = useState(false);
-  const paidDailyRoundId = useUpcomingPaidDailyRound();
   
-  // Build the navigation link - go to paid daily round if available
-  const paidRoundLink = paidDailyRoundId 
-    ? `/fantasy?roundId=${paidDailyRoundId}` 
+  // Use the smart hook that falls back to weekly if no daily pro round exists
+  const { round: paidProRound } = useUpcomingProRound({ isPaid: true });
+  
+  // Build the navigation link - go to paid pro round (daily or weekly) if available
+  const paidRoundLink = paidProRound 
+    ? `/fantasy?roundId=${paidProRound.id}` 
     : '/fantasy?tab=join';
 
   const formatPence = (pence: number) => {
