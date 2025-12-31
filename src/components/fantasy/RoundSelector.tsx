@@ -250,8 +250,8 @@ const RoundCard: React.FC<{
             </span>
           </div>
 
-          <div className="w-full flex flex-col items-center">
-            <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-t-lg px-4 py-2 flex items-center justify-center gap-2">
+          <div className="w-full">
+            <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-4 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
               <span className="text-base font-bold text-emerald-300">
                 {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
@@ -293,15 +293,15 @@ const RoundCard: React.FC<{
         </div>
 
         <div className="p-4 flex flex-col items-center justify-center">
-          <div className="flex flex-col items-center">
-            <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
+          <div className="w-full min-w-[140px]">
+            <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
               <span className="text-base font-bold text-emerald-300">
                 {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
               </span>
             </div>
             <Button
-              className={`font-medium text-sm px-6 rounded-t-none flex-shrink-0 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+              className={`w-full font-medium text-sm rounded-t-none ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
               disabled={isPaidCheckoutLoading}
             >
               {getButtonText()}
