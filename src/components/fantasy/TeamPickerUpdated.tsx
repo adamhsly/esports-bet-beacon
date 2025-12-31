@@ -22,8 +22,8 @@ import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 import { usePaidRoundCheckout } from '@/hooks/usePaidRoundCheckout';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
-import { TeamPickerWalkthrough, TeamPickerHelpButton } from './TeamPickerWalkthrough';
-import { FantasyRulesModal } from './FantasyRulesModal';
+import { TeamPickerWalkthrough } from './TeamPickerWalkthrough';
+import { RoundDetailsModal } from './RoundDetailsModal';
 
 
 interface FantasyRound {
@@ -770,7 +770,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
             {getRoundDisplayTitle()}
           </h2>
-          <TeamPickerHelpButton onOpenRules={() => setShowRulesModal(true)} />
+          <button 
+            onClick={() => setShowRulesModal(true)}
+            className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <Info className="h-4 w-4 text-gray-300" />
+          </button>
         </div>
         
         {/* Prize Display */}
@@ -1016,7 +1021,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         round={round}
       />
 
-      <FantasyRulesModal 
+      <RoundDetailsModal 
+        round={round} 
         open={showRulesModal} 
         onOpenChange={setShowRulesModal} 
       />
