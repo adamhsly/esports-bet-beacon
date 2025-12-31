@@ -295,16 +295,21 @@ serve(async (req) => {
                 round_type: round.type
               });
               
-              const { error: emailError } = await resend.emails.send({
+              console.log(`📤 Attempting to send consolation email to ${userEmail}...`);
+              const emailResult = await resend.emails.send({
                 from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
                 to: [userEmail],
                 subject: emailSubject,
                 html: emailHtml,
               });
               
-              if (emailError) {
-                console.error(`Failed to send consolation email to ${userEmail}:`, emailError);
+              console.log(`📧 Resend API response:`, JSON.stringify(emailResult));
+              
+              if (emailResult.error) {
+                console.error(`Failed to send consolation email to ${userEmail}:`, emailResult.error);
               } else {
+                console.log(`✅ Email sent successfully! Message ID: ${emailResult.data?.id}`);
+                
                 await supabase
                   .from('fantasy_round_consolations')
                   .update({ notification_sent: true })
@@ -404,7 +409,11 @@ serve(async (req) => {
         
         console.log(`Found ${nonWinnerPicks.length} users eligible for consolation prizes (backfill) in round ${round.id}`);
         
-        for (const pick of nonWinnerPicks) {
+        // Cap at 5 users per round to avoid CPU timeout
+        const usersToProcess = nonWinnerPicks.slice(0, 5);
+        console.log(`Processing ${usersToProcess.length} users this run (max 5 per round)`);
+        
+        for (const pick of usersToProcess) {
           try {
             // Get profile to check if test user
             const { data: profile } = await supabase
@@ -482,16 +491,21 @@ serve(async (req) => {
               round_type: round.type
             });
             
-            const { error: emailError } = await resend.emails.send({
+            console.log(`📤 Attempting to send consolation email to ${userEmail}...`);
+            const emailResult = await resend.emails.send({
               from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
               to: [userEmail],
               subject: emailSubject,
               html: emailHtml,
             });
             
-            if (emailError) {
-              console.error(`Failed to send consolation email to ${userEmail} (backfill):`, emailError);
+            console.log(`📧 Resend API response:`, JSON.stringify(emailResult));
+            
+            if (emailResult.error) {
+              console.error(`Failed to send consolation email to ${userEmail} (backfill):`, emailResult.error);
             } else {
+              console.log(`✅ Email sent successfully! Message ID: ${emailResult.data?.id}`);
+              
               await supabase
                 .from('fantasy_round_consolations')
                 .update({ notification_sent: true })
