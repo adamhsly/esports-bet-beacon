@@ -812,6 +812,65 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         onToggleStar={handleToggleStar} 
       />
 
+      {/* Pick For Me Button */}
+      <div className="flex justify-center">
+        <Button
+          variant="outline"
+          onClick={() => {
+            // Combine all available teams based on round's team_type
+            let availableTeams: Team[] = [];
+            if (round.team_type === 'pro') {
+              availableTeams = [...proTeams];
+            } else if (round.team_type === 'amateur') {
+              availableTeams = [...amateurTeams];
+            } else {
+              availableTeams = [...proTeams, ...amateurTeams];
+            }
+
+            if (availableTeams.length < 5) {
+              toast.error('Not enough teams available to pick from');
+              return;
+            }
+
+            // Shuffle and pick teams that fit within budget
+            const shuffled = availableTeams.sort(() => Math.random() - 0.5);
+            const picked: Team[] = [];
+            let spent = 0;
+            const budget = user ? totalBudget : SALARY_CAP;
+
+            for (const team of shuffled) {
+              if (picked.length >= 5) break;
+              const price = team.price ?? 0;
+              if (spent + price <= budget) {
+                picked.push(team);
+                spent += price;
+              }
+            }
+
+            if (picked.length < 5) {
+              // If we couldn't get 5 teams within budget, just pick the 5 cheapest
+              const sortedByPrice = [...availableTeams].sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+              picked.length = 0;
+              for (let i = 0; i < 5 && i < sortedByPrice.length; i++) {
+                picked.push(sortedByPrice[i]);
+              }
+            }
+
+            setSelectedTeams(picked);
+            // Set the first team as star team
+            if (picked.length > 0) {
+              setStarTeamId(picked[0].id);
+            }
+            toast.success('Random lineup selected!');
+          }}
+          disabled={loading || proTeams.length + amateurTeams.length < 5}
+          className="w-full max-w-md h-10 text-sm font-medium border-purple-500/30 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Pick for me
+        </Button>
+      </div>
+
       {/* Submit Button */}
       <div className="flex justify-center">
         <Button 
