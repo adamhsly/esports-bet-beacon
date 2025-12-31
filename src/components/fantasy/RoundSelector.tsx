@@ -257,13 +257,14 @@ const RoundCard: React.FC<{
                 {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
               </span>
             </div>
-            <Button
-              className={`w-full font-medium text-sm py-2.5 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-              style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
-              disabled={isPaidCheckoutLoading}
-            >
-              {getButtonText()}
-            </Button>
+            <div className="w-full overflow-hidden rounded-b-lg">
+              <Button
+                className={`w-full font-medium text-sm py-2.5 !rounded-none before:hidden ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+                disabled={isPaidCheckoutLoading}
+              >
+                {getButtonText()}
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -301,13 +302,14 @@ const RoundCard: React.FC<{
                 {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
               </span>
             </div>
-            <Button
-              className={`w-full font-medium text-sm ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-              style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
-              disabled={isPaidCheckoutLoading}
-            >
-              {getButtonText()}
-            </Button>
+            <div className="w-full overflow-hidden rounded-b-lg">
+              <Button
+                className={`w-full font-medium text-sm !rounded-none before:hidden ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+                disabled={isPaidCheckoutLoading}
+              >
+                {getButtonText()}
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
