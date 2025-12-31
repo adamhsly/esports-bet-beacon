@@ -242,10 +242,6 @@ const RoundCard: React.FC<{
 
         <div className="p-4 flex flex-col items-center gap-3">
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
-              <Trophy className="h-3 w-3" />
-              {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
-            </span>
             <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
@@ -254,8 +250,13 @@ const RoundCard: React.FC<{
             </span>
           </div>
 
+          <span className="px-4 py-1.5 text-base font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
+            {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
+          </span>
+
           <Button
-            className={`w-full font-medium text-sm py-2 mt-1 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
+            className={`w-full font-medium text-sm py-2 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
             disabled={isPaidCheckoutLoading}
           >
             {getButtonText()}
@@ -279,10 +280,6 @@ const RoundCard: React.FC<{
             <p className="text-lg font-bold text-center mb-2 truncate bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{round.round_name}</p>
           )}
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
-              <Trophy className="h-3 w-3" />
-              {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
-            </span>
             <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
@@ -292,7 +289,11 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        <div className="p-4 flex items-center">
+        <div className="p-4 flex flex-col items-center justify-center gap-2">
+          <span className="px-4 py-1.5 text-base font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
+            {formatTotalPrize(round.prize_1st ?? 0, round.prize_2nd ?? 0, round.prize_3rd ?? 0, prizeType)}
+          </span>
           <Button
             className={`font-medium text-sm px-6 flex-shrink-0 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
             disabled={isPaidCheckoutLoading}
