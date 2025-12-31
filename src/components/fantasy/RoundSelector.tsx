@@ -231,25 +231,11 @@ const RoundCard: React.FC<{
         </div>
 
         <div className="p-4 flex flex-col items-center gap-3">
-          <div className="text-center">
-          <div className="flex items-center justify-center gap-4 text-2xl font-bold">
-            <span className="flex items-center gap-1">
-              <span className="text-yellow-400">🥇</span>
-              <span className="text-gray-200">{prize1st}</span>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
+              <Trophy className="h-3 w-3" />
+              {prizeType === "vouchers" ? `$${((round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)) / 100}` : `${(round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)}`} {prizeType === "vouchers" ? "Vouchers" : "Credits"}
             </span>
-            <span className="flex items-center gap-1">
-              <span className="text-gray-400">🥈</span>
-              <span className="text-gray-200">{prize2nd}</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="text-orange-400">🥉</span>
-              <span className="text-gray-200">{prize3rd}</span>
-            </span>
-          </div>
-          <p className="text-white text-sm text-center mt-1">
-            {prizeType === "vouchers" ? "Steam Vouchers" : "Credits"}
-          </p>
-          <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
             <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
@@ -257,18 +243,6 @@ const RoundCard: React.FC<{
               {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
             </span>
           </div>
-        </div>
-
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
-          </div>
-        </div>
 
           <Button
             className={`w-full font-medium text-sm py-2 mt-1 ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
@@ -290,47 +264,21 @@ const RoundCard: React.FC<{
         </div>
 
         <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-          {/* Round name above prizes */}
+          {/* Round name */}
           {round.round_name && (
             <p className="text-sm font-bold text-center mb-2 truncate bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{round.round_name}</p>
           )}
-          <div className="flex flex-col items-center justify-center mb-1">
-            <div className="flex items-center gap-4 text-xl font-bold">
-              <span className="flex items-center gap-1">
-                <span className="text-yellow-400">🥇</span>
-                <span className="text-gray-200">{prize1st}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-gray-400">🥈</span>
-                <span className="text-gray-200">{prize2nd}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-orange-400">🥉</span>
-                <span className="text-gray-200">{prize3rd}</span>
-              </span>
-            </div>
-            <p className="text-white text-sm text-center mt-1">
-              {prizeType === "vouchers" ? "Steam Vouchers" : "Credits"}
-            </p>
-          </div>
-          <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
+              <Trophy className="h-3 w-3" />
+              {prizeType === "vouchers" ? `$${((round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)) / 100}` : `${(round.prize_1st ?? 200) + (round.prize_2nd ?? 100) + (round.prize_3rd ?? 50)}`} {prizeType === "vouchers" ? "Vouchers" : "Credits"}
+            </span>
             <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-full">
               {round.game_type || "All Games"}
             </span>
             <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${getTeamTypePillClass()}`}>
               {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
             </span>
-          </div>
-
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>Start: {new Date(round.start_date).toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>End: {new Date(round.end_date).toLocaleDateString()}</span>
-            </div>
           </div>
         </div>
 
