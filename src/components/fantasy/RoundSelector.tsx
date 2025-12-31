@@ -235,7 +235,7 @@ const RoundCard: React.FC<{
           {/* Round name overlay */}
           {round.round_name && (
             <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
-              <p className="text-sm font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent truncate">{round.round_name}</p>
+              <p className="text-base font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent truncate">{round.round_name}</p>
             </div>
           )}
         </div>
@@ -276,7 +276,7 @@ const RoundCard: React.FC<{
         <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
           {/* Round name */}
           {round.round_name && (
-            <p className="text-sm font-bold text-center mb-2 truncate bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{round.round_name}</p>
+            <p className="text-lg font-bold text-center mb-2 truncate bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{round.round_name}</p>
           )}
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
