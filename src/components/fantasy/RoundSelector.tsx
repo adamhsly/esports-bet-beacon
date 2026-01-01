@@ -378,16 +378,18 @@ const RoundCard: React.FC<{
               {round.team_type === "pro" ? "Pro Teams" : round.team_type === "amateur" ? "Amateur Teams" : "Pro & Amateur"}
             </span>
           </div>
+          {/* Player count display - centered below pills on desktop/tablet */}
+          {playerCountText && (
+            <div className="flex justify-center mt-2">
+              <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {playerCountText}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="p-4 pt-8 flex flex-col items-center justify-center gap-2">
-          {/* Player count display for desktop */}
-          {playerCountText && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {playerCountText}
-            </span>
-          )}
           <div className="w-full min-w-[140px] cursor-pointer hover:scale-[1.02] transition-transform" onClick={handleClick}>
             <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
