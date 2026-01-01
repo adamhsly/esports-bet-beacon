@@ -164,6 +164,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
       return;
     }
 
+    // Validate age is 18 or older
+    const birthDate = new Date(parseInt(dobYear), parseInt(dobMonth) - 1, parseInt(dobDay));
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age < 18) {
+      const errorMessage = "You must be 18 or older to create an account.";
+      setSignUpError(errorMessage);
+      toast({
+        title: "Age requirement not met",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check for field errors
     const hasErrors = Object.values(fieldErrors).some(error => error !== '');
     if (hasErrors) {
