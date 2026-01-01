@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gift, Clock, CheckCircle, Sparkles, Loader2, DollarSign, TrendingUp, Ticket } from 'lucide-react';
+import { Gift, Clock, CheckCircle, Sparkles, Loader2, DollarSign, TrendingUp, Ticket, Mail, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -222,13 +222,24 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                   📣 Once {paidRound?.minimum_reservations || 35} players reserve, the round opens and you can pick your teams!
                 </p>
               </div>
+
+              {/* Email notification info */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-md p-3 flex items-center gap-3">
+                <Mail className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                <p className="text-xs text-gray-400">
+                  We'll email you when the round opens for team submission.
+                </p>
+              </div>
               
               <Button 
-                onClick={handleCloseReservation}
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate('/fantasy');
+                }}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                View My Reservations
+                <Play className="w-4 h-4 mr-2" />
+                Join a Free Round in the Meantime
               </Button>
             </div>
           </>
