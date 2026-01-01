@@ -924,7 +924,11 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           disabled={selectedTeams.length !== 5 || submitting || checkoutLoading} 
           className="w-full max-w-md h-14 text-lg font-semibold rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] transition-all disabled:opacity-50 disabled:shadow-none"
         >
-          {submitting || checkoutLoading ? 'Processing...' : (user ? 'Submit Teams' : 'Create Account & Submit Teams')}
+        {submitting || checkoutLoading ? 'Processing...' : (
+          user 
+            ? (round.entry_fee && round.entry_fee > 0 ? 'Pay & Submit Teams' : 'Submit Teams') 
+            : 'Create Account & Submit Teams'
+        )}
         </Button>
       </div>
 

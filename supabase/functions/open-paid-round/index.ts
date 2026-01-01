@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+import { Resend } from 'npm:resend@4.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,8 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://fragsandfortunes.com';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { round_id } = await req.json();
@@ -26,7 +29,7 @@ Deno.serve(async (req) => {
     // Get round details
     const { data: round, error: roundError } = await supabase
       .from('fantasy_rounds')
-      .select('id, round_name, status, minimum_reservations, start_date')
+      .select('id, round_name, status, minimum_reservations, start_date, entry_fee, prize_1st, prize_2nd, prize_3rd, prize_type')
       .eq('id', round_id)
       .single();
 
@@ -78,7 +81,6 @@ Deno.serve(async (req) => {
       console.error('Error fetching reservations:', reservationsError);
     }
 
-    // Get user emails for notification
     const userIds = reservations?.map(r => r.user_id) || [];
     
     if (userIds.length > 0) {
@@ -89,9 +91,65 @@ Deno.serve(async (req) => {
         .eq('round_id', round_id)
         .eq('notified_open', false);
 
-      // TODO: Send email notifications via Resend
-      // For now, log that we would notify
-      console.log(`Would notify ${userIds.length} users that round is open`);
+      // Send email notifications via Resend
+      if (resendApiKey) {
+        const resend = new Resend(resendApiKey);
+        
+        // Get user emails from auth
+        const { data: users } = await supabase.auth.admin.listUsers();
+        const userEmails = users?.users
+          ?.filter(u => userIds.includes(u.id) && u.email)
+          ?.map(u => ({ id: u.id, email: u.email! })) || [];
+
+        console.log(`Sending open notifications to ${userEmails.length} users`);
+
+        // Format prize display
+        const formatPrize = (amount: number, type: string) => {
+          if (type === 'vouchers') {
+            return `$${(amount / 100).toFixed(0)}`;
+          }
+          return `${amount} credits`;
+        };
+        const totalPrize = (round.prize_1st || 0) + (round.prize_2nd || 0) + (round.prize_3rd || 0);
+        const prizeDisplay = formatPrize(totalPrize, round.prize_type || 'credits');
+        const entryFeeDisplay = round.entry_fee ? `$${(round.entry_fee / 100).toFixed(2)}` : 'Free';
+
+        for (const user of userEmails) {
+          try {
+            await resend.emails.send({
+              from: 'Frags & Fortunes <noreply@fragsandfortunes.com>',
+              to: [user.email],
+              subject: `🎮 ${round.round_name} is NOW OPEN! Time to pick your teams!`,
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h1 style="color: #8B5CF6; margin-bottom: 16px;">The Round is Open! 🎉</h1>
+                  <p style="font-size: 16px; color: #333;">Great news! <strong>${round.round_name}</strong> has reached the minimum number of players and is now open for entries.</p>
+                  
+                  <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%); border-radius: 12px; padding: 20px; margin: 24px 0; color: white;">
+                    <h2 style="margin: 0 0 12px 0; color: #a78bfa;">Round Details</h2>
+                    <p style="margin: 8px 0;"><strong>Entry Fee:</strong> ${entryFeeDisplay}</p>
+                    <p style="margin: 8px 0;"><strong>Total Prize Pool:</strong> ${prizeDisplay}</p>
+                  </div>
+                  
+                  <p style="font-size: 16px; color: #333;">Your reservation is confirmed - now it's time to pay and submit your team lineup!</p>
+                  
+                  <a href="${siteUrl}/fantasy" style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 20px 0;">
+                    Pick Your Teams Now →
+                  </a>
+                  
+                  <p style="font-size: 14px; color: #666; margin-top: 24px;">Good luck!</p>
+                  <p style="font-size: 14px; color: #666;">- The Frags & Fortunes Team</p>
+                </div>
+              `,
+            });
+            console.log(`Email sent to ${user.email}`);
+          } catch (emailError) {
+            console.error(`Failed to send email to ${user.email}:`, emailError);
+          }
+        }
+      } else {
+        console.log('RESEND_API_KEY not configured, skipping email notifications');
+      }
     }
 
     return new Response(
