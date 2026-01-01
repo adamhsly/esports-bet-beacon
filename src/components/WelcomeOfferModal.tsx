@@ -106,10 +106,15 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 Use your promo balance on paid fantasy entries
               </p>
               {daysRemaining !== null && (
-                <p className="text-xs text-yellow-400 flex items-center justify-center gap-1 mt-2">
-                  <Clock className="w-3 h-3" />
-                  Expires in {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className={`text-sm font-bold flex items-center justify-center gap-1 ${daysRemaining <= 1 ? 'text-red-400' : 'text-yellow-400'}`}>
+                    <Clock className="w-4 h-4" />
+                    {daysRemaining === 0 ? 'EXPIRES TODAY!' : `Expires in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`}
+                  </p>
+                  <p className="text-xs text-red-400/80 font-medium">
+                    ⚠️ Use it or lose it - don't miss out on prizes!
+                  </p>
+                </div>
               )}
             </div>
           ) : isTier2Ready ? (
@@ -274,12 +279,20 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
             </Button>
           )}
 
-          {/* Fine print */}
-          <div className="border-t border-gray-700 pt-3">
+          {/* Fine print with urgency */}
+          <div className="border-t border-gray-700 pt-3 space-y-2">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-md p-2">
+              <p className="text-xs text-red-400 font-medium text-center">
+                ⏰ {status?.tier === 2 
+                  ? 'Bonus expires 2 days after claiming - use it or lose it!'
+                  : 'Free entry expires in 24 hours - claim now to win prizes!'
+                }
+              </p>
+            </div>
             <p className="text-xs text-gray-500">
               {status?.tier === 2 
-                ? `Spend ${thresholdAmount} on paid entries to unlock ${rewardAmount} bonus. Promo balance valid for 2 days after claiming.`
-                : `Free entry valid for 30 days. Use it to enter any paid round. Complete to unlock the Spend $5 Get $10 bonus!`
+                ? `Spend ${thresholdAmount} on paid entries to unlock ${rewardAmount} bonus.`
+                : `Claim your free entry and enter a paid round to compete for real prizes!`
               }
             </p>
           </div>
