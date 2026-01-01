@@ -328,10 +328,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     : (tempSelectedTeams.length <= 5 && tempBudgetSpent <= effectiveTotalBudget);
   return <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-2xl bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-l border-gray-700/50 flex flex-col h-full overflow-hidden">
-        <SheetHeader className="border-b border-gray-700/50 pb-6">
+        <SheetHeader className="border-b border-gray-700/50 pb-3">
           
           {/* Budget & Selection Status */}
-          <div className="space-y-3 mt-4">
+          <div className="space-y-2 mt-2">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Budget:</span>
               <span className={`font-medium ${tempBudgetSpent > effectiveTotalBudget ? 'text-red-400' : 'text-green-400'}`}>
@@ -366,7 +366,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         </SheetHeader>
 
         {/* Tabs */}
-        <div className="mt-6 flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="mt-3 flex-1 flex flex-col min-h-0 overflow-hidden">
           <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'pro' | 'amateur')} className="flex-1 flex flex-col min-h-0">
             {round.team_type === 'both' || !round.team_type ? (
               <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700/50">
@@ -383,7 +383,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
             {/* Pro Teams Tab */}
             {(!round.team_type || round.team_type === 'both' || round.team_type === 'pro') && (
-            <TabsContent value="pro" className="mt-6 space-y-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsContent value="pro" className="mt-3 space-y-3 flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Pro Filters */}
               <div className="space-y-4">
                 <div className="relative">
@@ -445,7 +445,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
             {/* Amateur Teams Tab */}
             {(!round.team_type || round.team_type === 'both' || round.team_type === 'amateur') && (
-            <TabsContent value="amateur" className="mt-6 space-y-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsContent value="amateur" className="mt-3 space-y-3 flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Amateur Warning Banner */}
               
               
