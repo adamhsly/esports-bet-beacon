@@ -95,15 +95,14 @@ const WelcomeOfferBadge: React.FC = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <div 
-                className={`flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r ${
+                className={`flex items-center gap-1 px-2 py-1 bg-gradient-to-r ${
                   canClaimTier2 
                     ? 'from-yellow-600/30 to-orange-500/30 border-yellow-500/50 animate-pulse' 
                     : 'from-purple-600/30 to-blue-500/30 border-purple-500/50'
                 } border rounded-full cursor-pointer hover:border-opacity-70 transition-colors`}
                 onClick={() => setModalOpen(true)}
               >
-                <DollarSign className={`w-3.5 h-3.5 ${canClaimTier2 ? 'text-yellow-400' : 'text-purple-400'}`} />
-                <span className={`text-xs font-bold ${canClaimTier2 ? 'text-yellow-300' : 'text-purple-300'}`}>
+                <span className={`text-[10px] font-bold ${canClaimTier2 ? 'text-yellow-300' : 'text-purple-300'}`}>
                   {canClaimTier2 
                     ? `Claim ${formatPence(status.rewardPence)}!` 
                     : `Get ${formatPence(status.rewardPence)}`
