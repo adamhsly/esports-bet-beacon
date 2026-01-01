@@ -163,7 +163,7 @@ const RoundCard: React.FC<{
   const prize1st = formatPrize(round.prize_1st ?? 200, prizeType);
   const prize2nd = formatPrize(round.prize_2nd ?? 100, prizeType);
   const prize3rd = formatPrize(round.prize_3rd ?? 50, prizeType);
-  const isScheduled = round.status === "scheduled";
+  const isScheduled = round.status === "scheduled" || new Date() < new Date(round.start_date);
   const isInProgress = () => {
     const now = new Date();
     const start = new Date(round.start_date);
