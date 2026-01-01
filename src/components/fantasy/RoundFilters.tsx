@@ -22,7 +22,7 @@ import overwatchLogo from '@/assets/logos/esports/overwatch.png';
 export interface RoundFiltersState {
   entryType: "all" | "free" | "paid";
   gameTypes: string[]; // Multi-select now
-  status: "all" | "in_progress" | "coming_soon";
+  status: "all" | "coming_soon";
   teamType: "all" | "pro" | "amateur" | "both";
 }
 
@@ -50,7 +50,6 @@ const StatusTabs: React.FC<{
 }> = ({ value, onChange }) => {
   const options: { value: RoundFiltersState["status"]; label: string }[] = [
     { value: "all", label: "All Rounds" },
-    { value: "in_progress", label: "In Progress" },
     { value: "coming_soon", label: "Coming Soon" },
   ];
 
@@ -197,7 +196,7 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
 
     if (filters.status !== "all") {
       active.push({
-        label: filters.status === "in_progress" ? "In Progress" : "Coming Soon",
+        label: "Coming Soon",
         onRemove: () => updateFilter("status", "all"),
       });
     }
@@ -582,17 +581,10 @@ export const applyRoundFilters = <T extends {
       if (!matchesSelectedGame && !isAllGamesRound) return false;
     }
 
-    // Status filter
-    if (filters.status !== "all") {
+    // Status filter - only coming_soon filter since in_progress rounds are not shown
+    if (filters.status === "coming_soon") {
       const roundStatus = round.status?.toLowerCase() || "";
-      if (filters.status === "in_progress") {
-        if (roundStatus !== "open" && roundStatus !== "active" && roundStatus !== "in_progress") {
-          return false;
-        }
-      }
-      if (filters.status === "coming_soon") {
-        if (roundStatus !== "scheduled") return false;
-      }
+      if (roundStatus !== "scheduled") return false;
     }
 
     // Team type filter
