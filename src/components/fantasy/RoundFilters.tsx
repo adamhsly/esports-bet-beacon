@@ -379,20 +379,30 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] backdrop-blur-lg border border-white/[0.05] rounded-[10px] p-3">
-      {/* Quick status tabs + filter button */}
+    <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] backdrop-blur-lg border border-white/[0.05] rounded-[10px] p-3 space-y-3">
+      {/* Top row: Entry type tabs + filter button */}
       <div className="flex items-center gap-2">
-        {!hideStatusFilter && (
-          <StatusTabs
-            value={filters.status}
-            onChange={(v) => updateFilter("status", v)}
-          />
-        )}
-        {hideStatusFilter && (
-          <span className="text-sm text-[#d1d1d9] flex-1">
-            <span className="font-semibold text-white">{resultCount}</span> rounds found
-          </span>
-        )}
+        {/* Entry type pills at top level */}
+        <div className="flex-1 flex gap-1.5">
+          {[
+            { value: "all", label: "All" },
+            { value: "free", label: "Free" },
+            { value: "paid", label: "Paid" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => updateFilter("entryType", option.value as RoundFiltersState["entryType"])}
+              className={cn(
+                "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-250",
+                filters.entryType === option.value
+                  ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)]"
+                  : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <button className="relative shrink-0 inline-flex items-center justify-center p-2.5 rounded-lg text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white transition-all duration-250">
@@ -430,33 +440,6 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
                   selectedGames={filters.gameTypes}
                   onChange={(games) => updateFilter("gameTypes", games)}
                 />
-              </div>
-
-              {/* Entry Type */}
-              <div>
-                <h4 className="text-sm font-medium mb-3 text-white">Entry Type</h4>
-                <div className="flex gap-2">
-                  {[
-                    { value: "all", label: "All" },
-                    { value: "free", label: "Free" },
-                    { value: "paid", label: "Paid" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() =>
-                        updateFilter("entryType", option.value as RoundFiltersState["entryType"])
-                      }
-                      className={cn(
-                        "flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-250",
-                        filters.entryType === option.value
-                          ? "bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] text-white shadow-[0_0_12px_rgba(122,92,255,0.4)]"
-                          : "text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white"
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Team Type */}
@@ -505,11 +488,6 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
             </div>
           </SheetContent>
         </Sheet>
-      </div>
-
-      {/* Result count */}
-      <div className="mt-2 text-xs text-[#d1d1d9]">
-        <span className="font-semibold text-white">{resultCount}</span> rounds found
       </div>
     </div>
   );
