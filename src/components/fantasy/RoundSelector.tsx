@@ -80,6 +80,7 @@ const RoundCard: React.FC<{
   hasReservation?: boolean;
   reservationCount?: number;
   pickCount?: number;
+  hasFreeEntry?: boolean;
 }> = ({ 
   round, 
   type, 
@@ -94,6 +95,7 @@ const RoundCard: React.FC<{
   hasReservation = false,
   reservationCount = 0,
   pickCount = 0,
+  hasFreeEntry = false,
 }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
@@ -214,6 +216,9 @@ const RoundCard: React.FC<{
         return "Reserve Ticket";
       }
       // Round is open
+      if (hasFreeEntry) {
+        return "Use Free Entry";
+      }
       return userEntryCount > 0 ? `${formatEntryFee(round.entry_fee!)} Enter Again` : `${formatEntryFee(round.entry_fee!)} To Join`;
     }
     return "Free To Join";
@@ -332,6 +337,7 @@ const RoundCard: React.FC<{
                 className={`w-full font-medium text-sm py-2.5 !rounded-none before:hidden ${
                   hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : 
                   hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  (isPaid && hasFreeEntry && round.status === 'open') ? "bg-green-500 hover:bg-green-600 text-white" :
                   isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
@@ -402,6 +408,7 @@ const RoundCard: React.FC<{
                 className={`w-full font-medium text-sm !rounded-none before:hidden ${
                   hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : 
                   hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  (isPaid && hasFreeEntry && round.status === 'open') ? "bg-green-500 hover:bg-green-600 text-white" :
                   isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
@@ -441,6 +448,7 @@ export const RoundSelector: React.FC<{
   const [userReservations, setUserReservations] = useState<Set<string>>(new Set());
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [selectedReservationRound, setSelectedReservationRound] = useState<Round | null>(null);
+  const [userPromoBalance, setUserPromoBalance] = useState(0);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   const { reserveSlot, getReservationCount, loading: reserveLoading } = useRoundReservation();
 
@@ -470,9 +478,28 @@ export const RoundSelector: React.FC<{
         fetchPaidButEmptyPicks();
         fetchJoinedFreeRounds();
         fetchUserReservations();
+        fetchUserPromoBalance();
       }
     }
   }, [user, rounds]);
+
+  // Fetch user's promo balance to check if they have a free entry
+  const fetchUserPromoBalance = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('promo_balance_pence')
+        .eq('id', user.id)
+        .single();
+      
+      if (!error && data) {
+        setUserPromoBalance(data.promo_balance_pence || 0);
+      }
+    } catch (err) {
+      console.error('Error fetching promo balance:', err);
+    }
+  };
 
   const fetchReservationCounts = async () => {
     const paidRounds = rounds.filter(r => r.is_paid);
@@ -862,6 +889,7 @@ export const RoundSelector: React.FC<{
                             hasReservation={userReservations.has(round.id)}
                             reservationCount={reservationCounts[round.id]?.count || 0}
                             pickCount={reservationCounts[round.id]?.pickCount || 0}
+                            hasFreeEntry={round.is_paid && userPromoBalance >= (round.entry_fee || 0)}
                           />
                         </div>
                       );
