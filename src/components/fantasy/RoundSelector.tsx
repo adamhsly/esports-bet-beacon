@@ -206,7 +206,7 @@ const RoundCard: React.FC<{
 
   const getButtonText = () => {
     if (isPaidCheckoutLoading || isReserveLoading) return "Loading...";
-    if (hasPaidButEmptyPicks) return "Pay & Submit Teams";
+    if (hasPaidButEmptyPicks) return "Submit Team";
     if (isPaid) {
       if (round.status !== 'open') {
         // Round not open yet - show reserve option
@@ -215,13 +215,10 @@ const RoundCard: React.FC<{
         }
         return "Reserve Ticket";
       }
-      // Round is open
-      if (hasFreeEntry) {
-        return "Use Free Entry";
-      }
-      return userEntryCount > 0 ? `${formatEntryFee(round.entry_fee!)} Enter Again` : `${formatEntryFee(round.entry_fee!)} To Join`;
+      // Round is open - all paid rounds go to team picker first
+      return "Submit Team";
     }
-    return "Free To Join";
+    return "Submit Team";
   };
   
   // Show player count for all rounds
@@ -335,10 +332,8 @@ const RoundCard: React.FC<{
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
                 className={`w-full font-medium text-sm py-2.5 !rounded-none before:hidden ${
-                  hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : 
                   hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
-                  (isPaid && hasFreeEntry && round.status === 'open') ? "bg-green-500 hover:bg-green-600 text-white" :
-                  isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : 
+                  isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
                 disabled={isPaidCheckoutLoading || isReserveLoading || hasReservation}
@@ -406,10 +401,8 @@ const RoundCard: React.FC<{
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
                 className={`w-full font-medium text-sm !rounded-none before:hidden ${
-                  hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : 
                   hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
-                  (isPaid && hasFreeEntry && round.status === 'open') ? "bg-green-500 hover:bg-green-600 text-white" :
-                  isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : 
+                  isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
                 disabled={isPaidCheckoutLoading || isReserveLoading || hasReservation}

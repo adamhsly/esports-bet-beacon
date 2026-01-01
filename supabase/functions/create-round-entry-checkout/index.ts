@@ -38,7 +38,7 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    const { round_id } = await req.json();
+    const { round_id, team_picks, bench_team, star_team_id } = await req.json();
     if (!round_id) {
       throw new Error("round_id is required");
     }
@@ -90,13 +90,15 @@ serve(async (req) => {
 
       const promoSessionId = `promo_${crypto.randomUUID()}`;
 
-      // Create picks entry FIRST (before deducting promo)
+      // Create picks entry with team data if provided
       const { data: picksData, error: picksError } = await supabaseAdmin
         .from("fantasy_round_picks")
         .insert({
           round_id: round.id,
           user_id: user.id,
-          team_picks: [],
+          team_picks: team_picks || [],
+          bench_team: bench_team || null,
+          submitted_at: team_picks && team_picks.length > 0 ? new Date().toISOString() : null,
         })
         .select()
         .single();
@@ -104,6 +106,23 @@ serve(async (req) => {
       if (picksError) {
         console.error("Error creating picks entry:", picksError);
         throw new Error("Failed to create picks entry");
+      }
+
+      // Set star team if provided
+      if (star_team_id && team_picks && team_picks.length > 0) {
+        const { error: starError } = await supabaseAdmin
+          .from("fantasy_round_star_teams")
+          .upsert({
+            round_id: round.id,
+            user_id: user.id,
+            star_team_id: star_team_id,
+            change_used: false,
+          }, { onConflict: 'round_id,user_id' });
+
+        if (starError) {
+          console.error("Error setting star team:", starError);
+          // Non-blocking - continue with entry
+        }
       }
 
       // Create completed entry record with link to picks
