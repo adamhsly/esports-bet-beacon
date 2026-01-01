@@ -376,17 +376,21 @@ export const RoundSelector: React.FC<{
   }, [user, rounds]);
   const fetchOpenRounds = async () => {
     try {
+      const nowIso = new Date().toISOString();
+
       // Calculate date 2 months from now
       const twoMonthsFromNow = new Date();
       twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
-      
-      // Only fetch open and scheduled rounds - exclude in_progress rounds
-      // Players cannot join rounds that have already started
+
+      // Join page should only show rounds that haven't started yet.
+      // Some rounds can still be marked "open" in DB even after they start,
+      // so we also filter by start_date > now.
       const { data, error } = await supabase
         .from("fantasy_rounds")
         .select("*")
         .in("status", ["open", "scheduled"])
         .eq("is_private", false)
+        .gt("start_date", nowIso)
         .lte("start_date", twoMonthsFromNow.toISOString())
         .order("start_date", {
           ascending: true,
@@ -543,6 +547,12 @@ export const RoundSelector: React.FC<{
   }, [searchParams, user, rounds]);
   
   const handleJoinRound = (round: Round) => {
+    const hasStarted = new Date() >= new Date(round.start_date);
+    if (hasStarted) {
+      toast.error("This round has already started and can't be joined.");
+      return;
+    }
+
     // Allow unauthenticated users to join free rounds - auth will be required at submission
     const isFreeRound = !round.is_paid && (!round.entry_fee || round.entry_fee === 0);
     if (!user && !isFreeRound) {
