@@ -34,30 +34,52 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
   const [paidRound, setPaidRound] = useState<PaidRound | null>(null);
   const [reservationCount, setReservationCount] = useState(0);
   const [showReservationConfirm, setShowReservationConfirm] = useState(false);
+  const [roundNeedsReservation, setRoundNeedsReservation] = useState(false);
   const { reserveSlot, getReservationCount } = useRoundReservation();
   
-  // Fetch the next paid pro round (either coming_soon or open/scheduled)
+  // Fetch the next paid pro round and check if it needs reservations
   useEffect(() => {
     const fetchPaidRound = async () => {
-      // First try to find any paid round that's coming_soon, open, or scheduled
-      const { data } = await supabase
+      // First try to find a scheduled paid round (these need reservations to open)
+      const { data: scheduledRound } = await supabase
         .from('fantasy_rounds')
         .select('id, status, round_name, minimum_reservations')
         .eq('is_paid', true)
         .eq('is_private', false)
         .eq('team_type', 'pro')
-        .in('status', ['coming_soon', 'open', 'scheduled'])
+        .eq('status', 'scheduled')
         .order('start_date', { ascending: true })
         .limit(1)
         .maybeSingle();
       
-      if (data) {
-        setPaidRound(data);
-        // If coming_soon, also fetch current reservation count
-        if (data.status === 'coming_soon') {
-          const countData = await getReservationCount(data.id);
+      if (scheduledRound) {
+        // Check if this round still needs reservations
+        const countData = await getReservationCount(scheduledRound.id);
+        const needsReservations = !countData.isOpen && countData.count < (scheduledRound.minimum_reservations || 35);
+        
+        if (needsReservations) {
+          setPaidRound(scheduledRound);
           setReservationCount(countData.count);
+          setRoundNeedsReservation(true);
+          return;
         }
+      }
+      
+      // Fallback: find any open paid round
+      const { data: openRound } = await supabase
+        .from('fantasy_rounds')
+        .select('id, status, round_name, minimum_reservations')
+        .eq('is_paid', true)
+        .eq('is_private', false)
+        .eq('team_type', 'pro')
+        .eq('status', 'open')
+        .order('start_date', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (openRound) {
+        setPaidRound(openRound);
+        setRoundNeedsReservation(false);
       }
     };
     
@@ -87,8 +109,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
 
     setClaiming(true);
     try {
-      // Check if round is coming_soon - just reserve ticket, don't claim bonus yet
-      if (paidRound && paidRound.status === 'coming_soon') {
+      // Check if this scheduled round needs reservations before it opens
+      if (paidRound && roundNeedsReservation) {
         // Only reserve a ticket - bonus will be claimed on actual entry
         const result = await reserveSlot(paidRound.id);
         if (result?.success) {
@@ -97,7 +119,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
           setShowReservationConfirm(true);
         }
       } else {
-        // Round is open or scheduled - claim bonus and navigate to team picker
+        // Round is open - claim bonus and navigate to team picker
         const { data, error } = await (supabase.rpc as any)('claim_welcome_bonus', { p_user_id: user.id });
         
         if (error) {
