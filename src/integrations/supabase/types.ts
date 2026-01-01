@@ -1410,6 +1410,7 @@ export type Database = {
           is_private: boolean
           join_code: string | null
           max_participants: number | null
+          minimum_reservations: number | null
           prize_1st: number | null
           prize_2nd: number | null
           prize_3rd: number | null
@@ -1436,6 +1437,7 @@ export type Database = {
           is_private?: boolean
           join_code?: string | null
           max_participants?: number | null
+          minimum_reservations?: number | null
           prize_1st?: number | null
           prize_2nd?: number | null
           prize_3rd?: number | null
@@ -1462,6 +1464,7 @@ export type Database = {
           is_private?: boolean
           join_code?: string | null
           max_participants?: number | null
+          minimum_reservations?: number | null
           prize_1st?: number | null
           prize_2nd?: number | null
           prize_3rd?: number | null
@@ -2862,6 +2865,51 @@ export type Database = {
           },
           {
             foreignKeyName: "round_entries_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      round_reservations: {
+        Row: {
+          created_at: string
+          id: string
+          notified_at: string | null
+          reserved_at: string
+          rolled_over_from: string | null
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          reserved_at?: string
+          rolled_over_from?: string | null
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          reserved_at?: string
+          rolled_over_from?: string | null
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_reservations_rolled_over_from_fkey"
+            columns: ["rolled_over_from"]
+            isOneToOne: false
+            referencedRelation: "round_reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "round_reservations_round_id_fkey"
             columns: ["round_id"]
             isOneToOne: false
             referencedRelation: "fantasy_rounds"
