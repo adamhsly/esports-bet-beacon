@@ -436,8 +436,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 <div className="bg-red-500/10 border border-red-500/30 rounded-md p-2">
                   <p className="text-xs text-red-400 font-medium text-center">
                     ⏰ {status?.tier === 2 
-                      ? 'Bonus expires 2 days after claiming - use it or lose it!'
-                      : 'Free entry expires in 24 hours - claim now to win prizes!'
+                      ? 'Bonus expires 30 days after claiming - use it or lose it!'
+                      : 'Free entry expires 30 days after claiming - claim now to win prizes!'
                     }
                   </p>
                 </div>
