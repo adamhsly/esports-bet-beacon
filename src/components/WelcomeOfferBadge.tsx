@@ -154,7 +154,7 @@ const WelcomeOfferBadge: React.FC = () => {
               >
                 <Gift className="w-3.5 h-3.5 text-green-400" />
                 <span className="text-xs font-bold text-green-300">
-                  {formatPence(status.promoBalancePence)} Balance
+                  Free Entry
                 </span>
                 {daysRemaining !== null && (
                   <div className="flex items-center gap-0.5 text-yellow-400">
