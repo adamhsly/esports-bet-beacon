@@ -426,7 +426,8 @@ const RoundCard: React.FC<{
 export const RoundSelector: React.FC<{
   onNavigateToInProgress?: () => void;
   onJoinRound?: (round: Round) => void;
-}> = ({ onNavigateToInProgress, onJoinRound }) => {
+  onRefetchRef?: React.MutableRefObject<(() => void) | null>;
+}> = ({ onNavigateToInProgress, onJoinRound, onRefetchRef }) => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rounds, setRounds] = useState<Round[]>([]);
@@ -442,6 +443,20 @@ export const RoundSelector: React.FC<{
   const [selectedReservationRound, setSelectedReservationRound] = useState<Round | null>(null);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   const { reserveSlot, getReservationCount, loading: reserveLoading } = useRoundReservation();
+
+  // Expose refetch function to parent via ref
+  useEffect(() => {
+    if (onRefetchRef) {
+      onRefetchRef.current = () => {
+        fetchOpenRounds();
+      };
+    }
+    return () => {
+      if (onRefetchRef) {
+        onRefetchRef.current = null;
+      }
+    };
+  }, [onRefetchRef]);
 
   useEffect(() => {
     fetchOpenRounds();

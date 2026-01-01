@@ -59,6 +59,7 @@ const FantasyPage: React.FC = () => {
   const [walkthroughCompletedTick, setWalkthroughCompletedTick] = useState(0);
   const welcomeOfferAutoPopupArmedRef = useRef(false);
   const tier2PopupShownRef = useRef(false);
+  const roundSelectorRefetchRef = useRef<(() => void) | null>(null);
 
   const handleFantasyWalkthroughComplete = () => {
     setWalkthroughCompletedTick((v) => v + 1);
@@ -456,6 +457,7 @@ const FantasyPage: React.FC = () => {
                     <RoundSelector 
                       onNavigateToInProgress={() => setActiveTab('in-progress')} 
                       onJoinRound={setSelectedRound}
+                      onRefetchRef={roundSelectorRefetchRef}
                     />
                   )}
                 </TabsContent>
@@ -509,7 +511,11 @@ const FantasyPage: React.FC = () => {
       <FantasyRulesModal open={rulesModalOpen} onOpenChange={setRulesModalOpen} />
 
       {/* Welcome Offer Modal (auto-shown after walkthrough on first 2 logins) */}
-      <WelcomeOfferModal open={showWelcomeOfferModal} onOpenChange={setShowWelcomeOfferModal} />
+      <WelcomeOfferModal 
+        open={showWelcomeOfferModal} 
+        onOpenChange={setShowWelcomeOfferModal}
+        onRoundOpened={() => roundSelectorRefetchRef.current?.()}
+      />
       
       {/* Profile Sheet */}
       <ProfileSheet isOpen={isOpen} onOpenChange={closeProfile} />

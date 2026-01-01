@@ -17,6 +17,7 @@ import { useRoundReservation } from '@/hooks/useRoundReservation';
 interface WelcomeOfferModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRoundOpened?: () => void;
 }
 
 interface PaidRound {
@@ -26,7 +27,7 @@ interface PaidRound {
   minimum_reservations?: number;
 }
 
-const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChange }) => {
+const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChange, onRoundOpened }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { status, daysRemaining, displayState, refetch, progressPercent, canClaimTier2 } = useWelcomeOffer();
@@ -117,6 +118,11 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
           toast.success('Ticket reserved! Your free entry is saved for when the round opens.');
           setReservationCount(result.reservationCount);
           setShowReservationConfirm(true);
+          
+          // If the round just opened (hit threshold), notify parent to refresh
+          if (result.isOpen) {
+            onRoundOpened?.();
+          }
         }
       } else {
         // Round is open - claim bonus and navigate to team picker
