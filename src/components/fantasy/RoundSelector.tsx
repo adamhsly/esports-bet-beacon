@@ -206,7 +206,6 @@ const RoundCard: React.FC<{
 
   const getButtonText = () => {
     if (isPaidCheckoutLoading || isReserveLoading) return "Loading...";
-    if (hasPaidButEmptyPicks) return "Submit Team";
     if (isPaid) {
       if (round.status !== 'open') {
         // Round not open yet - show reserve option
@@ -215,10 +214,10 @@ const RoundCard: React.FC<{
         }
         return "Reserve Ticket";
       }
-      // Round is open - all paid rounds go to team picker first
-      return "Submit Team";
+      // Round is open - paid round
+      return "Submit Team - Paid";
     }
-    return "Submit Team";
+    return "Submit Team - Free";
   };
   
   // Show player count for all rounds
