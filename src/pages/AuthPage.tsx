@@ -603,6 +603,10 @@ const AuthPage: React.FC = () => {
                     </a>
                     <span className="text-red-400 ml-0.5">*</span>
                   </p>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    You must be 18 or older to create an account.
+                  </p>
                 </form>
               </TabsContent>
             </Tabs>
