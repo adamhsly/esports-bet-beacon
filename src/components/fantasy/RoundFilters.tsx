@@ -30,6 +30,7 @@ interface RoundFiltersProps {
   filters: RoundFiltersState;
   onFiltersChange: (filters: RoundFiltersState) => void;
   resultCount: number;
+  hideStatusFilter?: boolean;
 }
 
 // Game options with logos
@@ -181,6 +182,7 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
   onFiltersChange,
   resultCount,
   isSticky,
+  hideStatusFilter,
 }) => {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
@@ -254,11 +256,13 @@ const DesktopFilters: React.FC<RoundFiltersProps & { isSticky?: boolean }> = ({
     >
       {/* Primary row: Status tabs + Result count */}
       <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <StatusTabs
-          value={filters.status}
-          onChange={(v) => updateFilter("status", v)}
-        />
-        <div className="flex items-center gap-3">
+        {!hideStatusFilter && (
+          <StatusTabs
+            value={filters.status}
+            onChange={(v) => updateFilter("status", v)}
+          />
+        )}
+        <div className={cn("flex items-center gap-3", hideStatusFilter && "w-full justify-center")}>
           <span className="text-sm text-[#d1d1d9]">
             <span className="font-semibold text-white">{resultCount}</span> rounds found
           </span>
@@ -346,6 +350,7 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
   filters,
   onFiltersChange,
   resultCount,
+  hideStatusFilter,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -377,10 +382,17 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
     <div className="bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] backdrop-blur-lg border border-white/[0.05] rounded-[10px] p-3">
       {/* Quick status tabs + filter button */}
       <div className="flex items-center gap-2">
-        <StatusTabs
-          value={filters.status}
-          onChange={(v) => updateFilter("status", v)}
-        />
+        {!hideStatusFilter && (
+          <StatusTabs
+            value={filters.status}
+            onChange={(v) => updateFilter("status", v)}
+          />
+        )}
+        {hideStatusFilter && (
+          <span className="text-sm text-[#d1d1d9] flex-1">
+            <span className="font-semibold text-white">{resultCount}</span> rounds found
+          </span>
+        )}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <button className="relative shrink-0 inline-flex items-center justify-center p-2.5 rounded-lg text-[#d1d1d9] bg-white/[0.04] backdrop-blur-lg border border-white/[0.05] hover:bg-[#7a5cff]/15 hover:text-white transition-all duration-250">
@@ -400,14 +412,16 @@ const MobileFilterSheet: React.FC<RoundFiltersProps> = ({
             </SheetHeader>
 
             <div className="space-y-6 overflow-y-auto pb-24">
-              {/* Status */}
-              <div>
-                <h4 className="text-sm font-medium mb-3 text-white">Status</h4>
-                <StatusTabs
-                  value={filters.status}
-                  onChange={(v) => updateFilter("status", v)}
-                />
-              </div>
+              {/* Status - only show if not hidden */}
+              {!hideStatusFilter && (
+                <div>
+                  <h4 className="text-sm font-medium mb-3 text-white">Status</h4>
+                  <StatusTabs
+                    value={filters.status}
+                    onChange={(v) => updateFilter("status", v)}
+                  />
+                </div>
+              )}
 
               {/* Game Type */}
               <div>
