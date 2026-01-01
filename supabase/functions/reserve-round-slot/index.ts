@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
       // Mark all reservations as notified
       await adminClient
         .from('round_reservations')
-        .update({ notified_open: true })
+        .update({ notified_at: new Date().toISOString() })
         .eq('round_id', round_id);
 
       isOpen = true;
