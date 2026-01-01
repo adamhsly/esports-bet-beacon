@@ -196,10 +196,9 @@ const RoundCard: React.FC<{
     } else if (isPaid && round.status !== 'open' && onReserve) {
       // Paid round not yet open - reserve slot
       onReserve();
-    } else if (isPaid && round.status === 'open' && onPaidEntry) {
-      // Paid round is open - proceed to payment/checkout
-      onPaidEntry();
     } else {
+      // For all open rounds (free or paid), navigate to team picker
+      // Payment for paid rounds happens on submit in TeamPickerUpdated
       onClick();
     }
   };
