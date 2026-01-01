@@ -854,23 +854,38 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       </div>
 
       {/* Selected Teams Widget */}
-      <SelectedTeamsWidget 
-        selectedTeams={selectedTeams} 
-        benchTeam={benchTeam} 
-        budgetSpent={budgetSpent} 
-        budgetRemaining={budgetRemaining} 
-        salaryCapacity={SALARY_CAP}
-        bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)}
-        totalBudget={totalBudget}
-        roundType={round.type} 
-        onRemoveTeam={handleRemoveTeam} 
-        proTeams={proTeams} 
-        amateurTeams={amateurTeams} 
-        onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} 
-        onTeamSelect={handleTeamSelect} 
-        starTeamId={starTeamId} 
-        onToggleStar={handleToggleStar} 
-      />
+      {(() => {
+        // Calculate if budget error should be shown
+        const teamsNeeded = 5 - selectedTeams.length;
+        const allAvailableTeams = [...proTeams, ...amateurTeams].filter(
+          t => !selectedTeams.some(s => s.id === t.id)
+        );
+        const cheapestTeamPrice = allAvailableTeams.length > 0 
+          ? Math.min(...allAvailableTeams.map(t => t.price || 0))
+          : 0;
+        const showBudgetError = teamsNeeded > 0 && budgetRemaining < cheapestTeamPrice;
+        
+        return (
+          <SelectedTeamsWidget 
+            selectedTeams={selectedTeams} 
+            benchTeam={benchTeam} 
+            budgetSpent={budgetSpent} 
+            budgetRemaining={budgetRemaining} 
+            salaryCapacity={SALARY_CAP}
+            bonusCreditsUsed={Math.max(0, budgetSpent - SALARY_CAP)}
+            totalBudget={totalBudget}
+            roundType={round.type} 
+            onRemoveTeam={handleRemoveTeam} 
+            proTeams={proTeams} 
+            amateurTeams={amateurTeams} 
+            onOpenMultiTeamSelector={() => setShowTeamSelectionSheet(true)} 
+            onTeamSelect={handleTeamSelect} 
+            starTeamId={starTeamId} 
+            onToggleStar={handleToggleStar}
+            showBudgetError={showBudgetError}
+          />
+        );
+      })()}
 
       {/* Pick For Me Button */}
       <div className="flex justify-center pt-4">

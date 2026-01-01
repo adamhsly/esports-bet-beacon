@@ -29,6 +29,7 @@ interface SelectedTeamsWidgetProps {
   starTeamId?: string | null;
   onToggleStar?: (teamId: string) => void;
   onOpenMultiTeamSelector?: () => void;
+  showBudgetError?: boolean;
 }
 const TeamCard: React.FC<{
   team: Team;
@@ -194,7 +195,8 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
   onTeamSelect,
   starTeamId = null,
   onToggleStar,
-  onOpenMultiTeamSelector
+  onOpenMultiTeamSelector,
+  showBudgetError = false
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
@@ -307,6 +309,15 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Budget Error Message */}
+      {showBudgetError && (
+        <div className="text-center px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <p className="text-red-400 text-sm font-medium">
+            You've used your available budget without adding 5 teams. Remove a team and pick teams worth less credits!
+          </p>
+        </div>
+      )}
 
       {/* Bench Team */}
       {benchTeam && <div className="max-w-xs mx-auto">
