@@ -210,10 +210,12 @@ serve(async (req)=>{
     // Fetch all open/active/scheduled rounds (optionally filter by type)
     // ✅ FIX #2: Filter out private rounds
     // ✅ FIX #3: Include 'scheduled' status so upcoming rounds get test picks
+    // ✅ FIX #4: Skip paid rounds - only add test picks to free rounds
     let q = supabase.from("fantasy_rounds")
-      .select("id, type, start_date, end_date, status, is_private, round_name")
+      .select("id, type, start_date, end_date, status, is_private, is_paid, round_name")
       .in("status", ["open", "active", "scheduled"])
       .eq("is_private", false)  // Only public rounds
+      .eq("is_paid", false)     // Only FREE rounds - skip paid rounds
       .order("start_date", { ascending: false });
     if (ROUND_TYPE) q = q.eq("type", ROUND_TYPE);
     
