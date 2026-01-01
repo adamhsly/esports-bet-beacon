@@ -532,6 +532,26 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
         {/* Bottom Actions - Always sticky */}
         <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-[#0B0F14] to-[#12161C] border-t border-gray-700/50 pt-6 mt-6 space-y-3">
+          {/* Budget Error Message */}
+          {(() => {
+            const teamsNeeded = 5 - tempSelectedTeams.length;
+            const allAvailableTeams = [...proTeams, ...amateurTeams].filter(
+              t => !tempSelectedTeams.some(s => s.id === t.id)
+            );
+            const cheapestTeamPrice = allAvailableTeams.length > 0 
+              ? Math.min(...allAvailableTeams.map(t => t.price || 0))
+              : 0;
+            const showBudgetError = !swapMode && teamsNeeded > 0 && tempBudgetRemaining < cheapestTeamPrice;
+            
+            return showBudgetError ? (
+              <div className="text-center px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg mb-3">
+                <p className="text-red-400 text-sm font-medium">
+                  You've used your available budget without adding 5 teams. Remove a team and pick teams worth less credits!
+                </p>
+              </div>
+            ) : null;
+          })()}
+          
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleCancel} className="flex-1 border-gray-600/50 text-gray-300 hover:bg-gray-800/50">
               Cancel
