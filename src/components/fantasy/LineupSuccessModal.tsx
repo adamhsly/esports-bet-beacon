@@ -1,5 +1,5 @@
 // src/components/fantasy/LineupSuccessModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -37,11 +37,38 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
   const [shareData, setShareData] = useState<{ publicUrl: string; blob: Blob } | null>(null);
   const [reserving, setReserving] = useState(false);
   const [hasReserved, setHasReserved] = useState(false);
+  const [checkingReservation, setCheckingReservation] = useState(true);
   const isMobile = useMobile();
   
   const { user } = useAuth();
   const { round: paidRound } = useUpcomingProRound({ isPaid: true });
-  const { reserveSlot } = useRoundReservation();
+  const { reserveSlot, checkReservation } = useRoundReservation();
+
+  // Check if user already has a reservation for the paid round
+  useEffect(() => {
+    const checkExistingReservation = async () => {
+      if (!paidRound?.id || !user) {
+        setCheckingReservation(false);
+        return;
+      }
+      
+      try {
+        const alreadyReserved = await checkReservation(paidRound.id);
+        setHasReserved(alreadyReserved);
+      } catch (error) {
+        console.error("Error checking reservation:", error);
+      } finally {
+        setCheckingReservation(false);
+      }
+    };
+
+    if (open && paidRound?.id) {
+      setCheckingReservation(true);
+      checkExistingReservation();
+    } else {
+      setCheckingReservation(false);
+    }
+  }, [open, paidRound?.id, user, checkReservation]);
 
   // Small helper to avoid "Document is not focused" on some browsers
   const ensureFocused = () => {
@@ -150,7 +177,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           </Button>
           
           {/* Reserve Ticket for Paid Round */}
-          {paidRound && !hasReserved && (
+          {paidRound && !hasReserved && !checkingReservation && (
             <div className="pt-2 border-t border-slate-700 mt-2">
               <p className="text-xs text-amber-400 mb-2 flex items-center justify-center gap-1">
                 <DollarSign className="h-3 w-3" />
