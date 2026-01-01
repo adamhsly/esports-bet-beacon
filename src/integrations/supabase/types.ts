@@ -3490,18 +3490,21 @@ export type Database = {
         Row: {
           id: string
           reminder_day: number
+          reminder_type: string | null
           sent_at: string
           user_id: string
         }
         Insert: {
           id?: string
           reminder_day: number
+          reminder_type?: string | null
           sent_at?: string
           user_id: string
         }
         Update: {
           id?: string
           reminder_day?: number
+          reminder_type?: string | null
           sent_at?: string
           user_id?: string
         }
