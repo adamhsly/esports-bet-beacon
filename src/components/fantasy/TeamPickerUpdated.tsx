@@ -99,6 +99,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [existingSubmissionChecked, setExistingSubmissionChecked] = useState(false);
   const autoSubmitInFlightRef = useRef(false);
   const authFlowCompletedRef = useRef(false);
+  
+  // User's promo balance for determining free entry eligibility
+  const [userPromoBalance, setUserPromoBalance] = useState<number>(0);
 
   const pendingStorageKey = useMemo(
     () => `fantasy:pending_lineup_submit:${round.id}`,
@@ -210,6 +213,27 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Fetch user's promo balance for free entry eligibility
+  useEffect(() => {
+    const fetchPromoBalance = async () => {
+      if (!user) {
+        setUserPromoBalance(0);
+        return;
+      }
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('promo_balance_pence')
+          .eq('id', user.id)
+          .single();
+        setUserPromoBalance(data?.promo_balance_pence || 0);
+      } catch (err) {
+        console.error('Error fetching promo balance:', err);
+      }
+    };
+    fetchPromoBalance();
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
@@ -561,18 +585,54 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         const isPaidRound = round.entry_fee && round.entry_fee > 0;
         
         if (isPaidRound) {
-          // Store selection temporarily and go through checkout flow
-          // The checkout will create the pick entry after payment/promo deduction
-          persistPendingSubmission({
-            roundId: round.id,
-            selectedTeams,
-            benchTeam,
-            starTeamId,
-            createdAt: Date.now()
+          // Pass team picks to checkout - if promo covers it, picks are saved directly
+          const result = await initiateCheckout(round.id, {
+            teamPicks: teamPicksData,
+            benchTeam: benchTeamData,
+            starTeamId: starTeamId,
           });
           
-          // Initiate checkout which will handle promo balance deduction
-          await initiateCheckout(round.id);
+          // If promo covered the entry, picks are already saved - show success
+          if (result?.promoCovered) {
+            clearPersistedPendingSubmission();
+            
+            // Progress missions
+            try {
+              const { MissionBus } = await import('@/lib/missionBus');
+              MissionBus.onSubmitLineup();
+              MissionBus.onJoinRoundAny();
+              MissionBus.recordJoinType(round.type);
+              MissionBus.recordJoinTypeMonth(round.type);
+              MissionBus.onM2_JoinedType();
+              await progressMission('d_submit_lineup');
+              if (selectedTeams.length >= 3) MissionBus.onLineupHasThree();
+              const amateurCount = selectedTeams.filter(team => team.type === 'amateur').length;
+              const proCount = selectedTeams.filter(team => team.type === 'pro').length;
+              if (amateurCount >= 1) MissionBus.onLineupHasAmateur();
+              if (amateurCount >= 3) MissionBus.onLineupHasThreeAmateurs();
+              if (proCount >= 3) MissionBus.onLineupHasThreePros();
+              if (starTeamId) MissionBus.onStarTeamChosen();
+              MissionBus.onM1_SubmitLineup();
+            } catch (missionError) {
+              console.warn('Mission progression failed (non-blocking)', missionError);
+            }
+            
+            setShowSuccessModal(true);
+            setSubmitting(false);
+            return;
+          }
+          
+          // If redirecting to Stripe, store submission for after payment
+          if (result?.redirecting) {
+            persistPendingSubmission({
+              roundId: round.id,
+              selectedTeams,
+              benchTeam,
+              starTeamId,
+              createdAt: Date.now()
+            });
+          }
+          
           setSubmitting(false);
           return; // Exit early - checkout will redirect appropriately
         }
@@ -926,8 +986,10 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         >
         {submitting || checkoutLoading ? 'Processing...' : (
           user 
-            ? (round.entry_fee && round.entry_fee > 0 ? 'Pay & Submit Teams' : 'Submit Teams') 
-            : 'Create Account & Submit Teams'
+            ? (round.entry_fee && round.entry_fee > 0 
+                ? (userPromoBalance >= round.entry_fee ? 'Submit Team' : 'Pay & Submit')
+                : 'Submit Team') 
+            : 'Create Account & Submit'
         )}
         </Button>
       </div>
