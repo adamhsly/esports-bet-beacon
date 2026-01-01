@@ -68,3 +68,15 @@ verify_jwt = false
 
 [functions.send-welcome-bonus-reminders]
 verify_jwt = false
+
+[functions.reserve-round-slot]
+verify_jwt = true
+
+[functions.get-reservation-count]
+verify_jwt = false
+
+[functions.open-paid-round]
+verify_jwt = false
+
+[functions.rollover-round-reservations]
+verify_jwt = false

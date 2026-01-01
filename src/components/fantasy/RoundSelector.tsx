@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Trophy, Ticket, Clock, Info, Users, Gamepad2, DollarSign, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseUnsafe } from "@/integrations/supabase/unsafeClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AuthModal from "@/components/AuthModal";
@@ -379,7 +380,14 @@ const RoundCard: React.FC<{
           </div>
         </div>
 
-        <div className="p-4 pt-8 flex flex-col items-center justify-center">
+        <div className="p-4 pt-8 flex flex-col items-center justify-center gap-2">
+          {/* Player count display for desktop */}
+          {playerCountText && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {playerCountText}
+            </span>
+          )}
           <div className="w-full min-w-[140px] cursor-pointer hover:scale-[1.02] transition-transform" onClick={handleClick}>
             <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-5 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
@@ -389,8 +397,13 @@ const RoundCard: React.FC<{
             </div>
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
-                className={`w-full font-medium text-sm !rounded-none before:hidden ${hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"}`}
-                disabled={isPaidCheckoutLoading}
+                className={`w-full font-medium text-sm !rounded-none before:hidden ${
+                  hasPaidButEmptyPicks ? "bg-green-500 hover:bg-green-600 text-white" : 
+                  hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  isPaid ? "bg-amber-500 hover:bg-amber-600 text-white" : 
+                  "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+                }`}
+                disabled={isPaidCheckoutLoading || isReserveLoading || hasReservation}
               >
                 {getButtonText()}
               </Button>
@@ -439,6 +452,7 @@ export const RoundSelector: React.FC<{
         fetchUserEntryCounts();
         fetchPaidButEmptyPicks();
         fetchJoinedFreeRounds();
+        fetchUserReservations();
       }
     }
   }, [user, rounds]);
@@ -452,6 +466,24 @@ export const RoundSelector: React.FC<{
       counts[round.id] = data;
     }
     setReservationCounts(counts);
+  };
+
+  // Fetch which rounds the current user has already reserved
+  const fetchUserReservations = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabaseUnsafe
+        .from('round_reservations')
+        .select('round_id')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      const reservedIds = new Set((data || []).map((r: { round_id: string }) => r.round_id));
+      setUserReservations(reservedIds);
+    } catch (err) {
+      console.error('Error fetching user reservations:', err);
+    }
   };
   const fetchOpenRounds = async () => {
     try {
@@ -845,6 +877,29 @@ export const RoundSelector: React.FC<{
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onSuccess={() => setShowAuthModal(false)}
+      />
+
+      <ReservationConfirmModal
+        open={showReservationModal}
+        onOpenChange={setShowReservationModal}
+        roundName={selectedReservationRound?.round_name || 'Paid Round'}
+        reservationCount={selectedReservationRound ? reservationCounts[selectedReservationRound.id]?.count || 0 : 0}
+        minimumReservations={selectedReservationRound?.minimum_reservations || 30}
+        onPlayFreeRounds={() => {
+          setShowReservationModal(false);
+          // Scroll to a free round section
+        }}
+        onShare={() => {
+          const roundName = selectedReservationRound?.round_name || 'Paid Round';
+          const shareUrl = `${window.location.origin}/fantasy`;
+          const text = `I just reserved my spot for ${roundName}! Join me and compete for real prizes. Reserve your ticket now!`;
+          if (navigator.share) {
+            navigator.share({ title: roundName, text, url: shareUrl });
+          } else {
+            navigator.clipboard.writeText(`${text} ${shareUrl}`);
+            toast.success('Share link copied to clipboard!');
+          }
+        }}
       />
     </>
   );
