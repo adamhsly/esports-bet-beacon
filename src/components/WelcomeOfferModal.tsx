@@ -87,42 +87,29 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
 
     setClaiming(true);
     try {
-      const { data, error } = await (supabase.rpc as any)('claim_welcome_bonus', { p_user_id: user.id });
-      
-      if (error) {
-        console.error('Error claiming bonus:', error);
-        toast.error(error.message || 'Failed to claim bonus');
-        return;
-      } else if (data?.success === false) {
-        toast.error(data.error || 'Failed to claim bonus');
-        return;
-      }
-      
-      const tier = data?.tier ?? 1;
-      
-      // Check if round is coming_soon - need to reserve ticket instead of navigating
+      // Check if round is coming_soon - just reserve ticket, don't claim bonus yet
       if (paidRound && paidRound.status === 'coming_soon') {
-        // Reserve a ticket for this round
+        // Only reserve a ticket - bonus will be claimed on actual entry
         const result = await reserveSlot(paidRound.id);
         if (result?.success) {
-          const message = tier === 1 
-            ? `${rewardAmount} claimed & ticket reserved!`
-            : `${rewardAmount} bonus unlocked & ticket reserved!`;
-          toast.success(message);
-          refetch();
+          toast.success('Ticket reserved! Your free entry is saved for when the round opens.');
           setReservationCount(result.reservationCount);
           setShowReservationConfirm(true);
-        } else {
-          // Bonus claimed but reservation failed
-          const message = tier === 1 
-            ? `${rewardAmount} claimed! Use your promo balance on paid rounds`
-            : `${rewardAmount} bonus unlocked!`;
-          toast.success(message);
-          refetch();
-          onOpenChange(false);
         }
       } else {
-        // Round is open or scheduled - navigate to team picker
+        // Round is open or scheduled - claim bonus and navigate to team picker
+        const { data, error } = await (supabase.rpc as any)('claim_welcome_bonus', { p_user_id: user.id });
+        
+        if (error) {
+          console.error('Error claiming bonus:', error);
+          toast.error(error.message || 'Failed to claim bonus');
+          return;
+        } else if (data?.success === false) {
+          toast.error(data.error || 'Failed to claim bonus');
+          return;
+        }
+        
+        const tier = data?.tier ?? 1;
         const message = tier === 1 
           ? `${rewardAmount} claimed! Use your promo balance on paid rounds`
           : `${rewardAmount} bonus unlocked! You've earned it by spending ${thresholdAmount}`;
@@ -132,8 +119,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
         navigate(paidRoundLink);
       }
     } catch (err) {
-      console.error('Error claiming bonus:', err);
-      toast.error('Failed to claim bonus');
+      console.error('Error:', err);
+      toast.error('Something went wrong');
     } finally {
       setClaiming(false);
     }
@@ -177,7 +164,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                   You're In! 🎉
                 </h3>
                 <p className="text-sm text-gray-300 mb-3">
-                  Your {rewardAmount} free entry has been claimed and your ticket is reserved for the next paid round.
+                  Your ticket is reserved for the next paid round. Your free entry will be applied when you submit your team picks.
                 </p>
                 <div className="bg-gray-800/50 rounded-lg p-3">
                   <div className="flex justify-between items-center text-sm">
@@ -190,6 +177,15 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                       style={{ width: `${Math.min(100, (reservationCount / (paidRound?.minimum_reservations || 35)) * 100)}%` }}
                     />
                   </div>
+                </div>
+              </div>
+              
+              {/* Free entry saved indicator */}
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-md p-3 flex items-center gap-3">
+                <Gift className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-purple-300 font-medium">Free Entry Saved</p>
+                  <p className="text-xs text-gray-400">Your {rewardAmount} entry will be used when you pick your teams</p>
                 </div>
               </div>
               
