@@ -384,7 +384,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                       </div>
                       <div>
                         <p className="text-sm text-white">Claim your {rewardAmount}</p>
-                        <p className="text-xs text-gray-400">Added to your promo balance for 2 days</p>
+                        <p className="text-xs text-gray-400">Added to your promo balance for 30 days</p>
                       </div>
                     </div>
                   </div>
