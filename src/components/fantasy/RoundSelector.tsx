@@ -380,10 +380,12 @@ export const RoundSelector: React.FC<{
       const twoMonthsFromNow = new Date();
       twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
       
+      // Only fetch open and scheduled rounds - exclude in_progress rounds
+      // Players cannot join rounds that have already started
       const { data, error } = await supabase
         .from("fantasy_rounds")
         .select("*")
-        .in("status", ["open", "scheduled", "in_progress"])
+        .in("status", ["open", "scheduled"])
         .eq("is_private", false)
         .lte("start_date", twoMonthsFromNow.toISOString())
         .order("start_date", {
