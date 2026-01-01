@@ -106,7 +106,7 @@ const WelcomeOfferBadge: React.FC = () => {
                 <span className={`text-xs font-bold ${canClaimTier2 ? 'text-yellow-300' : 'text-purple-300'}`}>
                   {canClaimTier2 
                     ? `Claim ${formatPence(status.rewardPence)}!` 
-                    : `Spend ${thresholdAmount} Get ${formatPence(status.rewardPence)}`
+                    : `Get ${formatPence(status.rewardPence)}`
                   }
                 </span>
                 <InfoButton />
