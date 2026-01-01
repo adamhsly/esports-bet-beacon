@@ -883,22 +883,12 @@ export const RoundSelector: React.FC<{
         open={showReservationModal}
         onOpenChange={setShowReservationModal}
         roundName={selectedReservationRound?.round_name || 'Paid Round'}
+        roundId={selectedReservationRound?.id || ''}
         reservationCount={selectedReservationRound ? reservationCounts[selectedReservationRound.id]?.count || 0 : 0}
         minimumReservations={selectedReservationRound?.minimum_reservations || 30}
         onPlayFreeRounds={() => {
           setShowReservationModal(false);
           // Scroll to a free round section
-        }}
-        onShare={() => {
-          const roundName = selectedReservationRound?.round_name || 'Paid Round';
-          const shareUrl = `${window.location.origin}/fantasy`;
-          const text = `I just reserved my spot for ${roundName}! Join me and compete for real prizes. Reserve your ticket now!`;
-          if (navigator.share) {
-            navigator.share({ title: roundName, text, url: shareUrl });
-          } else {
-            navigator.clipboard.writeText(`${text} ${shareUrl}`);
-            toast.success('Share link copied to clipboard!');
-          }
         }}
       />
     </>
