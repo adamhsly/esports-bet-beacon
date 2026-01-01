@@ -81,6 +81,7 @@ const RoundCard: React.FC<{
   reservationCount?: number;
   pickCount?: number;
   hasFreeEntry?: boolean;
+  hasExistingPicks?: boolean;
 }> = ({ 
   round, 
   type, 
@@ -96,6 +97,7 @@ const RoundCard: React.FC<{
   reservationCount = 0,
   pickCount = 0,
   hasFreeEntry = false,
+  hasExistingPicks = false,
 }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
@@ -214,6 +216,10 @@ const RoundCard: React.FC<{
         return "Reserve Ticket";
       }
       // Round is open - paid round
+      // Show "Submit Team Again" if user already has picks for this round
+      if (hasExistingPicks) {
+        return "Submit Team Again - Paid";
+      }
       return "Submit Team - Paid";
     }
     return "Submit Team - Free";
@@ -434,6 +440,7 @@ export const RoundSelector: React.FC<{
   const [userEntryCounts, setUserEntryCounts] = useState<Record<string, number>>({});
   const [paidButEmptyPicks, setPaidButEmptyPicks] = useState<Record<string, string>>({});
   const [joinedFreeRounds, setJoinedFreeRounds] = useState<Set<string>>(new Set());
+  const [paidRoundsWithPicks, setPaidRoundsWithPicks] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<RoundFiltersState>(defaultFilters);
   const [reservationCounts, setReservationCounts] = useState<Record<string, { count: number; pickCount: number; isOpen: boolean; minimumReservations: number }>>({});
   const [userReservations, setUserReservations] = useState<Set<string>>(new Set());
@@ -617,11 +624,13 @@ export const RoundSelector: React.FC<{
       // Count submitted picks (non-empty team_picks) and find empty picks per round
       const submittedPicksCountByRound: Record<string, number> = {};
       const emptyPicksByRound: Record<string, string[]> = {};
+      const roundsWithSubmittedPicks = new Set<string>();
       (allPicks || []).forEach((pick) => {
         const teamPicks = pick.team_picks as unknown[];
         const hasTeams = teamPicks && Array.isArray(teamPicks) && teamPicks.length > 0;
         if (hasTeams) {
           submittedPicksCountByRound[pick.round_id] = (submittedPicksCountByRound[pick.round_id] || 0) + 1;
+          roundsWithSubmittedPicks.add(pick.round_id);
         } else {
           if (!emptyPicksByRound[pick.round_id]) {
             emptyPicksByRound[pick.round_id] = [];
@@ -629,6 +638,9 @@ export const RoundSelector: React.FC<{
           emptyPicksByRound[pick.round_id].push(pick.id);
         }
       });
+      
+      // Track which paid rounds have existing picks (for "Submit Team Again" CTA)
+      setPaidRoundsWithPicks(roundsWithSubmittedPicks);
       
       // Determine which rounds need team submission
       const needsSubmission: Record<string, string> = {};
@@ -881,6 +893,7 @@ export const RoundSelector: React.FC<{
                             reservationCount={reservationCounts[round.id]?.count || 0}
                             pickCount={reservationCounts[round.id]?.pickCount || 0}
                             hasFreeEntry={round.is_paid && userPromoBalance >= (round.entry_fee || 0)}
+                            hasExistingPicks={round.is_paid && paidRoundsWithPicks.has(round.id)}
                           />
                         </div>
                       );
