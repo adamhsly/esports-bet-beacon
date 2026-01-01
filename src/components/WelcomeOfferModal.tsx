@@ -213,7 +213,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 <Gift className="w-5 h-5 text-purple-400 flex-shrink-0" />
                 <div>
                   <p className="text-sm text-purple-300 font-medium">Free Entry Saved</p>
-                  <p className="text-xs text-gray-400">Your {rewardAmount} entry will be used when you pick your teams</p>
+                  <p className="text-xs text-gray-400">Your free entry will be used when you pick your teams</p>
                 </div>
               </div>
               
