@@ -798,7 +798,7 @@ export const RoundSelector: React.FC<{
   return (
     <>
       <div className="mb-6" data-walkthrough="filters">
-        <RoundFilters filters={filters} onFiltersChange={setFilters} resultCount={filteredRounds.length} />
+        <RoundFilters filters={filters} onFiltersChange={setFilters} resultCount={filteredRounds.length} hideStatusFilter />
       </div>
       <div className="space-y-8">
         {/* Dynamic sections based on section_name from database */}
