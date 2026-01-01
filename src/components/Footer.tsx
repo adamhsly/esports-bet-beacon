@@ -113,7 +113,7 @@ const Footer = () => {
         {/* Legal disclaimer */}
         <div className="border-t border-theme-gray-medium mt-8 pt-6 text-center">
           <p className="text-gray-500 text-xs max-w-2xl mx-auto mb-4">
-            Void where prohibited. Users are responsible for ensuring legal compliance in their region. Play responsibly. Fantasy contests should remain fun and skill-based.
+            Skill-based fantasy esports competition. No element of chance. Void where prohibited.
           </p>
           <p className="text-gray-400 text-sm">© {currentYear} Frags and Fortunes. All rights reserved.</p>
         </div>
