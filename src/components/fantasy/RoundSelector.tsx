@@ -493,10 +493,10 @@ export const RoundSelector: React.FC<{
   };
 
   const fetchReservationCounts = async () => {
-    const paidRounds = rounds.filter(r => r.is_paid);
+    // Fetch pick counts for ALL rounds (not just paid ones)
     const counts: Record<string, { count: number; pickCount: number; isOpen: boolean; minimumReservations: number }> = {};
     
-    for (const round of paidRounds) {
+    for (const round of rounds) {
       const data = await getReservationCount(round.id);
       counts[round.id] = data;
     }
