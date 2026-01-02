@@ -161,6 +161,9 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
   const isTier1Unclaimed = status?.tier === 1 && !status?.offerClaimed;
   const isTier2InProgress = status?.tier === 2 && !status?.offerClaimed && !canClaimTier2;
   const isTier2Ready = status?.tier === 2 && canClaimTier2;
+  
+  // Check if user has reserved but offer not yet claimed (waiting state)
+  const hasReservedButNotClaimed = isTier1Unclaimed && userHasReservation && roundNeedsReservation && !roundIsOpen;
 
   // Handle closing the modal after reservation confirmation
   const handleCloseReservation = () => {
@@ -250,18 +253,30 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-white">
-                {status?.tier === 2 ? (
+                {hasReservedButNotClaimed ? (
+                  <Ticket className="w-5 h-5 text-green-400" />
+                ) : status?.tier === 2 ? (
                   <Coins className="w-5 h-5 text-purple-400" />
                 ) : (
                   <Gift className="w-5 h-5 text-green-400" />
                 )}
-                {hasActiveBalance ? 'Promo Balance' : status?.tier === 2 ? 'Spend & Earn Bonus' : 'Free Paid Entry'}
+                {hasReservedButNotClaimed ? 'Ticket Reserved!' : hasActiveBalance ? 'Promo Balance' : status?.tier === 2 ? 'Spend & Earn Bonus' : 'Free Paid Entry'}
               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
               {/* Hero section - different based on state */}
-              {hasActiveBalance ? (
+              {hasReservedButNotClaimed ? (
+                <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
+                  <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                  <h3 className="text-2xl font-bold text-white mb-1">
+                    Ticket Reserved! 🎉
+                  </h3>
+                  <p className="text-sm text-gray-300">
+                    Your free entry is saved for when the round opens
+                  </p>
+                </div>
+              ) : hasActiveBalance ? (
                 <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
                   <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                   <h3 className="text-2xl font-bold text-white mb-1">
@@ -327,7 +342,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
               )}
 
               {/* How it works - for tier 1 unclaimed */}
-              {isTier1Unclaimed && (
+              {isTier1Unclaimed && !hasReservedButNotClaimed && (
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-white">How It Works</h4>
                   
@@ -404,8 +419,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 </div>
               )}
 
-              {/* Waiting for threshold message - only show when user has reserved but round not open */}
-              {hasActiveBalance && userHasReservation && roundNeedsReservation && !roundIsOpen && (
+              {/* Waiting for threshold message - show when user has reserved but round not open */}
+              {(hasReservedButNotClaimed || (hasActiveBalance && userHasReservation && roundNeedsReservation && !roundIsOpen)) && (
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-md p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-blue-400 flex-shrink-0" />
@@ -429,7 +444,19 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
               )}
 
               {/* CTA Button */}
-              {(isTier1Unclaimed || isTier2Ready) ? (
+              {hasReservedButNotClaimed ? (
+                // User has reserved but offer not claimed - show play free rounds CTA
+                <Button 
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate('/fantasy');
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3 text-lg"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Play Free Rounds in the Meantime
+                </Button>
+              ) : (isTier1Unclaimed || isTier2Ready) ? (
                 <Button 
                   onClick={handleClaimBonus}
                   disabled={claiming}
