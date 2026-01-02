@@ -23,6 +23,7 @@ interface WelcomeOfferModalProps {
 interface PaidRound {
   id: string;
   status: string;
+  start_date?: string;
   round_name?: string;
   minimum_reservations?: number;
 }
@@ -38,63 +39,96 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
   const [roundNeedsReservation, setRoundNeedsReservation] = useState(false);
   const [userHasReservation, setUserHasReservation] = useState(false);
   const [roundIsOpen, setRoundIsOpen] = useState(false);
+  const [paidRoundLoading, setPaidRoundLoading] = useState(false);
   const { reserveSlot, getReservationCount, checkReservation } = useRoundReservation();
   
-  // Fetch the next paid pro round and check if it needs reservations
+  // Fetch the next paid pro round and the user's reservation status
   useEffect(() => {
+    let cancelled = false;
+
     const fetchPaidRound = async () => {
-      // First try to find a scheduled paid round (these need reservations to open)
-      const { data: scheduledRound } = await supabase
-        .from('fantasy_rounds')
-        .select('id, status, round_name, minimum_reservations')
-        .eq('is_paid', true)
-        .eq('is_private', false)
-        .eq('team_type', 'pro')
-        .eq('status', 'scheduled')
-        .order('start_date', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      if (scheduledRound) {
-        // Check if this round still needs reservations
-        const countData = await getReservationCount(scheduledRound.id);
-        const hasReservation = await checkReservation(scheduledRound.id);
-        const needsReservations = !countData.isOpen && countData.count < (scheduledRound.minimum_reservations || 35);
-        
-        setPaidRound(scheduledRound);
-        setReservationCount(countData.count);
-        setUserHasReservation(hasReservation);
-        setRoundIsOpen(countData.isOpen);
-        setRoundNeedsReservation(needsReservations);
-        
-        if (needsReservations || !countData.isOpen) {
-          return;
+      setPaidRoundLoading(true);
+
+      try {
+        // Prefer the soonest scheduled paid pro rounds (these are the ones that use reservations)
+        const { data: scheduledRounds } = await supabase
+          .from('fantasy_rounds')
+          .select('id, status, start_date, round_name, minimum_reservations')
+          .eq('is_paid', true)
+          .eq('is_private', false)
+          .eq('team_type', 'pro')
+          .eq('status', 'scheduled')
+          .order('start_date', { ascending: true })
+          .limit(5);
+
+        if (scheduledRounds && scheduledRounds.length > 0) {
+          // Find the round the user reserved (if any). This prevents "reverting" when navigating
+          // between pages that render different instances of this modal.
+          const roundChecks = await Promise.all(
+            scheduledRounds.map(async (round) => {
+              const [countData, hasReservation] = await Promise.all([
+                getReservationCount(round.id),
+                checkReservation(round.id),
+              ]);
+
+              const minimumReservations =
+                round.minimum_reservations ?? countData.minimumReservations ?? 35;
+              const thresholdMet = (countData.count || 0) >= minimumReservations;
+              const isOpenEffective = !!countData.isOpen || thresholdMet;
+
+              return {
+                round: { ...round, minimum_reservations: minimumReservations } as PaidRound,
+                reservationCount: countData.count || 0,
+                hasReservation,
+                isOpen: isOpenEffective,
+              };
+            })
+          );
+
+          const chosen = roundChecks.find((r) => r.hasReservation) ?? roundChecks[0];
+
+          if (!cancelled && chosen) {
+            setPaidRound(chosen.round);
+            setReservationCount(chosen.reservationCount);
+            setUserHasReservation(chosen.hasReservation);
+            setRoundIsOpen(chosen.isOpen);
+            setRoundNeedsReservation(!chosen.isOpen);
+            return;
+          }
         }
-      }
-      
-      // Fallback: find any open paid round
-      const { data: openRound } = await supabase
-        .from('fantasy_rounds')
-        .select('id, status, round_name, minimum_reservations')
-        .eq('is_paid', true)
-        .eq('is_private', false)
-        .eq('team_type', 'pro')
-        .eq('status', 'open')
-        .order('start_date', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      if (openRound) {
-        setPaidRound(openRound);
-        setRoundNeedsReservation(false);
-        setRoundIsOpen(true);
+
+        // Fallback: find any open paid pro round
+        const { data: openRound } = await supabase
+          .from('fantasy_rounds')
+          .select('id, status, start_date, round_name, minimum_reservations')
+          .eq('is_paid', true)
+          .eq('is_private', false)
+          .eq('team_type', 'pro')
+          .eq('status', 'open')
+          .order('start_date', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (!cancelled && openRound) {
+          setPaidRound(openRound);
+          setReservationCount(0);
+          setUserHasReservation(false);
+          setRoundIsOpen(true);
+          setRoundNeedsReservation(false);
+        }
+      } finally {
+        if (!cancelled) setPaidRoundLoading(false);
       }
     };
-    
+
     if (open) {
       fetchPaidRound();
     }
-  }, [open, getReservationCount, checkReservation]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, user?.id, getReservationCount, checkReservation]);
   
   // Build the navigation link - go to paid pro round if available
   const paidRoundLink = paidRound 
@@ -118,11 +152,21 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
         const result = await reserveSlot(paidRound.id);
         if (result?.success) {
           toast.success('Ticket reserved! Your free entry is saved for when the round opens.');
+          setUserHasReservation(true);
           setReservationCount(result.reservationCount);
+
+          const minimumReservations =
+            paidRound.minimum_reservations ?? result.minimumReservations ?? 35;
+          const isOpenEffective =
+            result.isOpen || result.reservationCount >= minimumReservations;
+
+          setRoundIsOpen(isOpenEffective);
+          setRoundNeedsReservation(!isOpenEffective);
+
           setShowReservationConfirm(true);
-          
+
           // If the round just opened (hit threshold), notify parent to refresh
-          if (result.isOpen) {
+          if (isOpenEffective) {
             onRoundOpened?.();
           }
         }
@@ -162,8 +206,9 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
   const isTier2InProgress = status?.tier === 2 && !status?.offerClaimed && !canClaimTier2;
   const isTier2Ready = status?.tier === 2 && canClaimTier2;
   
-  // Check if user has reserved but offer not yet claimed (waiting state)
-  const hasReservedButNotClaimed = isTier1Unclaimed && userHasReservation && roundNeedsReservation && !roundIsOpen;
+  // User reserved a ticket, but the round isn't open yet (waiting state)
+  const hasReservedButNotClaimed = isTier1Unclaimed && userHasReservation && !roundIsOpen;
+  const shouldShowWaitingForThreshold = !!paidRound && userHasReservation && !roundIsOpen;
 
   // Handle closing the modal after reservation confirmation
   const handleCloseReservation = () => {
@@ -419,8 +464,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 </div>
               )}
 
-              {/* Waiting for threshold message - show when user has reserved but round not open */}
-              {(hasReservedButNotClaimed || (hasActiveBalance && userHasReservation && roundNeedsReservation && !roundIsOpen)) && (
+              {/* Waiting for threshold message - only when the user has reserved and the round isn't open yet */}
+              {shouldShowWaitingForThreshold && (
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-md p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-blue-400 flex-shrink-0" />
@@ -444,37 +489,92 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
               )}
 
               {/* CTA Button */}
-              {hasReservedButNotClaimed ? (
-                // User has reserved but offer not claimed - show play free rounds CTA
-                <Button 
+              {paidRoundLoading ? (
+                <Button
+                  disabled
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold w-full py-3 text-lg opacity-70"
+                >
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </Button>
+              ) : isTier1Unclaimed && paidRound && !roundIsOpen ? (
+                // Tier 1, round not open yet: reserve or wait
+                userHasReservation ? (
+                  <Button
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate('/fantasy');
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3 text-lg"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Play Free Rounds in the Meantime
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleClaimBonus}
+                    disabled={claiming}
+                    className="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold w-full py-3 text-lg"
+                  >
+                    {claiming ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Reserving...
+                      </>
+                    ) : (
+                      <>
+                        <Ticket className="w-4 h-4 mr-2" />
+                        Reserve Ticket
+                      </>
+                    )}
+                  </Button>
+                )
+              ) : isTier1Unclaimed && paidRound && roundIsOpen ? (
+                // Tier 1, round open: go to team picker
+                <Button
                   onClick={() => {
                     onOpenChange(false);
-                    navigate('/fantasy');
+                    navigate(paidRoundLink);
                   }}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3 text-lg"
+                  className="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold w-full py-3 text-lg"
                 >
-                  <Play className="w-4 h-4 mr-2" />
-                  Play Free Rounds in the Meantime
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Join Round
                 </Button>
-              ) : (isTier1Unclaimed || isTier2Ready) ? (
-                <Button 
+              ) : isTier2Ready ? (
+                <Button
                   onClick={handleClaimBonus}
                   disabled={claiming}
-                  className={`${
-                    isTier2Ready 
-                      ? 'bg-gradient-to-r from-yellow-600 to-orange-500 hover:from-yellow-500 hover:to-orange-400'
-                      : 'bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400'
-                  } text-white font-bold w-full py-3 text-lg`}
+                  className="bg-gradient-to-r from-yellow-600 to-orange-500 hover:from-yellow-500 hover:to-orange-400 text-white font-bold w-full py-3 text-lg"
                 >
                   {claiming ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {roundNeedsReservation && !userHasReservation ? 'Reserving...' : 'Claiming...'}
+                      Claiming...
                     </>
                   ) : (
                     <>
                       <Gift className="w-4 h-4 mr-2" />
-                      {isTier2Ready ? `Claim ${rewardAmount} Now` : 'Claim Free Entry'}
+                      {`Claim ${rewardAmount} Now`}
+                    </>
+                  )}
+                </Button>
+              ) : isTier1Unclaimed ? (
+                // Fallback tier 1 CTA when we don't have a scheduled round context
+                <Button
+                  onClick={handleClaimBonus}
+                  disabled={claiming}
+                  className="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold w-full py-3 text-lg"
+                >
+                  {claiming ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Claiming...
+                    </>
+                  ) : (
+                    <>
+                      <Gift className="w-4 h-4 mr-2" />
+                      Claim Free Entry
                     </>
                   )}
                 </Button>
@@ -527,11 +627,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                     onOpenChange(false);
                     navigate(paidRoundLink);
                   }}
-                  className={`${
-                    isTier2InProgress
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500'
-                      : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500'
-                  } text-white font-bold w-full py-3 text-lg`}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3 text-lg"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   {isTier2InProgress ? 'Enter a Paid Round' : 'Join a Round'}
