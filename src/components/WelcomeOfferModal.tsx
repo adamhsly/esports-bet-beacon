@@ -36,7 +36,9 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
   const [reservationCount, setReservationCount] = useState(0);
   const [showReservationConfirm, setShowReservationConfirm] = useState(false);
   const [roundNeedsReservation, setRoundNeedsReservation] = useState(false);
-  const { reserveSlot, getReservationCount } = useRoundReservation();
+  const [userHasReservation, setUserHasReservation] = useState(false);
+  const [roundIsOpen, setRoundIsOpen] = useState(false);
+  const { reserveSlot, getReservationCount, checkReservation } = useRoundReservation();
   
   // Fetch the next paid pro round and check if it needs reservations
   useEffect(() => {
@@ -56,12 +58,16 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
       if (scheduledRound) {
         // Check if this round still needs reservations
         const countData = await getReservationCount(scheduledRound.id);
+        const hasReservation = await checkReservation(scheduledRound.id);
         const needsReservations = !countData.isOpen && countData.count < (scheduledRound.minimum_reservations || 35);
         
-        if (needsReservations) {
-          setPaidRound(scheduledRound);
-          setReservationCount(countData.count);
-          setRoundNeedsReservation(true);
+        setPaidRound(scheduledRound);
+        setReservationCount(countData.count);
+        setUserHasReservation(hasReservation);
+        setRoundIsOpen(countData.isOpen);
+        setRoundNeedsReservation(needsReservations);
+        
+        if (needsReservations || !countData.isOpen) {
           return;
         }
       }
@@ -81,13 +87,14 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
       if (openRound) {
         setPaidRound(openRound);
         setRoundNeedsReservation(false);
+        setRoundIsOpen(true);
       }
     };
     
     if (open) {
       fetchPaidRound();
     }
-  }, [open, getReservationCount]);
+  }, [open, getReservationCount, checkReservation]);
   
   // Build the navigation link - go to paid pro round if available
   const paidRoundLink = paidRound 
@@ -258,7 +265,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
                   <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                   <h3 className="text-2xl font-bold text-white mb-1">
-                    {formatCurrency(status.promoBalancePence)} Available
+                    Free Entry to Paid Round
                   </h3>
                   <p className="text-sm text-gray-300">
                     Use your promo balance on paid fantasy entries
@@ -397,6 +404,30 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 </div>
               )}
 
+              {/* Waiting for threshold message - only show when user has reserved but round not open */}
+              {hasActiveBalance && userHasReservation && roundNeedsReservation && !roundIsOpen && (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-md p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                    <p className="text-sm text-gray-300">
+                      Waiting for {paidRound?.minimum_reservations || 35} players to reserve. We'll email you when team submission opens!
+                    </p>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Reservations:</span>
+                      <span className="text-white font-bold">{reservationCount} / {paidRound?.minimum_reservations || 35}</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
+                      <div 
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (reservationCount / (paidRound?.minimum_reservations || 35)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* CTA Button */}
               {(isTier1Unclaimed || isTier2Ready) ? (
                 <Button 
@@ -411,7 +442,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                   {claiming ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Claiming...
+                      {roundNeedsReservation && !userHasReservation ? 'Reserving...' : 'Claiming...'}
                     </>
                   ) : (
                     <>
@@ -420,6 +451,49 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                     </>
                   )}
                 </Button>
+              ) : hasActiveBalance ? (
+                // User has active balance - different CTAs based on reservation state
+                roundIsOpen ? (
+                  <Button 
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate(paidRoundLink);
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold w-full py-3 text-lg"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Join Round
+                  </Button>
+                ) : userHasReservation ? (
+                  <Button 
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate('/fantasy');
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold w-full py-3 text-lg"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Play Free Rounds in the Meantime
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleClaimBonus}
+                    disabled={claiming}
+                    className="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold w-full py-3 text-lg"
+                  >
+                    {claiming ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Reserving...
+                      </>
+                    ) : (
+                      <>
+                        <Ticket className="w-4 h-4 mr-2" />
+                        Reserve Ticket
+                      </>
+                    )}
+                  </Button>
+                )
               ) : (
                 <Button 
                   onClick={() => {
