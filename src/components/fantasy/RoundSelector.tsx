@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Trophy, Ticket, Clock, Info, Users, Gamepad2, DollarSign, Share2 } from "lucide-react";
+import { Calendar, Trophy, Ticket, Clock, Info, Users, Gamepad2, Coins, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseUnsafe } from "@/integrations/supabase/unsafeClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,7 @@ import { RoundFilters, RoundFiltersState, defaultFilters, applyRoundFilters } fr
 import { format } from "date-fns";
 import { RoundDetailsModal } from "./RoundDetailsModal";
 import { ReservationConfirmModal } from "./ReservationConfirmModal";
+import { formatCurrency, formatDollarAmount } from "@/utils/currencyUtils";
 
 interface Round {
   id: string;
@@ -38,7 +39,7 @@ interface Round {
 // Format prize amount based on type
 const formatPrize = (amount: number, prizeType: "credits" | "vouchers" = "credits") => {
   if (prizeType === "vouchers") {
-    return `$${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
+    return formatCurrency(amount);
   }
   return amount.toString();
 };
@@ -47,8 +48,7 @@ const formatPrize = (amount: number, prizeType: "credits" | "vouchers" = "credit
 const formatTotalPrize = (prize1st: number, prize2nd: number, prize3rd: number, prizeType: "credits" | "vouchers" = "credits") => {
   const total = prize1st + prize2nd + prize3rd;
   if (prizeType === "vouchers") {
-    const dollars = total / 100;
-    return `$${dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2)} Prizes`;
+    return `${formatCurrency(total)} Prizes`;
   }
   return `${total} Credits`;
 };
@@ -62,7 +62,7 @@ const SectionHeading: React.FC<{
 
 // Format entry fee from pence to dollars
 const formatEntryFee = (feePence: number) => {
-  return `$${(feePence / 100).toFixed(feePence % 100 === 0 ? 0 : 2)}`;
+  return formatCurrency(feePence);
 };
 
 
