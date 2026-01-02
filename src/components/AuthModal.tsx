@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-const loginBanner = "/lovable-uploads/Spend_5_Get_10_v4.png";
+const loginBanner = "/lovable-uploads/Spend_5_Get_10_v5.png";
 
 interface AuthModalProps {
   isOpen: boolean;
