@@ -363,8 +363,8 @@ const Index = () => {
       alt: 'Use your in-round team swap and star team change wisely'
     },
     {
-      src: '/lovable-uploads/Spend_5_Get_10_v2.webp',
-      alt: '$10 bonus - No deposit required - Have some free plays on us!'
+      src: '/lovable-uploads/Spend_5_Get_10_v4.png',
+      alt: 'Free Paid Entry - Fantasy League Esports - Prizes every round'
     }
   ];
 

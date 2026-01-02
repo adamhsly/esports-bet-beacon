@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-const loginBanner = "/lovable-uploads/Spend_5_Get_10_v2.webp";
+const loginBanner = "/lovable-uploads/Spend_5_Get_10_v4.png";
 
 // Check if user has ever logged in before (stored in localStorage)
 const hasLoggedInBefore = (): boolean => {

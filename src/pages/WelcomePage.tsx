@@ -16,7 +16,7 @@ const FaqSection = lazy(() => import("@/components/FaqSection"));
 const pickTeamsImg = "/assets/welcome/pick-teams.png";
 const scorePointsImg = "/assets/welcome/score-points.png";
 import winPrizesImg from "@/assets/welcome/win-prizes.webp";
-const welcomeBanner = "/lovable-uploads/Spend_5_Get_10_v3.png";
+const welcomeBanner = "/lovable-uploads/Spend_5_Get_10_v4.png";
 
 const WelcomePage = () => {
   const { user, loading } = useAuth();
