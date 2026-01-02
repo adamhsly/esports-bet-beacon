@@ -183,7 +183,7 @@ const FantasyPage: React.FC = () => {
 
   const banners = [
     {
-      src: '/lovable-uploads/Spend_5_Get_10_v4.png',
+      src: '/lovable-uploads/Spend_5_Get_10_v5.png',
       alt: 'Free Paid Entry - Fantasy League Esports - Prizes every round'
     },
     {
