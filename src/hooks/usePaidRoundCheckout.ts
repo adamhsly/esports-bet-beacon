@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/utils/currencyUtils';
 
 interface TeamPickData {
   id: string;
@@ -43,7 +44,7 @@ export function usePaidRoundCheckout() {
         // Force-refresh the welcome offer balance everywhere.
         await queryClient.invalidateQueries({ queryKey: ['welcomeOffer'] });
 
-        toast.success(`Entry completed! £${(data.promo_used / 100).toFixed(2)} promo balance used.`);
+        toast.success(`Entry completed! ${formatCurrency(data.promo_used)} promo balance used.`);
         // Return success so caller can show success modal instead of navigating away
         setLoading(false);
         return { success: true, promoCovered: true, promoUsed: data.promo_used };

@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Trophy, Clock, Users, Gamepad2, DollarSign } from "lucide-react";
+import { Calendar, Trophy, Clock, Users, Gamepad2, Coins } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { formatCurrency, getCurrencySymbol } from "@/utils/currencyUtils";
 
 interface Round {
   id: string;
@@ -39,7 +40,7 @@ export const RoundDetailsModal: React.FC<RoundDetailsModalProps> = ({ round, ope
   
   const formatPrizeDisplay = (amount: number) => {
     if (prizeType === "vouchers") {
-      return `$${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
+      return formatCurrency(amount);
     }
     return `${amount} Credits`;
   };
@@ -99,11 +100,11 @@ export const RoundDetailsModal: React.FC<RoundDetailsModalProps> = ({ round, ope
             {/* Entry Fee */}
             <div className="bg-slate-700/50 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-green-400" />
+                <Coins className="h-4 w-4 text-green-400" />
                 <span className="text-xs text-gray-400">Entry</span>
               </div>
               <div className="text-sm font-medium text-white">
-                {round.is_paid && round.entry_fee ? `$${(round.entry_fee / 100).toFixed(2)}` : "Free"}
+                {round.is_paid && round.entry_fee ? formatCurrency(round.entry_fee) : "Free"}
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gift, Clock, CheckCircle, Sparkles, Loader2, DollarSign, TrendingUp, Ticket, Mail, Play } from 'lucide-react';
+import { Gift, Clock, CheckCircle, Sparkles, Loader2, TrendingUp, Ticket, Mail, Play, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useRoundReservation } from '@/hooks/useRoundReservation';
-
+import { formatCurrency } from '@/utils/currencyUtils';
 interface WelcomeOfferModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -94,14 +94,9 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
     ? `/fantasy?roundId=${paidRound.id}` 
     : '/fantasy?tab=join';
 
-  const formatPence = (pence: number) => {
-    const dollars = pence / 100;
-    return dollars % 1 === 0 ? `$${dollars.toFixed(0)}` : `$${dollars.toFixed(2)}`;
-  };
-  const rewardAmount = status?.rewardPence ? formatPence(status.rewardPence) : '$10';
-  const thresholdAmount = status?.thresholdPence ? formatPence(status.thresholdPence) : '$5';
-  const spentAmount = status?.totalSpentPence ? formatPence(status.totalSpentPence) : '$0';
-
+  const rewardAmount = status?.rewardPence ? formatCurrency(status.rewardPence) : formatCurrency(1000);
+  const thresholdAmount = status?.thresholdPence ? formatCurrency(status.thresholdPence) : formatCurrency(500);
+  const spentAmount = status?.totalSpentPence ? formatCurrency(status.totalSpentPence) : formatCurrency(0);
   const handleClaimBonus = async () => {
     if (!user) {
       toast.error('Please sign in to claim your bonus');
@@ -249,7 +244,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-white">
                 {status?.tier === 2 ? (
-                  <DollarSign className="w-5 h-5 text-purple-400" />
+                  <Coins className="w-5 h-5 text-purple-400" />
                 ) : (
                   <Gift className="w-5 h-5 text-green-400" />
                 )}
@@ -263,7 +258,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
                 <div className="bg-gradient-to-r from-green-600/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4 text-center">
                   <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                   <h3 className="text-2xl font-bold text-white mb-1">
-                    {formatPence(status.promoBalancePence)} Available
+                    {formatCurrency(status.promoBalancePence)} Available
                   </h3>
                   <p className="text-sm text-gray-300">
                     Use your promo balance on paid fantasy entries
