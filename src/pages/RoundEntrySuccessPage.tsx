@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
+import { trackPurchase } from '@/utils/metaPixel';
 
 export const RoundEntrySuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -36,6 +37,9 @@ export const RoundEntrySuccessPage: React.FC = () => {
           .single();
 
         if (data?.status === 'completed') {
+          // Track Purchase for completed Stripe payment
+          trackPurchase(roundId, undefined, undefined, 'stripe');
+          
           setEntryConfirmed(true);
           setPickId(data.pick_id);
           setLoading(false);

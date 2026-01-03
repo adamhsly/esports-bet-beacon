@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { RoundDetailsModal } from "./RoundDetailsModal";
 import { ReservationConfirmModal } from "./ReservationConfirmModal";
 import { formatCurrency, formatDollarAmount } from "@/utils/currencyUtils";
+import { trackAddToCart, trackLead } from "@/utils/metaPixel";
 
 interface Round {
   id: string;
@@ -717,6 +718,12 @@ export const RoundSelector: React.FC<{
       setShowAuthModal(true);
       return;
     }
+    
+    // Track Lead for free round joins
+    if (isFreeRound) {
+      trackLead(`free_round_join_${round.type}`);
+    }
+    
     onJoinRound ? onJoinRound(round) : onNavigateToInProgress?.();
   };
   const handlePaidEntry = (round: Round) => {
@@ -724,6 +731,10 @@ export const RoundSelector: React.FC<{
       setShowAuthModal(true);
       return;
     }
+    
+    // Track AddToCart for paid round entry
+    trackAddToCart(round.id, round.round_name, round.entry_fee);
+    
     initiateCheckout(round.id);
   };
 
@@ -734,6 +745,9 @@ export const RoundSelector: React.FC<{
     }
     const result = await reserveSlot(round.id);
     if (result?.success) {
+      // Track AddToCart for paid round reservation
+      trackAddToCart(round.id, round.round_name, round.entry_fee);
+      
       setUserReservations(prev => new Set([...prev, round.id]));
       setSelectedReservationRound(round);
       setReservationCounts(prev => ({

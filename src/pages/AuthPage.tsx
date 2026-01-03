@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, User, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { trackCompleteRegistration } from "@/utils/metaPixel";
 const loginBanner = "/lovable-uploads/Spend_5_Get_10_v5.png";
 
 // Check if user has ever logged in before (stored in localStorage)
@@ -267,6 +268,10 @@ const AuthPage: React.FC = () => {
     } else {
       setSignUpError("");
       markAsLoggedIn(); // Mark user as returning user after successful signup
+      
+      // Track account creation with Meta Pixel
+      trackCompleteRegistration('email');
+      
       toast({
         title: "Account created successfully!",
         description: "Welcome to EsportsHub! Please check your email to verify your account.",

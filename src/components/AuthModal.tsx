@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackCompleteRegistration } from '@/utils/metaPixel';
 const loginBanner = "/lovable-uploads/Spend_5_Get_10_v5.png";
 
 interface AuthModalProps {
@@ -230,6 +231,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
     } else {
       setSignUpError('');
       markAsLoggedIn(); // Mark user as returning user after successful signup
+      
+      // Track account creation with Meta Pixel
+      trackCompleteRegistration('email');
+      
       toast({
         title: "Account created successfully!",
         description: "Welcome to EsportsHub! Please check your email to verify your account.",

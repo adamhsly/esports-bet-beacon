@@ -8,6 +8,7 @@ import { Star, Play, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getShareCardUrl } from '@/utils/shareUrlHelper';
 import { toast } from 'sonner';
+import { trackAddToCart } from '@/utils/metaPixel';
 
 interface LineupData {
   user: {
@@ -277,7 +278,13 @@ export const LineupSharePage: React.FC = () => {
                   Join the {lineupData.roundName} and compete against {lineupData.user.username}!
                 </p>
                 <Button 
-                  onClick={() => navigate('/')}
+                  onClick={() => {
+                    // Track AddToCart when user clicks to join round from shared lineup
+                    if (roundId) {
+                      trackAddToCart(roundId, lineupData.roundName);
+                    }
+                    navigate('/');
+                  }}
                   size="lg"
                   className="bg-purple-600 hover:bg-purple-700"
                 >
