@@ -7,7 +7,7 @@ import SearchableNavbar from "@/components/SearchableNavbar";
 import AuthModal from "@/components/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
+import { trackLead } from "@/utils/metaPixel";
 // Lazy load below-fold components
 const Footer = lazy(() => import("@/components/Footer"));
 const FaqSection = lazy(() => import("@/components/FaqSection"));
@@ -69,8 +69,14 @@ const WelcomePage = () => {
     navigate(teamPickerLink);
   };
 
+  // Track CTA clicks as Lead events
+  const handleCtaClick = (source: string) => {
+    trackLead(`welcome_cta_${source}`);
+  };
+
   // Variant B: open auth modal instead of navigating
-  const handleVariantBClick = () => {
+  const handleVariantBClick = (source: string) => {
+    trackLead(`welcome_cta_${source}`);
     setShowAuthModal(true);
   };
 
@@ -113,13 +119,13 @@ const WelcomePage = () => {
           {isVariantB ? (
             <Button
               size="lg"
-              onClick={handleVariantBClick}
+              onClick={() => handleVariantBClick('hero')}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
             >
               Create account
             </Button>
           ) : (
-            <Link to={teamPickerLink}>
+            <Link to={teamPickerLink} onClick={() => handleCtaClick('hero')}>
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
@@ -133,7 +139,7 @@ const WelcomePage = () => {
 
       <section className="w-full reveal-on-scroll">
         {isVariantB ? (
-          <div onClick={handleVariantBClick} className="block w-full cursor-pointer">
+          <div onClick={() => handleVariantBClick('banner')} className="block w-full cursor-pointer">
             <img 
               src={welcomeBanner} 
               alt="$10 bonus - No deposit required - Have some free plays on us!"
@@ -145,7 +151,7 @@ const WelcomePage = () => {
             />
           </div>
         ) : (
-          <Link to={teamPickerLink} className="block w-full">
+          <Link to={teamPickerLink} onClick={() => handleCtaClick('banner')} className="block w-full">
             <img 
               src={welcomeBanner} 
               alt="$10 bonus - No deposit required - Have some free plays on us!"
@@ -169,7 +175,7 @@ const WelcomePage = () => {
           <div className="max-w-6xl mx-auto space-y-6 md:space-y-12 overflow-hidden">
             {/* Card 1 - Pick Teams (Image Left) */}
             {isVariantB ? (
-              <div onClick={handleVariantBClick} className="block cursor-pointer">
+              <div onClick={() => handleVariantBClick('card_pick_teams')} className="block cursor-pointer">
                 <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20 mx-0">
                   <CardContent className="p-2 md:p-8">
                     <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
@@ -193,7 +199,7 @@ const WelcomePage = () => {
                 </Card>
               </div>
             ) : (
-              <Link to={teamPickerLink} className="block">
+              <Link to={teamPickerLink} onClick={() => handleCtaClick('card_pick_teams')} className="block">
                 <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all hover:shadow-lg hover:shadow-purple-500/20 mx-0 cursor-pointer">
                   <CardContent className="p-2 md:p-8">
                     <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
@@ -218,9 +224,8 @@ const WelcomePage = () => {
               </Link>
             )}
 
-            {/* Card 2 - Score Points (Image Right) */}
             {isVariantB ? (
-              <div onClick={handleVariantBClick} className="block cursor-pointer">
+              <div onClick={() => handleVariantBClick('card_score_points')} className="block cursor-pointer">
                 <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20 mx-0">
                   <CardContent className="p-2 md:p-8">
                     <div className="flex flex-col md:flex-row-reverse items-center gap-4 md:gap-12">
@@ -244,7 +249,7 @@ const WelcomePage = () => {
                 </Card>
               </div>
             ) : (
-              <Link to={teamPickerLink} className="block">
+              <Link to={teamPickerLink} onClick={() => handleCtaClick('card_score_points')} className="block">
                 <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all hover:shadow-lg hover:shadow-blue-500/20 mx-0 cursor-pointer">
                   <CardContent className="p-2 md:p-8">
                     <div className="flex flex-col md:flex-row-reverse items-center gap-4 md:gap-12">
@@ -271,7 +276,7 @@ const WelcomePage = () => {
 
             {/* Card 3 - Win Prizes (Image Left) */}
             {isVariantB ? (
-              <div onClick={handleVariantBClick} className="block cursor-pointer">
+              <div onClick={() => handleVariantBClick('card_win_prizes')} className="block cursor-pointer">
                 <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20 mx-0">
                   <CardContent className="p-2 md:p-8">
                     <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
@@ -295,7 +300,7 @@ const WelcomePage = () => {
                 </Card>
               </div>
             ) : (
-              <Link to={teamPickerLink} className="block">
+              <Link to={teamPickerLink} onClick={() => handleCtaClick('card_win_prizes')} className="block">
                 <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all hover:shadow-lg hover:shadow-yellow-500/20 mx-0 cursor-pointer">
                   <CardContent className="p-2 md:p-8">
                     <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12">
@@ -341,13 +346,13 @@ const WelcomePage = () => {
           {isVariantB ? (
             <Button
               size="lg"
-              onClick={handleVariantBClick}
+              onClick={() => handleVariantBClick('footer_cta')}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"
             >
               Create account
             </Button>
           ) : (
-            <Link to="/auth">
+            <Link to="/auth" onClick={() => handleCtaClick('footer_cta')}>
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 md:py-6 md:px-12 rounded-xl text-base md:text-xl shadow-lg hover:shadow-purple-500/50 transition-all"

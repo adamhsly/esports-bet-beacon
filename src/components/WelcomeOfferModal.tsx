@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useRoundReservation } from '@/hooks/useRoundReservation';
 import { formatCurrency } from '@/utils/currencyUtils';
+import { trackAddToCart } from '@/utils/metaPixel';
 interface WelcomeOfferModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -151,6 +152,9 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
         // Only reserve a ticket - bonus will be claimed on actual entry
         const result = await reserveSlot(paidRound.id);
         if (result?.success) {
+          // Track AddToCart for paid round reservation
+          trackAddToCart(paidRound.id, paidRound.round_name, 0); // Free entry via promo
+          
           toast.success('Ticket reserved! Your free entry is saved for when the round opens.');
           setUserHasReservation(true);
           setReservationCount(result.reservationCount);

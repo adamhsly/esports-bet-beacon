@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/utils/currencyUtils';
+import { trackPurchase } from '@/utils/metaPixel';
 
 interface TeamPickData {
   id: string;
@@ -43,6 +44,9 @@ export function usePaidRoundCheckout() {
       if (data?.promo_covered) {
         // Force-refresh the welcome offer balance everywhere.
         await queryClient.invalidateQueries({ queryKey: ['welcomeOffer'] });
+
+        // Track Purchase for promo-covered paid entry
+        trackPurchase(roundId, undefined, data.promo_used, 'promo');
 
         toast.success(`Entry completed! ${formatCurrency(data.promo_used)} promo balance used.`);
         // Return success so caller can show success modal instead of navigating away
