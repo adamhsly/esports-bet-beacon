@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 interface RoundParticipant {
   user_id: string;
   username: string;
+  email: string | null;
   type: 'reservation' | 'pick';
   created_at: string;
 }
@@ -161,15 +162,15 @@ export function PaidRoundsParticipants() {
                         key={`${participant.user_id}-${idx}`}
                         className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           {participant.type === 'pick' ? (
-                            <Trophy className="h-4 w-4 text-emerald-400" />
+                            <Trophy className="h-4 w-4 text-emerald-400 shrink-0" />
                           ) : (
-                            <Ticket className="h-4 w-4 text-yellow-400" />
+                            <Ticket className="h-4 w-4 text-yellow-400 shrink-0" />
                           )}
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-medium text-white">{participant.username || 'Unknown'}</p>
-                            <p className="text-xs text-white/40">{participant.user_id.slice(0, 8)}...</p>
+                            <p className="text-xs text-white/60 truncate">{participant.email || participant.user_id.slice(0, 8) + '...'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
