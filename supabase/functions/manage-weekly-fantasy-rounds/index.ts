@@ -106,6 +106,7 @@ Deno.serve(async (_req) => {
       prize_2nd: variant.prize_2nd,
       prize_3rd: variant.prize_3rd,
       section_name: variant.section_name,
+      minimum_reservations: variant.is_paid ? 35 : null,
     }));
 
     const { data: newRounds, error: insertError } = await supabase
@@ -116,6 +117,64 @@ Deno.serve(async (_req) => {
     if (insertError) throw insertError;
 
     console.log(`🆕 Created ${newRounds?.length || 0} weekly rounds for ${dateLabel}`);
+
+    // Find the new paid round for rollover purposes
+    const newPaidRound = newRounds?.find(r => r.is_paid);
+
+    // Roll over reservations from previous paid rounds that didn't reach threshold
+    const rolloverResults: any[] = [];
+    if (newPaidRound) {
+      // Find finished/cancelled paid weekly rounds with reservations that didn't open
+      const { data: oldPaidRounds } = await supabase
+        .from('fantasy_rounds')
+        .select('id, round_name, status, minimum_reservations')
+        .eq('type', 'weekly')
+        .eq('is_paid', true)
+        .eq('team_type', 'pro')
+        .in('status', ['finished', 'cancelled', 'scheduled'])
+        .neq('id', newPaidRound.id)
+        .lt('start_date', now.toISOString());
+
+      for (const oldRound of oldPaidRounds || []) {
+        // Check if this old round has reservations and never opened (wasn't 'open' status)
+        const { count: reservationCount } = await supabase
+          .from('round_reservations')
+          .select('*', { count: 'exact', head: true })
+          .eq('round_id', oldRound.id);
+
+        if (reservationCount && reservationCount > 0) {
+          console.log(`🔄 Rolling over ${reservationCount} reservations from ${oldRound.round_name} to ${newPaidRound.round_name}`);
+          
+          try {
+            const rolloverResponse = await fetch(`${supabaseUrl}/functions/v1/rollover-round-reservations`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}`,
+              },
+              body: JSON.stringify({ 
+                old_round_id: oldRound.id, 
+                new_round_id: newPaidRound.id 
+              }),
+            });
+            
+            const result = await rolloverResponse.json();
+            console.log(`✅ Rollover result for ${oldRound.round_name}:`, result);
+            rolloverResults.push({ 
+              from_round: oldRound.round_name, 
+              to_round: newPaidRound.round_name,
+              ...result 
+            });
+          } catch (err: any) {
+            console.error(`❌ Error rolling over from ${oldRound.round_name}:`, err);
+            rolloverResults.push({ 
+              from_round: oldRound.round_name, 
+              error: err?.message || String(err) 
+            });
+          }
+        }
+      }
+    }
 
     // Calculate team prices for each new round
     const priceResults: any[] = [];
@@ -153,6 +212,7 @@ Deno.serve(async (_req) => {
         min_required: MIN_PRO_MATCHES,
         date_range: `${startDate.toISOString()} → ${endDate.toISOString()}`,
         price_calculations: priceResults,
+        reservation_rollovers: rolloverResults,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
