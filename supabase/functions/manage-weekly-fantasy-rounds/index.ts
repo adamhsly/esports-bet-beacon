@@ -22,7 +22,7 @@ interface RoundVariant {
 // Create weekly pro free round and weekly pro paid round
 const WEEKLY_VARIANTS: RoundVariant[] = [
   { team_type: 'pro', is_paid: false, entry_fee: null, stripe_price_id: null, prize_type: 'credits', prize_1st: 50, prize_2nd: 25, prize_3rd: 10, section_name: 'Weekly Fun - Free', name_suffix: 'Pro - Free' },
-  { team_type: 'pro', is_paid: true, entry_fee: 250, stripe_price_id: null, prize_type: 'vouchers', prize_1st: 2500, prize_2nd: 1000, prize_3rd: 500, section_name: 'Weekly Pro - Paid', name_suffix: 'Pro - Paid' },
+  { team_type: 'pro', is_paid: true, entry_fee: 250, stripe_price_id: null, prize_type: 'vouchers', prize_1st: 5000, prize_2nd: 2500, prize_3rd: 1000, section_name: 'Weekly Pro - Paid', name_suffix: 'Pro - Paid' },
 ];
 
 const MIN_PRO_MATCHES = 3;
