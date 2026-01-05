@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Shield, Users, DollarSign, TrendingUp, LogIn, Trophy, Calendar, Clock, CreditCard, Gift } from 'lucide-react';
+import { PaidRoundsParticipants } from '@/components/admin/PaidRoundsParticipants';
 import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -595,6 +596,11 @@ const PlatformDashboardPage: React.FC = () => {
               </TabsContent>
             ))}
           </Tabs>
+
+          {/* Paid Rounds Participants Section */}
+          <div className="mt-12">
+            <PaidRoundsParticipants />
+          </div>
 
         </div>
       </main>
