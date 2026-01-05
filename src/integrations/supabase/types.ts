@@ -4004,6 +4004,7 @@ export type Database = {
         Args: { p_match_id: string; p_source: string }
         Returns: Json
       }
+      get_paid_round_participants: { Args: never; Returns: Json }
       get_pandascore_matches_around_date: {
         Args: { target_date: string }
         Returns: {
