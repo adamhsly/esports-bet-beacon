@@ -4091,6 +4091,22 @@ export type Database = {
           voucher_prizes_paid: number
         }[]
       }
+      get_private_round_participants: {
+        Args: never
+        Returns: {
+          end_date: string
+          id: string
+          join_code: string
+          organiser_email: string
+          organiser_id: string
+          organiser_username: string
+          participants: Json
+          round_name: string
+          start_date: string
+          status: string
+          type: string
+        }[]
+      }
       get_public_fantasy_leaderboard: {
         Args: { p_limit?: number; p_round_id: string }
         Returns: {
