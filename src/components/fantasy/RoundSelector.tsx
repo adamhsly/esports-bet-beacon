@@ -217,6 +217,13 @@ const RoundCard: React.FC<{
         return "Reserve Ticket";
       }
       // Round is open - paid round
+      // Show "Use Free Entry" if user has sufficient promo balance
+      if (hasFreeEntry) {
+        if (hasExistingPicks) {
+          return "Use Free Entry Again";
+        }
+        return "Use Free Entry";
+      }
       // Show "Submit Team Again" if user already has picks for this round
       if (hasExistingPicks) {
         return "Submit Team Again - Paid";
@@ -338,6 +345,7 @@ const RoundCard: React.FC<{
               <Button
                 className={`w-full font-medium text-sm py-2.5 !rounded-none before:hidden ${
                   hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  hasFreeEntry ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30" :
                   isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
@@ -407,6 +415,7 @@ const RoundCard: React.FC<{
               <Button
                 className={`w-full font-medium text-sm !rounded-none before:hidden ${
                   hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  hasFreeEntry ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30" :
                   isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
