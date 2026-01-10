@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import AuthModal from "@/components/AuthModal";
 import { usePaidRoundCheckout } from "@/hooks/usePaidRoundCheckout";
 import { useRoundReservation } from "@/hooks/useRoundReservation";
+import { useWelcomeOffer } from "@/hooks/useWelcomeOffer";
 import { RoundFilters, RoundFiltersState, defaultFilters, applyRoundFilters } from "./RoundFilters";
 import { format } from "date-fns";
 import { RoundDetailsModal } from "./RoundDetailsModal";
@@ -459,6 +460,11 @@ export const RoundSelector: React.FC<{
   const [userPromoBalance, setUserPromoBalance] = useState(0);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   const { reserveSlot, getReservationCount, loading: reserveLoading } = useRoundReservation();
+  const { status: welcomeOfferStatus } = useWelcomeOffer();
+  
+  // User has free entry if they have promo balance OR they're tier 1 with unclaimed offer (free entry waiting to be claimed)
+  const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed;
+  const effectivePromoBalance = userPromoBalance > 0 ? userPromoBalance : (hasUnclaimedFreeEntry ? (welcomeOfferStatus?.rewardPence || 1000) : 0);
 
   // Expose refetch function to parent via ref
   useEffect(() => {
@@ -915,7 +921,7 @@ export const RoundSelector: React.FC<{
                             hasReservation={userReservations.has(round.id)}
                             reservationCount={reservationCounts[round.id]?.count || 0}
                             pickCount={reservationCounts[round.id]?.pickCount || 0}
-                            hasFreeEntry={round.is_paid && userPromoBalance >= (round.entry_fee || 0)}
+                            hasFreeEntry={round.is_paid && effectivePromoBalance >= (round.entry_fee || 0)}
                             hasExistingPicks={round.is_paid && paidRoundsWithPicks.has(round.id)}
                           />
                         </div>
