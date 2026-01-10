@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Ticket, Trophy, Calendar, DollarSign, Unlock } from 'lucide-react';
+import { Users, Ticket, Trophy, Calendar, DollarSign, Unlock, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ export function PaidRoundsParticipants() {
   const [rounds, setRounds] = useState<PaidRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [openingRound, setOpeningRound] = useState<string | null>(null);
+  const [sendingBlast, setSendingBlast] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPaidRoundsWithParticipants();
@@ -91,6 +92,32 @@ export function PaidRoundsParticipants() {
       console.error(error);
     } finally {
       setOpeningRound(null);
+    }
+  }
+
+  async function handleSendBlast(roundId: string, roundName: string) {
+    if (!confirm(`Are you sure you want to send a blast email for "${roundName}"? This will email ALL non-test users (~100+ emails).`)) {
+      return;
+    }
+    
+    setSendingBlast(roundId);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-round-open-blast', {
+        body: { round_id: roundId }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success(`Blast sent! ${data.sent} emails delivered.`);
+      } else {
+        toast.error(data?.error || 'Failed to send blast');
+      }
+    } catch (error) {
+      toast.error('Failed to send blast');
+      console.error(error);
+    } finally {
+      setSendingBlast(null);
     }
   }
 
@@ -159,6 +186,18 @@ export function PaidRoundsParticipants() {
                       >
                         <Unlock className="h-4 w-4 mr-1" />
                         {openingRound === round.id ? 'Opening...' : 'Force Open'}
+                      </Button>
+                    )}
+                    {round.status === 'open' && (
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSendBlast(round.id, round.round_name || `${round.type} Round`)}
+                        disabled={sendingBlast === round.id}
+                        className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        {sendingBlast === round.id ? 'Sending...' : 'Send Blast'}
                       </Button>
                     )}
                     <Badge 

@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.rollover-round-reservations]
 verify_jwt = false
+
+[functions.send-round-open-blast]
+verify_jwt = false
