@@ -207,6 +207,11 @@ const RoundCard: React.FC<{
     }
   };
 
+  // Only disable/lock the CTA when we're in the "reserve" state (paid + not open) and a reservation already exists.
+  // If the round is open, an existing reservation should NOT make the button look disabled.
+  const isReservePhase = Boolean(isPaid && round.status !== 'open');
+  const isReservationLocked = Boolean(isReservePhase && hasReservation);
+
   const getButtonText = () => {
     if (isPaidCheckoutLoading || isReserveLoading) return "Loading...";
     if (isPaid) {
@@ -345,12 +350,12 @@ const RoundCard: React.FC<{
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
                 className={`w-full font-medium text-sm py-2.5 !rounded-none before:hidden ${
-                  hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  isReservationLocked ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
                   hasFreeEntry ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30" :
                   isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
-                disabled={isPaidCheckoutLoading || isReserveLoading || hasReservation}
+                disabled={isPaidCheckoutLoading || isReserveLoading || isReservationLocked}
               >
                 {getButtonText()}
               </Button>
@@ -415,12 +420,12 @@ const RoundCard: React.FC<{
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
                 className={`w-full font-medium text-sm !rounded-none before:hidden ${
-                  hasReservation ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
+                  isReservationLocked ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
                   hasFreeEntry ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30" :
                   isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
-                disabled={isPaidCheckoutLoading || isReserveLoading || hasReservation}
+                disabled={isPaidCheckoutLoading || isReserveLoading || isReservationLocked}
               >
                 {getButtonText()}
               </Button>
