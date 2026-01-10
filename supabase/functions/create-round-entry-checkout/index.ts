@@ -73,8 +73,39 @@ serve(async (req) => {
     const { data: promoStatus } = await supabaseAdmin
       .rpc('get_welcome_offer_status', { p_user_id: user.id });
 
-    const promoBalancePence = promoStatus?.promo_balance_pence || 0;
+    let promoBalancePence = promoStatus?.promo_balance_pence || 0;
     const entryFeePence = round.entry_fee;
+    const tier = promoStatus?.tier || 1;
+    const offerClaimed = promoStatus?.offer_claimed ?? false;
+    const rewardPence = promoStatus?.reward_pence || 0;
+
+    console.log(`User promo status: tier=${tier}, claimed=${offerClaimed}, balance=${promoBalancePence}, reward=${rewardPence}`);
+
+    // If user is tier 1 with unclaimed offer and has 0 balance, auto-claim the free entry
+    if (tier === 1 && !offerClaimed && promoBalancePence === 0 && rewardPence > 0) {
+      console.log(`Auto-claiming tier 1 free entry: ${rewardPence} pence`);
+      
+      // Claim the welcome offer by setting promo_balance_pence and marking as claimed
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiry
+      
+      const { error: claimError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          promo_balance_pence: rewardPence,
+          promo_expires_at: expiresAt.toISOString(),
+          welcome_offer_claimed: true,
+        })
+        .eq('id', user.id);
+      
+      if (claimError) {
+        console.error('Error auto-claiming welcome offer:', claimError);
+      } else {
+        // Update local variable to use the newly claimed balance
+        promoBalancePence = rewardPence;
+        console.log(`Welcome offer auto-claimed successfully, new balance: ${promoBalancePence} pence`);
+      }
+    }
 
     console.log(`User promo balance: ${promoBalancePence} pence, entry fee: ${entryFeePence} pence`);
 
