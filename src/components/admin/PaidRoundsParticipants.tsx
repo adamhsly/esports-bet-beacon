@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Ticket, Trophy, Calendar, DollarSign } from 'lucide-react';
+import { Users, Ticket, Trophy, Calendar, DollarSign, Unlock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface RoundParticipant {
   user_id: string;
@@ -29,6 +31,7 @@ interface PaidRound {
 export function PaidRoundsParticipants() {
   const [rounds, setRounds] = useState<PaidRound[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openingRound, setOpeningRound] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPaidRoundsWithParticipants();
@@ -61,6 +64,33 @@ export function PaidRoundsParticipants() {
       console.error('Error fetching paid rounds:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleForceOpen(roundId: string, roundName: string) {
+    if (!confirm(`Are you sure you want to force open "${roundName}"? This will send emails to all reserved users.`)) {
+      return;
+    }
+    
+    setOpeningRound(roundId);
+    try {
+      const { data, error } = await supabase.functions.invoke('open-paid-round', {
+        body: { round_id: roundId, force: true }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success(`Round opened! ${data.notified} users notified.`);
+        fetchPaidRoundsWithParticipants(); // Refresh the list
+      } else {
+        toast.error(data?.message || 'Failed to open round');
+      }
+    } catch (error) {
+      toast.error('Failed to open round');
+      console.error(error);
+    } finally {
+      setOpeningRound(null);
     }
   }
 
@@ -120,6 +150,17 @@ export function PaidRoundsParticipants() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
+                    {round.status === 'scheduled' && (
+                      <Button 
+                        size="sm"
+                        onClick={() => handleForceOpen(round.id, round.round_name || `${round.type} Round`)}
+                        disabled={openingRound === round.id}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <Unlock className="h-4 w-4 mr-1" />
+                        {openingRound === round.id ? 'Opening...' : 'Force Open'}
+                      </Button>
+                    )}
                     <Badge 
                       className={cn(
                         "text-xs",
