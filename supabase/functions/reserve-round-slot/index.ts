@@ -135,11 +135,26 @@ Deno.serve(async (req) => {
         
         const userIds = reservations?.map(r => r.user_id) || [];
         
-        // Get user emails from auth
-        const { data: users } = await adminClient.auth.admin.listUsers();
-        const userEmails = users?.users
-          ?.filter(u => userIds.includes(u.id) && u.email)
-          ?.map(u => ({ id: u.id, email: u.email! })) || [];
+        // Get user emails from auth with pagination
+        const perPage = 1000;
+        let authPage = 1;
+        let allAuthUsers: any[] = [];
+
+        for (let i = 0; i < 20; i++) {
+          const { data, error } = await adminClient.auth.admin.listUsers({ page: authPage, perPage });
+          if (error) {
+            console.error('Error fetching users page', authPage, error);
+            break;
+          }
+          allAuthUsers = allAuthUsers.concat(data.users || []);
+          const nextPage = (data as any).nextPage as number | null;
+          if (!nextPage) break;
+          authPage = nextPage;
+        }
+
+        const userEmails = allAuthUsers
+          .filter(u => userIds.includes(u.id) && u.email)
+          .map(u => ({ id: u.id, email: u.email! }));
 
         console.log(`Sending open notifications to ${userEmails.length} users`);
 

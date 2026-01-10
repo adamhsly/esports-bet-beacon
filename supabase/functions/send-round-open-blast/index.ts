@@ -44,16 +44,32 @@ Deno.serve(async (req) => {
       throw new Error('Round must be open to send blast');
     }
 
-    // Get all non-test users
-    const { data: usersData } = await supabase.auth.admin.listUsers();
-    const allUsers = usersData?.users || [];
+    // Get all users with pagination
+    const perPage = 1000;
+    let page = 1;
+    let allUsers: any[] = [];
+
+    for (let i = 0; i < 20; i++) { // Safety limit of 20 pages (20k users max)
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+      
+      if (error) {
+        console.error('Error fetching users page', page, error);
+        break;
+      }
+      
+      allUsers = allUsers.concat(data.users || []);
+      
+      const nextPage = (data as any).nextPage as number | null;
+      if (!nextPage) break;
+      page = nextPage;
+    }
     
     // Filter out test users (emails ending in @test.local)
     const nonTestUsers = allUsers.filter(u => 
       u.email && !u.email.endsWith('@test.local')
     );
 
-    console.log(`Found ${nonTestUsers.length} non-test users to email`);
+    console.log(`Found ${nonTestUsers.length} non-test users to email (from ${allUsers.length} total)`);
 
     // Format prize display
     const formatPrize = (amount: number, type: string) => {
