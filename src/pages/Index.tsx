@@ -255,21 +255,14 @@ const Index = () => {
   const tier2PopupShownRef = useRef(false);
 
   // Auto-show tier 2 popup when user just unlocked it
-  // Limited to max 2 times total across all triggers
   useEffect(() => {
     if (!user || loading || welcomeOfferLoading || tier2PopupShownRef.current) return;
     
     if (justUnlockedTier2) {
-      // Check if we've already shown tier 2 modal max times (2)
-      const tier2CountKey = `welcomeOfferTier2Count_${user.id}`;
-      const tier2Count = parseInt(localStorage.getItem(tier2CountKey) || '0', 10);
-      if (tier2Count >= 2) return;
-
       tier2PopupShownRef.current = true;
       markTier2UnlockSeen();
       // Small delay to ensure page is ready
       const timer = setTimeout(() => {
-        localStorage.setItem(tier2CountKey, String(tier2Count + 1));
         setShowWelcomeOfferModal(true);
       }, 500);
       return () => clearTimeout(timer);
@@ -277,20 +270,13 @@ const Index = () => {
   }, [user, loading, welcomeOfferLoading, justUnlockedTier2, markTier2UnlockSeen]);
 
   // Auto-show tier 2 popup on next login (2nd time)
-  // Limited to max 2 times total across all triggers
   useEffect(() => {
     if (!user || loading || welcomeOfferLoading || tier2PopupShownRef.current) return;
     
     if (shouldShowTier2OnLogin) {
-      // Check if we've already shown tier 2 modal max times (2)
-      const tier2CountKey = `welcomeOfferTier2Count_${user.id}`;
-      const tier2Count = parseInt(localStorage.getItem(tier2CountKey) || '0', 10);
-      if (tier2Count >= 2) return;
-
       tier2PopupShownRef.current = true;
       markTier2LoginShown();
       const timer = setTimeout(() => {
-        localStorage.setItem(tier2CountKey, String(tier2Count + 1));
         setShowWelcomeOfferModal(true);
       }, 1000);
       return () => clearTimeout(timer);

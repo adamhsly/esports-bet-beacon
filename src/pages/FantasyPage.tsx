@@ -73,15 +73,9 @@ const FantasyPage: React.FC = () => {
   }, [user]);
 
   // Tier 2: show immediately when unlocked (or first time we detect tier 2 without a prior popup)
-  // Limited to max 2 times total across all triggers
   useEffect(() => {
     if (!user || authLoading || welcomeOfferLoading || tier2PopupShownRef.current) return;
     if (!justUnlockedTier2) return;
-
-    // Check if we've already shown tier 2 modal max times (2)
-    const tier2CountKey = `welcomeOfferTier2Count_${user.id}`;
-    const tier2Count = parseInt(localStorage.getItem(tier2CountKey) || '0', 10);
-    if (tier2Count >= 2) return;
 
     tier2PopupShownRef.current = true;
 
@@ -89,7 +83,6 @@ const FantasyPage: React.FC = () => {
     const timer = window.setTimeout(() => {
       fired = true;
       markTier2UnlockSeen();
-      localStorage.setItem(tier2CountKey, String(tier2Count + 1));
       setShowWelcomeOfferModal(true);
     }, 650);
 
@@ -100,15 +93,9 @@ const FantasyPage: React.FC = () => {
   }, [user?.id, authLoading, welcomeOfferLoading, justUnlockedTier2, markTier2UnlockSeen]);
 
   // Tier 2: show again on the next login only
-  // Limited to max 2 times total across all triggers
   useEffect(() => {
     if (!user || authLoading || welcomeOfferLoading || tier2PopupShownRef.current) return;
     if (!shouldShowTier2OnLogin) return;
-
-    // Check if we've already shown tier 2 modal max times (2)
-    const tier2CountKey = `welcomeOfferTier2Count_${user.id}`;
-    const tier2Count = parseInt(localStorage.getItem(tier2CountKey) || '0', 10);
-    if (tier2Count >= 2) return;
 
     tier2PopupShownRef.current = true;
 
@@ -116,7 +103,6 @@ const FantasyPage: React.FC = () => {
     const timer = window.setTimeout(() => {
       fired = true;
       markTier2LoginShown();
-      localStorage.setItem(tier2CountKey, String(tier2Count + 1));
       setShowWelcomeOfferModal(true);
     }, 650);
 
