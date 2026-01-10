@@ -4134,7 +4134,7 @@ export type Database = {
         }[]
       }
       get_team_swap_state: { Args: { p_round_id: string }; Returns: Json }
-      get_welcome_offer_status: { Args: { p_user_id?: string }; Returns: Json }
+      get_welcome_offer_status: { Args: { p_user_id: string }; Returns: Json }
       grant_bonus_credits: {
         Args: { p_amount: number; p_source: string; p_user: string }
         Returns: undefined
