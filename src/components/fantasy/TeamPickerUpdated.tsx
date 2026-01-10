@@ -21,6 +21,7 @@ import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
 import { usePaidRoundCheckout } from '@/hooks/usePaidRoundCheckout';
+import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 import { TeamPickerWalkthrough } from './TeamPickerWalkthrough';
 import { RoundDetailsModal } from './RoundDetailsModal';
@@ -85,6 +86,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const { progressMission } = useRPCActions();
   const { availableCredits: availableBonusCredits, spendBonusCredits } = useBonusCredits();
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
+  const { status: welcomeOfferStatus } = useWelcomeOffer();
   
   const [proTeams, setProTeams] = useState<Team[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<Team[]>([]);
@@ -1002,7 +1004,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         {submitting || checkoutLoading ? 'Processing...' : (
           user 
             ? (round.entry_fee && round.entry_fee > 0 
-                ? (userPromoBalance >= round.entry_fee ? 'Submit Team' : 'Pay & Submit')
+                ? (() => {
+                    // Check if user has promo balance OR unclaimed tier 1 free entry
+                    const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed;
+                    const effectiveBalance = userPromoBalance > 0 ? userPromoBalance : (hasUnclaimedFreeEntry ? (welcomeOfferStatus?.rewardPence || 250) : 0);
+                    return effectiveBalance >= round.entry_fee ? 'Submit Team' : 'Pay & Submit';
+                  })()
                 : 'Submit Team') 
             : 'Create Account & Submit'
         )}
