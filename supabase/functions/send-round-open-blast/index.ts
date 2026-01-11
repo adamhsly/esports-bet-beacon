@@ -44,6 +44,24 @@ Deno.serve(async (req) => {
       throw new Error('Round must be open to send blast');
     }
 
+    // Get users who have already reserved/picked for this round (they get separate emails)
+    const { data: reservedUsers } = await supabase
+      .from('fantasy_round_picks')
+      .select('user_id')
+      .eq('round_id', round_id);
+    
+    const reservedUserIds = new Set((reservedUsers || []).map(r => r.user_id));
+    console.log(`Found ${reservedUserIds.size} users who have reserved this round (will be excluded)`);
+
+    // Get users who have already received a blast email for this round
+    const { data: alreadyBlasted } = await supabase
+      .from('round_blast_emails')
+      .select('user_id')
+      .eq('round_id', round_id);
+    
+    const alreadyBlastedUserIds = new Set((alreadyBlasted || []).map(b => b.user_id));
+    console.log(`Found ${alreadyBlastedUserIds.size} users who already received blast for this round (will be excluded)`);
+
     // Get all users with pagination
     const perPage = 1000;
     let page = 1;
@@ -64,12 +82,18 @@ Deno.serve(async (req) => {
       page = nextPage;
     }
     
-    // Filter out test users (emails ending in @test.local)
-    const nonTestUsers = allUsers.filter(u => 
-      u.email && !u.email.endsWith('@test.local')
+    // Filter out:
+    // 1. Test users (emails ending in @test.local)
+    // 2. Users who have reserved this round (they get separate emails)
+    // 3. Users who have already received a blast email for this round
+    const eligibleUsers = allUsers.filter(u => 
+      u.email && 
+      !u.email.endsWith('@test.local') &&
+      !reservedUserIds.has(u.id) &&
+      !alreadyBlastedUserIds.has(u.id)
     );
 
-    console.log(`Found ${nonTestUsers.length} non-test users to email (from ${allUsers.length} total)`);
+    console.log(`Found ${eligibleUsers.length} eligible users to email (from ${allUsers.length} total, excluding ${reservedUserIds.size} reserved and ${alreadyBlastedUserIds.size} already blasted)`);
 
     // Format prize display
     const formatPrize = (amount: number, type: string) => {
@@ -91,7 +115,7 @@ Deno.serve(async (req) => {
     let sentCount = 0;
     let failedCount = 0;
 
-    for (const user of nonTestUsers) {
+    for (const user of eligibleUsers) {
       try {
         await resend.emails.send({
           from: 'Frags & Fortunes <noreply@fragsandfortunes.com>',
@@ -174,6 +198,12 @@ Deno.serve(async (req) => {
             </div>
           `,
         });
+        
+        // Record that we sent this blast email
+        await supabase
+          .from('round_blast_emails')
+          .insert({ round_id, user_id: user.id, email: user.email });
+        
         sentCount++;
         console.log(`Email sent to ${user.email}`);
       } catch (emailError) {
@@ -190,7 +220,9 @@ Deno.serve(async (req) => {
         message: `Blast email sent to ${sentCount} users`,
         sent: sentCount,
         failed: failedCount,
-        total: nonTestUsers.length
+        total: eligibleUsers.length,
+        excludedReserved: reservedUserIds.size,
+        excludedAlreadyBlasted: alreadyBlastedUserIds.size
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
