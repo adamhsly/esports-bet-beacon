@@ -379,7 +379,7 @@ const FantasyPage: React.FC = () => {
           {!selectedRound && (
             <div className="mb-8 max-w-4xl mx-auto">
               <Carousel
-                plugins={[plugin.current]}
+                plugins={[plugin.current] as any}
                 className="w-full md:w-3/4 mx-auto"
               >
                 <CarouselContent>
