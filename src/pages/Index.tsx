@@ -728,7 +728,7 @@ const Index = () => {
               <div className="max-w-4xl mx-auto">
                 <Link to="/fantasy" className="block hover:opacity-90 transition-opacity">
                   <Carousel
-                    plugins={[autoplayPlugin.current]}
+                    plugins={[autoplayPlugin.current] as any}
                     className="w-full md:w-3/4 mx-auto"
                   >
                     <CarouselContent>
