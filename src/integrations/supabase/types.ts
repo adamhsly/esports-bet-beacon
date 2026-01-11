@@ -2788,6 +2788,38 @@ export type Database = {
         }
         Relationships: []
       }
+      round_blast_emails: {
+        Row: {
+          email: string
+          id: string
+          round_id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          round_id: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          round_id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_blast_emails_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       round_credit_spend: {
         Row: {
           amount: number
