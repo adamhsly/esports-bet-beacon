@@ -46,14 +46,19 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
     const fetchMatches = async () => {
       setLoading(true);
       try {
+        // Convert round dates to date-only format (YYYY-MM-DD) to match how match_volume is calculated
+        const startDateOnly = roundStartDate.split('T')[0];
+        const endDateOnly = roundEndDate.split('T')[0];
+
         if (team.type === 'pro') {
-          // Fetch from pandascore_matches
+          // Fetch from pandascore_matches using match_date (same as calculate-team-prices)
           const { data, error } = await supabase
             .from('pandascore_matches')
-            .select('id, teams, start_time, tournament_name, status')
-            .gte('start_time', roundStartDate)
-            .lte('start_time', roundEndDate)
-            .not('teams', 'is', null);
+            .select('id, teams, start_time, tournament_name, status, match_date')
+            .gte('match_date', startDateOnly)
+            .lte('match_date', endDateOnly)
+            .not('teams', 'is', null)
+            .not('status', 'eq', 'canceled');
 
           if (error) throw error;
 
@@ -63,14 +68,12 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
             const teams = match.teams as any[];
             if (!teams || teams.length < 2) continue;
 
-            const team1Name = teams[0]?.opponent?.name || '';
-            const team2Name = teams[1]?.opponent?.name || '';
             const team1Id = String(teams[0]?.opponent?.id || '');
             const team2Id = String(teams[1]?.opponent?.id || '');
 
-            // Check if this team is in the match
-            const isTeam1 = team1Id === team.id || team1Name.toLowerCase() === team.name.toLowerCase();
-            const isTeam2 = team2Id === team.id || team2Name.toLowerCase() === team.name.toLowerCase();
+            // Check if this team is in the match by ID
+            const isTeam1 = team1Id === team.id;
+            const isTeam2 = team2Id === team.id;
 
             if (isTeam1 || isTeam2) {
               const opponent = isTeam1 ? teams[1]?.opponent : teams[0]?.opponent;
@@ -90,12 +93,12 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
           setMatches(teamMatches);
 
         } else {
-          // Fetch from faceit_matches for amateur teams
+          // Fetch from faceit_matches for amateur teams using match_date (same as calculate-team-prices)
           const { data, error } = await supabase
             .from('faceit_matches')
-            .select('id, match_id, faction1_name, faction2_name, scheduled_at, competition_name, status')
-            .gte('scheduled_at', roundStartDate)
-            .lte('scheduled_at', roundEndDate);
+            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, match_date, competition_name, status')
+            .gte('match_date', startDateOnly)
+            .lte('match_date', endDateOnly);
 
           if (error) throw error;
 
@@ -104,19 +107,22 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
           for (const match of data || []) {
             const faction1 = match.faction1_name || '';
             const faction2 = match.faction2_name || '';
+            const faction1Id = match.faction1_id || '';
+            const faction2Id = match.faction2_id || '';
 
             // Skip BYE matches
             if (faction1.toLowerCase() === 'bye' || faction2.toLowerCase() === 'bye') continue;
 
-            const isTeam1 = faction1.toLowerCase() === team.name.toLowerCase();
-            const isTeam2 = faction2.toLowerCase() === team.name.toLowerCase();
+            // Match by team ID first, then fallback to name matching
+            const isTeam1 = faction1Id === team.id || faction1.toLowerCase() === team.name.toLowerCase();
+            const isTeam2 = faction2Id === team.id || faction2.toLowerCase() === team.name.toLowerCase();
 
             if (isTeam1 || isTeam2) {
               const opponent = isTeam1 ? faction2 : faction1;
               teamMatches.push({
                 id: match.id,
                 opponent: opponent || 'TBD',
-                startTime: match.scheduled_at,
+                startTime: match.scheduled_at || match.match_date,
                 tournamentName: match.competition_name,
                 status: match.status || 'scheduled'
               });
