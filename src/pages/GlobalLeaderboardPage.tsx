@@ -34,7 +34,6 @@ const GlobalLeaderboardPage: React.FC = () => {
   const [timeframe, setTimeframe] = useState<Timeframe>('lifetime');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userEntry, setUserEntry] = useState<LeaderboardEntry | null>(null);
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
@@ -46,7 +45,7 @@ const GlobalLeaderboardPage: React.FC = () => {
 
       if (error) throw error;
 
-      const entries: LeaderboardEntry[] = (data || []).map((row: any) => ({
+      const allEntries: LeaderboardEntry[] = (data || []).map((row: any) => ({
         user_id: row.user_id,
         username: row.username || 'Anonymous',
         avatar_url: row.avatar_url,
@@ -58,11 +57,26 @@ const GlobalLeaderboardPage: React.FC = () => {
         is_current_user: user?.id === row.user_id
       }));
 
-      setLeaderboard(entries);
+      // Apply 6-row logic similar to RoundLeaderboard
+      const currentUserEntry = allEntries.find(e => e.is_current_user);
+      const currentUserRank = currentUserEntry?.rank || null;
 
-      // Find current user's entry
-      const currentUserEntry = entries.find(e => e.is_current_user);
-      setUserEntry(currentUserEntry || null);
+      let displayEntries: LeaderboardEntry[] = [];
+
+      if (!currentUserRank || currentUserRank <= 3) {
+        // User is in top 3 or not found: show positions 1-6
+        displayEntries = allEntries.slice(0, 6);
+      } else {
+        // User is outside top 3: show top 3 + user's row + 1 above + 1 below
+        const top3 = allEntries.slice(0, 3);
+        const userAbove = currentUserRank > 4 ? allEntries.slice(currentUserRank - 2, currentUserRank - 1) : [];
+        const userRow = allEntries.slice(currentUserRank - 1, currentUserRank);
+        const userBelow = currentUserRank < allEntries.length ? allEntries.slice(currentUserRank, currentUserRank + 1) : [];
+        
+        displayEntries = [...top3, ...userAbove, ...userRow, ...userBelow];
+      }
+
+      setLeaderboard(displayEntries);
     } catch (error) {
       console.error('Error fetching global leaderboard:', error);
     } finally {
@@ -89,18 +103,18 @@ const GlobalLeaderboardPage: React.FC = () => {
 
   const getRowHighlight = (rank: number, isCurrentUser: boolean) => {
     if (isCurrentUser && rank > 3) {
-      return 'border-2 border-green-500/80 bg-green-500/10';
+      return 'border border-green-500/80';
     }
     
     switch (rank) {
       case 1:
-        return 'bg-gradient-to-r from-yellow-500/30 to-amber-500/30 border border-yellow-500/40';
+        return 'bg-gradient-to-r from-yellow-500/40 to-amber-500/40';
       case 2:
-        return 'bg-gradient-to-r from-gray-400/30 to-gray-500/30 border border-gray-400/40';
+        return 'bg-gradient-to-r from-gray-400/40 to-gray-500/40';
       case 3:
-        return 'bg-gradient-to-r from-orange-400/30 to-orange-500/30 border border-orange-500/40';
+        return 'bg-gradient-to-r from-orange-400/40 to-orange-500/40';
       default:
-        return 'bg-card/50 hover:bg-card/80 border border-transparent';
+        return 'hover:bg-muted/30';
     }
   };
 
@@ -119,7 +133,7 @@ const GlobalLeaderboardPage: React.FC = () => {
       </Helmet>
       <SearchableNavbar />
 
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-3xl">
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-2xl">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] mb-4">
@@ -172,75 +186,36 @@ const GlobalLeaderboardPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Leaderboard */}
-        <div className="space-y-2">
+        {/* Leaderboard - styled like RoundLeaderboard */}
+        <div className="space-y-1">
           {loading ? (
-            // Loading skeleton
-            <div className="space-y-2">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className="animate-pulse flex items-center gap-4 py-3 px-4 bg-card/50 rounded-lg">
-                  <div className="w-8 h-6 bg-muted rounded" />
-                  <div className="w-10 h-10 bg-muted rounded-full" />
-                  <div className="flex-1">
-                    <div className="w-32 h-4 bg-muted rounded" />
-                  </div>
-                  <div className="w-16 h-4 bg-muted rounded" />
-                  <div className="w-12 h-4 bg-muted rounded" />
+            // Loading skeleton matching RoundLeaderboard
+            <div className="animate-pulse space-y-1">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 px-1">
+                  <div className="w-6 h-4 bg-muted rounded" />
+                  <div className="w-5 h-5 bg-muted rounded-full" />
+                  <div className="w-20 h-3 bg-muted rounded flex-1" />
+                  <div className="w-12 h-3 bg-muted rounded" />
                 </div>
               ))}
             </div>
           ) : leaderboard.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">No rankings yet for this timeframe</p>
-              <p className="text-sm mt-2">Complete rounds to earn points and climb the leaderboard!</p>
+            <div className="text-center py-6 text-muted-foreground">
+              <div className="text-2xl mb-2">🏆</div>
+              <p className="text-sm">No rankings yet for this timeframe</p>
             </div>
           ) : (
-            <>
-              {/* Header Row */}
-              <div className="flex items-center gap-4 py-2 px-4 text-xs text-muted-foreground uppercase tracking-wider">
-                <div className="w-8 text-center">Rank</div>
-                <div className="w-10" />
-                <div className="flex-1">Player</div>
-                <div className="w-20 text-right">Points</div>
-                <div className="w-16 text-right">Rounds</div>
-              </div>
-
-              {/* Leaderboard Rows */}
-              {leaderboard.map((entry) => (
-                <LeaderboardRow
-                  key={entry.user_id}
-                  entry={entry}
-                  free={free}
-                  premium={premium}
-                  getRankDisplay={getRankDisplay}
-                  getRowHighlight={getRowHighlight}
-                />
-              ))}
-
-              {/* Current User Section (if not in top 100) */}
-              {user && !userEntry && (
-                <div className="mt-6 pt-6 border-t border-border">
-                  <p className="text-center text-sm text-muted-foreground mb-4">Your position</p>
-                  <div className="flex items-center gap-4 py-3 px-4 rounded-lg border-2 border-green-500/80 bg-green-500/10">
-                    <div className="w-8 text-center text-sm font-medium text-white">—</div>
-                    <EnhancedAvatar
-                      src={null}
-                      fallback="You"
-                      size="md"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">You</p>
-                    </div>
-                    <div className="w-20 text-right">
-                      <span className="text-sm font-bold text-white">0</span>
-                      <span className="text-xs text-muted-foreground ml-1">pts</span>
-                    </div>
-                    <div className="w-16 text-right text-sm text-muted-foreground">0</div>
-                  </div>
-                </div>
-              )}
-            </>
+            leaderboard.map((entry) => (
+              <LeaderboardRow
+                key={entry.user_id}
+                entry={entry}
+                free={free}
+                premium={premium}
+                getRankDisplay={getRankDisplay}
+                getRowHighlight={getRowHighlight}
+              />
+            ))
           )}
         </div>
       </main>
@@ -250,7 +225,7 @@ const GlobalLeaderboardPage: React.FC = () => {
   );
 };
 
-// Leaderboard Row Component
+// Leaderboard Row Component - styled exactly like RoundLeaderboard
 const LeaderboardRow: React.FC<{
   entry: LeaderboardEntry;
   free: any[];
@@ -278,11 +253,11 @@ const LeaderboardRow: React.FC<{
 
   return (
     <div
-      className={`flex items-center gap-4 py-3 px-4 rounded-lg transition-all ${getRowHighlight(entry.rank, entry.is_current_user)}`}
+      className={`flex items-center gap-3 py-2 px-1 rounded transition-colors h-11 ${getRowHighlight(entry.rank, entry.is_current_user)}`}
     >
       {/* Rank */}
-      <div className="w-8 text-center">
-        <span className={`text-sm font-bold ${entry.rank <= 3 ? 'text-xl' : 'text-white'}`}>
+      <div className="w-6 flex items-center justify-center">
+        <span className="text-sm font-medium text-white">
           {getRankDisplay(entry.rank)}
         </span>
       </div>
@@ -293,28 +268,25 @@ const LeaderboardRow: React.FC<{
         fallback={entry.username.slice(0, 2).toUpperCase()}
         frameUrl={frameAsset}
         borderUrl={borderAsset}
-        size="md"
+        size="sm"
+        className="h-5 w-5"
       />
 
       {/* Username */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-white truncate">
+        <p className="text-sm font-medium truncate text-white">
           {entry.username}
           {entry.is_current_user && (
-            <span className="ml-2 text-xs text-green-400">(You)</span>
+            <span className="ml-1 text-xs text-green-400">(You)</span>
           )}
         </p>
       </div>
 
       {/* Points */}
-      <div className="w-20 text-right">
-        <span className="text-sm font-bold text-white">{entry.total_points.toLocaleString()}</span>
-        <span className="text-xs text-muted-foreground ml-1">pts</span>
-      </div>
-
-      {/* Rounds Played */}
-      <div className="w-16 text-right text-sm text-muted-foreground">
-        {entry.rounds_played}
+      <div className="text-right">
+        <span className="text-sm font-bold text-white">
+          {entry.total_points.toLocaleString()}
+        </span>
       </div>
     </div>
   );
