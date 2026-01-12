@@ -40,6 +40,7 @@ interface TeamCardProps {
   showSwapButton?: boolean;
   isSwappedIn?: boolean;
   isSwappedOut?: boolean;
+  onMatchesClick?: (team: Team) => void;
 }
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
@@ -60,7 +61,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   onSwapTeam,
   showSwapButton = false,
   isSwappedIn = false,
-  isSwappedOut = false
+  isSwappedOut = false,
+  onMatchesClick
 }) => {
   const isAmateur = team.type === 'amateur';
   // Allow clicking already-selected teams even when budget is maxed out (so user can deselect)
@@ -125,12 +127,23 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           {/* Stats Row with Add/Remove Button */}
           <div className="mt-3 flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
-              <div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onMatchesClick) onMatchesClick(team);
+                }}
+                className={`flex items-center gap-1 transition-colors ${
+                  onMatchesClick 
+                    ? 'hover:underline cursor-pointer ' + (isAmateur ? 'text-orange-400 hover:text-orange-300' : 'text-blue-400 hover:text-blue-300')
+                    : 'cursor-default'
+                }`}
+                disabled={!onMatchesClick}
+              >
                 <span className="text-gray-400">Matches:</span>
-                <span className="ml-1 text-white font-medium">
+                <span className="font-medium">
                   {team.match_volume ?? 0}
                 </span>
-              </div>
+              </button>
               
               {/* Stats Link */}
               {onStatsClick && (
