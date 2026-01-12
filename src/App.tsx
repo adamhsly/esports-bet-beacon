@@ -46,6 +46,7 @@ import BlogPage from '@/pages/BlogPage';
 import BlogPostPage from '@/pages/BlogPostPage';
 import BlogAdminPage from '@/pages/BlogAdminPage';
 import PlatformDashboardPage from '@/pages/PlatformDashboardPage';
+import GlobalLeaderboardPage from '@/pages/GlobalLeaderboardPage';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
@@ -195,6 +196,7 @@ function App() {
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/blog-admin" element={<BlogAdminPage />} />
           <Route path="/platform-dashboard" element={<PlatformDashboardPage />} />
+          <Route path="/leaderboard" element={<GlobalLeaderboardPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
