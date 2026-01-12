@@ -109,14 +109,14 @@ const LeaderboardBannerPreview: React.FC = () => {
 
   if (top3.length === 0) {
     return (
-      <div className="hidden md:flex flex-col gap-1.5 ml-6 bg-black/20 rounded-lg p-3 min-w-[180px]">
+      <div className="flex-shrink-0 flex flex-col gap-1.5 md:ml-6 bg-black/20 rounded-lg p-2 md:p-3 min-w-[140px] md:min-w-[180px]">
         <div className="text-xs text-gray-400 text-center">Weekly Leaders</div>
         <div className="animate-pulse space-y-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-2 py-1.5 px-2">
+            <div key={i} className="flex items-center gap-2 py-1 px-2">
               <div className="w-4 h-4 bg-muted rounded" />
               <div className="w-4 h-4 bg-muted rounded-full" />
-              <div className="w-16 h-3 bg-muted rounded" />
+              <div className="w-12 md:w-16 h-3 bg-muted rounded" />
             </div>
           ))}
         </div>
@@ -125,15 +125,15 @@ const LeaderboardBannerPreview: React.FC = () => {
   }
 
   return (
-    <div className="hidden md:flex flex-col gap-1 ml-6 bg-black/20 rounded-lg p-2.5 min-w-[180px]">
-      <div className="text-xs text-gray-400 text-center mb-1">Weekly Leaders</div>
+    <div className="flex-shrink-0 flex flex-col gap-0.5 md:ml-6 bg-black/20 rounded-lg p-2 md:p-2.5 min-w-[140px] md:min-w-[180px]">
+      <div className="text-[10px] md:text-xs text-gray-400 text-center mb-0.5">Weekly Leaders</div>
       {top3.map((entry) => (
         <div
           key={entry.user_id}
-          className={`flex items-center gap-2 py-1.5 px-2 rounded transition-colors h-8 ${getRowHighlight(entry.rank)}`}
+          className={`flex items-center gap-1.5 md:gap-2 py-1 px-1.5 md:px-2 rounded transition-colors ${getRowHighlight(entry.rank)}`}
         >
-          <div className="w-5 flex items-center justify-center">
-            <span className="text-xs font-medium text-white">
+          <div className="w-4 md:w-5 flex items-center justify-center">
+            <span className="text-[10px] md:text-xs font-medium text-white">
               {getRankDisplay(entry.rank)}
             </span>
           </div>
@@ -146,11 +146,11 @@ const LeaderboardBannerPreview: React.FC = () => {
             className="h-4 w-4"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate text-white max-w-[80px]">
+            <p className="text-[10px] md:text-xs font-medium truncate text-white max-w-[60px] md:max-w-[80px]">
               {entry.username}
             </p>
           </div>
-          <span className="text-xs font-bold text-white">
+          <span className="text-[10px] md:text-xs font-bold text-white">
             {entry.total_points.toLocaleString()}
           </span>
         </div>
@@ -525,21 +525,21 @@ const FantasyPage: React.FC = () => {
                       {banner.isLeaderboardBanner ? (
                         <div 
                           onClick={() => navigate('/leaderboard')}
-                          className="w-full h-[120px] md:h-[160px] rounded-xl bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-blue-900/80 border border-purple-500/30 px-4 md:px-6 cursor-pointer hover:border-purple-400/50 transition-all group flex items-center"
+                          className="w-full aspect-[3/1] rounded-xl bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-blue-900/80 border border-purple-500/30 px-3 md:px-6 py-3 md:py-4 cursor-pointer hover:border-purple-400/50 transition-all group flex items-center overflow-hidden"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <h3 className="text-xl md:text-2xl font-bold text-white mb-2 flex items-center gap-2">
-                                <Trophy className="w-6 h-6 text-yellow-400" />
-                                Global Leaderboard
+                          <div className="flex items-center justify-between w-full gap-2 md:gap-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base md:text-2xl font-bold text-white mb-1 md:mb-2 flex items-center gap-1.5 md:gap-2">
+                                <Trophy className="w-4 h-4 md:w-6 md:h-6 text-yellow-400 flex-shrink-0" />
+                                <span className="truncate">Global Leaderboard</span>
                               </h3>
-                              <p className="text-gray-300 text-sm mb-3">See how you rank against all players</p>
-                              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
-                                <span className="px-2 py-1 bg-white/10 rounded">🏆 Top 1% = 100pts</span>
-                                <span className="px-2 py-1 bg-white/10 rounded">🥇 Top 5% = 70pts</span>
-                                <span className="px-2 py-1 bg-white/10 rounded">🥈 Top 10% = 50pts</span>
+                              <p className="text-gray-300 text-xs md:text-sm mb-1.5 md:mb-3 hidden sm:block">See how you rank against all players</p>
+                              <div className="flex flex-wrap gap-1 md:gap-2 text-[10px] md:text-xs text-muted-foreground mb-2 md:mb-4">
+                                <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded">🏆 Top 1% = 100pts</span>
+                                <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded">🥇 Top 5% = 70pts</span>
+                                <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded hidden sm:inline-flex">🥈 Top 10% = 50pts</span>
                               </div>
-                              <Button className="bg-purple-600 hover:bg-purple-500 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-all">
+                              <Button size="sm" className="bg-purple-600 hover:bg-purple-500 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-all text-xs md:text-sm h-7 md:h-9 px-2 md:px-4">
                                 View Leaderboard
                               </Button>
                             </div>
