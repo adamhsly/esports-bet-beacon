@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +30,134 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from 'embla-carousel-autoplay';
 import { FantasyWalkthrough } from '@/components/fantasy/FantasyWalkthrough';
 import { toast } from 'sonner';
+import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
+import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+
+// Mini leaderboard preview for banner
+const LeaderboardBannerPreview: React.FC = () => {
+  const [top3, setTop3] = useState<Array<{
+    user_id: string;
+    username: string;
+    avatar_url: string | null;
+    avatar_frame_id: string | null;
+    avatar_border_id: string | null;
+    total_points: number;
+    rank: number;
+  }>>([]);
+  const { free, premium } = useRewardsTrack();
+
+  useEffect(() => {
+    const fetchTop3 = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_global_leaderboard', {
+          p_timeframe: 'weekly',
+          p_limit: 3
+        });
+        if (!error && data) {
+          setTop3(data.map((row: any) => ({
+            user_id: row.user_id,
+            username: row.username || 'Anonymous',
+            avatar_url: row.avatar_url,
+            avatar_frame_id: row.avatar_frame_id,
+            avatar_border_id: row.avatar_border_id,
+            total_points: Number(row.total_points),
+            rank: Number(row.rank)
+          })));
+        }
+      } catch (err) {
+        console.error('Error fetching leaderboard preview:', err);
+      }
+    };
+    fetchTop3();
+  }, []);
+
+  const getRankDisplay = (rank: number) => {
+    switch (rank) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return rank.toString();
+    }
+  };
+
+  const getRowHighlight = (rank: number) => {
+    switch (rank) {
+      case 1: return 'bg-gradient-to-r from-yellow-500/40 to-amber-500/40';
+      case 2: return 'bg-gradient-to-r from-gray-400/40 to-gray-500/40';
+      case 3: return 'bg-gradient-to-r from-orange-400/40 to-orange-500/40';
+      default: return '';
+    }
+  };
+
+  const getFrameAsset = (frameId: string | null) => {
+    if (!frameId) return null;
+    const frameReward = [...free, ...premium].find(
+      item => item.id === frameId && item.type === 'frame'
+    );
+    return frameReward?.assetUrl || null;
+  };
+
+  const getBorderAsset = (borderId: string | null) => {
+    if (!borderId) return null;
+    const borderReward = [...free, ...premium].find(
+      item => item.id === borderId && 
+      item.value && 
+      (item.value.toLowerCase().includes('border') || item.value.toLowerCase().includes('pulse'))
+    );
+    return borderReward?.assetUrl || null;
+  };
+
+  if (top3.length === 0) {
+    return (
+      <div className="hidden md:flex flex-col gap-1.5 ml-6 bg-black/20 rounded-lg p-3 min-w-[180px]">
+        <div className="text-xs text-gray-400 text-center">Weekly Leaders</div>
+        <div className="animate-pulse space-y-1">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-2 py-1.5 px-2">
+              <div className="w-4 h-4 bg-muted rounded" />
+              <div className="w-4 h-4 bg-muted rounded-full" />
+              <div className="w-16 h-3 bg-muted rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="hidden md:flex flex-col gap-1 ml-6 bg-black/20 rounded-lg p-2.5 min-w-[180px]">
+      <div className="text-xs text-gray-400 text-center mb-1">Weekly Leaders</div>
+      {top3.map((entry) => (
+        <div
+          key={entry.user_id}
+          className={`flex items-center gap-2 py-1.5 px-2 rounded transition-colors h-8 ${getRowHighlight(entry.rank)}`}
+        >
+          <div className="w-5 flex items-center justify-center">
+            <span className="text-xs font-medium text-white">
+              {getRankDisplay(entry.rank)}
+            </span>
+          </div>
+          <EnhancedAvatar
+            src={entry.avatar_url}
+            fallback={entry.username.slice(0, 2).toUpperCase()}
+            frameUrl={getFrameAsset(entry.avatar_frame_id)}
+            borderUrl={getBorderAsset(entry.avatar_border_id)}
+            size="sm"
+            className="h-4 w-4"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium truncate text-white max-w-[80px]">
+              {entry.username}
+            </p>
+          </div>
+          <span className="text-xs font-bold text-white">
+            {entry.total_points.toLocaleString()}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 
 const FantasyPage: React.FC = () => {
@@ -415,20 +543,7 @@ const FantasyPage: React.FC = () => {
                                 View Leaderboard
                               </Button>
                             </div>
-                            <div className="hidden md:flex flex-col gap-1.5 ml-6 bg-black/20 rounded-lg p-3">
-                              <div className="flex items-center gap-2 text-white text-sm">
-                                <span>🥇</span>
-                                <span className="text-gray-300">Daily • Weekly • Lifetime</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-white text-sm">
-                                <span>📊</span>
-                                <span className="text-gray-300">Track your progress</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-white text-sm">
-                                <span>🎯</span>
-                                <span className="text-gray-300">Climb the ranks</span>
-                              </div>
-                            </div>
+                            <LeaderboardBannerPreview />
                           </div>
                         </div>
                       ) : (
