@@ -17,6 +17,7 @@ import { TeamFiltersOverlay, FilterState } from './TeamFiltersOverlay';
 import { TeamStatsModal } from './TeamStatsModal';
 import { AmateurTeamStatsModal } from './AmateurTeamStatsModal';
 import { RoundDetailsModal } from './RoundDetailsModal';
+import { TeamMatchesModal } from './TeamMatchesModal';
 interface Team {
   id: string;
   name: string;
@@ -97,6 +98,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [amateurStatsModalOpen, setAmateurStatsModalOpen] = useState(false);
   const [selectedStatsTeam, setSelectedStatsTeam] = useState<Team | null>(null);
   const [roundDetailsOpen, setRoundDetailsOpen] = useState(false);
+  const [matchesModalOpen, setMatchesModalOpen] = useState(false);
+  const [selectedMatchesTeam, setSelectedMatchesTeam] = useState<Team | null>(null);
 
   // Pro team filters
   const [proSearch, setProSearch] = useState('');
@@ -316,6 +319,11 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     }
   };
 
+  const handleMatchesClick = (team: Team) => {
+    setSelectedMatchesTeam(team);
+    setMatchesModalOpen(true);
+  };
+
   // Reset filters when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -433,7 +441,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
                 const wouldExceedLimit = !isSelected && tempSelectedTeams.length >= 5;
                 return <div key={team.id} className={`${!canAfford || wouldExceedLimit ? 'opacity-50' : ''}`}>
-                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} />
+                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} onMatchesClick={handleMatchesClick} />
                     </div>;
               })}
                 {filteredProTeams.length === 0 && <div className="text-center py-8 text-gray-400">
@@ -515,7 +523,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
                 const wouldExceedLimit = !isSelected && tempSelectedTeams.length >= 5;
                 return <div key={team.id} className={`${!canAfford || wouldExceedLimit ? 'opacity-50' : ''}`}>
-                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} />
+                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} onMatchesClick={handleMatchesClick} />
                     </div>;
               })}
                 {filteredAmateurTeams.length === 0 && <div className="text-center py-8 text-gray-400">
@@ -589,6 +597,15 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
           round={round} 
           open={roundDetailsOpen} 
           onOpenChange={setRoundDetailsOpen} 
+        />
+
+        {/* Team Matches Modal */}
+        <TeamMatchesModal
+          isOpen={matchesModalOpen}
+          onClose={() => setMatchesModalOpen(false)}
+          team={selectedMatchesTeam}
+          roundStartDate={round.start_date}
+          roundEndDate={round.end_date}
         />
       </SheetContent>
     </Sheet>;
