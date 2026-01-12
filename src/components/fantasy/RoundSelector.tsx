@@ -556,21 +556,61 @@ export const RoundSelector: React.FC<{
       const twoMonthsFromNow = new Date();
       twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
 
-      // Join page should only show rounds that haven't started yet.
-      // Some rounds can still be marked "open" in DB even after they start,
-      // so we also filter by start_date > now.
-      const { data, error } = await supabase
+      // Fetch two sets of rounds:
+      // 1. Free rounds: only scheduled/open rounds that haven't started yet
+      // 2. Paid rounds: allow open rounds even if they've started (late entry)
+
+      // Free rounds - must not have started
+      const { data: freeRounds, error: freeError } = await supabase
         .from("fantasy_rounds")
         .select("*")
         .in("status", ["open", "scheduled"])
         .eq("is_private", false)
+        .or("is_paid.is.null,is_paid.eq.false")
         .gt("start_date", nowIso)
         .lte("start_date", twoMonthsFromNow.toISOString())
-        .order("start_date", {
-          ascending: true,
-        });
-      if (error) throw error;
-      setRounds((data || []) as Round[]);
+        .order("start_date", { ascending: true });
+      
+      if (freeError) throw freeError;
+
+      // Paid rounds - scheduled ones must not have started, but open ones can have started
+      // Fetch scheduled paid rounds (not started)
+      const { data: scheduledPaidRounds, error: scheduledPaidError } = await supabase
+        .from("fantasy_rounds")
+        .select("*")
+        .eq("status", "scheduled")
+        .eq("is_private", false)
+        .eq("is_paid", true)
+        .gt("start_date", nowIso)
+        .lte("start_date", twoMonthsFromNow.toISOString())
+        .order("start_date", { ascending: true });
+      
+      if (scheduledPaidError) throw scheduledPaidError;
+
+      // Fetch open paid rounds (can have started, but must not have ended)
+      const { data: openPaidRounds, error: openPaidError } = await supabase
+        .from("fantasy_rounds")
+        .select("*")
+        .eq("status", "open")
+        .eq("is_private", false)
+        .eq("is_paid", true)
+        .gt("end_date", nowIso)
+        .order("start_date", { ascending: true });
+      
+      if (openPaidError) throw openPaidError;
+
+      // Combine all rounds and deduplicate by id
+      const allRoundsMap = new Map<string, Round>();
+      [...(freeRounds || []), ...(scheduledPaidRounds || []), ...(openPaidRounds || [])].forEach(r => {
+        allRoundsMap.set(r.id, r as Round);
+      });
+      
+      // Sort by start_date ascending
+      const combinedRounds = Array.from(allRoundsMap.values()).sort((a, b) => 
+        new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      );
+      
+      setRounds(combinedRounds);
     } catch (err) {
       console.error("Error fetching rounds:", err);
       toast.error("Failed to load rounds");
@@ -727,7 +767,11 @@ export const RoundSelector: React.FC<{
   
   const handleJoinRound = (round: Round) => {
     const hasStarted = new Date() >= new Date(round.start_date);
-    if (hasStarted) {
+    const isPaidRound = round.is_paid && round.entry_fee;
+    const isOpenPaidRound = isPaidRound && round.status === 'open';
+    
+    // For free rounds, block if started. For paid rounds, allow if status is 'open'
+    if (hasStarted && !isOpenPaidRound) {
       toast.error("This round has already started and can't be joined.");
       return;
     }
