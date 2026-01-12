@@ -184,15 +184,24 @@ const FantasyPage: React.FC = () => {
   const banners = [
     {
       src: '/lovable-uploads/Spend_5_Get_10_v5.png',
-      alt: 'Free Paid Entry - Fantasy League Esports - Prizes every round'
+      alt: 'Free Paid Entry - Fantasy League Esports - Prizes every round',
+      link: null
     },
     {
       src: '/lovable-uploads/build_roster_banner.png',
-      alt: 'Draft your ultimate roster - Pick teams and win prizes'
+      alt: 'Draft your ultimate roster - Pick teams and win prizes',
+      link: null
     },
     {
       src: '/lovable-uploads/team_swap_banner.png',
-      alt: 'Use your in-round team swap and star team change wisely'
+      alt: 'Use your in-round team swap and star team change wisely',
+      link: null
+    },
+    {
+      src: null,
+      alt: 'Global Leaderboard - See how you rank',
+      link: '/leaderboard',
+      isLeaderboardBanner: true
     }
   ];
 
@@ -385,11 +394,51 @@ const FantasyPage: React.FC = () => {
                 <CarouselContent>
                   {banners.map((banner, index) => (
                     <CarouselItem key={index}>
-                      <img 
-                        src={banner.src}
-                        alt={banner.alt}
-                        className="w-full rounded-xl"
-                      />
+                      {banner.isLeaderboardBanner ? (
+                        <div 
+                          onClick={() => navigate('/leaderboard')}
+                          className="w-full rounded-xl bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-blue-900/80 border border-purple-500/30 p-6 cursor-pointer hover:border-purple-400/50 transition-all group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-xl md:text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                                <Trophy className="w-6 h-6 text-yellow-400" />
+                                Global Leaderboard
+                              </h3>
+                              <p className="text-gray-300 text-sm mb-3">See how you rank against all players</p>
+                              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
+                                <span className="px-2 py-1 bg-white/10 rounded">🏆 Top 1% = 100pts</span>
+                                <span className="px-2 py-1 bg-white/10 rounded">🥇 Top 5% = 70pts</span>
+                                <span className="px-2 py-1 bg-white/10 rounded">🥈 Top 10% = 50pts</span>
+                              </div>
+                              <Button className="bg-purple-600 hover:bg-purple-500 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-all">
+                                View Leaderboard
+                              </Button>
+                            </div>
+                            <div className="hidden md:flex flex-col gap-1.5 ml-6 bg-black/20 rounded-lg p-3">
+                              <div className="flex items-center gap-2 text-white text-sm">
+                                <span>🥇</span>
+                                <span className="text-gray-300">Daily • Weekly • Lifetime</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-white text-sm">
+                                <span>📊</span>
+                                <span className="text-gray-300">Track your progress</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-white text-sm">
+                                <span>🎯</span>
+                                <span className="text-gray-300">Climb the ranks</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={banner.src!}
+                          alt={banner.alt}
+                          className={`w-full rounded-xl ${banner.link ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                          onClick={() => banner.link && navigate(banner.link)}
+                        />
+                      )}
                     </CarouselItem>
                   ))}
                 </CarouselContent>
