@@ -1,0 +1,67 @@
+name: generate-cs2-content
+on:
+  schedule:
+    # Run every morning at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Content type to generate (all, matches, slate, tournaments)'
+        required: false
+        default: 'all'
+      date:
+        description: 'Target date (YYYY-MM-DD) - defaults to today'
+        required: false
+      matchId:
+        description: 'Specific match ID to generate (optional)'
+        required: false
+      tournamentName:
+        description: 'Filter tournament by name (optional)'
+        required: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate CS2 Content
+        run: |
+          # Build the request body
+          BODY='{"type":"${{ github.event.inputs.type || 'all' }}"'
+          
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            BODY="${BODY%\}},\"date\":\"${{ github.event.inputs.date }}\"}"
+          fi
+          
+          if [ -n "${{ github.event.inputs.matchId }}" ]; then
+            BODY="${BODY%\}},\"matchId\":\"${{ github.event.inputs.matchId }}\"}"
+          fi
+          
+          if [ -n "${{ github.event.inputs.tournamentName }}" ]; then
+            BODY="${BODY%\}},\"tournamentName\":\"${{ github.event.inputs.tournamentName }}\"}"
+          fi
+          
+          # Close the JSON object properly
+          BODY="${BODY}}"
+          
+          echo "Request body: $BODY"
+          
+          # Call the edge function
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://zcjzeafelunqxmxzznos.supabase.co/functions/v1/generate-cs2-content" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -d "$BODY")
+          
+          # Extract HTTP status code
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY_RESPONSE=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response status: $HTTP_STATUS"
+          echo "Response body: $BODY_RESPONSE"
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Error: Function returned status $HTTP_STATUS"
+            exit 1
+          fi
+          
+          echo "Content generation completed successfully!"
