@@ -226,7 +226,7 @@ CONTENT REQUIREMENTS:
    - **### High Upside Team Pick** - Higher risk/reward team choice
    - **### Star Team Recommendation** - Which team to assign as Star Team (2x points)
 5. **## Match Prediction** - Brief opinion-based prediction (no odds/percentages)
-6. **## How to Play CS2 Fantasy** - Brief CTA explaining team-based fantasy, link to {fantasy_page_url}
+6. **## Ready to Play?** - Brief CTA explaining team-based fantasy, link to {fantasy_page_url}
 7. **## FAQ** - 4-5 questions targeting long-tail searches like:
    - "Who will win {team_a} vs {team_b}?"
    - "Best fantasy team pick for {team_a} vs {team_b}"
@@ -277,7 +277,7 @@ CONTENT REQUIREMENTS:
    - Quick team pick recommendation per match
 3. **## Today's Best Team Picks** - Top 3-5 team recommendations across all matches with reasoning
 4. **## Star Team of the Day** - Single best Star Team pick with explanation
-5. **## How to Draft Your CS2 Fantasy Team** - CTA linking to {fantasy_page_url}
+5. **## Start Drafting Now** - CTA linking to {fantasy_page_url}
 6. **## FAQ** - 3-4 questions like:
    - "Best CS2 fantasy picks for {date_formatted}"
    - "CS2 matches today {date_formatted}"
@@ -309,7 +309,7 @@ CONTENT REQUIREMENTS:
 
 ## Structure:
 1. **## {tournament_name} Overview** - Brief tournament intro, tier level, format info
-2. **## How to Play {tournament_name} Fantasy** - Explain team-based fantasy, link to {fantasy_page_url}
+2. **## Join the Fantasy Action** - Explain team-based fantasy, link to {fantasy_page_url}
 3. **## Upcoming {tournament_name} Matches** - List upcoming matches with links to "/blog/{match_slug}"
 4. **## {tournament_name} Results** - Past match results if available
 5. **## Fantasy Team Strategy for {tournament_name}** - General tier-appropriate team selection strategy
