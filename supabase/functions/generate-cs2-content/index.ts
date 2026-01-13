@@ -32,7 +32,6 @@ interface GeneratedContent {
 interface TeamStats {
   win_rate: number;
   recent_form: string;
-  tournament_wins: number;
   total_matches: number;
 }
 
@@ -178,7 +177,9 @@ async function fetchTeamStats(supabase: any, teamId: string): Promise<TeamStats 
       return null;
     }
     if (data && data.length > 0) {
-      return data[0];
+      // Exclude tournament_wins as it's incorrectly calculated (counts tournaments with any match win, not actual championships)
+      const { tournament_wins, ...validStats } = data[0];
+      return validStats;
     }
     return null;
   } catch (e) {
@@ -219,7 +220,7 @@ CONTENT REQUIREMENTS:
 
 ## Structure (use exact H2 headings for SEO):
 1. **## Match Overview** - Quick intro with teams, tournament, date/time (convert UTC to Europe/London), and stakes
-2. **## Team Form & Statistics** - Use the stats provided (win_rate, recent_form like "WWLWL", tournament_wins). If stats are null, say "Limited recent data available"
+2. **## Team Form & Statistics** - Use the stats provided (win_rate, recent_form like "WWLWL", total_matches). If stats are null, say "Limited recent data available". NEVER mention tournament wins as we don't have accurate data for this.
 3. **## Head-to-Head History** - Use h2h data if available. If totalMatches > 0, discuss the record
 4. **## CS2 Fantasy Team Picks** - TEAM picks only. Subsections:
    - **### Safe Team Pick** - Lower risk team choice with reasoning
