@@ -54,12 +54,14 @@ serve(async (req) => {
     // Optional scoping via request body
     let roundFilter: string | undefined;
     let userFilter: string | undefined;
+    let recalculateRecent = false;
     try {
       const body = await req.json().catch(() => null);
       if (body && typeof body === 'object') {
         roundFilter = body.round_id ?? body.roundId ?? undefined;
         userFilter = body.user_id ?? body.userId ?? undefined;
-        console.log(`🔍 Filters applied - Round: ${roundFilter || 'ALL'}, User: ${userFilter || 'ALL'}`);
+        recalculateRecent = body.recalculate_recent === true;
+        console.log(`🔍 Filters applied - Round: ${roundFilter || 'ALL'}, User: ${userFilter || 'ALL'}, RecalculateRecent: ${recalculateRecent}`);
       }
     } catch (_) {
       // Ignore bad JSON
@@ -70,13 +72,21 @@ serve(async (req) => {
       .from('fantasy_rounds')
       .select('*')
       .in('status', ['open', 'active', 'closed', 'finished']);
-    if (roundFilter) roundsQuery = roundsQuery.eq('id', roundFilter);
+    
+    if (roundFilter) {
+      roundsQuery = roundsQuery.eq('id', roundFilter);
+    } else if (recalculateRecent) {
+      // For scheduled recalculation, only process rounds that ended within the last 48 hours
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      roundsQuery = roundsQuery.gte('end_date', fortyEightHoursAgo);
+      console.log(`🔄 Recalculating recent rounds (ended after ${fortyEightHoursAgo})`);
+    }
 
     const { data: activeRounds, error: roundsError } = await roundsQuery;
 
     if (roundsError) throw roundsError;
 
-    console.log(`📊 Found ${activeRounds?.length || 0} active rounds${roundFilter ? ` (filtered by ${roundFilter})` : ''}`);
+    console.log(`📊 Found ${activeRounds?.length || 0} rounds to process${roundFilter ? ` (filtered by ${roundFilter})` : ''}${recalculateRecent ? ' (recent only)' : ''}`);
 
     for (const round of activeRounds || []) {
       console.log(`🔄 Processing round ${round.id} (${round.type})`);
