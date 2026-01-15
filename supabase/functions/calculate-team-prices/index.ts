@@ -105,26 +105,28 @@ serve(async (req) => {
       const esportTypeFilter = getEsportTypeFilter(r.game_type);
       console.log("Esport type filter:", esportTypeFilter);
 
-      // 1) PRO TEAMS - Using match_date for much faster lookups
+      // 1) PRO TEAMS - Using start_time for precise timestamp filtering
       if (shouldProcessPro) {
-        let proStartDate: string;
-        let proEndDate: string;
-
-        if (isScheduledRound) {
-          proStartDate = roundStart.toISOString().split('T')[0];
-          proEndDate = roundEnd.toISOString().split('T')[0];
-          console.log("Scheduled round - checking for upcoming matches in round window");
-        } else {
-          proStartDate = roundStart.toISOString().split('T')[0];
-          proEndDate = roundEnd.toISOString().split('T')[0];
-        }
+        // Use precise timestamps for filtering to ensure teams are only included
+        // if their matches actually start within the round window
+        const roundStartISO = roundStart.toISOString();
+        const roundEndISO = roundEnd.toISOString();
+        
+        // Also get date-only values for index optimization (pre-filter)
+        const proStartDate = roundStart.toISOString().split('T')[0];
+        const proEndDate = roundEnd.toISOString().split('T')[0];
+        
+        console.log(`Pro team filtering: ${roundStartISO} to ${roundEndISO}`);
 
         // Build query with optional esport_type filter - exclude cancelled matches
+        // Use match_date for index optimization, then start_time for precise filtering
         let matchQuery = supabase
           .from("pandascore_matches")
           .select("teams, esport_type, start_time")
           .gte("match_date", proStartDate)
           .lte("match_date", proEndDate)
+          .gte("start_time", roundStartISO)
+          .lt("start_time", roundEndISO)
           .not("teams", "is", null)
           .not("status", "eq", "canceled");
         
