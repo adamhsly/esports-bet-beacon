@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
-import { Star, Users, Trophy } from 'lucide-react';
+import { Star, Users, Trophy, ChevronRight, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TeamMatchesModal } from './TeamMatchesModal';
 
 interface PlayerSelectionsModalProps {
   open: boolean;
@@ -38,6 +39,13 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFrameId, setAvatarFrameId] = useState<string | null>(null);
   const [avatarBorderId, setAvatarBorderId] = useState<string | null>(null);
+  const [roundStartDate, setRoundStartDate] = useState<string>('');
+  const [roundEndDate, setRoundEndDate] = useState<string>('');
+  const [selectedTeamForMatches, setSelectedTeamForMatches] = useState<{
+    id: string;
+    name: string;
+    type: 'pro' | 'amateur';
+  } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -48,6 +56,18 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
   const fetchPlayerSelections = async () => {
     setLoading(true);
     try {
+      // Fetch round dates
+      const { data: roundData } = await supabase
+        .from('fantasy_rounds')
+        .select('start_date, end_date')
+        .eq('id', roundId)
+        .single();
+      
+      if (roundData) {
+        setRoundStartDate(roundData.start_date);
+        setRoundEndDate(roundData.end_date);
+      }
+
       // Fetch profile info
       const { data: profile } = await supabase
         .from('profiles')
@@ -180,7 +200,12 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
               return (
                 <Card 
                   key={pick.team_id}
-                  className={`relative transition-all ${
+                  onClick={() => setSelectedTeamForMatches({
+                    id: pick.team_id,
+                    name: pick.team_name,
+                    type: isAmateur ? 'amateur' : 'pro'
+                  })}
+                  className={`relative transition-all cursor-pointer hover:border-gray-500/70 ${
                     isStarred 
                       ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` 
                       : ''
@@ -224,12 +249,15 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                         </div>
                       </div>
                       
-                      {/* Fantasy Points */}
-                      <div className="text-right">
-                        <div className="font-bold text-lg text-blue-400">
-                          {pick.current_score}
+                      {/* Fantasy Points & Click indicator */}
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <div className="font-bold text-lg text-blue-400">
+                            {pick.current_score}
+                          </div>
+                          <div className="text-xs text-gray-400">pts</div>
                         </div>
-                        <div className="text-xs text-gray-400">pts</div>
+                        <ChevronRight className="h-4 w-4 text-gray-500" />
                       </div>
                     </div>
                     
@@ -262,6 +290,15 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
           </div>
         )}
       </DialogContent>
+
+      {/* Team Matches Modal */}
+      <TeamMatchesModal
+        isOpen={!!selectedTeamForMatches}
+        onClose={() => setSelectedTeamForMatches(null)}
+        team={selectedTeamForMatches}
+        roundStartDate={roundStartDate}
+        roundEndDate={roundEndDate}
+      />
     </Dialog>
   );
 };
