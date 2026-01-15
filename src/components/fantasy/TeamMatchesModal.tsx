@@ -25,6 +25,8 @@ interface Match {
   startTime: string;
   tournamentName?: string;
   status: string;
+  score?: string;
+  result?: 'win' | 'loss' | 'draw';
 }
 
 export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
@@ -54,7 +56,7 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
           // Fetch from pandascore_matches using match_date (same as calculate-team-prices)
           const { data, error } = await supabase
             .from('pandascore_matches')
-            .select('id, teams, start_time, tournament_name, status, match_date')
+            .select('id, teams, start_time, tournament_name, status, match_date, winner_id')
             .gte('match_date', startDateOnly)
             .lte('match_date', endDateOnly)
             .not('teams', 'is', null)
@@ -68,22 +70,49 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
             const teams = match.teams as any[];
             if (!teams || teams.length < 2) continue;
 
-            const team1Id = String(teams[0]?.opponent?.id || '');
-            const team2Id = String(teams[1]?.opponent?.id || '');
+            const team1 = teams[0]?.opponent;
+            const team2 = teams[1]?.opponent;
+            const team1Id = String(team1?.id || '');
+            const team2Id = String(team2?.id || '');
+            const team1Score = teams[0]?.score ?? 0;
+            const team2Score = teams[1]?.score ?? 0;
 
             // Check if this team is in the match by ID
             const isTeam1 = team1Id === team.id;
             const isTeam2 = team2Id === team.id;
 
             if (isTeam1 || isTeam2) {
-              const opponent = isTeam1 ? teams[1]?.opponent : teams[0]?.opponent;
+              const opponent = isTeam1 ? team2 : team1;
+              const ourScore = isTeam1 ? team1Score : team2Score;
+              const theirScore = isTeam1 ? team2Score : team1Score;
+              
+              // Determine result for finished matches
+              let result: 'win' | 'loss' | 'draw' | undefined;
+              let score: string | undefined;
+              
+              if (match.status === 'finished') {
+                score = `${ourScore} - ${theirScore}`;
+                if (match.winner_id) {
+                  const winnerId = String(match.winner_id);
+                  result = winnerId === team.id ? 'win' : 'loss';
+                } else if (ourScore > theirScore) {
+                  result = 'win';
+                } else if (ourScore < theirScore) {
+                  result = 'loss';
+                } else {
+                  result = 'draw';
+                }
+              }
+              
               teamMatches.push({
                 id: match.id,
                 opponent: opponent?.name || 'TBD',
                 opponentLogo: opponent?.image_url,
                 startTime: match.start_time,
                 tournamentName: match.tournament_name,
-                status: match.status || 'scheduled'
+                status: match.status || 'scheduled',
+                score,
+                result
               });
             }
           }
@@ -96,7 +125,7 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
           // Fetch from faceit_matches for amateur teams using match_date (same as calculate-team-prices)
           const { data, error } = await supabase
             .from('faceit_matches')
-            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, match_date, competition_name, status')
+            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, match_date, competition_name, status, teams')
             .gte('match_date', startDateOnly)
             .lte('match_date', endDateOnly);
 
@@ -119,12 +148,41 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
 
             if (isTeam1 || isTeam2) {
               const opponent = isTeam1 ? faction2 : faction1;
+              
+              // Extract scores from teams JSON if available
+              let result: 'win' | 'loss' | 'draw' | undefined;
+              let score: string | undefined;
+              
+              if (match.status === 'FINISHED' || match.status === 'finished') {
+                const teamsData = match.teams as any;
+                if (teamsData) {
+                  const faction1Data = teamsData.faction1 || teamsData[faction1Id];
+                  const faction2Data = teamsData.faction2 || teamsData[faction2Id];
+                  const score1 = faction1Data?.score ?? faction1Data?.roster_score ?? 0;
+                  const score2 = faction2Data?.score ?? faction2Data?.roster_score ?? 0;
+                  
+                  const ourScore = isTeam1 ? score1 : score2;
+                  const theirScore = isTeam1 ? score2 : score1;
+                  
+                  score = `${ourScore} - ${theirScore}`;
+                  if (ourScore > theirScore) {
+                    result = 'win';
+                  } else if (ourScore < theirScore) {
+                    result = 'loss';
+                  } else {
+                    result = 'draw';
+                  }
+                }
+              }
+              
               teamMatches.push({
                 id: match.id,
                 opponent: opponent || 'TBD',
                 startTime: match.scheduled_at || match.match_date,
                 tournamentName: match.competition_name,
-                status: match.status || 'scheduled'
+                status: match.status || 'scheduled',
+                score,
+                result
               });
             }
           }
@@ -145,6 +203,17 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
   }, [isOpen, team, roundStartDate, roundEndDate]);
 
   const isAmateur = team?.type === 'amateur';
+
+  const getResultBadge = (result: 'win' | 'loss' | 'draw') => {
+    switch (result) {
+      case 'win':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">WIN</Badge>;
+      case 'loss':
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">LOSS</Badge>;
+      case 'draw':
+        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">DRAW</Badge>;
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
@@ -217,8 +286,17 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
                       )}
                     </div>
                   </div>
-                  {getStatusBadge(match.status)}
+                  <div className="flex items-center gap-2">
+                    {match.result ? getResultBadge(match.result) : getStatusBadge(match.status)}
+                  </div>
                 </div>
+                
+                {/* Score display for finished matches */}
+                {match.score && (
+                  <div className="mt-2 text-center">
+                    <span className="text-lg font-bold text-white">{match.score}</span>
+                  </div>
+                )}
 
                 <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
                   <Clock className="w-3 h-3" />
