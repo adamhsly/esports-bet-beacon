@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Trophy, Users, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
+import { getPandaScoreLiveScore } from '@/utils/pandascoreScoreUtils';
+import { getFaceitScore } from '@/utils/faceitScoreUtils';
 
 interface TeamMatchesModalProps {
   isOpen: boolean;
@@ -53,10 +55,10 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
         const endDateOnly = roundEndDate.split('T')[0];
 
         if (team.type === 'pro') {
-          // Fetch from pandascore_matches using match_date (same as calculate-team-prices)
+          // Fetch from pandascore_matches - include raw_data for score extraction
           const { data, error } = await supabase
             .from('pandascore_matches')
-            .select('id, teams, start_time, tournament_name, status, match_date, winner_id')
+            .select('id, teams, start_time, tournament_name, status, match_date, winner_id, raw_data')
             .gte('match_date', startDateOnly)
             .lte('match_date', endDateOnly)
             .not('teams', 'is', null)
@@ -74,8 +76,6 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
             const team2 = teams[1]?.opponent;
             const team1Id = String(team1?.id || '');
             const team2Id = String(team2?.id || '');
-            const team1Score = teams[0]?.score ?? 0;
-            const team2Score = teams[1]?.score ?? 0;
 
             // Check if this team is in the match by ID
             const isTeam1 = team1Id === team.id;
@@ -83,15 +83,25 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
 
             if (isTeam1 || isTeam2) {
               const opponent = isTeam1 ? team2 : team1;
-              const ourScore = isTeam1 ? team1Score : team2Score;
-              const theirScore = isTeam1 ? team2Score : team1Score;
               
-              // Determine result for finished matches
+              // Determine result and score for finished matches
               let result: 'win' | 'loss' | 'draw' | undefined;
               let score: string | undefined;
               
               if (match.status === 'finished') {
+                // Use the utility function to extract scores from raw_data
+                const rawData = match.raw_data as any;
+                const liveScore = getPandaScoreLiveScore(rawData, [
+                  { id: team1?.id },
+                  { id: team2?.id }
+                ]);
+                
+                const ourScore = isTeam1 ? liveScore.a : liveScore.b;
+                const theirScore = isTeam1 ? liveScore.b : liveScore.a;
+                
                 score = `${ourScore} - ${theirScore}`;
+                
+                // Determine winner
                 if (match.winner_id) {
                   const winnerId = String(match.winner_id);
                   result = winnerId === team.id ? 'win' : 'loss';
@@ -116,16 +126,15 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
               });
             }
           }
-
           // Sort by start time
           teamMatches.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
           setMatches(teamMatches);
 
         } else {
-          // Fetch from faceit_matches for amateur teams using match_date (same as calculate-team-prices)
+          // Fetch from faceit_matches for amateur teams - include raw_data and faceit_data for score extraction
           const { data, error } = await supabase
             .from('faceit_matches')
-            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, match_date, competition_name, status, teams')
+            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, match_date, competition_name, status, raw_data, faceit_data, live_team_scores')
             .gte('match_date', startDateOnly)
             .lte('match_date', endDateOnly);
 
@@ -149,23 +158,30 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
             if (isTeam1 || isTeam2) {
               const opponent = isTeam1 ? faction2 : faction1;
               
-              // Extract scores from teams JSON if available
+              // Extract scores using the utility function
               let result: 'win' | 'loss' | 'draw' | undefined;
               let score: string | undefined;
               
               if (match.status === 'FINISHED' || match.status === 'finished') {
-                const teamsData = match.teams as any;
-                if (teamsData) {
-                  const faction1Data = teamsData.faction1 || teamsData[faction1Id];
-                  const faction2Data = teamsData.faction2 || teamsData[faction2Id];
-                  const score1 = faction1Data?.score ?? faction1Data?.roster_score ?? 0;
-                  const score2 = faction2Data?.score ?? faction2Data?.roster_score ?? 0;
-                  
-                  const ourScore = isTeam1 ? score1 : score2;
-                  const theirScore = isTeam1 ? score2 : score1;
+                const rawData = match.raw_data as any;
+                const faceitData = match.faceit_data as any;
+                const liveScores = match.live_team_scores as any;
+                
+                // Use the FACEIT score utility to properly extract scores
+                const scoreResult = getFaceitScore(rawData, faceitData, liveScores);
+                
+                if (scoreResult.score) {
+                  const ourScore = isTeam1 ? scoreResult.score.faction1 : scoreResult.score.faction2;
+                  const theirScore = isTeam1 ? scoreResult.score.faction2 : scoreResult.score.faction1;
                   
                   score = `${ourScore} - ${theirScore}`;
-                  if (ourScore > theirScore) {
+                  
+                  // Determine result based on winner or scores
+                  if (scoreResult.winner) {
+                    const weWon = (isTeam1 && scoreResult.winner === 'faction1') || 
+                                  (isTeam2 && scoreResult.winner === 'faction2');
+                    result = weWon ? 'win' : 'loss';
+                  } else if (ourScore > theirScore) {
                     result = 'win';
                   } else if (ourScore < theirScore) {
                     result = 'loss';
