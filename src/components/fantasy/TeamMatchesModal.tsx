@@ -50,17 +50,19 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
     const fetchMatches = async () => {
       setLoading(true);
       try {
-        // Convert round dates to date-only format (YYYY-MM-DD) to match how match_volume is calculated
-        const startDateOnly = roundStartDate.split('T')[0];
-        const endDateOnly = roundEndDate.split('T')[0];
+        // Use full timestamps for filtering to match edge function logic
+        // This ensures consistent results with get-team-match-breakdown
+        const startDateTime = roundStartDate;
+        const endDateTime = roundEndDate;
 
         if (team.type === 'pro') {
-          // Fetch from pandascore_matches - include raw_data for score extraction
+          // Fetch from pandascore_matches using start_time for proper timestamp comparison
+          // This matches the edge function filtering logic
           const { data, error } = await supabase
             .from('pandascore_matches')
             .select('id, teams, start_time, tournament_name, status, match_date, winner_id, raw_data')
-            .gte('match_date', startDateOnly)
-            .lte('match_date', endDateOnly)
+            .gte('start_time', startDateTime)
+            .lte('start_time', endDateTime)
             .not('teams', 'is', null)
             .not('status', 'eq', 'canceled');
 
@@ -131,12 +133,14 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
           setMatches(teamMatches);
 
         } else {
-          // Fetch from faceit_matches for amateur teams - include raw_data and faceit_data for score extraction
+          // Fetch from faceit_matches for amateur teams using started_at for proper timestamp comparison
+          // This matches the edge function filtering logic
           const { data, error } = await supabase
             .from('faceit_matches')
-            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, match_date, competition_name, status, raw_data, faceit_data, live_team_scores')
-            .gte('match_date', startDateOnly)
-            .lte('match_date', endDateOnly);
+            .select('id, match_id, faction1_name, faction2_name, faction1_id, faction2_id, scheduled_at, started_at, match_date, competition_name, status, is_finished, raw_data, faceit_data, live_team_scores')
+            .gte('started_at', startDateTime)
+            .lte('started_at', endDateTime)
+            .eq('is_finished', true);
 
           if (error) throw error;
 
@@ -194,7 +198,7 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
               teamMatches.push({
                 id: match.id,
                 opponent: opponent || 'TBD',
-                startTime: match.scheduled_at || match.match_date,
+                startTime: match.started_at || match.scheduled_at || match.match_date,
                 tournamentName: match.competition_name,
                 status: match.status || 'scheduled',
                 score,
