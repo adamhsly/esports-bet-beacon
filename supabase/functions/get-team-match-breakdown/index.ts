@@ -114,6 +114,21 @@ serve(async (req) => {
 
     const isStarTeam = starTeam?.star_team_id === team_id;
 
+    // Check for team swaps to respect swap timing
+    const { data: teamSwap } = await supabase
+      .from("fantasy_round_team_swaps")
+      .select("*")
+      .eq("round_id", round_id)
+      .eq("user_id", user_id)
+      .eq("swap_used", true)
+      .maybeSingle();
+
+    const wasSwappedOut = teamSwap?.old_team_id === team_id;
+    const wasSwappedIn = teamSwap?.new_team_id === team_id;
+    const swapTime = teamSwap?.swapped_at ? new Date(teamSwap.swapped_at) : null;
+    
+    console.log("Swap info:", { wasSwappedOut, wasSwappedIn, swapTime: swapTime?.toISOString() });
+
     // Scoring config - must match calculate-fantasy-scores scoring system
     const basePoints = {
       matchWin: 10,
@@ -146,11 +161,25 @@ serve(async (req) => {
         );
       }
 
-      // Filter matches where team participated
+      // Filter matches where team participated and respect swap timing
       const teamMatches = (proMatches || []).filter((match) => {
         const teams = match.teams as any[];
-        return teams?.some((t: any) => t?.opponent?.id?.toString() === team_id);
+        const teamParticipated = teams?.some((t: any) => t?.opponent?.id?.toString() === team_id);
+        if (!teamParticipated) return false;
+        
+        // Apply swap timing filter
+        if (swapTime) {
+          const matchDate = new Date(match.start_time);
+          // If team was swapped out, only include matches before swap
+          if (wasSwappedOut && matchDate >= swapTime) return false;
+          // If team was swapped in, only include matches after swap
+          if (wasSwappedIn && matchDate < swapTime) return false;
+        }
+        
+        return true;
       });
+
+      console.log(`Pro matches after swap filtering: ${teamMatches.length}`);
 
       // Process matches
       matches = teamMatches.map((match) => {
@@ -259,10 +288,24 @@ serve(async (req) => {
         );
       }
       
-      console.log(`Found ${teamMatches?.length || 0} matches for team "${team_id}"`);
+      console.log(`Found ${teamMatches?.length || 0} matches for team "${team_id}" before swap filtering`);
+
+      // Filter by swap timing
+      const filteredMatches = (teamMatches || []).filter((match) => {
+        if (swapTime) {
+          const matchDate = new Date(match.started_at);
+          // If team was swapped out, only include matches before swap
+          if (wasSwappedOut && matchDate >= swapTime) return false;
+          // If team was swapped in, only include matches after swap
+          if (wasSwappedIn && matchDate < swapTime) return false;
+        }
+        return true;
+      });
+      
+      console.log(`Amateur matches after swap filtering: ${filteredMatches.length}`);
 
       // Process matches
-      matches = (teamMatches || []).map((match) => {
+      matches = filteredMatches.map((match) => {
         const f1Name = (match.faction1_name || "").toLowerCase();
         const searchId = team_id.toLowerCase();
         const isTeam1 = f1Name === searchId;
