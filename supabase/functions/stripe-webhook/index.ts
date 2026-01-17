@@ -208,55 +208,112 @@ serve(async (req) => {
           }
         }
 
-        // Track affiliate earnings if user was referred
-        const entryFee = totalEntryFee;
-        if (entryFee > 0) {
-          try {
-            // Get user's referrer code
-            const { data: userProfile } = await supabaseService
-              .from('profiles')
-              .select('referrer_code')
-              .eq('id', metadata.user_id)
+        // Track affiliate earnings/activations if user was referred
+        try {
+          // Get user's referrer code
+          const { data: userProfile } = await supabaseService
+            .from('profiles')
+            .select('referrer_code')
+            .eq('id', metadata.user_id)
+            .single();
+
+          if (userProfile?.referrer_code) {
+            console.log(`User ${metadata.user_id} has referrer: ${userProfile.referrer_code}`);
+            
+            // Find the affiliate by referral code
+            const { data: affiliate } = await supabaseService
+              .from('creator_affiliates')
+              .select('id, rev_share_percent, compensation_type, pay_per_play_rate')
+              .eq('referral_code', userProfile.referrer_code)
+              .eq('status', 'active')
               .single();
 
-            if (userProfile?.referrer_code) {
-              console.log(`User ${metadata.user_id} has referrer: ${userProfile.referrer_code}`);
-              
-              // Find the affiliate by referral code
-              const { data: affiliate } = await supabaseService
-                .from('creator_affiliates')
-                .select('id, rev_share_percent')
-                .eq('referral_code', userProfile.referrer_code)
-                .eq('status', 'active')
-                .single();
+            if (affiliate) {
+              console.log(`Affiliate found: id=${affiliate.id}, type=${affiliate.compensation_type}`);
 
-              if (affiliate) {
-                const revSharePercent = affiliate.rev_share_percent || 20;
-                const earningsAmount = Math.floor(entryFee * (revSharePercent / 100));
+              if (affiliate.compensation_type === 'pay_per_play') {
+                // Pay Per Play: Check if this is the user's first round entry (activation)
+                const { data: existingActivation } = await supabaseService
+                  .from('affiliate_activations')
+                  .select('id, activated')
+                  .eq('creator_id', affiliate.id)
+                  .eq('user_id', metadata.user_id)
+                  .maybeSingle();
 
-                console.log(`Logging affiliate earning: creator=${affiliate.id}, fee=${entryFee}, share=${revSharePercent}%, amount=${earningsAmount}`);
+                if (!existingActivation) {
+                  // First time seeing this user - create activation record and mark as activated
+                  const payoutAmount = affiliate.pay_per_play_rate || 50; // Default 50 cents
+                  
+                  const { error: activationError } = await supabaseService
+                    .from('affiliate_activations')
+                    .insert({
+                      creator_id: affiliate.id,
+                      user_id: metadata.user_id,
+                      registered_at: new Date().toISOString(),
+                      first_round_played_at: new Date().toISOString(),
+                      round_id: metadata.round_id,
+                      activated: true,
+                      payout_amount: payoutAmount,
+                    });
 
-                const { error: earningsError } = await supabaseService
-                  .from('affiliate_earnings')
-                  .insert({
-                    creator_id: affiliate.id,
-                    user_id: metadata.user_id,
-                    round_id: metadata.round_id,
-                    entry_fee: entryFee,
-                    rev_share_percent: revSharePercent,
-                    earnings_amount: earningsAmount,
-                  });
+                  if (activationError) {
+                    console.error('Error creating affiliate activation:', activationError);
+                  } else {
+                    console.log(`Pay-per-play activation created: creator=${affiliate.id}, user=${metadata.user_id}, payout=${payoutAmount} cents`);
+                  }
+                } else if (!existingActivation.activated) {
+                  // User was registered but hadn't played - now they have, activate them
+                  const payoutAmount = affiliate.pay_per_play_rate || 50;
+                  
+                  const { error: updateError } = await supabaseService
+                    .from('affiliate_activations')
+                    .update({
+                      first_round_played_at: new Date().toISOString(),
+                      round_id: metadata.round_id,
+                      activated: true,
+                      payout_amount: payoutAmount,
+                    })
+                    .eq('id', existingActivation.id);
 
-                if (earningsError) {
-                  console.error('Error logging affiliate earnings:', earningsError);
+                  if (updateError) {
+                    console.error('Error updating affiliate activation:', updateError);
+                  } else {
+                    console.log(`Pay-per-play activation updated: user=${metadata.user_id} is now activated`);
+                  }
                 } else {
-                  console.log(`Affiliate earnings logged successfully`);
+                  console.log(`User ${metadata.user_id} already activated for affiliate ${affiliate.id}, skipping`);
+                }
+              } else {
+                // Revenue Share: Log earnings as before (only for paid entries)
+                const entryFee = totalEntryFee;
+                if (entryFee > 0) {
+                  const revSharePercent = affiliate.rev_share_percent || 20;
+                  const earningsAmount = Math.floor(entryFee * (revSharePercent / 100));
+
+                  console.log(`Logging affiliate earning: creator=${affiliate.id}, fee=${entryFee}, share=${revSharePercent}%, amount=${earningsAmount}`);
+
+                  const { error: earningsError } = await supabaseService
+                    .from('affiliate_earnings')
+                    .insert({
+                      creator_id: affiliate.id,
+                      user_id: metadata.user_id,
+                      round_id: metadata.round_id,
+                      entry_fee: entryFee,
+                      rev_share_percent: revSharePercent,
+                      earnings_amount: earningsAmount,
+                    });
+
+                  if (earningsError) {
+                    console.error('Error logging affiliate earnings:', earningsError);
+                  } else {
+                    console.log(`Affiliate earnings logged successfully`);
+                  }
                 }
               }
             }
-          } catch (affiliateErr) {
-            console.error('Error processing affiliate tracking:', affiliateErr);
           }
+        } catch (affiliateErr) {
+          console.error('Error processing affiliate tracking:', affiliateErr);
         }
 
         console.log(`Round entry completed successfully for user ${metadata.user_id}`);

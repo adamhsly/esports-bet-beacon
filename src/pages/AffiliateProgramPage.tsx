@@ -598,6 +598,14 @@ const AffiliateProgramPage = () => {
                         </div>
                       </RadioGroup>
                     </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold"
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                    </Button>
                   </form>
                 </CardContent>
               </Card>
