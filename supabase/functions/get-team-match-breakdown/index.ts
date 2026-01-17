@@ -104,15 +104,18 @@ serve(async (req) => {
     
     console.log("Round dates:", { start_date: round.start_date, end_date: round.end_date });
 
-    // Check if this is the user's star team
+    // Check if this is the user's star team (with history for mid-round changes)
     const { data: starTeam } = await supabase
       .from("fantasy_round_star_teams")
-      .select("star_team_id")
+      .select("star_team_id, previous_star_team_id, star_changed_at, change_used")
       .eq("user_id", user_id)
       .eq("round_id", round_id)
       .single();
 
-    const isStarTeam = starTeam?.star_team_id === team_id;
+    const isCurrentStarTeam = starTeam?.star_team_id === team_id;
+    const isPreviousStarTeam = starTeam?.previous_star_team_id === team_id;
+    const starChangedAt = starTeam?.star_changed_at ? new Date(starTeam.star_changed_at) : null;
+    const isStarTeam = isCurrentStarTeam || isPreviousStarTeam;
 
     // Check for team swaps to respect swap timing
     const { data: teamSwap } = await supabase
@@ -128,6 +131,7 @@ serve(async (req) => {
     const swapTime = teamSwap?.swapped_at ? new Date(teamSwap.swapped_at) : null;
     
     console.log("Swap info:", { wasSwappedOut, wasSwappedIn, swapTime: swapTime?.toISOString() });
+    console.log("Star team info:", { isCurrentStarTeam, isPreviousStarTeam, starChangedAt: starChangedAt?.toISOString() });
 
     // Scoring config - must match calculate-fantasy-scores scoring system
     const basePoints = {
@@ -137,7 +141,26 @@ serve(async (req) => {
       tournamentWin: 20,
     };
     const amateurMultiplier = 1.25;
-    const starMultiplier = isStarTeam ? 2 : 1;
+    
+    // Helper function to determine if star multiplier applies for a specific match
+    const shouldApplyStarMultiplier = (matchDate: Date): boolean => {
+      // If this team is the current star team
+      if (isCurrentStarTeam) {
+        // If there was a change, only apply multiplier AFTER the change
+        if (starChangedAt) {
+          return matchDate >= starChangedAt;
+        }
+        // No change occurred, so this was always the star team - apply to all
+        return true;
+      }
+      
+      // If this team was the previous star team, apply multiplier only BEFORE the change
+      if (isPreviousStarTeam && starChangedAt) {
+        return matchDate < starChangedAt;
+      }
+      
+      return false;
+    };
 
     let matches: any[] = [];
     let team_name = "";
@@ -248,8 +271,10 @@ serve(async (req) => {
           points += basePoints.tournamentWin;
         }
 
-        // Apply multipliers
-        points = points * starMultiplier;
+        // Apply star multiplier based on match timing
+        const matchDate = new Date(match.start_time);
+        const starMult = shouldApplyStarMultiplier(matchDate) ? 2 : 1;
+        points = points * starMult;
 
         return {
           match_id: match.match_id,
@@ -368,8 +393,10 @@ serve(async (req) => {
         // Apply amateur multiplier to total (same as calculate-fantasy-scores)
         points = Math.floor(points * amateurMultiplier);
         
-        // Apply star multiplier
-        points = points * starMultiplier;
+        // Apply star multiplier based on match timing
+        const matchDate = new Date(match.started_at);
+        const starMult = shouldApplyStarMultiplier(matchDate) ? 2 : 1;
+        points = points * starMult;
 
         return {
           match_id: match.match_id,

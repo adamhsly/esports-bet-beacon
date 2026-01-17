@@ -125,20 +125,31 @@ serve(async (req) => {
 
       console.log(`👥 Found ${picks?.length || 0} picks for round ${round.id}${userFilter ? ` (filtered by ${userFilter})` : ''}`);
 
-      // Fetch all star teams for this round in one query
+      // Fetch all star teams for this round in one query (including change history)
       const { data: starTeamsData, error: starTeamsError } = await supabase
         .from('fantasy_round_star_teams')
-        .select('user_id, star_team_id')
+        .select('user_id, star_team_id, previous_star_team_id, star_changed_at, change_used')
         .eq('round_id', round.id);
 
       if (starTeamsError) {
         console.error(`⚠️ Error fetching star teams for round ${round.id}:`, starTeamsError);
       }
 
-      // Create a map of user_id -> star_team_id for quick lookup
-      const starTeamMap = new Map<string, string>();
+      // Create a map of user_id -> star team info for quick lookup
+      interface StarTeamInfo {
+        currentStarTeamId: string;
+        previousStarTeamId: string | null;
+        starChangedAt: Date | null;
+        changeUsed: boolean;
+      }
+      const starTeamMap = new Map<string, StarTeamInfo>();
       for (const st of starTeamsData || []) {
-        starTeamMap.set(st.user_id, st.star_team_id);
+        starTeamMap.set(st.user_id, {
+          currentStarTeamId: st.star_team_id,
+          previousStarTeamId: st.previous_star_team_id || null,
+          starChangedAt: st.star_changed_at ? new Date(st.star_changed_at) : null,
+          changeUsed: st.change_used || false,
+        });
       }
       console.log(`⭐ Found ${starTeamMap.size} star team selections for round ${round.id}`);
 
@@ -158,8 +169,8 @@ serve(async (req) => {
         const teamPicks = Array.isArray(pick.team_picks) ? pick.team_picks : [];
         console.log(`🎮 Processing picks for user ${pick.user_id} with ${teamPicks.length} teams`);
 
-        // Get this user's star team
-        const userStarTeamId = starTeamMap.get(pick.user_id);
+        // Get this user's star team info (including history)
+        const starTeamInfo = starTeamMap.get(pick.user_id);
         const swap = swapMap.get(pick.user_id);
 
         // Parse team data
@@ -205,7 +216,10 @@ serve(async (req) => {
         const scoreUpdates: any[] = [];
 
         for (const team of teams) {
-          const isStarTeam = userStarTeamId === team.id;
+          // Determine star status for this team
+          const isCurrentStarTeam = starTeamInfo?.currentStarTeamId === team.id;
+          const isPreviousStarTeam = starTeamInfo?.previousStarTeamId === team.id;
+          const starChangedAt = starTeamInfo?.starChangedAt || null;
           
           // Check if this team was swapped out or in
           const wasSwappedOut = swap && swap.old_team_id === team.id;
@@ -213,9 +227,11 @@ serve(async (req) => {
           const swapTime = swap?.swapped_at ? new Date(swap.swapped_at) : null;
 
           // Calculate team's score and get match breakdowns
+          // Pass star team info so we can apply multiplier based on timing
           const { score, breakdowns } = calculateTeamScore(
             team.id, team.name, team.type, proMatches, amateurMatches,
-            isStarTeam, wasSwappedOut, wasSwappedIn, swapTime
+            isCurrentStarTeam, isPreviousStarTeam, starChangedAt,
+            wasSwappedOut, wasSwappedIn, swapTime
           );
 
           // For swapped-out team, use preserved points
@@ -226,8 +242,8 @@ serve(async (req) => {
 
           totalScore += finalScore;
 
-          if (isStarTeam) {
-            console.log(`⭐ Team ${team.name}: ${breakdowns.length} matches, ${finalScore} pts (star team)`);
+          if (isCurrentStarTeam || isPreviousStarTeam) {
+            console.log(`⭐ Team ${team.name}: ${breakdowns.length} matches, ${finalScore} pts (star: current=${isCurrentStarTeam}, previous=${isPreviousStarTeam})`);
           }
 
           // Prepare breakdown records
@@ -250,8 +266,8 @@ serve(async (req) => {
               is_clean_sweep: breakdown.is_clean_sweep,
               is_tournament_win: breakdown.is_tournament_win,
               tournament_name: breakdown.tournament_name,
-              is_star_team: isStarTeam,
-              star_multiplier_applied: isStarTeam,
+              is_star_team: isCurrentStarTeam || isPreviousStarTeam,
+              star_multiplier_applied: breakdown.star_multiplier_applied ?? (isCurrentStarTeam || isPreviousStarTeam),
               amateur_bonus_applied: team.type === 'amateur',
             });
           }
@@ -350,16 +366,37 @@ function calculateTeamScore(
   teamType: 'pro' | 'amateur',
   proMatches: any[],
   amateurMatches: any[],
-  isStarTeam: boolean,
+  isCurrentStarTeam: boolean,
+  isPreviousStarTeam: boolean,
+  starChangedAt: Date | null,
   wasSwappedOut: boolean,
   wasSwappedIn: boolean,
   swapTime: Date | null
-): { score: number; breakdowns: MatchBreakdown[] } {
-  const breakdowns: MatchBreakdown[] = [];
+): { score: number; breakdowns: (MatchBreakdown & { star_multiplier_applied: boolean })[] } {
+  const breakdowns: (MatchBreakdown & { star_multiplier_applied: boolean })[] = [];
   let totalScore = 0;
 
-  const starMult = isStarTeam ? STAR_MULTIPLIER : 1;
   const amateurMult = teamType === 'amateur' ? AMATEUR_MULTIPLIER : 1;
+
+  // Determine if star multiplier applies for a match based on timing
+  const shouldApplyStarMultiplier = (matchDate: Date): boolean => {
+    // If this team is the current star team
+    if (isCurrentStarTeam) {
+      // If there was a change, only apply multiplier AFTER the change
+      if (starChangedAt) {
+        return matchDate >= starChangedAt;
+      }
+      // No change occurred, so this was always the star team - apply to all
+      return true;
+    }
+    
+    // If this team was the previous star team, apply multiplier only BEFORE the change
+    if (isPreviousStarTeam && starChangedAt) {
+      return matchDate < starChangedAt;
+    }
+    
+    return false;
+  };
 
   if (teamType === 'pro') {
     // Filter pro matches for this team
@@ -375,9 +412,12 @@ function calculateTeamScore(
       if (wasSwappedOut && swapTime && matchDate >= swapTime) continue;
       if (wasSwappedIn && swapTime && matchDate < swapTime) continue;
 
+      const applyStarMult = shouldApplyStarMultiplier(matchDate);
+      const starMult = applyStarMult ? STAR_MULTIPLIER : 1;
+
       const breakdown = processProMatch(match, teamId, starMult);
       if (breakdown) {
-        breakdowns.push(breakdown);
+        breakdowns.push({ ...breakdown, star_multiplier_applied: applyStarMult });
         totalScore += breakdown.points_earned;
       }
     }
@@ -397,9 +437,12 @@ function calculateTeamScore(
       if (wasSwappedOut && swapTime && matchDate >= swapTime) continue;
       if (wasSwappedIn && swapTime && matchDate < swapTime) continue;
 
+      const applyStarMult = shouldApplyStarMultiplier(matchDate);
+      const starMult = applyStarMult ? STAR_MULTIPLIER : 1;
+
       const breakdown = processAmateurMatch(match, teamId, starMult, amateurMult);
       if (breakdown) {
-        breakdowns.push(breakdown);
+        breakdowns.push({ ...breakdown, star_multiplier_applied: applyStarMult });
         totalScore += breakdown.points_earned;
       }
     }
