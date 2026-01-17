@@ -650,6 +650,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           });
 
         if (error) throw error;
+
+        // Track affiliate activation for free round entries
+        try {
+          await supabase.functions.invoke('track-affiliate-activation', {
+            body: { round_id: round.id }
+          });
+        } catch (affiliateError) {
+          console.warn('Affiliate tracking failed (non-blocking):', affiliateError);
+        }
       }
 
       // Set star team if one is selected

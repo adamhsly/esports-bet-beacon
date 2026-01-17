@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.generate-cs2-content]
 verify_jwt = false
+
+[functions.track-affiliate-activation]
+verify_jwt = true
