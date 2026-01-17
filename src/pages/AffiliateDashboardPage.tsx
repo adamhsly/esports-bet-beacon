@@ -127,25 +127,21 @@ const AffiliateDashboardPage = () => {
       };
 
       setAffiliateData(typedAffiliate);
-        return;
-      }
-
-      setAffiliateData(affiliate);
 
       // Fetch referred users count
       const { count: referredCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .eq('referrer_code', affiliate.referral_code);
+        .eq('referrer_code', typedAffiliate.referral_code);
 
       const currentMonth = new Date().toISOString().slice(0, 7);
 
-      if (affiliate.compensation_type === 'pay_per_play') {
+      if (typedAffiliate.compensation_type === 'pay_per_play') {
         // Fetch activations for pay-per-play affiliates
         const { data: activationsData } = await supabase
           .from('affiliate_activations')
           .select('*')
-          .eq('creator_id', affiliate.id);
+          .eq('creator_id', typedAffiliate.id);
 
         const totalActivations = activationsData?.filter(a => a.activated).length || 0;
         const pendingActivations = activationsData?.filter(a => !a.activated).length || 0;
@@ -175,7 +171,7 @@ const AffiliateDashboardPage = () => {
         const { data: earningsData } = await supabase
           .from('affiliate_earnings')
           .select('*')
-          .eq('creator_id', affiliate.id);
+          .eq('creator_id', typedAffiliate.id);
 
         const totalEarnings = earningsData?.reduce((sum, e) => sum + e.earnings_amount, 0) || 0;
         
@@ -198,7 +194,7 @@ const AffiliateDashboardPage = () => {
       const { data: payoutsData } = await supabase
         .from('affiliate_payouts')
         .select('*')
-        .eq('creator_id', affiliate.id)
+        .eq('creator_id', typedAffiliate.id)
         .order('created_at', { ascending: false });
 
       setPayouts(payoutsData || []);
