@@ -18,13 +18,17 @@ import {
   Calendar,
   Loader2,
   ShieldX,
-  Sparkles
+  Sparkles,
+  UserCheck,
+  Gamepad2
 } from 'lucide-react';
 
 interface AffiliateData {
   id: string;
   referral_code: string;
   rev_share_percent: number;
+  pay_per_play_rate: number;
+  compensation_type: 'revenue_share' | 'pay_per_play';
   tier: string;
   status: string;
   name: string;
@@ -35,6 +39,10 @@ interface EarningsSummary {
   totalPremiumEntries: number;
   totalEarnings: number;
   monthlyEarnings: number;
+  // Pay per play specific
+  totalActivations: number;
+  pendingActivations: number;
+  monthlyActivations: number;
 }
 
 interface Payout {
@@ -55,7 +63,10 @@ const AffiliateDashboardPage = () => {
     totalReferredUsers: 0,
     totalPremiumEntries: 0,
     totalEarnings: 0,
-    monthlyEarnings: 0
+    monthlyEarnings: 0,
+    totalActivations: 0,
+    pendingActivations: 0,
+    monthlyActivations: 0
   });
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +120,16 @@ const AffiliateDashboardPage = () => {
         return;
       }
 
+      // Cast compensation_type to the expected union type
+      const typedAffiliate: AffiliateData = {
+        ...affiliate,
+        compensation_type: (affiliate.compensation_type as 'revenue_share' | 'pay_per_play') || 'revenue_share'
+      };
+
+      setAffiliateData(typedAffiliate);
+        return;
+      }
+
       setAffiliateData(affiliate);
 
       // Fetch referred users count
@@ -117,26 +138,61 @@ const AffiliateDashboardPage = () => {
         .select('*', { count: 'exact', head: true })
         .eq('referrer_code', affiliate.referral_code);
 
-      // Fetch earnings
-      const { data: earningsData } = await supabase
-        .from('affiliate_earnings')
-        .select('*')
-        .eq('creator_id', affiliate.id);
-
-      const totalEarnings = earningsData?.reduce((sum, e) => sum + e.earnings_amount, 0) || 0;
-      
-      // Monthly earnings (current month)
       const currentMonth = new Date().toISOString().slice(0, 7);
-      const monthlyEarnings = earningsData
-        ?.filter(e => e.created_at.startsWith(currentMonth))
-        .reduce((sum, e) => sum + e.earnings_amount, 0) || 0;
 
-      setEarnings({
-        totalReferredUsers: referredCount || 0,
-        totalPremiumEntries: earningsData?.length || 0,
-        totalEarnings,
-        monthlyEarnings
-      });
+      if (affiliate.compensation_type === 'pay_per_play') {
+        // Fetch activations for pay-per-play affiliates
+        const { data: activationsData } = await supabase
+          .from('affiliate_activations')
+          .select('*')
+          .eq('creator_id', affiliate.id);
+
+        const totalActivations = activationsData?.filter(a => a.activated).length || 0;
+        const pendingActivations = activationsData?.filter(a => !a.activated).length || 0;
+        const monthlyActivations = activationsData
+          ?.filter(a => a.activated && a.first_round_played_at?.startsWith(currentMonth))
+          .length || 0;
+
+        const totalEarnings = activationsData
+          ?.filter(a => a.activated)
+          .reduce((sum, a) => sum + a.payout_amount, 0) || 0;
+
+        const monthlyEarnings = activationsData
+          ?.filter(a => a.activated && a.first_round_played_at?.startsWith(currentMonth))
+          .reduce((sum, a) => sum + a.payout_amount, 0) || 0;
+
+        setEarnings({
+          totalReferredUsers: referredCount || 0,
+          totalPremiumEntries: 0,
+          totalEarnings,
+          monthlyEarnings,
+          totalActivations,
+          pendingActivations,
+          monthlyActivations
+        });
+      } else {
+        // Fetch earnings for revenue share affiliates
+        const { data: earningsData } = await supabase
+          .from('affiliate_earnings')
+          .select('*')
+          .eq('creator_id', affiliate.id);
+
+        const totalEarnings = earningsData?.reduce((sum, e) => sum + e.earnings_amount, 0) || 0;
+        
+        const monthlyEarnings = earningsData
+          ?.filter(e => e.created_at.startsWith(currentMonth))
+          .reduce((sum, e) => sum + e.earnings_amount, 0) || 0;
+
+        setEarnings({
+          totalReferredUsers: referredCount || 0,
+          totalPremiumEntries: earningsData?.length || 0,
+          totalEarnings,
+          monthlyEarnings,
+          totalActivations: 0,
+          pendingActivations: 0,
+          monthlyActivations: 0
+        });
+      }
 
       // Fetch payouts
       const { data: payoutsData } = await supabase
@@ -169,6 +225,14 @@ const AffiliateDashboardPage = () => {
       case 'silver': return 'bg-gray-400/20 text-gray-300 border-gray-400/50';
       default: return 'bg-amber-700/20 text-amber-500 border-amber-700/50';
     }
+  };
+
+  const getCompensationLabel = () => {
+    if (!affiliateData) return '';
+    if (affiliateData.compensation_type === 'pay_per_play') {
+      return `$${(affiliateData.pay_per_play_rate / 100).toFixed(2)} Per Activation`;
+    }
+    return `${affiliateData.rev_share_percent}% Rev Share`;
   };
 
   if (authLoading || loading) {
@@ -210,6 +274,8 @@ const AffiliateDashboardPage = () => {
     );
   }
 
+  const isPayPerPlay = affiliateData.compensation_type === 'pay_per_play';
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden w-full max-w-screen flex flex-col">
       <SearchableNavbar />
@@ -237,13 +303,13 @@ const AffiliateDashboardPage = () => {
                 <Trophy className="w-3 h-3 mr-1" />
                 {affiliateData.tier} Tier
               </Badge>
-              <Badge variant="outline" className="border-purple-500/50 text-purple-400">
-                {affiliateData.rev_share_percent}% Rev Share
+              <Badge variant="outline" className={isPayPerPlay ? "border-green-500/50 text-green-400" : "border-purple-500/50 text-purple-400"}>
+                {getCompensationLabel()}
               </Badge>
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {/* Stats Grid - Dynamic based on compensation type */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
@@ -257,36 +323,71 @@ const AffiliateDashboardPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all">
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{earnings.totalPremiumEntries}</p>
-                    <p className="text-xs md:text-sm text-white/70">Premium Entries</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {isPayPerPlay ? (
+              <>
+                <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30 hover:border-green-500/60 transition-all">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-center gap-3">
+                      <UserCheck className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
+                      <div>
+                        <p className="text-xl md:text-2xl font-bold text-white">{earnings.totalActivations}</p>
+                        <p className="text-xs md:text-sm text-white/70">Activated Users</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30 hover:border-green-500/60 transition-all">
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">${(earnings.totalEarnings / 100).toFixed(2)}</p>
-                    <p className="text-xs md:text-sm text-white/70">Total Earnings</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-center gap-3">
+                      <Gamepad2 className="h-6 w-6 md:h-8 md:w-8 text-yellow-400" />
+                      <div>
+                        <p className="text-xl md:text-2xl font-bold text-white">{earnings.pendingActivations}</p>
+                        <p className="text-xs md:text-sm text-white/70">Pending (No Round)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30 hover:border-purple-500/60 transition-all">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
+                      <div>
+                        <p className="text-xl md:text-2xl font-bold text-white">{earnings.totalPremiumEntries}</p>
+                        <p className="text-xs md:text-sm text-white/70">Premium Entries</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30 hover:border-green-500/60 transition-all">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
+                      <div>
+                        <p className="text-xl md:text-2xl font-bold text-white">${(earnings.totalEarnings / 100).toFixed(2)}</p>
+                        <p className="text-xs md:text-sm text-white/70">Total Earnings</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30 hover:border-yellow-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-6 w-6 md:h-8 md:w-8 text-yellow-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">${(earnings.monthlyEarnings / 100).toFixed(2)}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">
+                      {isPayPerPlay 
+                        ? `$${(earnings.monthlyEarnings / 100).toFixed(2)}`
+                        : `$${(earnings.monthlyEarnings / 100).toFixed(2)}`
+                      }
+                    </p>
                     <p className="text-xs md:text-sm text-white/70">This Month</p>
                   </div>
                 </div>
@@ -299,6 +400,23 @@ const AffiliateDashboardPage = () => {
       {/* Main Content */}
       <main className="flex-1 py-8 md:py-12 bg-gradient-to-br from-[#0B0F14] to-[#12161C]">
         <div className="container mx-auto px-3 max-w-full space-y-6">
+          {/* Compensation Info Card */}
+          <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30">
+            <CardHeader>
+              <CardTitle className="text-blue-400">
+                {isPayPerPlay ? 'Pay Per Activation Model' : 'Revenue Share Model'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-white/80">
+                {isPayPerPlay 
+                  ? `You earn $${(affiliateData.pay_per_play_rate / 100).toFixed(2)} for each user who registers with your link AND plays their first round (any round type). Users who register but haven't played yet are shown as "Pending".`
+                  : `You earn ${affiliateData.rev_share_percent}% of every premium contest entry fee from users who signed up with your referral link. Earnings are calculated on each paid entry.`
+                }
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Referral Link Card */}
           <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-purple-500/30">
             <CardHeader>
@@ -332,10 +450,30 @@ const AffiliateDashboardPage = () => {
             </CardContent>
           </Card>
 
-          {/* Payout History */}
+          {/* Total Earnings Card */}
           <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-green-500/30">
             <CardHeader>
-              <CardTitle className="text-green-400">Payout History</CardTitle>
+              <CardTitle className="text-green-400">Total Earnings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-4">
+                <p className="text-4xl md:text-5xl font-bold text-green-400">
+                  ${(earnings.totalEarnings / 100).toFixed(2)}
+                </p>
+                <p className="text-white/70 mt-2">
+                  {isPayPerPlay 
+                    ? `From ${earnings.totalActivations} activated users`
+                    : `From ${earnings.totalPremiumEntries} premium entries`
+                  }
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payout History */}
+          <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-yellow-500/30">
+            <CardHeader>
+              <CardTitle className="text-yellow-400">Payout History</CardTitle>
             </CardHeader>
             <CardContent>
               {payouts.length === 0 ? (
