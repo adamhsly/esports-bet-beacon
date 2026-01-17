@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_activations: {
+        Row: {
+          activated: boolean
+          created_at: string
+          creator_id: string
+          first_round_played_at: string | null
+          id: string
+          payout_amount: number
+          registered_at: string
+          round_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activated?: boolean
+          created_at?: string
+          creator_id: string
+          first_round_played_at?: string | null
+          id?: string
+          payout_amount?: number
+          registered_at?: string
+          round_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activated?: boolean
+          created_at?: string
+          creator_id?: string
+          first_round_played_at?: string | null
+          id?: string
+          payout_amount?: number
+          registered_at?: string
+          round_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_activations_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator_affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_earnings: {
         Row: {
           created_at: string
@@ -159,11 +203,13 @@ export type Database = {
       }
       creator_affiliates: {
         Row: {
+          compensation_type: string
           created_at: string
           discord: string | null
           email: string
           id: string
           name: string
+          pay_per_play_rate: number
           platform_links: Json | null
           referral_code: string
           rev_share_percent: number
@@ -173,11 +219,13 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          compensation_type?: string
           created_at?: string
           discord?: string | null
           email: string
           id?: string
           name: string
+          pay_per_play_rate?: number
           platform_links?: Json | null
           referral_code: string
           rev_share_percent?: number
@@ -187,11 +235,13 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          compensation_type?: string
           created_at?: string
           discord?: string | null
           email?: string
           id?: string
           name?: string
+          pay_per_play_rate?: number
           platform_links?: Json | null
           referral_code?: string
           rev_share_percent?: number
@@ -212,6 +262,7 @@ export type Database = {
           message: string | null
           name: string
           platform_links: Json
+          preferred_compensation: string | null
           status: string
           updated_at: string
         }
@@ -224,6 +275,7 @@ export type Database = {
           message?: string | null
           name: string
           platform_links?: Json
+          preferred_compensation?: string | null
           status?: string
           updated_at?: string
         }
@@ -236,6 +288,7 @@ export type Database = {
           message?: string | null
           name?: string
           platform_links?: Json
+          preferred_compensation?: string | null
           status?: string
           updated_at?: string
         }
