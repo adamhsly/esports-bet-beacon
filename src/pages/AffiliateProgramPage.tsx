@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '@/components/AuthModal';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -22,7 +23,8 @@ import {
   Star,
   Trophy,
   Zap,
-  LogIn
+  LogIn,
+  Users
 } from 'lucide-react';
 
 const FORM_STORAGE_KEY = 'affiliate_application_form';
@@ -40,7 +42,8 @@ const AffiliateProgramPage = () => {
     platformLinks: '',
     avgViewers: '',
     discord: '',
-    message: ''
+    message: '',
+    compensationType: 'revenue_share' as 'revenue_share' | 'pay_per_play'
   });
 
   // Load form data from localStorage on mount
@@ -117,6 +120,7 @@ const AffiliateProgramPage = () => {
           avg_viewers: formData.avgViewers,
           discord: formData.discord,
           message: formData.message,
+          preferred_compensation: formData.compensationType,
           status: 'pending'
         });
 
@@ -144,7 +148,8 @@ const AffiliateProgramPage = () => {
         platformLinks: '',
         avgViewers: '',
         discord: '',
-        message: ''
+        message: '',
+        compensationType: 'revenue_share'
       });
 
       // Clear saved form data
@@ -186,7 +191,7 @@ const AffiliateProgramPage = () => {
     });
   };
 
-  const tiers = [
+  const revShareTiers = [
     { 
       name: 'Bronze', 
       percent: 20, 
@@ -209,6 +214,36 @@ const AffiliateProgramPage = () => {
       name: 'Gold', 
       percent: 30, 
       requirement: '200+ referred entries',
+      color: 'from-yellow-400 to-yellow-600',
+      borderColor: 'border-yellow-400/30 hover:border-yellow-400/60',
+      shadowColor: 'hover:shadow-yellow-400/20',
+      textColor: 'text-yellow-400'
+    }
+  ];
+
+  const payPerPlayTiers = [
+    { 
+      name: 'Bronze', 
+      amount: 0.50, 
+      requirement: 'Starting tier',
+      color: 'from-amber-700 to-amber-900',
+      borderColor: 'border-amber-600/30 hover:border-amber-600/60',
+      shadowColor: 'hover:shadow-amber-500/20',
+      textColor: 'text-amber-500'
+    },
+    { 
+      name: 'Silver', 
+      amount: 1.00, 
+      requirement: '50+ activated users',
+      color: 'from-gray-400 to-gray-600',
+      borderColor: 'border-gray-400/30 hover:border-gray-400/60',
+      shadowColor: 'hover:shadow-gray-400/20',
+      textColor: 'text-gray-400'
+    },
+    { 
+      name: 'Gold', 
+      amount: 1.50, 
+      requirement: '200+ activated users',
       color: 'from-yellow-400 to-yellow-600',
       borderColor: 'border-yellow-400/30 hover:border-yellow-400/60',
       shadowColor: 'hover:shadow-yellow-400/20',
@@ -239,7 +274,7 @@ const AffiliateProgramPage = () => {
                 <span className="text-white">Partner</span>
               </h1>
               <p className="text-xl md:text-2xl text-white mb-8">
-                Earn <span className="text-yellow-400 font-semibold">20–30% revenue share</span> from premium contest entries.
+                Choose your earning model: <span className="text-yellow-400 font-semibold">20–30% revenue share</span> or <span className="text-green-400 font-semibold">$0.50–$1.50 per activated user</span>
               </p>
               <div className="flex flex-wrap justify-center gap-4 text-sm text-white mb-8">
                 <div className="flex items-center gap-2">
@@ -306,37 +341,78 @@ const AffiliateProgramPage = () => {
           </div>
         </section>
 
-        {/* Revenue Tiers */}
+        {/* Compensation Options */}
         <section className="py-16 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-background reveal-on-scroll">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent">
-              Revenue Share Tiers
+              Choose Your Compensation Model
             </h2>
             <p className="text-center text-white mb-12 max-w-2xl mx-auto">
-              Start at Bronze and grow your earnings as you bring in more players
+              We offer two earning models - choose the one that best fits your audience
             </p>
-            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {tiers.map((tier) => (
-                <Card 
-                  key={tier.name} 
-                  className={`relative overflow-hidden bg-gradient-to-br from-[#0B0F14] to-[#12161C] ${tier.borderColor} transition-all hover:shadow-lg ${tier.shadowColor}`}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${tier.color} opacity-5`} />
-                  <CardHeader className="relative">
-                    <CardTitle className="flex items-center justify-between text-white">
-                      <span>{tier.name}</span>
-                      <Trophy className={`w-5 h-5 ${tier.textColor}`} />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="relative">
-                    <div className={`text-4xl font-bold mb-2 ${tier.textColor}`}>{tier.percent}%</div>
-                    <p className="text-sm text-white">Revenue Share</p>
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                      <p className="text-sm text-white">{tier.requirement}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            
+            {/* Revenue Share Option */}
+            <div className="mb-12">
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <DollarSign className="w-6 h-6 text-purple-400" />
+                <h3 className="text-2xl font-bold text-purple-400">Option 1: Revenue Share</h3>
+              </div>
+              <p className="text-center text-white/70 mb-6">Earn a percentage of every premium contest entry from your referrals, forever</p>
+              <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                {revShareTiers.map((tier) => (
+                  <Card 
+                    key={tier.name} 
+                    className={`relative overflow-hidden bg-gradient-to-br from-[#0B0F14] to-[#12161C] ${tier.borderColor} transition-all hover:shadow-lg ${tier.shadowColor}`}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${tier.color} opacity-5`} />
+                    <CardHeader className="relative">
+                      <CardTitle className="flex items-center justify-between text-white">
+                        <span>{tier.name}</span>
+                        <Trophy className={`w-5 h-5 ${tier.textColor}`} />
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <div className={`text-4xl font-bold mb-2 ${tier.textColor}`}>{tier.percent}%</div>
+                      <p className="text-sm text-white">Revenue Share</p>
+                      <div className="mt-4 pt-4 border-t border-white/10">
+                        <p className="text-sm text-white">{tier.requirement}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Pay Per Play Option */}
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Users className="w-6 h-6 text-green-400" />
+                <h3 className="text-2xl font-bold text-green-400">Option 2: Pay Per Activation</h3>
+              </div>
+              <p className="text-center text-white/70 mb-6">Earn a fixed amount for each user who registers AND plays their first round (any round type)</p>
+              <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                {payPerPlayTiers.map((tier) => (
+                  <Card 
+                    key={tier.name} 
+                    className={`relative overflow-hidden bg-gradient-to-br from-[#0B0F14] to-[#12161C] ${tier.borderColor} transition-all hover:shadow-lg ${tier.shadowColor}`}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${tier.color} opacity-5`} />
+                    <CardHeader className="relative">
+                      <CardTitle className="flex items-center justify-between text-white">
+                        <span>{tier.name}</span>
+                        <Trophy className={`w-5 h-5 ${tier.textColor}`} />
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <div className={`text-4xl font-bold mb-2 ${tier.textColor}`}>${tier.amount.toFixed(2)}</div>
+                      <p className="text-sm text-white">Per Activated User</p>
+                      <div className="mt-4 pt-4 border-t border-white/10">
+                        <p className="text-sm text-white">{tier.requirement}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -499,14 +575,29 @@ const AffiliateProgramPage = () => {
                       />
                     </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold" 
-                      size="lg"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                    </Button>
+                    <div className="space-y-3">
+                      <Label className="text-white">Preferred Compensation Model *</Label>
+                      <RadioGroup 
+                        value={formData.compensationType} 
+                        onValueChange={(value: 'revenue_share' | 'pay_per_play') => setFormData({ ...formData, compensationType: value })}
+                        className="space-y-3"
+                      >
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, compensationType: 'revenue_share' })}>
+                          <RadioGroupItem value="revenue_share" id="revenue_share" className="mt-1" />
+                          <div>
+                            <Label htmlFor="revenue_share" className="text-white font-semibold cursor-pointer">Revenue Share (20-30%)</Label>
+                            <p className="text-sm text-white/70">Earn a percentage of every premium entry fee from your referrals, forever</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-green-500/30 hover:border-green-500/50 transition-colors cursor-pointer" onClick={() => setFormData({ ...formData, compensationType: 'pay_per_play' })}>
+                          <RadioGroupItem value="pay_per_play" id="pay_per_play" className="mt-1" />
+                          <div>
+                            <Label htmlFor="pay_per_play" className="text-green-400 font-semibold cursor-pointer">Pay Per Activation ($0.50-$1.50)</Label>
+                            <p className="text-sm text-white/70">Earn a fixed amount for each user who registers AND plays their first round</p>
+                          </div>
+                        </div>
+                      </RadioGroup>
+                    </div>
                   </form>
                 </CardContent>
               </Card>

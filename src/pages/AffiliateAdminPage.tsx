@@ -298,11 +298,15 @@ const AffiliateAdminPage: React.FC = () => {
     }
   };
 
-  const updateAffiliateTier = async (affiliateId: string, tier: string, revShare: number) => {
+  const updateAffiliateTier = async (affiliateId: string, tier: string, rate: number, isPayPerPlay: boolean) => {
     try {
+      const updateData = isPayPerPlay 
+        ? { tier, pay_per_play_rate: rate }
+        : { tier, rev_share_percent: rate };
+      
       const { error } = await supabase
         .from('creator_affiliates')
-        .update({ tier, rev_share_percent: revShare })
+        .update(updateData)
         .eq('id', affiliateId);
 
       if (error) throw error;
@@ -310,6 +314,28 @@ const AffiliateAdminPage: React.FC = () => {
       fetchData();
     } catch (err: any) {
       toast.error('Failed to update tier: ' + err.message);
+    }
+  };
+
+  const updateAffiliateCompensationType = async (affiliateId: string, compensationType: 'revenue_share' | 'pay_per_play', currentTier: string) => {
+    try {
+      const revShare = currentTier === 'gold' ? 30 : currentTier === 'silver' ? 25 : 20;
+      const payRate = currentTier === 'gold' ? 150 : currentTier === 'silver' ? 100 : 50;
+      
+      const { error } = await supabase
+        .from('creator_affiliates')
+        .update({ 
+          compensation_type: compensationType,
+          rev_share_percent: revShare,
+          pay_per_play_rate: payRate
+        })
+        .eq('id', affiliateId);
+
+      if (error) throw error;
+      toast.success('Compensation type updated successfully');
+      fetchData();
+    } catch (err: any) {
+      toast.error('Failed to update compensation type: ' + err.message);
     }
   };
 
@@ -513,17 +539,33 @@ const AffiliateAdminPage: React.FC = () => {
                             <Select
                               defaultValue={affiliate.tier}
                               onValueChange={(value) => {
+                                const isPayPerPlay = (affiliate as any).compensation_type === 'pay_per_play';
                                 const revShare = value === 'gold' ? 30 : value === 'silver' ? 25 : 20;
-                                updateAffiliateTier(affiliate.id, value, revShare);
+                                const payRate = value === 'gold' ? 150 : value === 'silver' ? 100 : 50;
+                                updateAffiliateTier(affiliate.id, value, isPayPerPlay ? payRate : revShare, isPayPerPlay);
                               }}
                             >
                               <SelectTrigger className="w-32 border-border/50 text-white">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-[#12161C] border-border/50">
-                                <SelectItem value="bronze" className="text-white">Bronze (20%)</SelectItem>
-                                <SelectItem value="silver" className="text-white">Silver (25%)</SelectItem>
-                                <SelectItem value="gold" className="text-white">Gold (30%)</SelectItem>
+                                <SelectItem value="bronze" className="text-white">Bronze</SelectItem>
+                                <SelectItem value="silver" className="text-white">Silver</SelectItem>
+                                <SelectItem value="gold" className="text-white">Gold</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              defaultValue={(affiliate as any).compensation_type || 'revenue_share'}
+                              onValueChange={(value) => {
+                                updateAffiliateCompensationType(affiliate.id, value as 'revenue_share' | 'pay_per_play', affiliate.tier);
+                              }}
+                            >
+                              <SelectTrigger className="w-36 border-border/50 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#12161C] border-border/50">
+                                <SelectItem value="revenue_share" className="text-white">Rev Share</SelectItem>
+                                <SelectItem value="pay_per_play" className="text-white">Pay Per Play</SelectItem>
                               </SelectContent>
                             </Select>
                             <Badge variant={affiliate.status === 'active' ? 'default' : 'secondary'}>
