@@ -144,7 +144,9 @@ const AffiliateDashboardPage = () => {
           .eq('creator_id', typedAffiliate.id);
 
         const totalActivations = activationsData?.filter(a => a.activated).length || 0;
-        const pendingActivations = activationsData?.filter(a => !a.activated).length || 0;
+        // Pending users = registered users who haven't played a round yet
+        // This is: total referred users - activated users
+        const pendingActivations = (referredCount || 0) - totalActivations;
         const monthlyActivations = activationsData
           ?.filter(a => a.activated && a.first_round_played_at?.startsWith(currentMonth))
           .length || 0;
