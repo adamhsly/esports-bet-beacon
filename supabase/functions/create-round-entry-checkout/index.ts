@@ -193,6 +193,48 @@ serve(async (req) => {
 
       console.log(`Promo entry completed: deducted ${deductedAmount || promoToUse} pence`);
 
+      // Track affiliate activation for promo-covered entries
+      try {
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('referrer_code')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.referrer_code) {
+          const { data: affiliate } = await supabaseAdmin
+            .from('creator_affiliates')
+            .select('id, compensation_type, pay_per_play_rate')
+            .eq('referral_code', profile.referrer_code)
+            .eq('status', 'active')
+            .single();
+
+          if (affiliate?.compensation_type === 'pay_per_play') {
+            const { data: existingActivation } = await supabaseAdmin
+              .from('affiliate_activations')
+              .select('id, activated')
+              .eq('creator_id', affiliate.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (!existingActivation) {
+              const payoutAmount = affiliate.pay_per_play_rate || 50;
+              await supabaseAdmin.from('affiliate_activations').insert({
+                creator_id: affiliate.id,
+                user_id: user.id,
+                registered_at: new Date().toISOString(),
+                first_round_played_at: new Date().toISOString(),
+                round_id: round.id,
+                activated: true,
+                payout_amount: payoutAmount,
+              });
+              console.log(`Affiliate activation created for promo entry: ${affiliate.id}`);
+            }
+          }
+        }
+      } catch (affiliateError) {
+        console.error('Affiliate tracking failed (non-blocking):', affiliateError);
+      }
       return new Response(
         JSON.stringify({ 
           success: true, 
