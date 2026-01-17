@@ -1330,7 +1330,9 @@ export type Database = {
           change_used: boolean
           created_at: string
           id: string
+          previous_star_team_id: string | null
           round_id: string
+          star_changed_at: string | null
           star_team_id: string
           updated_at: string
           user_id: string
@@ -1339,7 +1341,9 @@ export type Database = {
           change_used?: boolean
           created_at?: string
           id?: string
+          previous_star_team_id?: string | null
           round_id: string
+          star_changed_at?: string | null
           star_team_id: string
           updated_at?: string
           user_id: string
@@ -1348,7 +1352,9 @@ export type Database = {
           change_used?: boolean
           created_at?: string
           id?: string
+          previous_star_team_id?: string | null
           round_id?: string
+          star_changed_at?: string | null
           star_team_id?: string
           updated_at?: string
           user_id?: string
