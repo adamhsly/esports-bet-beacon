@@ -744,3 +744,18 @@ nav a:hover {
   color: hsl(0 0% 90%);
 }
 
+/* CookieYes banner - ensure it appears above all dialogs/modals */
+/* CookieYes uses shadow DOM but we can target the outer container */
+[data-cky-tag="detail-container"],
+.cky-consent-container,
+.cky-modal,
+#cky-consent,
+[class*="cky-"] {
+  z-index: 99999 !important;
+}
+
+/* Also ensure the CookieYes overlay appears above Radix dialogs */
+.cky-overlay {
+  z-index: 99998 !important;
+}
+
