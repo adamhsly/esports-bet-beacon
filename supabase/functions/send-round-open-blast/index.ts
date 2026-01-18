@@ -6,6 +6,183 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Background task to send emails
+async function sendBlastEmails(
+  supabase: ReturnType<typeof createClient>,
+  resend: Resend,
+  round: any,
+  eligibleUsers: any[]
+) {
+  console.log(`[Background] Starting to send ${eligibleUsers.length} emails for round ${round.id}`);
+  
+  // Format prize display
+  const formatPrize = (amount: number, type: string) => {
+    if (type === 'vouchers') {
+      return `$${(amount / 100).toFixed(0)}`;
+    }
+    return `${amount} credits`;
+  };
+
+  const prize1st = round.prize_1st || 0;
+  const prize2nd = round.prize_2nd || 0;
+  const prize3rd = round.prize_3rd || 0;
+  const totalPrize = prize1st + prize2nd + prize3rd;
+  const prizeType = round.prize_type || 'credits';
+  const entryFee = round.entry_fee ? `$${(round.entry_fee / 100).toFixed(2)}` : 'Free';
+  const teamType = round.team_type === 'pro' ? 'Pro Teams' : round.team_type === 'amateur' ? 'Amateur Teams' : 'All Teams';
+
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const user of eligibleUsers) {
+    try {
+      await resend.emails.send({
+        from: 'Frags & Fortunes <noreply@fragsandfortunes.com>',
+        to: [user.email!],
+        subject: `🎮 New Round Open: ${round.round_name || 'Weekly Pro Round'}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
+              <tr>
+                <td align="center" style="padding: 40px 20px;">
+                  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #1a1a1a; border-radius: 16px; overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 32px; text-align: center;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
+                          🎮 New Round is OPEN!
+                        </h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 32px;">
+                        <h2 style="margin: 0 0 16px 0; color: #ffffff; font-size: 24px; font-weight: 600;">
+                          ${round.round_name || 'Weekly Pro Round'}
+                        </h2>
+                        
+                        <p style="margin: 0 0 24px 0; color: #a1a1aa; font-size: 16px; line-height: 1.6;">
+                          A new fantasy CS2 round is now open for team selection! Pick your teams and compete for prizes.
+                        </p>
+                        
+                        <!-- Prize Pool Box -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #262626; border-radius: 12px; margin-bottom: 24px;">
+                          <tr>
+                            <td style="padding: 24px; text-align: center;">
+                              <p style="margin: 0 0 8px 0; color: #a1a1aa; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+                                Total Prize Pool
+                              </p>
+                              <p style="margin: 0; color: #22c55e; font-size: 36px; font-weight: 700;">
+                                ${formatPrize(totalPrize, prizeType)}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Details Grid -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                          <tr>
+                            <td width="50%" style="padding: 12px; background-color: #262626; border-radius: 8px 0 0 8px;">
+                              <p style="margin: 0 0 4px 0; color: #a1a1aa; font-size: 12px;">Entry Fee</p>
+                              <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">${entryFee}</p>
+                            </td>
+                            <td width="50%" style="padding: 12px; background-color: #262626; border-radius: 0 8px 8px 0;">
+                              <p style="margin: 0 0 4px 0; color: #a1a1aa; font-size: 12px;">Team Type</p>
+                              <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">${teamType}</p>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Prize Breakdown -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                          <tr>
+                            <td style="padding: 8px 0; border-bottom: 1px solid #333333;">
+                              <span style="color: #fbbf24;">🥇</span>
+                              <span style="color: #ffffff; margin-left: 8px;">1st Place</span>
+                              <span style="color: #22c55e; float: right; font-weight: 600;">${formatPrize(prize1st, prizeType)}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; border-bottom: 1px solid #333333;">
+                              <span style="color: #94a3b8;">🥈</span>
+                              <span style="color: #ffffff; margin-left: 8px;">2nd Place</span>
+                              <span style="color: #22c55e; float: right; font-weight: 600;">${formatPrize(prize2nd, prizeType)}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0;">
+                              <span style="color: #cd7f32;">🥉</span>
+                              <span style="color: #ffffff; margin-left: 8px;">3rd Place</span>
+                              <span style="color: #22c55e; float: right; font-weight: 600;">${formatPrize(prize3rd, prizeType)}</span>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- CTA Button -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center">
+                              <a href="https://frags-and-fortunes.lovable.app/fantasy" 
+                                 style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 18px; font-weight: 600;">
+                                Pick Your Teams Now →
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="padding: 24px; background-color: #0f0f0f; text-align: center;">
+                        <p style="margin: 0 0 8px 0; color: #71717a; font-size: 14px;">
+                          Frags & Fortunes - Fantasy CS2
+                        </p>
+                        <p style="margin: 0; color: #52525b; font-size: 12px;">
+                          <a href="https://frags-and-fortunes.lovable.app/settings" style="color: #52525b;">Manage email preferences</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `,
+      });
+      
+      // Record the sent email
+      await supabase
+        .from('round_blast_emails')
+        .insert({
+          round_id: round.id,
+          user_id: user.id,
+          email: user.email,
+        });
+      
+      sentCount++;
+      
+      // Log progress every 50 emails
+      if (sentCount % 50 === 0) {
+        console.log(`[Background] Progress: ${sentCount}/${eligibleUsers.length} emails sent`);
+      }
+    } catch (error) {
+      console.error(`[Background] Failed to send email to ${user.email}:`, error);
+      failedCount++;
+    }
+  }
+
+  console.log(`[Background] Blast complete! Sent: ${sentCount}, Failed: ${failedCount}`);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -95,142 +272,56 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${eligibleUsers.length} eligible users to email (from ${allUsers.length} total, excluding ${reservedUserIds.size} reserved and ${alreadyBlastedUserIds.size} already blasted)`);
 
-    // Format prize display
-    const formatPrize = (amount: number, type: string) => {
-      if (type === 'vouchers') {
-        return `$${(amount / 100).toFixed(0)}`;
-      }
-      return `${amount} credits`;
-    };
-
-    const prize1st = round.prize_1st || 0;
-    const prize2nd = round.prize_2nd || 0;
-    const prize3rd = round.prize_3rd || 0;
-    const totalPrize = prize1st + prize2nd + prize3rd;
-    const prizeType = round.prize_type || 'credits';
-    const entryFee = round.entry_fee ? `$${(round.entry_fee / 100).toFixed(2)}` : 'Free';
-    const teamType = round.team_type === 'pro' ? 'Pro Teams' : round.team_type === 'amateur' ? 'Amateur Teams' : 'All Teams';
-
-    const resend = new Resend(resendApiKey);
-    let sentCount = 0;
-    let failedCount = 0;
-
-    for (const user of eligibleUsers) {
-      try {
-        await resend.emails.send({
-          from: 'Frags & Fortunes <noreply@fragsandfortunes.com>',
-          to: [user.email!],
-          subject: `🎮 A New Round is Open! ${round.round_name} - Pick Your Teams Now`,
-          html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f0f23; padding: 32px; border-radius: 16px;">
-              
-              <div style="text-align: center; margin-bottom: 24px;">
-                <h1 style="color: #8B5CF6; margin: 0; font-size: 28px;">A New Round is Open! 🎮</h1>
-              </div>
-              
-              <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6; text-align: center;">
-                <strong style="color: #a78bfa;">${round.round_name}</strong> is now open for team submissions!
-              </p>
-              
-              <!-- Prize Pool Card -->
-              <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
-                <p style="margin: 0 0 8px 0; font-size: 14px; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 1px;">Total Prize Pool</p>
-                <p style="margin: 0; font-size: 36px; font-weight: bold; color: white;">${formatPrize(totalPrize, prizeType)}</p>
-              </div>
-              
-              <!-- Prize Breakdown -->
-              <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%); border-radius: 12px; padding: 20px; margin: 24px 0;">
-                <h2 style="margin: 0 0 16px 0; color: #a78bfa; font-size: 18px; text-align: center;">Prize Breakdown</h2>
-                <div style="display: table; width: 100%;">
-                  <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 8px; color: #fbbf24; font-weight: bold;">🥇 1st Place</div>
-                    <div style="display: table-cell; padding: 8px; color: white; text-align: right;">${formatPrize(prize1st, prizeType)}</div>
-                  </div>
-                  <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 8px; color: #9ca3af; font-weight: bold;">🥈 2nd Place</div>
-                    <div style="display: table-cell; padding: 8px; color: white; text-align: right;">${formatPrize(prize2nd, prizeType)}</div>
-                  </div>
-                  <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 8px; color: #cd7f32; font-weight: bold;">🥉 3rd Place</div>
-                    <div style="display: table-cell; padding: 8px; color: white; text-align: right;">${formatPrize(prize3rd, prizeType)}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Round Details -->
-              <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px; margin: 24px 0;">
-                <h2 style="margin: 0 0 16px 0; color: #a78bfa; font-size: 18px; text-align: center;">Round Details</h2>
-                <div style="display: table; width: 100%;">
-                  <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 6px 0; color: #9ca3af;">Team Type</div>
-                    <div style="display: table-cell; padding: 6px 0; color: white; text-align: right;">${teamType}</div>
-                  </div>
-                  <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 6px 0; color: #9ca3af;">Entry Fee</div>
-                    <div style="display: table-cell; padding: 6px 0; color: white; text-align: right;">${entryFee}</div>
-                  </div>
-                  <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 6px 0; color: #9ca3af;">Games</div>
-                    <div style="display: table-cell; padding: 6px 0; color: white; text-align: right;">CS2 • Valorant • LoL • Dota 2</div>
-                  </div>
-                </div>
-              </div>
-              
-              <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6; text-align: center; margin: 24px 0;">
-                Pick your esports dream team and compete for glory!
-              </p>
-              
-              <!-- CTA Button -->
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="https://fragsandfortunes.com/fantasy" style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%); color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-                  Pick Your Teams Now →
-                </a>
-              </div>
-              
-              <p style="font-size: 14px; color: #555; line-height: 1.6; text-align: center; margin-top: 24px;">
-                Don't forget you have 1 team swap and one star team change during the round - use them wisely!
-              </p>
-              
-              <div style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 32px; padding-top: 24px; text-align: center;">
-                <p style="font-size: 14px; color: #666; margin: 0;">Good luck!</p>
-                <p style="font-size: 14px; color: #666; margin: 8px 0 0 0;">- The Frags & Fortunes Team</p>
-              </div>
-            </div>
-          `,
-        });
-        
-        // Record that we sent this blast email
-        await supabase
-          .from('round_blast_emails')
-          .insert({ round_id, user_id: user.id, email: user.email });
-        
-        sentCount++;
-        console.log(`Email sent to ${user.email}`);
-      } catch (emailError) {
-        failedCount++;
-        console.error(`Failed to send email to ${user.email}:`, emailError);
-      }
+    if (eligibleUsers.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'No eligible users to email',
+          eligible: 0,
+          sent: 0
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
     }
 
-    console.log(`Blast complete: ${sentCount} sent, ${failedCount} failed`);
+    // Create Resend client for background task
+    const resend = new Resend(resendApiKey);
 
+    // Start background task to send emails
+    // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(sendBlastEmails(supabase, resend, round, eligibleUsers));
+
+    // Return immediately with the count of emails to be sent
+    console.log(`Returning immediately, ${eligibleUsers.length} emails will be sent in background`);
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Blast email sent to ${sentCount} users`,
-        sent: sentCount,
-        failed: failedCount,
-        total: eligibleUsers.length,
-        excludedReserved: reservedUserIds.size,
-        excludedAlreadyBlasted: alreadyBlastedUserIds.size
+        message: `Sending ${eligibleUsers.length} emails in background`,
+        eligible: eligibleUsers.length,
+        sent: eligibleUsers.length, // Report as "sent" since they will be sent
+        background: true
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
     );
+
   } catch (error) {
-    console.error('Error sending blast:', error);
+    console.error('Error in send-round-open-blast:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
     );
   }
 });
