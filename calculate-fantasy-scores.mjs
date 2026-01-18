@@ -78,15 +78,25 @@ async function processRound(round) {
     return;
   }
 
-  // Fetch star teams for this round
-  const { data: starTeams } = await supabase
+  // Fetch star teams for this round (including change history for mid-round star swaps)
+  const { data: starTeamsData, error: starTeamsError } = await supabase
     .from('fantasy_round_star_teams')
-    .select('user_id, star_team_id')
+    .select('user_id, star_team_id, previous_star_team_id, star_changed_at, change_used')
     .eq('round_id', round.id);
 
+  if (starTeamsError) {
+    console.error(`   ⚠️ Failed to fetch star teams for round ${round.id}: ${starTeamsError.message}`);
+  }
+
+  // Map: user_id -> { currentStarTeamId, previousStarTeamId, starChangedAt, changeUsed }
   const starTeamMap = new Map();
-  (starTeams || []).forEach(st => {
-    starTeamMap.set(st.user_id, st.star_team_id);
+  (starTeamsData || []).forEach(st => {
+    starTeamMap.set(st.user_id, {
+      currentStarTeamId: String(st.star_team_id),
+      previousStarTeamId: st.previous_star_team_id ? String(st.previous_star_team_id) : null,
+      starChangedAt: st.star_changed_at ? new Date(st.star_changed_at) : null,
+      changeUsed: !!st.change_used,
+    });
   });
 
   // Fetch team swaps for this round
