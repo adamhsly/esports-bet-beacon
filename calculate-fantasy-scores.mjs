@@ -158,7 +158,7 @@ async function fetchAmateurMatches(startDate, endDate) {
 
 async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, amateurMatches) {
   const userId = pick.user_id;
-  const starTeamId = starTeamMap.get(userId);
+  const starTeamInfo = starTeamMap.get(userId); // Now contains { currentStarTeamId, previousStarTeamId, starChangedAt, changeUsed }
   const swap = swapMap.get(userId);
 
   // Parse team picks - handle various formats
@@ -218,7 +218,10 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
 
     if (!teamId) continue;
 
-    const isStarTeam = starTeamId === teamId;
+    // Determine star status for this team (supports mid-round star team changes)
+    const isCurrentStarTeam = starTeamInfo?.currentStarTeamId === teamId;
+    const isPreviousStarTeam = starTeamInfo?.previousStarTeamId === teamId;
+    const starChangedAt = starTeamInfo?.starChangedAt || null;
     
     // Check if this team was swapped out or in
     const wasSwappedOut = swap && swap.old_team_id === teamId;
@@ -226,9 +229,11 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
     const swapTime = swap?.swapped_at ? new Date(swap.swapped_at) : null;
 
     // Calculate team's score and get match breakdowns
+    // Pass star team info so we can apply multiplier based on timing
     const { score, breakdowns } = calculateTeamScore(
       teamId, teamName, teamType, round, proMatches, amateurMatches,
-      isStarTeam, wasSwappedOut, wasSwappedIn, swapTime
+      isCurrentStarTeam, isPreviousStarTeam, starChangedAt,
+      wasSwappedOut, wasSwappedIn, swapTime
     );
 
     // For swapped-out team, use preserved points
@@ -238,6 +243,11 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
     }
 
     totalScore += finalScore;
+
+    // Log star team info for debugging
+    if (isCurrentStarTeam || isPreviousStarTeam) {
+      console.log(`   ⭐ Team ${teamName}: ${breakdowns.length} matches, ${score} pts (star: current=${isCurrentStarTeam}, previous=${isPreviousStarTeam})`);
+    }
 
     // Prepare breakdown records (only for matches that count)
     for (const breakdown of breakdowns) {
@@ -259,8 +269,8 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
         is_clean_sweep: breakdown.is_clean_sweep,
         is_tournament_win: breakdown.is_tournament_win,
         tournament_name: breakdown.tournament_name,
-        is_star_team: isStarTeam,
-        star_multiplier_applied: isStarTeam,
+        is_star_team: isCurrentStarTeam || isPreviousStarTeam,
+        star_multiplier_applied: breakdown.star_multiplier_applied ?? false,
         amateur_bonus_applied: teamType === 'amateur',
       });
     }
@@ -322,12 +332,32 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
   }
 }
 
-function calculateTeamScore(teamId, teamName, teamType, round, proMatches, amateurMatches, isStarTeam, wasSwappedOut, wasSwappedIn, swapTime) {
+function calculateTeamScore(teamId, teamName, teamType, round, proMatches, amateurMatches, isCurrentStarTeam, isPreviousStarTeam, starChangedAt, wasSwappedOut, wasSwappedIn, swapTime) {
   const breakdowns = [];
   let totalScore = 0;
 
-  const starMult = isStarTeam ? STAR_MULTIPLIER : 1;
   const amateurMult = teamType === 'amateur' ? AMATEUR_MULTIPLIER : 1;
+
+  // Determine if star multiplier applies for a match based on timing
+  // This matches the Edge Function logic exactly
+  const shouldApplyStarMultiplier = (matchDate) => {
+    // If this team is the current star team
+    if (isCurrentStarTeam) {
+      // If there was a change, only apply multiplier AFTER the change
+      if (starChangedAt) {
+        return matchDate >= starChangedAt;
+      }
+      // No change occurred, so this was always the star team - apply to all
+      return true;
+    }
+    
+    // If this team was the previous star team, apply multiplier only BEFORE the change
+    if (isPreviousStarTeam && starChangedAt) {
+      return matchDate < starChangedAt;
+    }
+    
+    return false;
+  };
 
   if (teamType === 'pro') {
     // Filter pro matches for this team
@@ -343,8 +373,13 @@ function calculateTeamScore(teamId, teamName, teamType, round, proMatches, amate
       if (wasSwappedOut && swapTime && matchDate >= swapTime) continue;
       if (wasSwappedIn && swapTime && matchDate < swapTime) continue;
 
+      // Determine star multiplier based on match timing
+      const applyStarMult = shouldApplyStarMultiplier(matchDate);
+      const starMult = applyStarMult ? STAR_MULTIPLIER : 1;
+
       const breakdown = processProMatch(match, teamId, starMult);
       if (breakdown) {
+        breakdown.star_multiplier_applied = applyStarMult;
         breakdowns.push(breakdown);
         totalScore += breakdown.points_earned;
       }
@@ -365,8 +400,13 @@ function calculateTeamScore(teamId, teamName, teamType, round, proMatches, amate
       if (wasSwappedOut && swapTime && matchDate >= swapTime) continue;
       if (wasSwappedIn && swapTime && matchDate < swapTime) continue;
 
+      // Determine star multiplier based on match timing
+      const applyStarMult = shouldApplyStarMultiplier(matchDate);
+      const starMult = applyStarMult ? STAR_MULTIPLIER : 1;
+
       const breakdown = processAmateurMatch(match, teamId, starMult, amateurMult);
       if (breakdown) {
+        breakdown.star_multiplier_applied = applyStarMult;
         breakdowns.push(breakdown);
         totalScore += breakdown.points_earned;
       }
