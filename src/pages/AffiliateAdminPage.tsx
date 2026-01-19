@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Check, X, Users, DollarSign, TrendingUp, Clock, Shield } from 'lucide-react';
+import { Check, X, Users, DollarSign, TrendingUp, Clock, Shield, Eye } from 'lucide-react';
+import AffiliateBreakdownModal from '@/components/affiliate/AffiliateBreakdownModal';
 
 interface CreatorApplication {
   id: string;
@@ -49,6 +50,8 @@ const AffiliateAdminPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [selectedAffiliate, setSelectedAffiliate] = useState<CreatorAffiliate | null>(null);
+  const [breakdownModalOpen, setBreakdownModalOpen] = useState(false);
   const [stats, setStats] = useState({
     totalAffiliates: 0,
     pendingApplications: 0,
@@ -526,16 +529,26 @@ const AffiliateAdminPage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {affiliates.map((affiliate) => (
-                      <div key={affiliate.id} className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-blue-500/40 transition-all">
+                      <div 
+                        key={affiliate.id} 
+                        className="border border-border/50 rounded-lg p-4 bg-background/30 hover:border-blue-500/40 transition-all cursor-pointer"
+                        onClick={() => {
+                          setSelectedAffiliate(affiliate);
+                          setBreakdownModalOpen(true);
+                        }}
+                      >
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div>
-                            <h3 className="font-semibold text-white">{affiliate.name}</h3>
+                            <h3 className="font-semibold text-white flex items-center gap-2">
+                              {affiliate.name}
+                              <Eye className="h-4 w-4 text-blue-400 opacity-60" />
+                            </h3>
                             <p className="text-sm text-white/70">{affiliate.email}</p>
                             <p className="text-sm font-mono bg-purple-500/20 text-purple-300 px-2 py-1 rounded mt-2 inline-block">
                               Code: {affiliate.referral_code}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             <Select
                               defaultValue={affiliate.tier}
                               onValueChange={(value) => {
@@ -623,6 +636,16 @@ const AffiliateAdminPage: React.FC = () => {
       </main>
 
       <Footer />
+
+      {/* Affiliate Breakdown Modal */}
+      <AffiliateBreakdownModal
+        affiliate={selectedAffiliate ? {
+          ...selectedAffiliate,
+          compensation_type: (selectedAffiliate as any).compensation_type
+        } : null}
+        open={breakdownModalOpen}
+        onOpenChange={setBreakdownModalOpen}
+      />
     </div>
   );
 };
