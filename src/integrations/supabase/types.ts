@@ -3825,9 +3825,9 @@ export type Database = {
         Args: { p_round_id: string }
         Returns: {
           credits_awarded: number
+          email: string
           finish_position: number
           total_score: number
-          user_email: string
           user_id: string
           username: string
         }[]
