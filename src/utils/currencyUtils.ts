@@ -131,3 +131,61 @@ export const formatDollarAmount = (amount: number): string => {
     return `$${amount.toFixed(2)}`;
   }
 };
+
+/**
+ * Format GBP pence as GBP currency string
+ * Used for entry fees to show the actual charge amount
+ */
+export const formatGBP = (pence: number): string => {
+  const amount = pence / 100;
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
+/**
+ * Round prize amount to nearest 5 in local currency
+ * Makes prize displays cleaner (e.g., $12.60 → $15)
+ */
+export const roundPrizeAmount = (amount: number): number => {
+  return Math.round(amount / 5) * 5;
+};
+
+/**
+ * Format prize with local currency, optionally rounded to nearest 5
+ * @param pence - Amount in GBP pence
+ * @param exchangeRate - Rate from GBP to local currency
+ * @param round - Whether to round to nearest 5 (default: true)
+ */
+export const formatPrizeWithRate = (
+  pence: number, 
+  exchangeRate: number = 1,
+  round: boolean = true
+): string => {
+  try {
+    const locale = getUserLocale();
+    const currency = getCurrencyCode(locale);
+    let localAmount = (pence / 100) * exchangeRate;
+    
+    if (round) {
+      localAmount = roundPrizeAmount(localAmount);
+    }
+
+    const formatter = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: localAmount % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: localAmount % 1 === 0 ? 0 : 2,
+    });
+
+    return formatter.format(localAmount);
+  } catch {
+    const localAmount = round 
+      ? roundPrizeAmount((pence / 100) * exchangeRate)
+      : (pence / 100) * exchangeRate;
+    return `$${localAmount.toFixed(0)}`;
+  }
+};

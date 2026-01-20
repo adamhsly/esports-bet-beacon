@@ -3070,6 +3070,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_fx_rates: {
+        Row: {
+          currency_code: string
+          fetched_at: string | null
+          rate_from_gbp: number
+        }
+        Insert: {
+          currency_code: string
+          fetched_at?: string | null
+          rate_from_gbp: number
+        }
+        Update: {
+          currency_code?: string
+          fetched_at?: string | null
+          rate_from_gbp?: number
+        }
+        Relationships: []
+      }
       sync_checkpoints: {
         Row: {
           id: string

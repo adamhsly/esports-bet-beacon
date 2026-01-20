@@ -17,6 +17,7 @@ import { RoundDetailsModal } from "./RoundDetailsModal";
 import { ReservationConfirmModal } from "./ReservationConfirmModal";
 import { formatCurrency, formatDollarAmount } from "@/utils/currencyUtils";
 import { trackAddToCart, trackLead } from "@/utils/metaPixel";
+import { useStripeFxRate } from "@/hooks/useStripeFxRate";
 
 interface Round {
   id: string;
