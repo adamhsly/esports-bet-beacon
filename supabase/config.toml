@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.track-affiliate-activation]
 verify_jwt = true
+
+[functions.get-stripe-fx-rate]
+verify_jwt = false

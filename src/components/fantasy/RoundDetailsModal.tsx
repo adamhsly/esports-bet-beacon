@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { formatCurrency, getCurrencySymbol } from "@/utils/currencyUtils";
+import { useStripeFxRate } from "@/hooks/useStripeFxRate";
 
 interface Round {
   id: string;
@@ -37,12 +38,23 @@ interface RoundDetailsModalProps {
 
 export const RoundDetailsModal: React.FC<RoundDetailsModalProps> = ({ round, open, onOpenChange }) => {
   const prizeType = round.prize_type || "credits";
+  const { convertEntryFee, isGBP, isLoading: fxLoading } = useStripeFxRate();
   
   const formatPrizeDisplay = (amount: number) => {
     if (prizeType === "vouchers") {
       return formatCurrency(amount);
     }
     return `${amount} Credits`;
+  };
+
+  // Format entry fee with Stripe FX rate
+  const formatEntryFeeDisplay = (fee: number) => {
+    if (fxLoading) {
+      return "Loading...";
+    }
+    const converted = convertEntryFee(fee);
+    // Add ~ prefix for non-GBP users to indicate approximate
+    return isGBP ? converted : `~${converted}`;
   };
 
   return (
@@ -104,7 +116,7 @@ export const RoundDetailsModal: React.FC<RoundDetailsModalProps> = ({ round, ope
                 <span className="text-xs text-gray-400">Entry</span>
               </div>
               <div className="text-sm font-medium text-white">
-                {round.is_paid && round.entry_fee ? formatCurrency(round.entry_fee) : "Free"}
+                {round.is_paid && round.entry_fee ? formatEntryFeeDisplay(round.entry_fee) : "Free"}
               </div>
             </div>
 
