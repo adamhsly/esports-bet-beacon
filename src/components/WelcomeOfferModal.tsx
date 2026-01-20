@@ -228,7 +228,7 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
       }
       onOpenChange(open);
     }}>
-      <DialogContent className="bg-theme-gray-dark border-green-500/30 max-w-md">
+      <DialogContent className="bg-theme-gray-dark border-green-500/30 max-w-md z-[200]">
         {showReservationConfirm ? (
           // Reservation confirmation view
           <>
