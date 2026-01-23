@@ -290,6 +290,45 @@ serve(async (req) => {
           });
         }
 
+        // Clean up stale breakdown entries for cancelled/rescheduled matches
+        // For each team processed, delete breakdown entries with match IDs not in our valid set
+        const teamIdsProcessed = [...new Set(allBreakdowns.map(b => b.team_id))];
+        
+        for (const teamId of teamIdsProcessed) {
+          const validMatchIdsForTeam = allBreakdowns
+            .filter(b => b.team_id === teamId)
+            .map(b => String(b.match_id));
+          
+          if (validMatchIdsForTeam.length > 0) {
+            // Get existing breakdown entries for this user/round/team
+            const { data: existingBreakdowns } = await supabase
+              .from('fantasy_team_match_breakdown')
+              .select('match_id')
+              .eq('round_id', round.id)
+              .eq('user_id', pick.user_id)
+              .eq('team_id', teamId);
+            
+            const staleMatchIds = (existingBreakdowns || [])
+              .map(b => String(b.match_id))
+              .filter(matchId => !validMatchIdsForTeam.includes(matchId));
+            
+            if (staleMatchIds.length > 0) {
+              console.log(`🗑️ Removing ${staleMatchIds.length} stale breakdown entries for team ${teamId}`);
+              const { error: deleteError } = await supabase
+                .from('fantasy_team_match_breakdown')
+                .delete()
+                .eq('round_id', round.id)
+                .eq('user_id', pick.user_id)
+                .eq('team_id', teamId)
+                .in('match_id', staleMatchIds);
+              
+              if (deleteError) {
+                console.error(`⚠️ Failed to delete stale breakdowns:`, deleteError.message);
+              }
+            }
+          }
+        }
+
         // Batch upsert breakdowns
         if (allBreakdowns.length > 0) {
           const { error: breakdownError } = await supabase
