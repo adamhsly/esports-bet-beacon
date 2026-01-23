@@ -132,7 +132,7 @@ async function fetchProMatches(startDate, endDate) {
     .select('*')
     .gte('start_time', startDate)
     .lte('start_time', endDate)
-    .eq('status', 'finished');
+    .not('winner_id', 'is', null);
 
   if (error) {
     console.error('   ❌ Failed to fetch pro matches:', error.message);
