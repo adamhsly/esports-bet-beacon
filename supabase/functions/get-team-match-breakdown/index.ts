@@ -168,12 +168,13 @@ serve(async (req) => {
     // Fetch matches based on team type
     if (team_type === "pro") {
       // Query PandaScore matches using start_time for proper timestamp comparison
+      // Only include matches with a winner_id (reliable indicator of completion)
       const { data: proMatches, error: proError } = await supabase
         .from("pandascore_matches")
         .select("*")
         .gte("start_time", round.start_date)
         .lte("start_time", round.end_date)
-        .eq("status", "finished")
+        .not("winner_id", "is", null)
         .order("start_time", { ascending: false });
 
       if (proError) {

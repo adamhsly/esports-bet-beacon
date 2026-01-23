@@ -93,14 +93,14 @@ serve(async (req) => {
       console.log(`   Period: ${round.start_date} to ${round.end_date}`);
 
       // Pre-fetch all matches for this round period
-      // Include 'finished' OR 'cancelled' matches that have a winner_id (completed but mis-labeled)
+      // Only include matches with a winner_id (reliable indicator of completion)
       const [proMatchesResult, amateurMatchesResult] = await Promise.all([
         supabase
           .from('pandascore_matches')
           .select('*')
           .gte('start_time', round.start_date)
           .lte('start_time', round.end_date)
-          .or('status.eq.finished,and(status.eq.cancelled,winner_id.not.is.null)'),
+          .not('winner_id', 'is', null),
         supabase
           .from('faceit_matches')
           .select('*')
