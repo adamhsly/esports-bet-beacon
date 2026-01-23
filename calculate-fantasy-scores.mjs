@@ -293,6 +293,47 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
     });
   }
 
+  // Get the set of valid match IDs we just calculated
+  const validMatchIds = new Set(allBreakdowns.map(b => String(b.match_id)));
+  const teamIdsProcessed = [...new Set(allBreakdowns.map(b => b.team_id))];
+
+  // Clean up stale breakdown entries for cancelled/rescheduled matches
+  // For each team processed, delete breakdown entries with match IDs not in our valid set
+  for (const teamId of teamIdsProcessed) {
+    const validMatchIdsForTeam = allBreakdowns
+      .filter(b => b.team_id === teamId)
+      .map(b => String(b.match_id));
+    
+    if (validMatchIdsForTeam.length > 0) {
+      // Get existing breakdown entries for this user/round/team
+      const { data: existingBreakdowns } = await supabase
+        .from('fantasy_team_match_breakdown')
+        .select('match_id')
+        .eq('round_id', round.id)
+        .eq('user_id', userId)
+        .eq('team_id', teamId);
+      
+      const staleMatchIds = (existingBreakdowns || [])
+        .map(b => String(b.match_id))
+        .filter(matchId => !validMatchIdsForTeam.includes(matchId));
+      
+      if (staleMatchIds.length > 0) {
+        console.log(`   🗑️ Removing ${staleMatchIds.length} stale breakdown entries for team ${teamId}`);
+        const { error: deleteError } = await supabase
+          .from('fantasy_team_match_breakdown')
+          .delete()
+          .eq('round_id', round.id)
+          .eq('user_id', userId)
+          .eq('team_id', teamId)
+          .in('match_id', staleMatchIds);
+        
+        if (deleteError) {
+          console.error(`   ⚠️ Failed to delete stale breakdowns:`, deleteError.message);
+        }
+      }
+    }
+  }
+
   // Batch upsert breakdowns
   if (allBreakdowns.length > 0) {
     const { error: breakdownError } = await supabase
@@ -304,6 +345,19 @@ async function processUserPick(round, pick, starTeamMap, swapMap, proMatches, am
 
     if (breakdownError) {
       console.error(`   ❌ Failed to upsert breakdowns for user ${userId}:`, breakdownError.message);
+    }
+  }
+
+  // Recalculate current_score from the breakdown sum to ensure consistency
+  // This ensures current_score always matches SUM(points_earned) from breakdowns
+  for (const scoreUpdate of scoreUpdates) {
+    const breakdownSum = allBreakdowns
+      .filter(b => b.team_id === scoreUpdate.team_id)
+      .reduce((sum, b) => sum + (b.points_earned || 0), 0);
+    
+    // Use breakdown sum for regular teams, or preserved points for swapped-out teams
+    if (!scoreUpdate._preservedPoints) {
+      scoreUpdate.current_score = breakdownSum;
     }
   }
 
