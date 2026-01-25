@@ -1479,6 +1479,7 @@ export type Database = {
           start_date: string
           status: string
           stripe_price_id: string | null
+          team_summary_sent: boolean | null
           team_type: string | null
           type: string
           updated_at: string
@@ -1506,6 +1507,7 @@ export type Database = {
           start_date: string
           status?: string
           stripe_price_id?: string | null
+          team_summary_sent?: boolean | null
           team_type?: string | null
           type: string
           updated_at?: string
@@ -1533,6 +1535,7 @@ export type Database = {
           start_date?: string
           status?: string
           stripe_price_id?: string | null
+          team_summary_sent?: boolean | null
           team_type?: string | null
           type?: string
           updated_at?: string

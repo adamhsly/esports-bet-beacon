@@ -28,7 +28,7 @@ serve(async (req) => {
     
     const { data: recentlyFinishedRounds, error: roundsError } = await supabase
       .from('fantasy_rounds')
-      .select('id, type, end_date, round_name, prize_type, prize_1st, prize_2nd, prize_3rd, is_paid')
+      .select('id, type, end_date, round_name, prize_type, prize_1st, prize_2nd, prize_3rd, is_paid, team_summary_sent')
       .eq('status', 'closed')
       .gte('end_date', today.toISOString());
 
@@ -163,10 +163,53 @@ serve(async (req) => {
           }
         }
 
-        // Send team summary email
-        if (winnersForSummary.length > 0) {
+        console.log(`Winners processed for round ${round.id}: ${unsentWinners.length} winners`);
+      } else {
+        console.log(`No unsent notifications for round ${round.id}`);
+      }
+
+      // ========== TEAM SUMMARY EMAIL (INDEPENDENT OF WINNER NOTIFICATIONS) ==========
+      // Send team summary email if not already sent for this round
+      if (round.team_summary_sent !== true) {
+        console.log(`📧 Preparing team summary email for round ${round.id}`);
+        
+        // Fetch ALL winners for this round (regardless of notification status)
+        const { data: allWinnersRaw } = await supabase
+          .from('fantasy_round_winners')
+          .select('id, user_id, finish_position, total_score, credits_awarded')
+          .eq('round_id', round.id)
+          .order('finish_position', { ascending: true });
+        
+        if (allWinnersRaw && allWinnersRaw.length > 0) {
+          const allWinnersForSummary: any[] = [];
+          
+          for (const winner of allWinnersRaw) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('username, full_name, test')
+              .eq('id', winner.user_id)
+              .single();
+            
+            const { data: authUser } = await supabase.auth.admin.getUserById(winner.user_id);
+            const userEmail = authUser?.user?.email || 'unknown';
+            
+            const prizeAmount = getPrizeAmount(winner.finish_position, round);
+            const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+            
+            allWinnersForSummary.push({
+              finish_position: winner.finish_position,
+              total_score: winner.total_score,
+              credits_awarded: winner.credits_awarded,
+              username: profile?.username || profile?.full_name || 'Player',
+              user_email: userEmail,
+              is_test_user: profile?.test === true,
+              prize_amount: prizeAmount,
+              prize_type: prizeType,
+            });
+          }
+          
           try {
-            const summaryEmailHtml = generateTeamSummaryEmail(round, winnersForSummary);
+            const summaryEmailHtml = generateTeamSummaryEmail(round, allWinnersForSummary);
             const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
             
             const { error: summaryEmailError } = await resend.emails.send({
@@ -180,16 +223,23 @@ serve(async (req) => {
               console.error(`Failed to send team summary email:`, summaryEmailError);
             } else {
               console.log(`✅ Team summary email sent for round ${round.id}`);
+              
+              // Mark as sent so we don't resend
+              await supabase
+                .from('fantasy_rounds')
+                .update({ team_summary_sent: true })
+                .eq('id', round.id);
+              
               await new Promise(resolve => setTimeout(resolve, 600));
             }
           } catch (summaryError) {
             console.error(`Error sending team summary email:`, summaryError);
           }
+        } else {
+          console.log(`No winners found for team summary email for round ${round.id}`);
         }
-
-        console.log(`Winners processed for round ${round.id}: ${unsentWinners.length} winners`);
       } else {
-        console.log(`No unsent notifications for round ${round.id}`);
+        console.log(`Team summary already sent for round ${round.id}`);
       }
 
       // ========== CONSOLATION PRIZES FOR PAID ROUNDS ==========
@@ -340,12 +390,97 @@ serve(async (req) => {
       }
     }
 
-    // ========== BACKFILL: Process finished paid rounds that need consolation ==========
-    console.log('🔄 Checking for finished paid rounds needing consolation backfill (past week only)...');
+    // ========== BACKFILL: Send team summary emails for finished rounds ==========
+    console.log('🔄 Checking for finished rounds needing team summary email...');
     
-    // Calculate date 7 days ago
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const { data: roundsNeedingSummary, error: summaryError } = await supabase
+      .from('fantasy_rounds')
+      .select('id, type, round_name, prize_type, prize_1st, prize_2nd, prize_3rd, is_paid, end_date')
+      .eq('status', 'finished')
+      .eq('team_summary_sent', false)
+      .gte('end_date', oneWeekAgo.toISOString())
+      .order('end_date', { ascending: false })
+      .limit(5);
+    
+    if (summaryError) {
+      console.error('Error fetching rounds needing summary:', summaryError);
+    } else if (roundsNeedingSummary && roundsNeedingSummary.length > 0) {
+      console.log(`Found ${roundsNeedingSummary.length} finished rounds needing team summary email`);
+      
+      for (const round of roundsNeedingSummary) {
+        console.log(`📧 Sending team summary for finished round ${round.id} (${round.round_name || round.type})`);
+        
+        const { data: allWinnersRaw } = await supabase
+          .from('fantasy_round_winners')
+          .select('id, user_id, finish_position, total_score, credits_awarded')
+          .eq('round_id', round.id)
+          .order('finish_position', { ascending: true });
+        
+        if (allWinnersRaw && allWinnersRaw.length > 0) {
+          const allWinnersForSummary: any[] = [];
+          
+          for (const winner of allWinnersRaw) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('username, full_name, test')
+              .eq('id', winner.user_id)
+              .single();
+            
+            const { data: authUser } = await supabase.auth.admin.getUserById(winner.user_id);
+            const userEmail = authUser?.user?.email || 'unknown';
+            
+            const prizeAmount = getPrizeAmount(winner.finish_position, round);
+            const prizeType = round.prize_type || (round.type === 'monthly' ? 'vouchers' : 'credits');
+            
+            allWinnersForSummary.push({
+              finish_position: winner.finish_position,
+              total_score: winner.total_score,
+              credits_awarded: winner.credits_awarded,
+              username: profile?.username || profile?.full_name || 'Player',
+              user_email: userEmail,
+              is_test_user: profile?.test === true,
+              prize_amount: prizeAmount,
+              prize_type: prizeType,
+            });
+          }
+          
+          try {
+            const summaryEmailHtml = generateTeamSummaryEmail(round, allWinnersForSummary);
+            const roundName = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+            
+            const { error: summaryEmailError } = await resend.emails.send({
+              from: "Frags & Fortunes <theteam@fragsandfortunes.com>",
+              to: ["theteam@fragsandfortunes.com"],
+              subject: `🏆 Round Finished: ${roundName} - Winners Summary`,
+              html: summaryEmailHtml,
+            });
+
+            if (summaryEmailError) {
+              console.error(`Failed to send team summary email for ${round.id}:`, summaryEmailError);
+            } else {
+              console.log(`✅ Team summary email sent for finished round ${round.id}`);
+              
+              await supabase
+                .from('fantasy_rounds')
+                .update({ team_summary_sent: true })
+                .eq('id', round.id);
+              
+              await new Promise(resolve => setTimeout(resolve, 600));
+            }
+          } catch (summaryError) {
+            console.error(`Error sending team summary email for ${round.id}:`, summaryError);
+          }
+        }
+      }
+    } else {
+      console.log('No finished rounds need team summary email');
+    }
+
+    // ========== BACKFILL: Process finished paid rounds that need consolation ==========
+    console.log('🔄 Checking for finished paid rounds needing consolation backfill (past week only)...');
     
     // Find paid rounds that are finished from the past week
     const { data: finishedPaidRounds, error: finishedError } = await supabase
