@@ -15,6 +15,7 @@ interface RoundParticipant {
   email: string | null;
   type: 'reservation' | 'pick';
   created_at: string;
+  is_free_ticket: boolean;
 }
 
 interface PaidRound {
@@ -156,6 +157,8 @@ export function PaidRoundsParticipants() {
         {rounds.map((round) => {
           const reservedCount = round.participants.filter(p => p.type === 'reservation').length;
           const submittedCount = round.participants.filter(p => p.type === 'pick').length;
+          const freeCount = round.participants.filter(p => p.is_free_ticket).length;
+          const paidCount = round.participants.filter(p => !p.is_free_ticket).length;
           const totalCount = round.participants.length;
 
           return (
@@ -217,7 +220,7 @@ export function PaidRoundsParticipants() {
                 </div>
 
                 {/* Stats Summary */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-5 gap-3 mb-4">
                   <div className="bg-white/5 rounded-lg p-3 text-center">
                     <p className="text-xl font-bold text-white">{totalCount}</p>
                     <p className="text-xs text-white/60">Total</p>
@@ -229,6 +232,14 @@ export function PaidRoundsParticipants() {
                   <div className="bg-yellow-500/10 rounded-lg p-3 text-center">
                     <p className="text-xl font-bold text-yellow-400">{reservedCount}</p>
                     <p className="text-xs text-yellow-400/70">Reserved</p>
+                  </div>
+                  <div className="bg-cyan-500/10 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-cyan-400">{paidCount}</p>
+                    <p className="text-xs text-cyan-400/70">Paid</p>
+                  </div>
+                  <div className="bg-purple-500/10 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-purple-400">{freeCount}</p>
+                    <p className="text-xs text-purple-400/70">Free</p>
                   </div>
                 </div>
 
@@ -254,6 +265,16 @@ export function PaidRoundsParticipants() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Badge 
+                            className={cn(
+                              "text-xs",
+                              participant.is_free_ticket
+                                ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+                            )}
+                          >
+                            {participant.is_free_ticket ? 'Free' : 'Paid'}
+                          </Badge>
                           <Badge 
                             className={cn(
                               "text-xs",
