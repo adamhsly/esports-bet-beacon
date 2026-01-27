@@ -15,7 +15,7 @@ interface RoundParticipant {
   email: string | null;
   type: 'reservation' | 'pick';
   created_at: string;
-  is_free_ticket: boolean;
+  is_free_ticket: boolean | null; // null for reservations (not yet paid)
 }
 
 interface PaidRound {
@@ -157,8 +157,9 @@ export function PaidRoundsParticipants() {
         {rounds.map((round) => {
           const reservedCount = round.participants.filter(p => p.type === 'reservation').length;
           const submittedCount = round.participants.filter(p => p.type === 'pick').length;
-          const freeCount = round.participants.filter(p => p.is_free_ticket).length;
-          const paidCount = round.participants.filter(p => !p.is_free_ticket).length;
+          // Only count free/paid for submitted entries (where is_free_ticket is not null)
+          const freeCount = round.participants.filter(p => p.is_free_ticket === true).length;
+          const paidCount = round.participants.filter(p => p.is_free_ticket === false).length;
           const totalCount = round.participants.length;
 
           return (
@@ -265,16 +266,19 @@ export function PaidRoundsParticipants() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            className={cn(
-                              "text-xs",
-                              participant.is_free_ticket
-                                ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                                : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
-                            )}
-                          >
-                            {participant.is_free_ticket ? 'Free' : 'Paid'}
-                          </Badge>
+                          {/* Only show Free/Paid badge for submitted entries */}
+                          {participant.is_free_ticket !== null && (
+                            <Badge 
+                              className={cn(
+                                "text-xs",
+                                participant.is_free_ticket
+                                  ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                  : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+                              )}
+                            >
+                              {participant.is_free_ticket ? 'Free' : 'Paid'}
+                            </Badge>
+                          )}
                           <Badge 
                             className={cn(
                               "text-xs",
