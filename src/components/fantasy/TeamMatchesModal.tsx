@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Trophy, Users, Clock, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, parseISO, addDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { getPandaScoreLiveScore } from '@/utils/pandascoreScoreUtils';
 import { getFaceitScore } from '@/utils/faceitScoreUtils';
 
@@ -53,47 +53,35 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
     const fetchMatches = async () => {
       setLoading(true);
       try {
-        // Use full timestamps for filtering to match edge function logic
-        // This ensures consistent results with get-team-match-breakdown
+        // Use full timestamps for filtering - all matches within round window
         const startDateTime = roundStartDate;
         const endDateTime = roundEndDate;
-        
-        // For upcoming matches, look 14 days ahead from round end
-        const upcomingEndDate = addDays(new Date(roundEndDate), 14).toISOString();
 
         if (team.type === 'pro') {
-          // Fetch round matches and upcoming matches in parallel
-          const [roundResult, upcomingResult] = await Promise.all([
-            // Round matches
-            supabase
-              .from('pandascore_matches')
-              .select('id, teams, start_time, tournament_name, status, match_date, winner_id, raw_data')
-              .gte('start_time', startDateTime)
-              .lte('start_time', endDateTime)
-              .not('teams', 'is', null)
-              .not('status', 'eq', 'canceled'),
-            // Upcoming matches (after round ends)
-            supabase
-              .from('pandascore_matches')
-              .select('id, teams, start_time, tournament_name, status, match_date')
-              .gt('start_time', endDateTime)
-              .lte('start_time', upcomingEndDate)
-              .not('teams', 'is', null)
-              .not('status', 'eq', 'canceled')
-              .in('status', ['not_started', 'running'])
-          ]);
+          // Fetch all matches within round window (past and upcoming)
+          const { data, error } = await supabase
+            .from('pandascore_matches')
+            .select('id, teams, start_time, tournament_name, status, match_date, winner_id, raw_data')
+            .gte('start_time', startDateTime)
+            .lte('start_time', endDateTime)
+            .not('teams', 'is', null)
+            .not('status', 'eq', 'canceled');
 
-          if (roundResult.error) throw roundResult.error;
+          if (error) throw error;
 
-          // Process round matches
-          const teamMatches = processProMatches(roundResult.data || [], team, false);
-          setMatches(teamMatches);
+          // Split into past (finished) and upcoming (not_started/running) matches
+          const now = new Date();
+          const allTeamMatches = processProMatches(data || [], team, false);
           
-          // Process upcoming matches
-          if (!upcomingResult.error) {
-            const upcoming = processProMatches(upcomingResult.data || [], team, true);
-            setUpcomingMatches(upcoming.slice(0, 5)); // Limit to 5 upcoming matches
-          }
+          const pastMatches = allTeamMatches.filter(m => 
+            m.status.toLowerCase() === 'finished'
+          );
+          const upcoming = allTeamMatches.filter(m => 
+            m.status.toLowerCase() !== 'finished'
+          ).map(m => ({ ...m, isUpcoming: true }));
+          
+          setMatches(pastMatches);
+          setUpcomingMatches(upcoming);
 
         } else {
           // Fetch from faceit_matches for amateur teams
