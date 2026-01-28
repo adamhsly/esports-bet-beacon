@@ -454,30 +454,48 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
   // Fetch upcoming match counts for all teams
   useEffect(() => {
     const fetchUpcomingMatchCounts = async () => {
-      const teamIds = round.team_picks.map((t: any) => t.id);
-      if (teamIds.length === 0) return;
+      const teamNames = round.team_picks.map((t: any) => t.name);
+      if (teamNames.length === 0) return;
       
       const now = new Date().toISOString();
       const roundEnd = round.end_date;
       
-      // Fetch upcoming matches for all teams in parallel
+      // Fetch all upcoming matches within the round window
+      const { data: upcomingMatches, error } = await supabase
+        .from('pandascore_matches')
+        .select('teams')
+        .gte('start_time', now)
+        .lte('start_time', roundEnd)
+        .in('status', ['not_started', 'running']);
+      
+      if (error) {
+        console.error('Error fetching upcoming matches:', error);
+        return;
+      }
+      
+      // Count matches per team by checking team names in the matches data
       const counts: Record<string, number> = {};
       
-      await Promise.all(teamIds.map(async (teamId: string) => {
-        const teamPick = round.team_picks.find((t: any) => t.id === teamId);
-        const teamName = teamPick?.name || '';
+      for (const teamPick of round.team_picks) {
+        const teamName = teamPick.name?.toLowerCase() || '';
+        let matchCount = 0;
         
-        const { count } = await supabase
-          .from('pandascore_matches')
-          .select('*', { count: 'exact', head: true })
-          .gte('start_time', now)
-          .lte('start_time', roundEnd)
-          .in('status', ['not_started', 'running'])
-          .or(`teams->0->>name.ilike.%${teamName}%,teams->1->>name.ilike.%${teamName}%`);
+        for (const match of (upcomingMatches || [])) {
+          const teams = match.teams as any;
+          if (Array.isArray(teams)) {
+            const team0Name = (teams[0]?.name || '').toLowerCase();
+            const team1Name = (teams[1]?.name || '').toLowerCase();
+            if (team0Name.includes(teamName) || teamName.includes(team0Name) ||
+                team1Name.includes(teamName) || teamName.includes(team1Name)) {
+              matchCount++;
+            }
+          }
+        }
         
-        counts[teamId] = count || 0;
-      }));
+        counts[teamPick.id] = matchCount;
+      }
       
+      console.log('Upcoming match counts:', counts);
       setUpcomingMatchCounts(counts);
     };
     
