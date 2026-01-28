@@ -17,6 +17,16 @@ serve(async (req) => {
     
     console.log("get-team-match-breakdown called with:", { team_id, team_type, round_id, user_id });
 
+    // Interface for upcoming matches
+    interface UpcomingMatch {
+      match_id: string;
+      match_date: string;
+      opponent_name: string;
+      opponent_logo?: string;
+      status: string;
+      tournament_name?: string;
+    }
+
     if (!team_id || !team_type || !round_id || !user_id) {
       console.error("Missing required parameters:", { team_id, team_type, round_id, user_id });
       return new Response(
@@ -163,30 +173,43 @@ serve(async (req) => {
     };
 
     let matches: any[] = [];
+    let upcomingMatches: UpcomingMatch[] = [];
     let team_name = "";
 
     // Fetch matches based on team type
     if (team_type === "pro") {
-      // Query PandaScore matches using start_time for proper timestamp comparison
-      // Only include matches with a winner_id (reliable indicator of completion)
-      const { data: proMatches, error: proError } = await supabase
-        .from("pandascore_matches")
-        .select("*")
-        .gte("start_time", round.start_date)
-        .lte("start_time", round.end_date)
-        .not("winner_id", "is", null)
-        .order("start_time", { ascending: false });
+      // Query BOTH finished and upcoming PandaScore matches in parallel
+      const [finishedResult, upcomingResult] = await Promise.all([
+        // Finished matches (with winner_id)
+        supabase
+          .from("pandascore_matches")
+          .select("*")
+          .gte("start_time", round.start_date)
+          .lte("start_time", round.end_date)
+          .not("winner_id", "is", null)
+          .order("start_time", { ascending: false }),
+        // Upcoming/running matches (no winner_id yet, not canceled)
+        supabase
+          .from("pandascore_matches")
+          .select("match_id, teams, start_time, tournament_name, status")
+          .gte("start_time", round.start_date)
+          .lte("start_time", round.end_date)
+          .is("winner_id", null)
+          .not("status", "eq", "canceled")
+          .in("status", ["not_started", "running"])
+          .order("start_time", { ascending: true })
+      ]);
 
-      if (proError) {
-        console.error("Pro matches error:", proError);
+      if (finishedResult.error) {
+        console.error("Pro matches error:", finishedResult.error);
         return new Response(
           JSON.stringify({ error: "Failed to fetch matches" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Filter matches where team participated and respect swap timing
-      const teamMatches = (proMatches || []).filter((match) => {
+      // Filter finished matches where team participated and respect swap timing
+      const teamMatches = (finishedResult.data || []).filter((match) => {
         const teams = match.teams as any[];
         const teamParticipated = teams?.some((t: any) => t?.opponent?.id?.toString() === team_id);
         if (!teamParticipated) return false;
@@ -205,7 +228,42 @@ serve(async (req) => {
 
       console.log(`Pro matches after swap filtering: ${teamMatches.length}`);
 
-      // Process matches
+      // Process upcoming matches
+      if (!upcomingResult.error && upcomingResult.data) {
+        const upcomingTeamMatches = upcomingResult.data.filter((match) => {
+          const teams = match.teams as any[];
+          const teamParticipated = teams?.some((t: any) => t?.opponent?.id?.toString() === team_id);
+          if (!teamParticipated) return false;
+          
+          // Apply swap timing filter for upcoming matches too
+          if (swapTime && wasSwappedOut) return false; // Swapped out teams don't get future matches
+          
+          return true;
+        });
+
+        console.log(`Pro upcoming matches: ${upcomingTeamMatches.length}`);
+
+        upcomingMatches = upcomingTeamMatches.map((match) => {
+          const teams = match.teams as any[];
+          const teamData = teams?.find((t: any) => t?.opponent?.id?.toString() === team_id);
+          const opponentData = teams?.find((t: any) => t?.opponent?.id?.toString() !== team_id);
+
+          if (!team_name && teamData?.opponent?.name) {
+            team_name = teamData.opponent.name;
+          }
+
+          return {
+            match_id: match.match_id,
+            match_date: match.start_time,
+            opponent_name: opponentData?.opponent?.name || "TBD",
+            opponent_logo: opponentData?.opponent?.image_url,
+            status: match.status || "not_started",
+            tournament_name: match.tournament_name || "",
+          };
+        });
+      }
+
+      // Process finished matches
       matches = teamMatches.map((match) => {
         const teams = match.teams as any[];
         const teamData = teams?.find((t: any) => t?.opponent?.id?.toString() === team_id);
@@ -434,6 +492,7 @@ serve(async (req) => {
       clean_sweeps: cleanSweeps,
       tournaments_won: tournamentsWon,
       matches,
+      upcoming_matches: upcomingMatches,
       source: "calculated",
     };
 

@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Users, Star, TrendingUp, Calendar, Target } from 'lucide-react';
+import { Trophy, Users, Star, TrendingUp, Calendar, Target, Clock, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -27,6 +27,15 @@ interface MatchBreakdown {
   is_tournament_win: boolean;
 }
 
+interface UpcomingMatch {
+  match_id: string;
+  match_date: string;
+  opponent_name: string;
+  opponent_logo?: string;
+  status: string;
+  tournament_name?: string;
+}
+
 interface TeamPerformanceData {
   team_name: string;
   team_type: 'pro' | 'amateur';
@@ -37,6 +46,7 @@ interface TeamPerformanceData {
   clean_sweeps: number;
   tournaments_won: number;
   matches: MatchBreakdown[];
+  upcoming_matches?: UpcomingMatch[];
 }
 
 interface TeamPerformanceModalProps {
@@ -175,67 +185,122 @@ export const TeamPerformanceModal: React.FC<TeamPerformanceModalProps> = ({
 
             {/* Match List */}
             <div>
-              <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
-                <Target className="h-4 w-4" />
-                Match History
-              </h4>
-
               <ScrollArea className="h-[300px] pr-4">
-                {data.matches.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No matches played in this round yet
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {data.matches.map((match) => (
-                      <div
-                        key={match.match_id}
-                        className="p-3 rounded-lg bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 hover:border-gray-600/50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge className={`text-xs ${getResultColor(match.result)}`}>
-                              {match.result.toUpperCase()}
+                {/* Upcoming Matches Section */}
+                {data.upcoming_matches && data.upcoming_matches.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2 text-blue-400">
+                      <CalendarClock className="h-4 w-4" />
+                      Upcoming Matches ({data.upcoming_matches.length})
+                    </h4>
+                    <div className="space-y-3">
+                      {data.upcoming_matches.map((match) => (
+                        <div
+                          key={match.match_id}
+                          className="p-3 rounded-lg bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700/40 hover:border-blue-600/50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-400/30">
+                              {match.status === 'running' ? 'LIVE' : 'SCHEDULED'}
                             </Badge>
-                            {match.is_clean_sweep && (
-                              <Badge className="text-xs bg-purple-500/20 text-purple-400 border-purple-400/30">
-                                Clean Sweep
-                              </Badge>
-                            )}
-                            {match.is_tournament_win && (
-                              <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-400/30">
-                                Tournament Win
-                              </Badge>
-                            )}
                           </div>
-                          <div className="text-sm font-bold text-blue-400">
-                            +{match.points_earned} pts
-                          </div>
-                        </div>
 
-                        <div className="flex items-center justify-between text-sm">
-                          <div>
-                            <div className="text-white font-medium">vs {match.opponent_name}</div>
-                            <div className="text-xs text-gray-400">
-                              <Calendar className="h-3 w-3 inline mr-1" />
-                              {new Date(match.match_date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              {match.opponent_logo && (
+                                <img src={match.opponent_logo} alt="" className="w-6 h-6 object-contain" />
+                              )}
+                              <div>
+                                <div className="text-white font-medium">vs {match.opponent_name}</div>
+                                <div className="text-xs text-gray-400">
+                                  <Clock className="h-3 w-3 inline mr-1" />
+                                  {new Date(match.match_date).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })} • {new Date(match.match_date).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-white font-medium">{match.score}</div>
                             {match.tournament_name && (
-                              <div className="text-xs text-gray-400 truncate max-w-[150px]">
+                              <div className="text-xs text-gray-400 truncate max-w-[120px] text-right">
                                 {match.tournament_name}
                               </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Match History Section */}
+                {data.matches.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                      <Target className="h-4 w-4" />
+                      Match History ({data.matches.length})
+                    </h4>
+                    <div className="space-y-3">
+                      {data.matches.map((match) => (
+                        <div
+                          key={match.match_id}
+                          className="p-3 rounded-lg bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 hover:border-gray-600/50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge className={`text-xs ${getResultColor(match.result)}`}>
+                                {match.result.toUpperCase()}
+                              </Badge>
+                              {match.is_clean_sweep && (
+                                <Badge className="text-xs bg-purple-500/20 text-purple-400 border-purple-400/30">
+                                  Clean Sweep
+                                </Badge>
+                              )}
+                              {match.is_tournament_win && (
+                                <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-400/30">
+                                  Tournament Win
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm font-bold text-blue-400">
+                              +{match.points_earned} pts
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-sm">
+                            <div>
+                              <div className="text-white font-medium">vs {match.opponent_name}</div>
+                              <div className="text-xs text-gray-400">
+                                <Calendar className="h-3 w-3 inline mr-1" />
+                                {new Date(match.match_date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-white font-medium">{match.score}</div>
+                              {match.tournament_name && (
+                                <div className="text-xs text-gray-400 truncate max-w-[150px]">
+                                  {match.tournament_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Empty state - no matches at all */}
+                {data.matches.length === 0 && (!data.upcoming_matches || data.upcoming_matches.length === 0) && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No scheduled matches found in this round
                   </div>
                 )}
               </ScrollArea>
