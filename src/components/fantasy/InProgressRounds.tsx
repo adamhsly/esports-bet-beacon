@@ -447,6 +447,42 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
   const [selectedNewTeam, setSelectedNewTeam] = useState<any>(null);
   const [proTeams, setProTeams] = useState<any[]>([]);
   const [amateurTeams, setAmateurTeams] = useState<any[]>([]);
+  
+  // Upcoming match counts state
+  const [upcomingMatchCounts, setUpcomingMatchCounts] = useState<Record<string, number>>({});
+
+  // Fetch upcoming match counts for all teams
+  useEffect(() => {
+    const fetchUpcomingMatchCounts = async () => {
+      const teamIds = round.team_picks.map((t: any) => t.id);
+      if (teamIds.length === 0) return;
+      
+      const now = new Date().toISOString();
+      const roundEnd = round.end_date;
+      
+      // Fetch upcoming matches for all teams in parallel
+      const counts: Record<string, number> = {};
+      
+      await Promise.all(teamIds.map(async (teamId: string) => {
+        const teamPick = round.team_picks.find((t: any) => t.id === teamId);
+        const teamName = teamPick?.name || '';
+        
+        const { count } = await supabase
+          .from('pandascore_matches')
+          .select('*', { count: 'exact', head: true })
+          .gte('start_time', now)
+          .lte('start_time', roundEnd)
+          .in('status', ['not_started', 'running'])
+          .or(`teams->0->>name.ilike.%${teamName}%,teams->1->>name.ilike.%${teamName}%`);
+        
+        counts[teamId] = count || 0;
+      }));
+      
+      setUpcomingMatchCounts(counts);
+    };
+    
+    fetchUpcomingMatchCounts();
+  }, [round.id, round.team_picks, round.end_date]);
 
   const handleStarToggle = (teamId: string) => {
     if (!canChange) return;
@@ -636,6 +672,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
             isSwappedOut: boolean;
             isSwappedIn: boolean;
             hasScore: boolean;
+            upcoming_match_count: number;
           }> = [];
           
           const processedTeamIds = new Set<string>();
@@ -655,6 +692,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
               isSwappedOut,
               isSwappedIn,
               hasScore: true,
+              upcoming_match_count: upcomingMatchCounts[score.team_id] || 0,
             });
             processedTeamIds.add(score.team_id);
           }
@@ -672,6 +710,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
                 isSwappedOut: false,
                 isSwappedIn,
                 hasScore: false,
+                upcoming_match_count: upcomingMatchCounts[team.id] || 0,
               });
               processedTeamIds.add(team.id);
             }
@@ -688,6 +727,7 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
               isSwappedOut: true,
               isSwappedIn: false,
               hasScore: false,
+              upcoming_match_count: 0, // Swapped out teams don't need upcoming matches
             });
           }
           
@@ -698,7 +738,8 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
                 id: team.id,
                 name: team.name,
                 type: team.type,
-                logo_url: team.logo_url
+                logo_url: team.logo_url,
+                upcoming_match_count: team.upcoming_match_count
               }}
               isSelected={true}
               onClick={() => {}}
