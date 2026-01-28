@@ -460,14 +460,14 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
 
       if (pickTeamIds.length === 0) return;
 
-      const roundStart = round.start_date;
+      const now = new Date().toISOString();
       const roundEnd = round.end_date;
 
-      // Fetch all upcoming matches within the round window
+      // Fetch only UPCOMING matches (from now, not from round start) to limit data
       const { data: upcomingMatches, error } = await supabase
         .from('pandascore_matches')
         .select('teams')
-        .gte('start_time', roundStart)
+        .gte('start_time', now)
         .lte('start_time', roundEnd)
         .in('status', ['not_started', 'running']);
       
@@ -476,7 +476,8 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
         return;
       }
       
-      // Count matches per team by team ID (reliable; avoids name mismatches / empty names)
+      // Count matches per team by team ID
+      // Handle both formats: {id, name} and {opponent: {id, name}}
       const pickIdSet = new Set(pickTeamIds);
       const counts: Record<string, number> = Object.fromEntries(pickTeamIds.map((id) => [id, 0]));
 
@@ -485,20 +486,22 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
         if (!Array.isArray(teams)) continue;
 
         for (const t of teams) {
-          const id = t?.id;
-          if (id == null) continue;
-          const idStr = String(id);
+          // Handle both formats: direct {id} or nested {opponent: {id}}
+          const teamId = t?.opponent?.id ?? t?.id;
+          if (teamId == null) continue;
+          const idStr = String(teamId);
           if (pickIdSet.has(idStr)) {
             counts[idStr] = (counts[idStr] ?? 0) + 1;
           }
         }
       }
 
+      console.log('Upcoming match counts:', counts, 'from', upcomingMatches?.length, 'matches');
       setUpcomingMatchCounts(counts);
     };
     
     fetchUpcomingMatchCounts();
-  }, [round.id, round.team_picks, round.start_date, round.end_date]);
+  }, [round.id, round.team_picks, round.end_date]);
 
   const handleStarToggle = (teamId: string) => {
     if (!canChange) return;
