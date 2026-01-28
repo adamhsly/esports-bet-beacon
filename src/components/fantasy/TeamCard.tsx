@@ -19,6 +19,7 @@ interface Team {
   abandon_rate?: number;
   recent_win_rate?: number;
   match_volume?: number;
+  upcoming_match_count?: number;
 }
 interface TeamCardProps {
   team: Team;
@@ -211,10 +212,15 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           {/* Team Info */}
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-white truncate text-left">{team.name}</h4>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
                 {isAmateur ? 'Amateur' : 'Pro'}
               </Badge>
+              {(team.upcoming_match_count ?? 0) > 0 && !isSwappedOut && (
+                <Badge className="text-xs bg-blue-600/80 text-white border-blue-500/50">
+                  {team.upcoming_match_count} upcoming
+                </Badge>
+              )}
               {isAmateur && !isSwappedOut && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
                   +25% Bonus
                 </Badge>}
