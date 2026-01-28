@@ -217,11 +217,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                 {isAmateur ? 'Amateur' : 'Pro'}
               </Badge>
               {!isSwappedOut && (
-                <Badge className={`text-xs text-white ${
-                  (team.upcoming_match_count ?? 0) > 0 
-                    ? 'bg-blue-600/80 border-blue-500/50' 
-                    : 'bg-blue-900/70 border-blue-800/50'
-                }`}>
+                <Badge 
+                  className={`text-xs text-white ${
+                    (team.upcoming_match_count ?? 0) > 0 
+                      ? 'bg-blue-600/80 border-blue-500/50' 
+                      : 'bg-blue-900/70 border-blue-800/50'
+                  }`}
+                >
                   {team.upcoming_match_count ?? 0} upcoming matches
                 </Badge>
               )}
