@@ -454,17 +454,20 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
   // Fetch upcoming match counts for all teams
   useEffect(() => {
     const fetchUpcomingMatchCounts = async () => {
-      const teamNames = round.team_picks.map((t: any) => t.name);
-      if (teamNames.length === 0) return;
-      
-      const now = new Date().toISOString();
+      const pickTeamIds = (round.team_picks || [])
+        .map((t: any) => String(t?.id ?? t?.team_id ?? t?.teamId ?? ''))
+        .filter((id: string) => !!id);
+
+      if (pickTeamIds.length === 0) return;
+
+      const roundStart = round.start_date;
       const roundEnd = round.end_date;
-      
+
       // Fetch all upcoming matches within the round window
       const { data: upcomingMatches, error } = await supabase
         .from('pandascore_matches')
         .select('teams')
-        .gte('start_time', now)
+        .gte('start_time', roundStart)
         .lte('start_time', roundEnd)
         .in('status', ['not_started', 'running']);
       
@@ -473,34 +476,29 @@ const InProgressTeamsList: React.FC<{ round: InProgressRound; onRefresh: () => P
         return;
       }
       
-      // Count matches per team by checking team names in the matches data
-      const counts: Record<string, number> = {};
-      
-      for (const teamPick of round.team_picks) {
-        const teamName = teamPick.name?.toLowerCase() || '';
-        let matchCount = 0;
-        
-        for (const match of (upcomingMatches || [])) {
-          const teams = match.teams as any;
-          if (Array.isArray(teams)) {
-            const team0Name = (teams[0]?.name || '').toLowerCase();
-            const team1Name = (teams[1]?.name || '').toLowerCase();
-            if (team0Name.includes(teamName) || teamName.includes(team0Name) ||
-                team1Name.includes(teamName) || teamName.includes(team1Name)) {
-              matchCount++;
-            }
+      // Count matches per team by team ID (reliable; avoids name mismatches / empty names)
+      const pickIdSet = new Set(pickTeamIds);
+      const counts: Record<string, number> = Object.fromEntries(pickTeamIds.map((id) => [id, 0]));
+
+      for (const match of (upcomingMatches || [])) {
+        const teams = match.teams as any;
+        if (!Array.isArray(teams)) continue;
+
+        for (const t of teams) {
+          const id = t?.id;
+          if (id == null) continue;
+          const idStr = String(id);
+          if (pickIdSet.has(idStr)) {
+            counts[idStr] = (counts[idStr] ?? 0) + 1;
           }
         }
-        
-        counts[teamPick.id] = matchCount;
       }
-      
-      console.log('Upcoming match counts:', counts);
+
       setUpcomingMatchCounts(counts);
     };
     
     fetchUpcomingMatchCounts();
-  }, [round.id, round.team_picks, round.end_date]);
+  }, [round.id, round.team_picks, round.start_date, round.end_date]);
 
   const handleStarToggle = (teamId: string) => {
     if (!canChange) return;
