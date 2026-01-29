@@ -40,6 +40,67 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Get round dates first (needed for upcoming matches in both cached and fresh paths)
+    const { data: round, error: roundError } = await supabase
+      .from("fantasy_rounds")
+      .select("start_date, end_date")
+      .eq("id", round_id)
+      .single();
+
+    if (roundError || !round) {
+      console.error("Round fetch error:", roundError);
+      return new Response(
+        JSON.stringify({ error: "Round not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Helper function to fetch upcoming matches for a team
+    const fetchUpcomingMatchesForTeam = async (teamIdToSearch: string, teamTypeToSearch: string, roundEndDate: string): Promise<UpcomingMatch[]> => {
+      if (teamTypeToSearch === "amateur") {
+        // Amateur teams don't use pandascore_matches
+        return [];
+      }
+
+      // Fetch upcoming matches for pro teams
+      const now = new Date().toISOString();
+      const { data: upcomingMatchData, error: upcomingError } = await supabase
+        .from("pandascore_matches")
+        .select("match_id, teams, start_time, tournament_name, status")
+        .gte("start_time", now)
+        .lte("start_time", roundEndDate)
+        .is("winner_id", null)
+        .not("status", "eq", "canceled")
+        .in("status", ["not_started", "running"])
+        .order("start_time", { ascending: true });
+
+      if (upcomingError || !upcomingMatchData) {
+        console.error("Error fetching upcoming matches:", upcomingError);
+        return [];
+      }
+
+      // Filter to matches where this team participates
+      const teamMatches = upcomingMatchData.filter((match) => {
+        const teams = match.teams as any[];
+        return teams?.some((t: any) => t?.opponent?.id?.toString() === teamIdToSearch);
+      });
+
+      console.log(`Found ${teamMatches.length} upcoming matches for team ${teamIdToSearch}`);
+
+      return teamMatches.map((match) => {
+        const teams = match.teams as any[];
+        const opponentData = teams?.find((t: any) => t?.opponent?.id?.toString() !== teamIdToSearch);
+        return {
+          match_id: match.match_id,
+          match_date: match.start_time,
+          opponent_name: opponentData?.opponent?.name || "TBD",
+          opponent_logo: opponentData?.opponent?.image_url,
+          status: match.status || "not_started",
+          tournament_name: match.tournament_name || "",
+        };
+      });
+    };
+
     // First, try to get pre-calculated breakdown from the database
     const { data: storedBreakdowns, error: storedError } = await supabase
       .from("fantasy_team_match_breakdown")
@@ -50,11 +111,12 @@ serve(async (req) => {
       .order("match_date", { ascending: false });
 
     if (!storedError && storedBreakdowns && storedBreakdowns.length > 0) {
-      console.log(`Found ${storedBreakdowns.length} stored breakdowns, returning cached data`);
+      console.log(`Found ${storedBreakdowns.length} stored breakdowns, returning cached data with upcoming matches`);
       
       // Get team name from first breakdown
       const teamName = storedBreakdowns[0].team_name || "Unknown Team";
       const isStarTeam = storedBreakdowns[0].is_star_team || false;
+      const storedTeamType = storedBreakdowns[0].team_type || team_type;
 
       // Calculate summary stats from stored data
       const totalPoints = storedBreakdowns.reduce((sum, m) => sum + (m.points_earned || 0), 0);
@@ -78,9 +140,12 @@ serve(async (req) => {
         is_tournament_win: b.is_tournament_win,
       }));
 
+      // IMPORTANT: Fetch upcoming matches even for cached data
+      const upcomingMatches = await fetchUpcomingMatchesForTeam(team_id, storedTeamType, round.end_date);
+
       return new Response(JSON.stringify({
         team_name: teamName,
-        team_type,
+        team_type: storedTeamType,
         total_points: totalPoints,
         is_star_team: isStarTeam,
         match_wins: matchWins,
@@ -88,6 +153,7 @@ serve(async (req) => {
         clean_sweeps: cleanSweeps,
         tournaments_won: tournamentsWon,
         matches,
+        upcoming_matches: upcomingMatches,
         source: "cached",
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -96,22 +162,6 @@ serve(async (req) => {
 
     // Fallback: Calculate on-the-fly if no stored data
     console.log("No stored breakdowns found, calculating on-the-fly");
-
-    // Get round dates
-    const { data: round, error: roundError } = await supabase
-      .from("fantasy_rounds")
-      .select("start_date, end_date")
-      .eq("id", round_id)
-      .single();
-
-    if (roundError || !round) {
-      console.error("Round fetch error:", roundError);
-      return new Response(
-        JSON.stringify({ error: "Round not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
     console.log("Round dates:", { start_date: round.start_date, end_date: round.end_date });
 
     // Check if this is the user's star team (with history for mid-round changes)
