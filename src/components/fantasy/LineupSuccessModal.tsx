@@ -1,16 +1,13 @@
 // src/components/fantasy/LineupSuccessModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { Share2, TrendingUp, Trophy, Ticket, DollarSign } from 'lucide-react';
+import { Share2, TrendingUp, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { renderShareCard } from '@/utils/shareCardRenderer';
 import { useMobile } from '@/hooks/useMobile';
 import { ShareSheet } from './ShareSheet';
-import { useUpcomingProRound } from '@/hooks/useUpcomingProRound';
-import { useRoundReservation } from '@/hooks/useRoundReservation';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface LineupSuccessModalProps {
   open: boolean;
@@ -35,40 +32,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [shareData, setShareData] = useState<{ publicUrl: string; blob: Blob } | null>(null);
-  const [reserving, setReserving] = useState(false);
-  const [hasReserved, setHasReserved] = useState(false);
-  const [checkingReservation, setCheckingReservation] = useState(true);
   const isMobile = useMobile();
-  
-  const { user } = useAuth();
-  const { round: paidRound } = useUpcomingProRound({ isPaid: true });
-  const { reserveSlot, checkReservation } = useRoundReservation();
-
-  // Check if user already has a reservation for the paid round
-  useEffect(() => {
-    const checkExistingReservation = async () => {
-      if (!paidRound?.id || !user) {
-        setCheckingReservation(false);
-        return;
-      }
-      
-      try {
-        const alreadyReserved = await checkReservation(paidRound.id);
-        setHasReserved(alreadyReserved);
-      } catch (error) {
-        console.error("Error checking reservation:", error);
-      } finally {
-        setCheckingReservation(false);
-      }
-    };
-
-    if (open && paidRound?.id) {
-      setCheckingReservation(true);
-      checkExistingReservation();
-    } else {
-      setCheckingReservation(false);
-    }
-  }, [open, paidRound?.id, user, checkReservation]);
 
   // Small helper to avoid "Document is not focused" on some browsers
   const ensureFocused = () => {
@@ -77,20 +41,6 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
         if (!document.hasFocus() && typeof window.focus === 'function') window.focus();
       }
     } catch {}
-  };
-
-  const handleReserveTicket = async () => {
-    if (!paidRound || !user) return;
-    setReserving(true);
-    try {
-      const result = await reserveSlot(paidRound.id);
-      if (result?.success) {
-        setHasReserved(true);
-        toast.success('Ticket reserved! You\'ll be notified when the round opens.');
-      }
-    } finally {
-      setReserving(false);
-    }
   };
 
   const handleSharePicks = async () => {
@@ -175,33 +125,6 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
             <TrendingUp className="mr-2 h-4 w-4" />
             Check Progress
           </Button>
-          
-          {/* Reserve Ticket for Paid Round */}
-          {paidRound && !hasReserved && !checkingReservation && (
-            <div className="pt-2 border-t border-slate-700 mt-2">
-              <p className="text-xs text-amber-400 mb-2 flex items-center justify-center gap-1">
-                <DollarSign className="h-3 w-3" />
-                Win real cash in the coming paid round!
-              </p>
-              <Button
-                onClick={handleReserveTicket}
-                disabled={reserving}
-                variant="outline"
-                className="w-full border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-              >
-                <Ticket className="mr-2 h-4 w-4" />
-                {reserving ? 'Reserving...' : 'Reserve Ticket for Paid Round'}
-              </Button>
-            </div>
-          )}
-          
-          {hasReserved && (
-            <div className="pt-2 border-t border-slate-700 mt-2">
-              <p className="text-xs text-green-400 flex items-center justify-center gap-1">
-                ✓ Ticket reserved for paid round!
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </>
