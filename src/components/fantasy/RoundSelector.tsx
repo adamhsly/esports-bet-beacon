@@ -2,19 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Trophy, Ticket, Clock, Info, Users, Gamepad2, Coins, Share2 } from "lucide-react";
+import { Calendar, Trophy, Clock, Info, Users, Gamepad2, Coins, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseUnsafe } from "@/integrations/supabase/unsafeClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AuthModal from "@/components/AuthModal";
 import { usePaidRoundCheckout } from "@/hooks/usePaidRoundCheckout";
-import { useRoundReservation } from "@/hooks/useRoundReservation";
 import { useWelcomeOffer } from "@/hooks/useWelcomeOffer";
 import { RoundFilters, RoundFiltersState, defaultFilters, applyRoundFilters } from "./RoundFilters";
 import { format } from "date-fns";
 import { RoundDetailsModal } from "./RoundDetailsModal";
-import { ReservationConfirmModal } from "./ReservationConfirmModal";
 import { formatCurrency, formatDollarAmount } from "@/utils/currencyUtils";
 import { trackAddToCart, trackLead } from "@/utils/metaPixel";
 import { useStripeFxRate } from "@/hooks/useStripeFxRate";
@@ -74,14 +71,10 @@ const RoundCard: React.FC<{
   type: "daily" | "weekly" | "monthly" | "private";
   onClick: () => void;
   onPaidEntry?: () => void;
-  onReserve?: () => void;
   onSubmitPaidTeams?: () => void;
   isPaidCheckoutLoading?: boolean;
-  isReserveLoading?: boolean;
   userEntryCount?: number;
   hasPaidButEmptyPicks?: boolean;
-  hasReservation?: boolean;
-  reservationCount?: number;
   pickCount?: number;
   hasFreeEntry?: boolean;
   hasExistingPicks?: boolean;
@@ -90,14 +83,10 @@ const RoundCard: React.FC<{
   type, 
   onClick, 
   onPaidEntry, 
-  onReserve,
   onSubmitPaidTeams, 
   isPaidCheckoutLoading, 
-  isReserveLoading,
   userEntryCount = 0, 
   hasPaidButEmptyPicks = false,
-  hasReservation = false,
-  reservationCount = 0,
   pickCount = 0,
   hasFreeEntry = false,
   hasExistingPicks = false,
@@ -198,32 +187,16 @@ const RoundCard: React.FC<{
     // If user has paid but hasn't submitted teams, go to team picker
     if (hasPaidButEmptyPicks && onSubmitPaidTeams) {
       onSubmitPaidTeams();
-    } else if (isPaid && round.status !== 'open' && onReserve) {
-      // Paid round not yet open - reserve slot
-      onReserve();
     } else {
-      // For all open rounds (free or paid), navigate to team picker
+      // For all rounds (free or paid), navigate to team picker
       // Payment for paid rounds happens on submit in TeamPickerUpdated
       onClick();
     }
   };
 
-  // Only disable/lock the CTA when we're in the "reserve" state (paid + not open) and a reservation already exists.
-  // If the round is open, an existing reservation should NOT make the button look disabled.
-  const isReservePhase = Boolean(isPaid && round.status !== 'open');
-  const isReservationLocked = Boolean(isReservePhase && hasReservation);
-
   const getButtonText = () => {
-    if (isPaidCheckoutLoading || isReserveLoading) return "Loading...";
+    if (isPaidCheckoutLoading) return "Loading...";
     if (isPaid) {
-      if (round.status !== 'open') {
-        // Round not open yet - show reserve option
-        if (hasReservation) {
-          return "Reserved ✓";
-        }
-        return "Reserve Ticket";
-      }
-      // Round is open - paid round
       // Show "Use Free Entry" if user has sufficient promo balance
       if (hasFreeEntry) {
         if (hasExistingPicks) {
@@ -242,11 +215,7 @@ const RoundCard: React.FC<{
   
   // Show player count for all rounds
   const getPlayerCountDisplay = () => {
-    if (isPaid && round.status !== 'open') {
-      const minimum = round.minimum_reservations || 30;
-      return `${reservationCount}/${minimum} reserved`;
-    }
-    // For open rounds, show submitted picks
+    // For all rounds, show submitted picks
     if (pickCount > 0) {
       return `${pickCount} playing`;
     }
@@ -351,12 +320,11 @@ const RoundCard: React.FC<{
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
                 className={`w-full font-medium text-sm py-2.5 !rounded-none before:hidden ${
-                  isReservationLocked ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
                   hasFreeEntry ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30" :
                   isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
-                disabled={isPaidCheckoutLoading || isReserveLoading || isReservationLocked}
+                disabled={isPaidCheckoutLoading}
               >
                 {getButtonText()}
               </Button>
@@ -421,12 +389,11 @@ const RoundCard: React.FC<{
             <div className="w-full overflow-hidden rounded-b-lg">
               <Button
                 className={`w-full font-medium text-sm !rounded-none before:hidden ${
-                  isReservationLocked ? "bg-emerald-600 hover:bg-emerald-700 text-white" :
                   hasFreeEntry ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30" :
                   isPaid ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white" : 
                   "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                 }`}
-                disabled={isPaidCheckoutLoading || isReserveLoading || isReservationLocked}
+                disabled={isPaidCheckoutLoading}
               >
                 {getButtonText()}
               </Button>
@@ -459,13 +426,9 @@ export const RoundSelector: React.FC<{
   const [joinedFreeRounds, setJoinedFreeRounds] = useState<Set<string>>(new Set());
   const [paidRoundsWithPicks, setPaidRoundsWithPicks] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<RoundFiltersState>(defaultFilters);
-  const [reservationCounts, setReservationCounts] = useState<Record<string, { count: number; pickCount: number; isOpen: boolean; minimumReservations: number }>>({});
-  const [userReservations, setUserReservations] = useState<Set<string>>(new Set());
-  const [showReservationModal, setShowReservationModal] = useState(false);
-  const [selectedReservationRound, setSelectedReservationRound] = useState<Round | null>(null);
+  const [pickCounts, setPickCounts] = useState<Record<string, number>>({});
   const [userPromoBalance, setUserPromoBalance] = useState(0);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
-  const { reserveSlot, getReservationCount, loading: reserveLoading } = useRoundReservation();
   const { status: welcomeOfferStatus } = useWelcomeOffer();
   
   // User has free entry if they have promo balance OR they're tier 1 with unclaimed offer (free entry waiting to be claimed)
@@ -492,12 +455,11 @@ export const RoundSelector: React.FC<{
 
   useEffect(() => {
     if (rounds.length > 0) {
-      fetchReservationCounts();
+      fetchPickCounts();
       if (user) {
         fetchUserEntryCounts();
         fetchPaidButEmptyPicks();
         fetchJoinedFreeRounds();
-        fetchUserReservations();
         fetchUserPromoBalance();
       }
     }
@@ -521,33 +483,25 @@ export const RoundSelector: React.FC<{
     }
   };
 
-  const fetchReservationCounts = async () => {
-    // Fetch pick counts for ALL rounds (not just paid ones)
-    const counts: Record<string, { count: number; pickCount: number; isOpen: boolean; minimumReservations: number }> = {};
+  // Fetch pick counts for all rounds
+  const fetchPickCounts = async () => {
+    const counts: Record<string, number> = {};
     
     for (const round of rounds) {
-      const data = await getReservationCount(round.id);
-      counts[round.id] = data;
+      try {
+        const { count, error } = await supabase
+          .from('fantasy_round_picks')
+          .select('*', { count: 'exact', head: true })
+          .eq('round_id', round.id);
+        
+        if (!error) {
+          counts[round.id] = count || 0;
+        }
+      } catch {
+        counts[round.id] = 0;
+      }
     }
-    setReservationCounts(counts);
-  };
-
-  // Fetch which rounds the current user has already reserved
-  const fetchUserReservations = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabaseUnsafe
-        .from('round_reservations')
-        .select('round_id')
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      const reservedIds = new Set((data || []).map((r: { round_id: string }) => r.round_id));
-      setUserReservations(reservedIds);
-    } catch (err) {
-      console.error('Error fetching user reservations:', err);
-    }
+    setPickCounts(counts);
   };
   const fetchOpenRounds = async () => {
     try {
@@ -803,31 +757,6 @@ export const RoundSelector: React.FC<{
     initiateCheckout(round.id);
   };
 
-  const handleReserve = async (round: Round) => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    const result = await reserveSlot(round.id);
-    if (result?.success) {
-      // Track AddToCart for paid round reservation
-      trackAddToCart(round.id, round.round_name, round.entry_fee);
-      
-      setUserReservations(prev => new Set([...prev, round.id]));
-      setSelectedReservationRound(round);
-      setReservationCounts(prev => ({
-        ...prev,
-        [round.id]: {
-          count: result.reservationCount,
-          pickCount: prev[round.id]?.pickCount || 0,
-          isOpen: result.isOpen,
-          minimumReservations: result.minimumReservations,
-        }
-      }));
-      setShowReservationModal(true);
-    }
-  };
-  
   const handleSubmitPaidTeams = async (round: Round) => {
     const pickId = paidButEmptyPicks[round.id];
     if (!pickId) return;
@@ -961,16 +890,12 @@ export const RoundSelector: React.FC<{
                             round={round}
                             type={round.type}
                             onClick={() => handleJoinRound(round)}
-                            onPaidEntry={round.is_paid && round.status === 'open' ? () => handlePaidEntry(round) : undefined}
-                            onReserve={round.is_paid && round.status !== 'open' ? () => handleReserve(round) : undefined}
+                            onPaidEntry={round.is_paid ? () => handlePaidEntry(round) : undefined}
                             onSubmitPaidTeams={paidButEmptyPicks[round.id] ? () => handleSubmitPaidTeams(round) : undefined}
                             isPaidCheckoutLoading={checkoutLoading}
-                            isReserveLoading={reserveLoading}
                             userEntryCount={userEntryCounts[round.id] || 0}
                             hasPaidButEmptyPicks={!!paidButEmptyPicks[round.id]}
-                            hasReservation={userReservations.has(round.id)}
-                            reservationCount={reservationCounts[round.id]?.count || 0}
-                            pickCount={reservationCounts[round.id]?.pickCount || 0}
+                            pickCount={pickCounts[round.id] || 0}
                             hasFreeEntry={round.is_paid && effectivePromoBalance >= (round.entry_fee || 0)}
                             hasExistingPicks={round.is_paid && paidRoundsWithPicks.has(round.id)}
                           />
@@ -1005,19 +930,6 @@ export const RoundSelector: React.FC<{
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onSuccess={() => setShowAuthModal(false)}
-      />
-
-      <ReservationConfirmModal
-        open={showReservationModal}
-        onOpenChange={setShowReservationModal}
-        roundName={selectedReservationRound?.round_name || 'Paid Round'}
-        roundId={selectedReservationRound?.id || ''}
-        reservationCount={selectedReservationRound ? reservationCounts[selectedReservationRound.id]?.count || 0 : 0}
-        minimumReservations={selectedReservationRound?.minimum_reservations || 30}
-        onPlayFreeRounds={() => {
-          setShowReservationModal(false);
-          // Scroll to a free round section
-        }}
       />
     </>
   );
