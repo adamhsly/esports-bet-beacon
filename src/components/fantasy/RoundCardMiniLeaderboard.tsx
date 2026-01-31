@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
+import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+import { PlayerSelectionsModal } from './PlayerSelectionsModal';
 
 interface MiniLeaderboardEntry {
   position: number;
   user_id: string;
   username: string;
+  avatar_url?: string;
+  avatar_frame_id?: string;
+  avatar_border_id?: string;
   total_score: number;
 }
 
@@ -13,53 +19,58 @@ interface RoundCardMiniLeaderboardProps {
 }
 
 export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> = ({ roundId }) => {
+  const { free, premium } = useRewardsTrack();
   const [entries, setEntries] = useState<MiniLeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState<{ userId: string; username: string } | null>(null);
 
-  useEffect(() => {
-    const fetchTopThree = async () => {
-      try {
-        const { data: scores, error } = await supabase
-          .rpc('get_public_fantasy_leaderboard', {
-            p_round_id: roundId,
-            p_limit: 3
-          });
-
-        if (error) throw error;
-
-        if (!scores || scores.length === 0) {
-          setEntries([]);
-          setLoading(false);
-          return;
-        }
-
-        // Get profile info for top 3
-        const userIds = scores.map((s: any) => s.user_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, full_name')
-          .in('id', userIds);
-
-        const entriesWithNames: MiniLeaderboardEntry[] = scores.map((score: any) => {
-          const profile = profiles?.find(p => p.id === score.user_id);
-          return {
-            position: score.user_position,
-            user_id: score.user_id,
-            username: profile?.username || profile?.full_name || 'Anonymous',
-            total_score: score.total_score
-          };
+  const fetchTopThree = useCallback(async () => {
+    try {
+      const { data: scores, error } = await supabase
+        .rpc('get_public_fantasy_leaderboard', {
+          p_round_id: roundId,
+          p_limit: 3
         });
 
-        setEntries(entriesWithNames);
-      } catch (error) {
-        console.error('Error fetching mini leaderboard:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      if (error) throw error;
 
-    fetchTopThree();
+      if (!scores || scores.length === 0) {
+        setEntries([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get profile info for top 3
+      const userIds = scores.map((s: any) => s.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url, avatar_frame_id, avatar_border_id')
+        .in('id', userIds);
+
+      const entriesWithProfiles: MiniLeaderboardEntry[] = scores.map((score: any) => {
+        const profile = profiles?.find(p => p.id === score.user_id);
+        return {
+          position: score.user_position,
+          user_id: score.user_id,
+          username: profile?.username || profile?.full_name || 'Anonymous',
+          avatar_url: profile?.avatar_url,
+          avatar_frame_id: profile?.avatar_frame_id,
+          avatar_border_id: profile?.avatar_border_id,
+          total_score: score.total_score
+        };
+      });
+
+      setEntries(entriesWithProfiles);
+    } catch (error) {
+      console.error('Error fetching mini leaderboard:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [roundId]);
+
+  useEffect(() => {
+    fetchTopThree();
+  }, [fetchTopThree]);
 
   const getRankEmoji = (position: number) => {
     switch (position) {
@@ -70,15 +81,39 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
     }
   };
 
+  const getRowHighlight = (position: number) => {
+    switch (position) {
+      case 1:
+        return 'bg-gradient-to-r from-yellow-500/30 to-amber-500/30';
+      case 2:
+        return 'bg-gradient-to-r from-gray-400/30 to-gray-500/30';
+      case 3:
+        return 'bg-gradient-to-r from-orange-400/30 to-orange-500/30';
+      default:
+        return 'hover:bg-muted/30';
+    }
+  };
+
+  const handleRowClick = (entry: MiniLeaderboardEntry) => {
+    setSelectedPlayer({
+      userId: entry.user_id,
+      username: entry.username
+    });
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-3 py-1.5">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-1 animate-pulse">
-            <div className="w-4 h-4 bg-gray-700 rounded" />
-            <div className="w-12 h-3 bg-gray-700 rounded" />
-          </div>
-        ))}
+      <div className="w-full bg-muted/30 rounded-lg px-2 py-1.5 border border-border/50">
+        <div className="space-y-1">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-2 py-1 px-1 animate-pulse">
+              <div className="w-5 h-4 bg-muted rounded" />
+              <div className="w-5 h-5 bg-muted rounded-full" />
+              <div className="w-16 h-3 bg-muted rounded flex-1" />
+              <div className="w-8 h-3 bg-muted rounded" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -88,23 +123,86 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
   }
 
   return (
-    <div className="w-full bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700/50">
-      <div className="flex items-center justify-center gap-4 text-xs">
-        {entries.map((entry) => (
-          <div 
-            key={entry.user_id} 
-            className="flex items-center gap-1.5 min-w-0"
-          >
-            <span className="flex-shrink-0">{getRankEmoji(entry.position)}</span>
-            <span className="text-gray-300 truncate max-w-[60px] sm:max-w-[80px]">
-              {entry.username}
-            </span>
-            <span className="text-white font-semibold flex-shrink-0">
-              {entry.total_score}
-            </span>
-          </div>
-        ))}
+    <>
+      <div className="w-full bg-muted/30 rounded-lg px-2 py-1.5 border border-border/50">
+        <div className="space-y-0.5">
+          {entries.map((entry) => (
+            <div
+              key={entry.user_id}
+              onClick={() => handleRowClick(entry)}
+              className={`flex items-center gap-2 py-1 px-1 rounded cursor-pointer transition-colors hover:brightness-110 ${getRowHighlight(entry.position)}`}
+            >
+              {/* Rank */}
+              <div className="w-5 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-medium text-foreground">
+                  {getRankEmoji(entry.position)}
+                </span>
+              </div>
+
+              {/* Avatar */}
+              <MiniLeaderboardAvatar entry={entry} free={free} premium={premium} />
+
+              {/* Username */}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate text-foreground">
+                  {entry.username}
+                </p>
+              </div>
+
+              {/* Points */}
+              <div className="text-right flex-shrink-0">
+                <span className="text-xs font-bold text-foreground">
+                  {entry.total_score}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+
+      <PlayerSelectionsModal
+        open={!!selectedPlayer}
+        onOpenChange={(open) => !open && setSelectedPlayer(null)}
+        userId={selectedPlayer?.userId || ''}
+        username={selectedPlayer?.username || ''}
+        roundId={roundId}
+      />
+    </>
+  );
+};
+
+// Helper component for avatar with frames and borders
+const MiniLeaderboardAvatar: React.FC<{
+  entry: MiniLeaderboardEntry;
+  free: any[];
+  premium: any[];
+}> = ({ entry, free, premium }) => {
+  const frameAsset = useMemo(() => {
+    if (!entry.avatar_frame_id) return null;
+    const frameReward = [...free, ...premium].find(
+      item => item.id === entry.avatar_frame_id && item.type === 'frame'
+    );
+    return frameReward?.assetUrl || null;
+  }, [entry.avatar_frame_id, JSON.stringify(free), JSON.stringify(premium)]);
+
+  const borderAsset = useMemo(() => {
+    if (!entry.avatar_border_id) return null;
+    const borderReward = [...free, ...premium].find(
+      item => item.id === entry.avatar_border_id && 
+      item.value && 
+      (item.value.toLowerCase().includes('border') || item.value.toLowerCase().includes('pulse'))
+    );
+    return borderReward?.assetUrl || null;
+  }, [entry.avatar_border_id, JSON.stringify(free), JSON.stringify(premium)]);
+
+  return (
+    <EnhancedAvatar
+      src={entry.avatar_url}
+      fallback={entry.username.slice(0, 2).toUpperCase()}
+      frameUrl={frameAsset}
+      borderUrl={borderAsset}
+      size="sm"
+      className="h-5 w-5 flex-shrink-0"
+    />
   );
 };
