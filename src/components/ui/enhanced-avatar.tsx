@@ -9,6 +9,7 @@ interface EnhancedAvatarProps {
   frameUrl?: string | null;
   borderUrl?: string | null;
   className?: string;
+  fallbackClassName?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
@@ -33,6 +34,7 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
   frameUrl,
   borderUrl,
   className,
+  fallbackClassName,
   size = 'md'
 }) => {
   return (
@@ -52,7 +54,7 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
       <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
         <Avatar className={cn('relative', avatarSizeClasses[size])}>
           {src && <AvatarImage src={src} alt={alt} onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />}
-          <AvatarFallback>
+          <AvatarFallback className={fallbackClassName}>
             {fallback}
           </AvatarFallback>
         </Avatar>

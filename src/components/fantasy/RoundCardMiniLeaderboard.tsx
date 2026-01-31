@@ -103,7 +103,7 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
 
   if (loading) {
     return (
-      <div className="w-full bg-muted/30 rounded-lg px-2 py-1.5 border border-border/50">
+      <div className="w-full bg-theme-gray-dark rounded-lg px-2 py-1.5 border border-border/50">
         <div className="space-y-1">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-2 py-1 px-1 animate-pulse">
@@ -124,7 +124,7 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
 
   return (
     <>
-      <div className="w-full bg-muted/30 rounded-lg px-2 py-1.5 border border-border/50">
+      <div className="w-full bg-theme-gray-dark rounded-lg px-2 py-1.5 border border-border/50">
         <div className="space-y-0.5">
           {entries.map((entry) => (
             <div
@@ -203,6 +203,7 @@ const MiniLeaderboardAvatar: React.FC<{
       borderUrl={borderAsset}
       size="sm"
       className="h-5 w-5 flex-shrink-0"
+      fallbackClassName="bg-black text-white"
     />
   );
 };
