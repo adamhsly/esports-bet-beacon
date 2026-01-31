@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
-import { Star, Users, Trophy, ChevronRight, Calendar } from 'lucide-react';
+import { Star, Users, Trophy, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TeamMatchesModal } from './TeamMatchesModal';
@@ -23,6 +23,14 @@ interface TeamPick {
   team_type: string;
   current_score: number;
   logo_url?: string;
+  isSwappedIn?: boolean;
+  isSwappedOut?: boolean;
+}
+
+interface SwapRecord {
+  old_team_id: string;
+  new_team_id: string;
+  swapped_at: string;
 }
 
 export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
@@ -56,30 +64,41 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
   const fetchPlayerSelections = async () => {
     setLoading(true);
     try {
-      // Fetch round dates
-      const { data: roundData } = await supabase
-        .from('fantasy_rounds')
-        .select('start_date, end_date')
-        .eq('id', roundId)
-        .single();
+      // Fetch round dates, profile info, and swap data in parallel
+      const [roundResponse, profileResponse, swapsResponse] = await Promise.all([
+        supabase
+          .from('fantasy_rounds')
+          .select('start_date, end_date')
+          .eq('id', roundId)
+          .single(),
+        supabase
+          .from('profiles')
+          .select('avatar_url, avatar_frame_id, avatar_border_id')
+          .eq('id', userId)
+          .single(),
+        supabase
+          .from('fantasy_round_team_swaps')
+          .select('old_team_id, new_team_id, swapped_at')
+          .eq('round_id', roundId)
+          .eq('user_id', userId)
+      ]);
+
+      if (roundResponse.data) {
+        setRoundStartDate(roundResponse.data.start_date);
+        setRoundEndDate(roundResponse.data.end_date);
+      }
+
+      if (profileResponse.data) {
+        setAvatarUrl(profileResponse.data.avatar_url);
+        setAvatarFrameId(profileResponse.data.avatar_frame_id);
+        setAvatarBorderId(profileResponse.data.avatar_border_id);
+      }
+
+      const swapRecords: SwapRecord[] = swapsResponse.data || [];
       
-      if (roundData) {
-        setRoundStartDate(roundData.start_date);
-        setRoundEndDate(roundData.end_date);
-      }
-
-      // Fetch profile info
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('avatar_url, avatar_frame_id, avatar_border_id')
-        .eq('id', userId)
-        .single();
-
-      if (profile) {
-        setAvatarUrl(profile.avatar_url);
-        setAvatarFrameId(profile.avatar_frame_id);
-        setAvatarBorderId(profile.avatar_border_id);
-      }
+      // Build sets of swapped in/out team IDs
+      const swappedInTeamIds = new Set(swapRecords.map(s => s.new_team_id));
+      const swappedOutTeamIds = new Set(swapRecords.map(s => s.old_team_id));
 
       // Fetch team picks using RPC to bypass RLS
       const { data: pickData, error: pickError } = await supabase
@@ -108,30 +127,66 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
           return;
         }
 
+        // Helper to add swap status
+        const addSwapStatus = (teamId: string) => ({
+          isSwappedIn: swappedInTeamIds.has(teamId) && !swappedOutTeamIds.has(teamId),
+          isSwappedOut: swappedOutTeamIds.has(teamId) && !swappedInTeamIds.has(teamId)
+        });
+
         // Check if we have scores, otherwise fall back to team_picks
         if (!scores || scores.length === 0) {
           // No scores found - use team_picks directly (common for test users)
-          const picksFromTeamData = (picks.team_picks || []).map((t: any) => ({
-            team_id: t.id || t.team_id,
-            team_name: t.name || t.team_name,
-            team_type: t.type || t.team_type,
-            current_score: 0,
-            logo_url: t.logo_url || null
-          }));
+          const picksFromTeamData = (picks.team_picks || []).map((t: any) => {
+            const teamId = t.id || t.team_id;
+            return {
+              team_id: teamId,
+              team_name: t.name || t.team_name,
+              team_type: t.type || t.team_type,
+              current_score: 0,
+              logo_url: t.logo_url || null,
+              ...addSwapStatus(teamId)
+            };
+          });
           
-          setTeamPicks(picksFromTeamData);
+          // Also add swapped out teams that are no longer in picks
+          const currentTeamIds = new Set(picksFromTeamData.map((t: TeamPick) => t.team_id));
+          const swappedOutTeams: TeamPick[] = [];
+          
+          for (const swap of swapRecords) {
+            if (!currentTeamIds.has(swap.old_team_id) && !swappedOutTeams.some(t => t.team_id === swap.old_team_id)) {
+              // This team was swapped out - try to find info from scores
+              const { data: oldTeamScore } = await supabase
+                .from('fantasy_round_scores')
+                .select('team_id, team_name, team_type, current_score')
+                .eq('round_id', roundId)
+                .eq('user_id', userId)
+                .eq('team_id', swap.old_team_id)
+                .single();
+              
+              if (oldTeamScore) {
+                swappedOutTeams.push({
+                  ...oldTeamScore,
+                  logo_url: undefined,
+                  isSwappedIn: false,
+                  isSwappedOut: true
+                });
+              }
+            }
+          }
+          
+          setTeamPicks([...picksFromTeamData, ...swappedOutTeams]);
           setStarTeamId(picks.star_team_id || null);
         } else {
-          // Enhance scores with team logos from team_picks jsonb (backwards compatible)
+          // Enhance scores with team logos and swap status
           const enhancedScores = scores.map(score => {
-            // Find the team in the picks data to get logo_url (check both old and new formats)
             const teamInPicks = picks.team_picks && Array.isArray(picks.team_picks) 
               ? picks.team_picks.find((t: any) => t.id === score.team_id || t.team_id === score.team_id)
               : null;
             
             return {
               ...score,
-              logo_url: teamInPicks?.logo_url || teamInPicks?.team_logo || null
+              logo_url: teamInPicks?.logo_url || teamInPicks?.team_logo || null,
+              ...addSwapStatus(score.team_id)
             };
           });
 
@@ -196,6 +251,8 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
             {teamPicks.map((pick) => {
               const isAmateur = pick.team_type === 'faceit' || pick.team_type === 'amateur';
               const isStarred = starTeamId === pick.team_id;
+              const isSwappedOut = pick.isSwappedOut;
+              const isSwappedIn = pick.isSwappedIn;
               
               return (
                 <Card 
@@ -206,10 +263,12 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                     type: isAmateur ? 'amateur' : 'pro'
                   })}
                   className={`relative transition-all cursor-pointer hover:border-gray-500/70 ${
-                    isStarred 
-                      ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` 
-                      : ''
-                  } bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`}
+                    isSwappedOut 
+                      ? 'opacity-60 bg-gray-900/60 border-gray-600/50'
+                      : isStarred 
+                        ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` 
+                        : ''
+                  } ${!isSwappedOut ? 'bg-gradient-to-br from-gray-900/90 to-gray-800/90' : ''} border-gray-700/50`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
@@ -231,7 +290,7 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                       {/* Team Info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-white truncate text-left">{pick.team_name}</h4>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge 
                             className={`text-xs ${
                               isAmateur 
@@ -241,9 +300,19 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                           >
                             {isAmateur ? 'Amateur' : 'Pro'}
                           </Badge>
-                          {isAmateur && (
+                          {isAmateur && !isSwappedOut && (
                             <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
                               +25% Bonus
+                            </Badge>
+                          )}
+                          {isSwappedIn && (
+                            <Badge className="text-xs bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-cyan-400/50">
+                              Swapped In
+                            </Badge>
+                          )}
+                          {isSwappedOut && (
+                            <Badge variant="outline" className="text-xs border-gray-500 text-gray-400">
+                              Swapped Out
                             </Badge>
                           )}
                         </div>
@@ -252,7 +321,7 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                       {/* Fantasy Points & Click indicator */}
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <div className="font-bold text-lg text-blue-400">
+                          <div className={`font-bold text-lg ${isSwappedOut ? 'text-gray-500' : 'text-blue-400'}`}>
                             {pick.current_score}
                           </div>
                           <div className="text-xs text-gray-400">pts</div>
@@ -262,7 +331,7 @@ export const PlayerSelectionsModal: React.FC<PlayerSelectionsModalProps> = ({
                     </div>
                     
                     {/* Star Team Double Points Label */}
-                    {isStarred && (
+                    {isStarred && !isSwappedOut && (
                       <div className="mt-2 pt-2 border-t border-gray-600/50">
                         <div className="text-xs text-[#F5C042] font-medium flex items-center gap-1">
                           <Star className="h-3 w-3 fill-current" />
