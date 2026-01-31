@@ -203,7 +203,6 @@ const MiniLeaderboardAvatar: React.FC<{
       borderUrl={borderAsset}
       size="sm"
       className="h-5 w-5 flex-shrink-0"
-      fallbackClassName="bg-black text-white"
     />
   );
 };
