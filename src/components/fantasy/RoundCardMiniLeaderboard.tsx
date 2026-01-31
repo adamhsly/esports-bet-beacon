@@ -84,11 +84,11 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
   const getRowHighlight = (position: number) => {
     switch (position) {
       case 1:
-        return 'bg-gradient-to-r from-yellow-500/30 to-amber-500/30';
+        return 'bg-gradient-to-r from-yellow-500/40 to-amber-500/40';
       case 2:
-        return 'bg-gradient-to-r from-gray-400/30 to-gray-500/30';
+        return 'bg-gradient-to-r from-gray-400/40 to-gray-500/40';
       case 3:
-        return 'bg-gradient-to-r from-orange-400/30 to-orange-500/30';
+        return 'bg-gradient-to-r from-orange-400/40 to-orange-500/40';
       default:
         return 'hover:bg-muted/30';
     }
