@@ -15,6 +15,7 @@ import { RoundDetailsModal } from "./RoundDetailsModal";
 import { formatCurrency, formatDollarAmount } from "@/utils/currencyUtils";
 import { trackAddToCart, trackLead } from "@/utils/metaPixel";
 import { useStripeFxRate } from "@/hooks/useStripeFxRate";
+import { RoundCardMiniLeaderboard } from "./RoundCardMiniLeaderboard";
 
 interface Round {
   id: string;
@@ -310,6 +311,11 @@ const RoundCard: React.FC<{
             )}
           </div>
 
+          {/* Mini Leaderboard for in-progress rounds */}
+          {isInProgress() && (
+            <RoundCardMiniLeaderboard roundId={round.id} />
+          )}
+
           <div className="w-full cursor-pointer hover:scale-[1.02] transition-transform" onClick={handleClick}>
             <div className="w-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 border-b-0 rounded-t-lg px-4 py-2 flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-300" />
@@ -374,6 +380,13 @@ const RoundCard: React.FC<{
                 <Users className="h-3 w-3" />
                 {playerCountText}
               </span>
+            </div>
+          )}
+          
+          {/* Mini Leaderboard for in-progress rounds */}
+          {isInProgress() && (
+            <div className="mt-2">
+              <RoundCardMiniLeaderboard roundId={round.id} />
             </div>
           )}
         </div>
