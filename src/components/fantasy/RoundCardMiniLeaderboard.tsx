@@ -144,14 +144,14 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
 
               {/* Username */}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate text-foreground">
+                <p className="text-xs font-medium truncate text-white">
                   {entry.username}
                 </p>
               </div>
 
               {/* Points */}
               <div className="text-right flex-shrink-0">
-                <span className="text-xs font-bold text-foreground">
+                <span className="text-xs font-bold text-white">
                   {entry.total_score}
                 </span>
               </div>
