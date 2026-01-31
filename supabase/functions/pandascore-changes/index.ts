@@ -117,7 +117,7 @@ serve(async () => {
 
       const { data: existing, error: fetchError } = await supabase
         .from("pandascore_matches")
-        .select("status", "teams")
+        .select("status, teams, winner_id")
         .eq("match_id", match_id)
         .maybeSingle();
 
@@ -127,11 +127,16 @@ serve(async () => {
       }
 
       const existingStatus = existing?.status ?? null;
+      const existingWinnerId = existing?.winner_id ?? null;
       const existingTeams = existing?.teams ?? [];
       const apiStatus = match.status ?? null;
+      const apiWinnerId = match.winner_id ?? null;
       const apiTeams = match.opponents ?? [];
 
-      if (existingStatus === apiStatus && !teamsAreDifferent(apiTeams, existingTeams)) continue;
+      // Check if cancelled match now has a winner - needs status update to 'finished'
+      const cancelledNowHasWinner = existingStatus === 'cancelled' && apiWinnerId != null && existingWinnerId == null;
+      
+      if (existingStatus === apiStatus && !teamsAreDifferent(apiTeams, existingTeams) && !cancelledNowHasWinner) continue;
 
       // If match has a winner_id, it's finished regardless of what status says
       const apiStatusRaw = match.status ?? null;
