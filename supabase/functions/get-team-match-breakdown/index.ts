@@ -196,6 +196,7 @@ serve(async (req) => {
     // Scoring config - must match calculate-fantasy-scores scoring system
     const basePoints = {
       matchWin: 10,
+      matchDraw: 5, // Half of match win for draws
       mapWin: 3,
       cleanSweep: 5,
       tournamentWin: 20,
@@ -369,9 +370,11 @@ serve(async (req) => {
         // Map wins always count (3 pts each)
         points += teamScore * basePoints.mapWin;
         
-        // Match win bonus (10 pts) only for wins
+        // Match win bonus (10 pts) for wins, half (5 pts) for draws
         if (result === "win") {
           points += basePoints.matchWin;
+        } else if (result === "tie" || result === "draw") {
+          points += basePoints.matchDraw;
         }
         if (isCleanSweep) {
           points += basePoints.cleanSweep;
@@ -488,9 +491,11 @@ serve(async (req) => {
         // Map wins always count (3 pts each)
         points += teamScore * basePoints.mapWin;
         
-        // Match win bonus only for wins
+        // Match win bonus for wins, half for draws
         if (result === "win") {
           points += basePoints.matchWin;
+        } else if (result === "tie" || result === "draw") {
+          points += basePoints.matchDraw;
         }
         if (isCleanSweep) {
           points += basePoints.cleanSweep;

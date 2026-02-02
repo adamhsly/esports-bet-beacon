@@ -9,6 +9,7 @@ const corsHeaders = {
 // Scoring configuration - must match all other scoring implementations
 const BASE_POINTS = {
   matchWin: 10,
+  matchDraw: 5, // Half of match win for draws
   mapWin: 3,
   cleanSweep: 5,
   tournamentWin: 20,
@@ -536,6 +537,7 @@ function processProMatch(match: any, teamId: string, starMult: number): MatchBre
   // Calculate points - map wins count for ALL matches, not just wins
   let points = teamScore * BASE_POINTS.mapWin;
   if (result === 'win') points += BASE_POINTS.matchWin;
+  if (result === 'draw') points += BASE_POINTS.matchDraw; // Half points for draw
   if (isCleanSweep) points += BASE_POINTS.cleanSweep;
   if (isTournamentWin) points += BASE_POINTS.tournamentWin;
   points = Math.round(points * starMult);
@@ -593,6 +595,7 @@ function processAmateurMatch(match: any, teamId: string, starMult: number, amate
   // Calculate points with amateur multiplier applied to total
   let points = teamScore * BASE_POINTS.mapWin;
   if (result === 'win') points += BASE_POINTS.matchWin;
+  if (result === 'draw') points += BASE_POINTS.matchDraw; // Half points for draw
   if (isCleanSweep) points += BASE_POINTS.cleanSweep;
   if (isTournamentWin) points += BASE_POINTS.tournamentWin;
   points = Math.floor(points * amateurMult);
