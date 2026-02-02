@@ -45,7 +45,7 @@ const FaqSection = () => {
     },
     {
       question: "HOW ARE FANTASY POINTS CALCULATED?",
-      answer: "Teams earn points based on real match results: 10 points for match wins, 3 points per map won, 5 bonus points for clean sweeps (winning all maps), and 20 points for tournament victories. Amateur teams receive a 25% bonus, and your Star Team earns double points on everything.",
+      answer: "Teams earn points based on real match results: 10 points for match wins, 5 points for draws, 3 points per map won, 5 bonus points for clean sweeps (winning all maps), and 20 points for tournament victories. Amateur teams receive a 25% bonus, and your Star Team earns double points on everything.",
     },
   ];
 

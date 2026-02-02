@@ -123,6 +123,10 @@ export const FantasyRulesModal: React.FC<FantasyRulesModalProps> = ({
                 <p className="text-gray-300">+10 points per match victory</p>
               </div>
               <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-4 rounded-lg border border-[#8B5CF6]/30">
+                <h4 className="font-semibold text-white mb-2">Match Draw</h4>
+                <p className="text-gray-300">+5 points per match draw (half of win bonus)</p>
+              </div>
+              <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-4 rounded-lg border border-[#8B5CF6]/30">
                 <h4 className="font-semibold text-white mb-2">Map Win</h4>
                 <p className="text-gray-300">+3 points per individual map won</p>
               </div>
