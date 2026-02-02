@@ -230,13 +230,13 @@ serve(async (req) => {
     if (team_type === "pro") {
       // Query BOTH finished and upcoming PandaScore matches in parallel
       const [finishedResult, upcomingResult] = await Promise.all([
-        // Finished matches (with winner_id)
+        // Finished matches (with winner_id OR finished status for draws)
         supabase
           .from("pandascore_matches")
           .select("*")
           .gte("start_time", round.start_date)
           .lte("start_time", round.end_date)
-          .not("winner_id", "is", null)
+          .or("winner_id.not.is.null,status.eq.finished")
           .order("start_time", { ascending: false }),
         // Upcoming/running matches (no winner_id yet, not canceled)
         supabase
