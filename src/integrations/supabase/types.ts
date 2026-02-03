@@ -4120,11 +4120,14 @@ export type Database = {
       }
       get_global_leaderboard:
         | {
-            Args: { p_limit?: number; p_offset?: number }
+            Args: { p_limit?: number; p_offset?: number; p_timeframe?: string }
             Returns: {
+              avatar_border_id: string
+              avatar_frame_id: string
               avatar_url: string
               avg_points_per_round: number
               position_change: number
+              rank: number
               rounds_played: number
               total_points: number
               user_id: string
