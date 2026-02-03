@@ -119,7 +119,8 @@ const WelcomeOfferModal: React.FC<WelcomeOfferModalProps> = ({ open, onOpenChang
 
   // Check if we're in the claimed/active state
   const hasActiveBalance = displayState === 'active' && status && status.promoBalancePence > 0;
-  const isTier1Unclaimed = status?.tier === 1 && !status?.offerClaimed;
+  // IMPORTANT: Don't show tier 1 as unclaimed if user has already used a promo entry
+  const isTier1Unclaimed = status?.tier === 1 && !status?.offerClaimed && !status?.hasUsedPromoEntry;
   const isTier2InProgress = status?.tier === 2 && !status?.offerClaimed && !canClaimTier2;
   const isTier2Ready = status?.tier === 2 && canClaimTier2;
 
