@@ -180,8 +180,9 @@ export function useWelcomeOffer() {
       return 'expired';
     }
     
-    // Tier 1: Free bonus not yet claimed
-    if (status.tier === 1 && !status.offerClaimed) {
+    // Tier 1: Free bonus not yet claimed AND user hasn't already used their free entry
+    // CRITICAL: hasUsedPromoEntry prevents showing "Claim Free Entry" after using it
+    if (status.tier === 1 && !status.offerClaimed && !status.hasUsedPromoEntry) {
       return 'progress';
     }
     
