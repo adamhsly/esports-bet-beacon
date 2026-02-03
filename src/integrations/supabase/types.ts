@@ -1703,6 +1703,44 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_position_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          round_id: string
+          snapshot_at: string
+          total_score: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position: number
+          round_id: string
+          snapshot_at?: string
+          total_score?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          round_id?: string
+          snapshot_at?: string
+          total_score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_position_snapshots_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       level_rewards: {
         Row: {
           amount: number | null
@@ -4080,20 +4118,34 @@ export type Database = {
         Args: { game_filter?: string; team_names: string[] }
         Returns: Json
       }
-      get_global_leaderboard: {
-        Args: { p_limit?: number; p_timeframe?: string }
-        Returns: {
-          avatar_border_id: string
-          avatar_frame_id: string
-          avatar_url: string
-          position_change: number
-          rank: number
-          rounds_played: number
-          total_points: number
-          user_id: string
-          username: string
-        }[]
-      }
+      get_global_leaderboard:
+        | {
+            Args: { p_limit?: number; p_offset?: number }
+            Returns: {
+              avatar_url: string
+              display_name: string
+              position_change: number
+              rank: number
+              rounds_played: number
+              rounds_won: number
+              total_credits: number
+              user_id: string
+            }[]
+          }
+        | {
+            Args: { p_limit?: number; p_timeframe?: string }
+            Returns: {
+              avatar_border_id: string
+              avatar_frame_id: string
+              avatar_url: string
+              position_change: number
+              rank: number
+              rounds_played: number
+              total_points: number
+              user_id: string
+              username: string
+            }[]
+          }
       get_head_to_head_optimized: {
         Args: {
           p_match_id: string
@@ -4217,15 +4269,17 @@ export type Database = {
           voucher_prizes_paid: number
         }[]
       }
-      get_position_change: {
-        Args: {
-          p_current_position: number
-          p_round_id: string
-          p_snapshot_type?: string
-          p_user_id: string
-        }
-        Returns: number
-      }
+      get_position_change:
+        | { Args: { p_round_id: string; p_user_id: string }; Returns: number }
+        | {
+            Args: {
+              p_current_position: number
+              p_round_id: string
+              p_snapshot_type?: string
+              p_user_id: string
+            }
+            Returns: number
+          }
       get_private_round_participants: {
         Args: never
         Returns: {
@@ -4242,15 +4296,27 @@ export type Database = {
           type: string
         }[]
       }
-      get_public_fantasy_leaderboard: {
-        Args: { p_limit?: number; p_round_id: string }
-        Returns: {
-          position_change: number
-          total_score: number
-          user_id: string
-          user_position: number
-        }[]
-      }
+      get_public_fantasy_leaderboard:
+        | {
+            Args: { p_round_id: string }
+            Returns: {
+              avatar_url: string
+              display_name: string
+              position_change: number
+              rank: number
+              total_score: number
+              user_id: string
+            }[]
+          }
+        | {
+            Args: { p_limit?: number; p_round_id: string }
+            Returns: {
+              position_change: number
+              total_score: number
+              user_id: string
+              user_position: number
+            }[]
+          }
       get_public_user_picks: {
         Args: { p_round_id: string; p_user_id: string }
         Returns: {
