@@ -4118,37 +4118,22 @@ export type Database = {
         Args: { game_filter?: string; team_names: string[] }
         Returns: Json
       }
-      get_global_leaderboard:
-        | {
-            Args: { p_limit?: number; p_offset?: number; p_timeframe?: string }
-            Returns: {
-              avatar_border_id: string
-              avatar_frame_id: string
-              avatar_url: string
-              avg_points_per_round: number
-              position_change: number
-              rank: number
-              rounds_played: number
-              total_points: number
-              user_id: string
-              user_position: number
-              username: string
-            }[]
-          }
-        | {
-            Args: { p_limit?: number; p_timeframe?: string }
-            Returns: {
-              avatar_border_id: string
-              avatar_frame_id: string
-              avatar_url: string
-              position_change: number
-              rank: number
-              rounds_played: number
-              total_points: number
-              user_id: string
-              username: string
-            }[]
-          }
+      get_global_leaderboard: {
+        Args: { p_limit?: number; p_offset?: number; p_timeframe?: string }
+        Returns: {
+          avatar_border_id: string
+          avatar_frame_id: string
+          avatar_url: string
+          avg_points_per_round: number
+          position_change: number
+          rank: number
+          rounds_played: number
+          total_points: number
+          user_id: string
+          user_position: number
+          username: string
+        }[]
+      }
       get_head_to_head_optimized: {
         Args: {
           p_match_id: string
