@@ -4123,13 +4123,13 @@ export type Database = {
             Args: { p_limit?: number; p_offset?: number }
             Returns: {
               avatar_url: string
-              display_name: string
+              avg_points_per_round: number
               position_change: number
-              rank: number
               rounds_played: number
-              rounds_won: number
-              total_credits: number
+              total_points: number
               user_id: string
+              user_position: number
+              username: string
             }[]
           }
         | {
