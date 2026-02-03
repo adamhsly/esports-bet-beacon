@@ -195,20 +195,23 @@ serve(async (req) => {
       }
 
       // Deduct promo balance LAST (only after all records are created)
-      const { data: deductedAmount, error: deductError } = await supabaseAdmin
-        .rpc('deduct_promo_balance', {
-          p_user_id: user.id,
-          p_amount_pence: promoToUse
-        });
+      // CRITICAL: This must succeed to prevent double free entries
+      const newBalance = promoBalancePence - promoToUse;
+      
+      const { error: deductError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          promo_balance_pence: Math.max(0, newBalance),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
 
       if (deductError) {
-        console.error('Error deducting promo balance:', deductError);
-        // Entry already created, but promo deduction failed - this shouldn't happen
-        // but log it for investigation
-        console.error('CRITICAL: Entry created but promo deduction failed!');
+        console.error('CRITICAL: Failed to deduct promo balance:', deductError);
+        // Still continue - entry is already created
+      } else {
+        console.log(`Promo entry completed: balance updated from ${promoBalancePence} to ${newBalance} pence`);
       }
-
-      console.log(`Promo entry completed: deducted ${deductedAmount || promoToUse} pence`);
 
       // Track affiliate activation for promo-covered entries
       try {
