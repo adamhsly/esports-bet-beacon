@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { PlayerSelectionsModal } from './PlayerSelectionsModal';
+import { PositionChangeIndicator } from '@/components/ui/position-change-indicator';
 
 interface MiniLeaderboardEntry {
   position: number;
@@ -12,6 +13,7 @@ interface MiniLeaderboardEntry {
   avatar_frame_id?: string;
   avatar_border_id?: string;
   total_score: number;
+  position_change?: number | null;
 }
 
 interface RoundCardMiniLeaderboardProps {
@@ -56,7 +58,8 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
           avatar_url: profile?.avatar_url,
           avatar_frame_id: profile?.avatar_frame_id,
           avatar_border_id: profile?.avatar_border_id,
-          total_score: score.total_score
+          total_score: score.total_score,
+          position_change: score.position_change
         };
       });
 
@@ -138,6 +141,9 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
                   {getRankEmoji(entry.position)}
                 </span>
               </div>
+
+              {/* Position Change Indicator */}
+              <PositionChangeIndicator change={entry.position_change} size="sm" />
 
               {/* Avatar */}
               <MiniLeaderboardAvatar entry={entry} free={free} premium={premium} />
