@@ -634,7 +634,6 @@ async function createRoundPositionSnapshots(roundId) {
       round_id: roundId,
       position: entry.user_position,
       total_score: entry.total_score || 0,
-      snapshot_type: 'round',
       snapshot_at: new Date().toISOString()
     }));
 
