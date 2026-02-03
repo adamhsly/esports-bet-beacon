@@ -94,9 +94,12 @@ serve(async (req) => {
     
     console.log(`User has previously used promo entry: ${hasUsedPromoEntry}`);
 
-    // If user is tier 1 with unclaimed offer and has 0 balance, auto-claim the free entry
-    // CRITICAL: Only auto-claim if they have NEVER used a promo entry before
-    if (tier === 1 && !offerClaimed && promoBalancePence === 0 && rewardPence > 0 && !hasUsedPromoEntry) {
+    // CRITICAL: If user has EVER used a promo entry, they should NEVER get tier 1 again
+    // This is the primary check - takes precedence over all other conditions
+    if (hasUsedPromoEntry) {
+      console.log(`User has already used a promo entry - no auto-claim will occur`);
+    } else if (tier === 1 && !offerClaimed && promoBalancePence === 0 && rewardPence > 0) {
+      // Only auto-claim tier 1 for NEW users who have never used promo
       console.log(`Auto-claiming tier 1 free entry: ${rewardPence} pence`);
       
       // Claim the welcome offer by setting promo_balance_pence and marking as claimed
@@ -119,8 +122,6 @@ serve(async (req) => {
         promoBalancePence = rewardPence;
         console.log(`Welcome offer auto-claimed successfully, new balance: ${promoBalancePence} pence`);
       }
-    } else if (tier === 1 && !offerClaimed && hasUsedPromoEntry) {
-      console.log(`User already used their tier 1 free entry - not auto-claiming again`);
     }
 
     console.log(`User promo balance: ${promoBalancePence} pence, entry fee: ${entryFeePence} pence`);
