@@ -445,7 +445,8 @@ export const RoundSelector: React.FC<{
   const { status: welcomeOfferStatus } = useWelcomeOffer();
   
   // User has free entry if they have promo balance OR they're tier 1 with unclaimed offer (free entry waiting to be claimed)
-  const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed;
+  // BUT NOT if they've already used a promo entry (prevents double free entry bug)
+  const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed && !welcomeOfferStatus?.hasUsedPromoEntry;
   const effectivePromoBalance = userPromoBalance > 0 ? userPromoBalance : (hasUnclaimedFreeEntry ? (welcomeOfferStatus?.rewardPence || 1000) : 0);
 
   // Expose refetch function to parent via ref

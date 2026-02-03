@@ -12,6 +12,7 @@ interface WelcomeOfferStatus {
   promoExpiresAt: string | null;
   rewardPence: number;
   tier1Complete: boolean;
+  hasUsedPromoEntry: boolean;
 }
 
 async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStatus> {
@@ -56,6 +57,24 @@ async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStat
     // ignore - fall back to RPC values
   }
 
+  // Check if user has ever used a promo-covered entry (prevents double free entry in UI)
+  let hasUsedPromoEntry = false;
+  try {
+    const { data: promoEntries, error: promoError } = await supabase
+      .from('round_entries')
+      .select('id')
+      .eq('user_id', userId)
+      .gt('promo_used', 0)
+      .eq('status', 'completed')
+      .limit(1);
+
+    if (!promoError && promoEntries && promoEntries.length > 0) {
+      hasUsedPromoEntry = true;
+    }
+  } catch {
+    // ignore - default to false
+  }
+
   return {
     tier: result?.tier ?? 1,
     totalSpentPence: result?.total_spent_pence ?? 0,
@@ -65,6 +84,7 @@ async function fetchWelcomeOfferStatus(userId: string): Promise<WelcomeOfferStat
     promoExpiresAt,
     rewardPence: result?.reward_pence ?? 1000,
     tier1Complete: result?.tier1_complete ?? false,
+    hasUsedPromoEntry,
   };
 }
 

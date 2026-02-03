@@ -1015,7 +1015,8 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
             ? (round.entry_fee && round.entry_fee > 0 
                 ? (() => {
                     // Check if user has promo balance OR unclaimed tier 1 free entry
-                    const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed;
+                    // IMPORTANT: Don't show free entry if they've already used one
+                    const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed && !welcomeOfferStatus?.hasUsedPromoEntry;
                     const effectiveBalance = userPromoBalance > 0 ? userPromoBalance : (hasUnclaimedFreeEntry ? (welcomeOfferStatus?.rewardPence || 250) : 0);
                     return effectiveBalance >= round.entry_fee ? 'Submit Team' : 'Pay & Submit';
                   })()

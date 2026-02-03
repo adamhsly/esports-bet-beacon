@@ -81,8 +81,22 @@ serve(async (req) => {
 
     console.log(`User promo status: tier=${tier}, claimed=${offerClaimed}, balance=${promoBalancePence}, reward=${rewardPence}`);
 
+    // Check if user has EVER used a promo-covered entry (to prevent double free entries)
+    const { data: previousPromoEntries, error: promoEntriesError } = await supabaseAdmin
+      .from('round_entries')
+      .select('id')
+      .eq('user_id', user.id)
+      .gt('promo_used', 0)
+      .eq('status', 'completed')
+      .limit(1);
+
+    const hasUsedPromoEntry = !promoEntriesError && previousPromoEntries && previousPromoEntries.length > 0;
+    
+    console.log(`User has previously used promo entry: ${hasUsedPromoEntry}`);
+
     // If user is tier 1 with unclaimed offer and has 0 balance, auto-claim the free entry
-    if (tier === 1 && !offerClaimed && promoBalancePence === 0 && rewardPence > 0) {
+    // CRITICAL: Only auto-claim if they have NEVER used a promo entry before
+    if (tier === 1 && !offerClaimed && promoBalancePence === 0 && rewardPence > 0 && !hasUsedPromoEntry) {
       console.log(`Auto-claiming tier 1 free entry: ${rewardPence} pence`);
       
       // Claim the welcome offer by setting promo_balance_pence and marking as claimed
@@ -105,6 +119,8 @@ serve(async (req) => {
         promoBalancePence = rewardPence;
         console.log(`Welcome offer auto-claimed successfully, new balance: ${promoBalancePence} pence`);
       }
+    } else if (tier === 1 && !offerClaimed && hasUsedPromoEntry) {
+      console.log(`User already used their tier 1 free entry - not auto-claiming again`);
     }
 
     console.log(`User promo balance: ${promoBalancePence} pence, entry fee: ${entryFeePence} pence`);
