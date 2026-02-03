@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { PlayerSelectionsModal } from './PlayerSelectionsModal';
+import { PositionChangeIndicator } from '@/components/ui/position-change-indicator';
 
 interface LeaderboardEntry {
   position: number;
@@ -14,6 +15,7 @@ interface LeaderboardEntry {
   avatar_border_id?: string;
   total_score: number;
   is_current_user: boolean;
+  position_change?: number | null;
 }
 
 interface RoundLeaderboardProps {
@@ -54,7 +56,8 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
         user_id: score.user_id,
         username: '', // Will be filled from profiles
         total_score: score.total_score,
-        is_current_user: userId ? score.user_id === userId : false
+        is_current_user: userId ? score.user_id === userId : false,
+        position_change: score.position_change
       }));
 
       // Find current user's position
@@ -208,6 +211,9 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
               {getRankDisplay(entry.position)}
             </span>
           </div>
+
+          {/* Position Change */}
+          <PositionChangeIndicator change={entry.position_change} size="sm" />
 
           {/* Avatar */}
           <LeaderboardAvatar entry={entry} free={free} premium={premium} />

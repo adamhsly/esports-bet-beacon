@@ -51,6 +51,9 @@ async function main() {
       console.log(`   Period: ${round.start_date} to ${round.end_date}`);
 
       await processRound(round);
+      
+      // Create position snapshots for this round after processing
+      await createRoundPositionSnapshots(round.id);
     }
 
     console.log('\n✅ Fantasy score calculation complete!');
@@ -604,5 +607,53 @@ function calculateMatchStats(breakdowns) {
   };
 }
 
+/**
+ * Create position snapshots for all users in a round.
+ * This allows us to track position changes over time.
+ */
+async function createRoundPositionSnapshots(roundId) {
+  try {
+    // Get current leaderboard positions using the RPC function
+    const { data: leaderboard, error } = await supabase.rpc('get_public_fantasy_leaderboard', {
+      p_round_id: roundId,
+      p_limit: null
+    });
+
+    if (error) {
+      console.error(`   ⚠️ Failed to get leaderboard for snapshots: ${error.message}`);
+      return;
+    }
+
+    if (!leaderboard || leaderboard.length === 0) {
+      return;
+    }
+
+    // Prepare snapshot records
+    const snapshots = leaderboard.map(entry => ({
+      user_id: entry.user_id,
+      round_id: roundId,
+      position: entry.user_position,
+      total_score: entry.total_score || 0,
+      snapshot_type: 'round',
+      snapshot_at: new Date().toISOString()
+    }));
+
+    // Insert snapshots (we insert new ones each time rather than upserting)
+    // This creates a history of positions over time
+    const { error: insertError } = await supabase
+      .from('leaderboard_position_snapshots')
+      .insert(snapshots);
+
+    if (insertError) {
+      console.error(`   ⚠️ Failed to insert position snapshots: ${insertError.message}`);
+    } else {
+      console.log(`   📸 Created ${snapshots.length} position snapshots for round`);
+    }
+  } catch (err) {
+    console.error(`   ⚠️ Error creating position snapshots:`, err);
+  }
+}
+
 // Run the main function
+main();
 main();

@@ -7,6 +7,7 @@ import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
+import { PositionChangeIndicator } from '@/components/ui/position-change-indicator';
 import {
   Tooltip,
   TooltipContent,
@@ -26,6 +27,7 @@ interface LeaderboardEntry {
   rounds_played: number;
   rank: number;
   is_current_user: boolean;
+  position_change?: number | null;
 }
 
 const GlobalLeaderboardPage: React.FC = () => {
@@ -54,7 +56,8 @@ const GlobalLeaderboardPage: React.FC = () => {
         total_points: Number(row.total_points),
         rounds_played: Number(row.rounds_played),
         rank: Number(row.rank),
-        is_current_user: user?.id === row.user_id
+        is_current_user: user?.id === row.user_id,
+        position_change: row.position_change
       }));
 
       // Apply 6-row logic similar to RoundLeaderboard
@@ -261,6 +264,9 @@ const LeaderboardRow: React.FC<{
           {getRankDisplay(entry.rank)}
         </span>
       </div>
+
+      {/* Position Change */}
+      <PositionChangeIndicator change={entry.position_change} size="sm" />
 
       {/* Avatar */}
       <EnhancedAvatar
