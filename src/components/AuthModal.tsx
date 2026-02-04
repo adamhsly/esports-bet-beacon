@@ -289,7 +289,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
   return (
     <Dialog
       open={isOpen}
-      modal={false}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
