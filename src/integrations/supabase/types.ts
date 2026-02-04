@@ -1708,7 +1708,7 @@ export type Database = {
           created_at: string
           id: string
           position: number
-          round_id: string
+          round_id: string | null
           snapshot_at: string
           total_score: number
           user_id: string
@@ -1717,7 +1717,7 @@ export type Database = {
           created_at?: string
           id?: string
           position: number
-          round_id: string
+          round_id?: string | null
           snapshot_at?: string
           total_score?: number
           user_id: string
@@ -1726,7 +1726,7 @@ export type Database = {
           created_at?: string
           id?: string
           position?: number
-          round_id?: string
+          round_id?: string | null
           snapshot_at?: string
           total_score?: number
           user_id?: string
@@ -4412,6 +4412,7 @@ export type Database = {
         }
         Returns: Json
       }
+      snapshot_global_leaderboard: { Args: never; Returns: undefined }
       spend_bonus_credits:
         | {
             Args: { p_amount: number; p_round: string; p_user: string }

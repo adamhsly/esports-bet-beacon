@@ -56,6 +56,9 @@ async function main() {
       await createRoundPositionSnapshots(round.id);
     }
 
+    // Create global leaderboard snapshots after processing all rounds
+    await createGlobalLeaderboardSnapshots();
+
     console.log('\n✅ Fantasy score calculation complete!');
   } catch (error) {
     console.error('❌ Error in fantasy score calculation:', error);
@@ -653,6 +656,26 @@ async function createRoundPositionSnapshots(roundId) {
   }
 }
 
+/**
+ * Create global leaderboard position snapshots.
+ * This allows us to track position changes over time on the global leaderboard.
+ */
+async function createGlobalLeaderboardSnapshots() {
+  try {
+    console.log('\n📸 Creating global leaderboard snapshots...');
+    
+    // Call the RPC function that creates global leaderboard snapshots
+    const { error } = await supabase.rpc('snapshot_global_leaderboard');
+
+    if (error) {
+      console.error(`   ⚠️ Failed to create global leaderboard snapshots: ${error.message}`);
+    } else {
+      console.log('   ✅ Global leaderboard snapshots created');
+    }
+  } catch (err) {
+    console.error('   ⚠️ Error creating global leaderboard snapshots:', err);
+  }
+}
+
 // Run the main function
-main();
 main();
