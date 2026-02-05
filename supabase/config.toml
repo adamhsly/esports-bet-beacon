@@ -92,3 +92,9 @@ verify_jwt = true
 
 [functions.get-stripe-fx-rate]
 verify_jwt = false
+ 
+ [functions.create-crypto-checkout]
+ verify_jwt = true
+ 
+ [functions.coinbase-webhook]
+ verify_jwt = false

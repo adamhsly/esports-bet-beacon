@@ -1,12 +1,12 @@
-import { useState } from 'react';
+ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { trackPurchase } from '@/utils/metaPixel';
+ import { trackPurchase } from '@/utils/metaPixel';
 
-interface TeamPickData {
+ export interface TeamPickData {
   id: string;
   name: string;
   type: string;
@@ -17,6 +17,7 @@ interface CheckoutOptions {
   teamPicks?: TeamPickData[];
   benchTeam?: { id: string; name: string; type: string } | null;
   starTeamId?: string | null;
+   paymentMethod?: 'stripe' | 'crypto';
 }
 
 export function usePaidRoundCheckout() {
@@ -24,10 +25,14 @@ export function usePaidRoundCheckout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const initiateCheckout = async (roundId: string, options?: CheckoutOptions) => {
+   const initiateCheckout = async (roundId: string, options?: CheckoutOptions) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-round-entry-checkout', {
+       const functionName = options?.paymentMethod === 'crypto' 
+         ? 'create-crypto-checkout' 
+         : 'create-round-entry-checkout';
+ 
+       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           round_id: roundId,
           team_picks: options?.teamPicks,
@@ -55,7 +60,7 @@ export function usePaidRoundCheckout() {
       }
 
       if (data?.url) {
-        // Stripe flow - deduction happens later (on webhook/payment completion).
+         // Payment flow - redirect to provider (Stripe or Coinbase)
         window.location.href = data.url;
         return { success: true, redirecting: true };
       } else {
@@ -69,5 +74,5 @@ export function usePaidRoundCheckout() {
     }
   };
 
-  return { initiateCheckout, loading };
+   return { initiateCheckout, loading };
 }
