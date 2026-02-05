@@ -16,6 +16,7 @@ import { formatCurrency, formatDollarAmount } from "@/utils/currencyUtils";
 import { trackAddToCart, trackLead } from "@/utils/metaPixel";
 import { useStripeFxRate } from "@/hooks/useStripeFxRate";
 import { RoundCardMiniLeaderboard } from "./RoundCardMiniLeaderboard";
+ import { PaymentMethodModal, PaymentMethod } from '@/components/PaymentMethodModal';
 
 interface Round {
   id: string;
@@ -443,6 +444,8 @@ export const RoundSelector: React.FC<{
   const [userPromoBalance, setUserPromoBalance] = useState(0);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   const { status: welcomeOfferStatus } = useWelcomeOffer();
+   const [showPaymentModal, setShowPaymentModal] = useState(false);
+   const [pendingPaidRound, setPendingPaidRound] = useState<Round | null>(null);
   
   // User has free entry if they have promo balance OR they're tier 1 with unclaimed offer (free entry waiting to be claimed)
   // BUT NOT if they've already used a promo entry (prevents double free entry bug)
@@ -768,8 +771,25 @@ export const RoundSelector: React.FC<{
     // Track AddToCart for paid round entry
     trackAddToCart(round.id, round.round_name, round.entry_fee);
     
-    initiateCheckout(round.id);
+     // Show payment method selection modal
+     setPendingPaidRound(round);
+     setShowPaymentModal(true);
   };
+ 
+   const handlePaymentMethodSelect = async (method: PaymentMethod) => {
+     if (!pendingPaidRound) return;
+     
+     const result = await initiateCheckout(pendingPaidRound.id, { paymentMethod: method });
+     
+     // If promo covered the entry, close modal and refresh
+     if (result?.promoCovered) {
+       setShowPaymentModal(false);
+       setPendingPaidRound(null);
+       fetchOpenRounds();
+     }
+     
+     // If redirecting to payment, the page will navigate away
+   };
 
   const handleSubmitPaidTeams = async (round: Round) => {
     const pickId = paidButEmptyPicks[round.id];
@@ -945,6 +965,18 @@ export const RoundSelector: React.FC<{
         onClose={() => setShowAuthModal(false)}
         onSuccess={() => setShowAuthModal(false)}
       />
+ 
+     <PaymentMethodModal
+       open={showPaymentModal}
+       onOpenChange={(open) => {
+         setShowPaymentModal(open);
+         if (!open) setPendingPaidRound(null);
+       }}
+       onSelect={handlePaymentMethodSelect}
+       loading={checkoutLoading}
+       entryFee={pendingPaidRound?.entry_fee}
+       roundName={pendingPaidRound?.round_name || (pendingPaidRound ? `${pendingPaidRound.type.charAt(0).toUpperCase() + pendingPaidRound.type.slice(1)} Round` : undefined)}
+     />
     </>
   );
 };

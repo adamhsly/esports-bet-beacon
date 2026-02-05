@@ -20,11 +20,12 @@ import { MultiTeamSelectionSheet } from './MultiTeamSelectionSheet';
 import { useRoundStar } from '@/hooks/useRoundStar';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { useBonusCredits } from '@/hooks/useBonusCredits';
-import { usePaidRoundCheckout } from '@/hooks/usePaidRoundCheckout';
+ import { usePaidRoundCheckout, TeamPickData } from '@/hooks/usePaidRoundCheckout';
 import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
 import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 import { TeamPickerWalkthrough } from './TeamPickerWalkthrough';
 import { RoundDetailsModal } from './RoundDetailsModal';
+ import { PaymentMethodModal, PaymentMethod } from '@/components/PaymentMethodModal';
 
 
 interface FantasyRound {
@@ -163,6 +164,12 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
   const [showTeamSelectionSheet, setShowTeamSelectionSheet] = useState(false);
   const [sheetHasBeenOpened, setSheetHasBeenOpened] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
+   const [showPaymentModal, setShowPaymentModal] = useState(false);
+   const [pendingPaymentData, setPendingPaymentData] = useState<{
+     teamPicksData: TeamPickData[];
+     benchTeamData: { id: string; name: string; type: string } | null;
+     starTeamId: string | null;
+   } | null>(null);
   const { setStarTeam } = useRoundStar(round.id);
 
   // Track if sheet has ever been opened (for skipping walkthrough)
@@ -587,56 +594,15 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         const isPaidRound = round.entry_fee && round.entry_fee > 0;
         
         if (isPaidRound) {
-          // Pass team picks to checkout - if promo covers it, picks are saved directly
-          const result = await initiateCheckout(round.id, {
-            teamPicks: teamPicksData,
-            benchTeam: benchTeamData,
-            starTeamId: starTeamId,
-          });
-          
-          // If promo covered the entry, picks are already saved - show success
-          if (result?.promoCovered) {
-            clearPersistedPendingSubmission();
-            
-            // Progress missions
-            try {
-              const { MissionBus } = await import('@/lib/missionBus');
-              MissionBus.onSubmitLineup();
-              MissionBus.onJoinRoundAny();
-              MissionBus.recordJoinType(round.type);
-              MissionBus.recordJoinTypeMonth(round.type);
-              MissionBus.onM2_JoinedType();
-              await progressMission('d_submit_lineup');
-              if (selectedTeams.length >= 3) MissionBus.onLineupHasThree();
-              const amateurCount = selectedTeams.filter(team => team.type === 'amateur').length;
-              const proCount = selectedTeams.filter(team => team.type === 'pro').length;
-              if (amateurCount >= 1) MissionBus.onLineupHasAmateur();
-              if (amateurCount >= 3) MissionBus.onLineupHasThreeAmateurs();
-              if (proCount >= 3) MissionBus.onLineupHasThreePros();
-              if (starTeamId) MissionBus.onStarTeamChosen();
-              MissionBus.onM1_SubmitLineup();
-            } catch (missionError) {
-              console.warn('Mission progression failed (non-blocking)', missionError);
-            }
-            
-            setShowSuccessModal(true);
-            setSubmitting(false);
-            return;
-          }
-          
-          // If redirecting to Stripe, store submission for after payment
-          if (result?.redirecting) {
-            persistPendingSubmission({
-              roundId: round.id,
-              selectedTeams,
-              benchTeam,
-              starTeamId,
-              createdAt: Date.now()
-            });
-          }
-          
-          setSubmitting(false);
-          return; // Exit early - checkout will redirect appropriately
+         // Store the payment data and show payment method modal
+         setPendingPaymentData({
+           teamPicksData,
+           benchTeamData,
+           starTeamId,
+         });
+         setShowPaymentModal(true);
+         setSubmitting(false);
+         return;
         }
         
         // Insert new pick for free round
@@ -1095,6 +1061,73 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         open={showRulesModal} 
         onOpenChange={setShowRulesModal} 
       />
+ 
+     <PaymentMethodModal
+       open={showPaymentModal}
+       onOpenChange={(open) => {
+         setShowPaymentModal(open);
+         if (!open) setPendingPaymentData(null);
+       }}
+       onSelect={async (method: PaymentMethod) => {
+         if (!pendingPaymentData) return;
+         
+         setSubmitting(true);
+         const result = await initiateCheckout(round.id, {
+           teamPicks: pendingPaymentData.teamPicksData,
+           benchTeam: pendingPaymentData.benchTeamData,
+           starTeamId: pendingPaymentData.starTeamId,
+           paymentMethod: method,
+         });
+         
+         // If promo covered the entry, picks are already saved - show success
+         if (result?.promoCovered) {
+           clearPersistedPendingSubmission();
+           setShowPaymentModal(false);
+           setPendingPaymentData(null);
+           
+           // Progress missions
+           try {
+             const { MissionBus } = await import('@/lib/missionBus');
+             MissionBus.onSubmitLineup();
+             MissionBus.onJoinRoundAny();
+             MissionBus.recordJoinType(round.type);
+             MissionBus.recordJoinTypeMonth(round.type);
+             MissionBus.onM2_JoinedType();
+             await progressMission('d_submit_lineup');
+             if (selectedTeams.length >= 3) MissionBus.onLineupHasThree();
+             const amateurCount = selectedTeams.filter(team => team.type === 'amateur').length;
+             const proCount = selectedTeams.filter(team => team.type === 'pro').length;
+             if (amateurCount >= 1) MissionBus.onLineupHasAmateur();
+             if (amateurCount >= 3) MissionBus.onLineupHasThreeAmateurs();
+             if (proCount >= 3) MissionBus.onLineupHasThreePros();
+             if (pendingPaymentData.starTeamId) MissionBus.onStarTeamChosen();
+             MissionBus.onM1_SubmitLineup();
+           } catch (missionError) {
+             console.warn('Mission progression failed (non-blocking)', missionError);
+           }
+           
+           setShowSuccessModal(true);
+           setSubmitting(false);
+           return;
+         }
+         
+         // If redirecting to payment, store submission for after payment
+         if (result?.redirecting) {
+           persistPendingSubmission({
+             roundId: round.id,
+             selectedTeams,
+             benchTeam,
+             starTeamId: pendingPaymentData.starTeamId,
+             createdAt: Date.now()
+           });
+         }
+         
+         setSubmitting(false);
+       }}
+       loading={submitting || checkoutLoading}
+       entryFee={round.entry_fee || undefined}
+       roundName={round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`}
+     />
     </div>
   );
 };
