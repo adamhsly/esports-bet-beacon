@@ -142,11 +142,11 @@ export const RoundCardMiniLeaderboard: React.FC<RoundCardMiniLeaderboardProps> =
                 </span>
               </div>
 
-              {/* Position Change Indicator */}
-              <PositionChangeIndicator change={entry.position_change} size="sm" />
-
               {/* Avatar */}
               <MiniLeaderboardAvatar entry={entry} free={free} premium={premium} />
+
+              {/* Position Change Indicator - immediately after avatar */}
+              <PositionChangeIndicator change={entry.position_change} size="sm" />
 
               {/* Username */}
               <div className="flex-1 min-w-0">
