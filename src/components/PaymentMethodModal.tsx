@@ -43,14 +43,14 @@
  
    return (
      <Dialog open={open} onOpenChange={onOpenChange}>
-       <DialogContent className="sm:max-w-md bg-card border-border">
+       <DialogContent className="sm:max-w-md bg-[#0d0d1a] border-primary/30 rounded-xl">
          <DialogHeader>
-           <DialogTitle className="text-foreground text-xl">
+           <DialogTitle className="text-white text-xl font-bold text-center">
              Choose Payment Method
            </DialogTitle>
-           <DialogDescription className="text-muted-foreground">
+           <DialogDescription className="text-gray-400 text-center">
              {roundName && entryFee ? (
-               <>Entry fee: <span className="text-primary font-semibold">{formatPrice(entryFee)}</span> for {roundName}</>
+               <>Entry fee: <span className="text-primary font-bold">{formatPrice(entryFee)}</span> for {roundName}</>
              ) : (
                'Select how you would like to pay for your entry'
              )}
@@ -63,25 +63,25 @@
              onClick={() => setSelectedMethod('stripe')}
              disabled={loading}
              className={cn(
-               'flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left',
-               'hover:border-primary/50 hover:bg-primary/5',
+               'flex items-center gap-4 p-4 rounded-xl border transition-all text-left',
+               'hover:border-primary/60 hover:bg-primary/10',
                selectedMethod === 'stripe'
-                 ? 'border-primary bg-primary/10'
-                 : 'border-border bg-background/50'
+                 ? 'border-primary bg-primary/15 shadow-[0_0_15px_rgba(0,212,255,0.2)]'
+                 : 'border-white/10 bg-white/5'
              )}
            >
-             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-             <CreditCard className="w-6 h-6 text-primary" />
+             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border border-primary/30">
+               <CreditCard className="w-6 h-6 text-primary" />
              </div>
              <div className="flex-1">
-               <h3 className="font-semibold text-foreground">Card Payment</h3>
-               <p className="text-sm text-muted-foreground">
+               <h3 className="font-semibold text-white">Card Payment</h3>
+               <p className="text-sm text-gray-400">
                  Pay with credit or debit card via Stripe
                </p>
              </div>
              <div className={cn(
-               'w-5 h-5 rounded-full border-2 flex items-center justify-center',
-               selectedMethod === 'stripe' ? 'border-primary' : 'border-muted-foreground/30'
+               'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+               selectedMethod === 'stripe' ? 'border-primary bg-primary/20' : 'border-white/30'
              )}>
                {selectedMethod === 'stripe' && (
                  <div className="w-2.5 h-2.5 rounded-full bg-primary" />
@@ -94,28 +94,28 @@
              onClick={() => setSelectedMethod('crypto')}
              disabled={loading}
              className={cn(
-               'flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left',
-               'hover:border-primary/50 hover:bg-primary/5',
+               'flex items-center gap-4 p-4 rounded-xl border transition-all text-left',
+               'hover:border-accent/60 hover:bg-accent/10',
                selectedMethod === 'crypto'
-                 ? 'border-primary bg-primary/10'
-                 : 'border-border bg-background/50'
+                 ? 'border-accent bg-accent/15 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                 : 'border-white/10 bg-white/5'
              )}
            >
-             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-             <Bitcoin className="w-6 h-6 text-accent" />
+             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center border border-accent/30">
+               <Bitcoin className="w-6 h-6 text-accent" />
              </div>
              <div className="flex-1">
-               <h3 className="font-semibold text-foreground">Crypto Payment</h3>
-               <p className="text-sm text-muted-foreground">
+               <h3 className="font-semibold text-white">Crypto Payment</h3>
+               <p className="text-sm text-gray-400">
                  Pay with BTC, ETH, USDC & more via Coinbase
                </p>
              </div>
              <div className={cn(
-               'w-5 h-5 rounded-full border-2 flex items-center justify-center',
-               selectedMethod === 'crypto' ? 'border-primary' : 'border-muted-foreground/30'
+               'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+               selectedMethod === 'crypto' ? 'border-accent bg-accent/20' : 'border-white/30'
              )}>
                {selectedMethod === 'crypto' && (
-                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                 <div className="w-2.5 h-2.5 rounded-full bg-accent" />
                )}
              </div>
            </button>
@@ -125,7 +125,7 @@
            <Button
              variant="outline"
              onClick={() => onOpenChange(false)}
-             className="flex-1"
+             className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
              disabled={loading}
            >
              Cancel
@@ -133,7 +133,7 @@
            <Button
              onClick={handleConfirm}
              disabled={!selectedMethod || loading}
-             className="flex-1"
+             className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold shadow-[0_0_15px_rgba(0,212,255,0.3)]"
            >
              {loading ? (
                <>
