@@ -147,15 +147,6 @@ export const RoundDetailsModal: React.FC<RoundDetailsModalProps> = ({ round, ope
               </div>
             </div>
           </div>
-
-          {/* Paid Round Disclaimer */}
-          {round.is_paid && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-              <p className="text-xs text-amber-300 text-center">
-                ⚠️ A minimum of 35 rosters must be submitted for round prizes to be paid out.
-              </p>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
