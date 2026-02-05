@@ -125,7 +125,7 @@
            <Button
              variant="outline"
              onClick={() => onOpenChange(false)}
-              className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white border-none font-medium"
+              className="flex-1 bg-slate-700/80 hover:bg-slate-600/80 text-white border-none font-medium"
              disabled={loading}
            >
              Cancel
