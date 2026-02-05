@@ -60,36 +60,36 @@ import bitcoinIcon from '@/assets/bitcoin-icon.png';
          </DialogHeader>
  
          <div className="grid gap-3 py-4">
-           {/* Stripe Option */}
-           <button
-             onClick={() => setSelectedMethod('stripe')}
-             disabled={loading}
-             className={cn(
-               'flex items-center gap-4 p-4 rounded-xl border transition-all text-left',
-               'hover:border-primary/60 hover:bg-primary/10',
-               selectedMethod === 'stripe'
-                 ? 'border-primary bg-primary/15 shadow-[0_0_15px_rgba(0,212,255,0.2)]'
-                 : 'border-white/10 bg-white/5'
-             )}
-           >
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border border-primary/30 overflow-hidden">
+            {/* Stripe Option */}
+            <button
+              onClick={() => setSelectedMethod('stripe')}
+              disabled={loading}
+              className={cn(
+                'flex items-center gap-4 p-4 rounded-xl border transition-all text-left',
+                'hover:border-accent/60 hover:bg-accent/10',
+                selectedMethod === 'stripe'
+                  ? 'border-accent bg-accent/15 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                  : 'border-white/10 bg-white/5'
+              )}
+            >
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center border border-accent/30 overflow-hidden">
               <img src={cardsIcon} alt="Card" className="w-10 h-10 object-contain" />
             </div>
-             <div className="flex-1">
-               <h3 className="font-semibold text-white">Card Payment</h3>
-               <p className="text-sm text-gray-400">
-                 Pay with credit or debit card via Stripe
-               </p>
-             </div>
-             <div className={cn(
-               'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
-               selectedMethod === 'stripe' ? 'border-primary bg-primary/20' : 'border-white/30'
-             )}>
-               {selectedMethod === 'stripe' && (
-                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-               )}
-             </div>
-           </button>
+              <div className="flex-1">
+                <h3 className="font-semibold text-white">Card Payment</h3>
+                <p className="text-sm text-gray-400">
+                  Pay with credit or debit card via Stripe
+                </p>
+              </div>
+              <div className={cn(
+                'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+                selectedMethod === 'stripe' ? 'border-accent bg-accent/20' : 'border-white/30'
+              )}>
+                {selectedMethod === 'stripe' && (
+                  <div className="w-2.5 h-2.5 rounded-full bg-accent" />
+                )}
+              </div>
+            </button>
  
            {/* Crypto Option */}
            <button
