@@ -212,11 +212,11 @@ export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({ roundId }) =
             </span>
           </div>
 
-          {/* Position Change */}
-          <PositionChangeIndicator change={entry.position_change} size="sm" />
-
           {/* Avatar */}
           <LeaderboardAvatar entry={entry} free={free} premium={premium} />
+
+          {/* Position Change - immediately after avatar */}
+          <PositionChangeIndicator change={entry.position_change} size="sm" className="font-bold" />
 
           {/* Username */}
           <div className="flex-1 min-w-0">
