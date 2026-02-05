@@ -1,14 +1,16 @@
- import { useState } from 'react';
- import {
-   Dialog,
-   DialogContent,
-   DialogDescription,
-   DialogHeader,
-   DialogTitle,
- } from '@/components/ui/dialog';
- import { Button } from '@/components/ui/button';
- import { CreditCard, Bitcoin, Loader2 } from 'lucide-react';
- import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import cardsIcon from '@/assets/cards-icon.png';
+import bitcoinIcon from '@/assets/bitcoin-icon.png';
  
  export type PaymentMethod = 'stripe' | 'crypto';
  
@@ -70,9 +72,9 @@
                  : 'border-white/10 bg-white/5'
              )}
            >
-             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border border-primary/30">
-               <CreditCard className="w-6 h-6 text-primary" />
-             </div>
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border border-primary/30 overflow-hidden">
+              <img src={cardsIcon} alt="Card" className="w-10 h-10 object-contain" />
+            </div>
              <div className="flex-1">
                <h3 className="font-semibold text-white">Card Payment</h3>
                <p className="text-sm text-gray-400">
@@ -101,9 +103,9 @@
                  : 'border-white/10 bg-white/5'
              )}
            >
-             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center border border-accent/30">
-               <Bitcoin className="w-6 h-6 text-accent" />
-             </div>
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center border border-accent/30 overflow-hidden">
+              <img src={bitcoinIcon} alt="Bitcoin" className="w-10 h-10 object-contain" />
+            </div>
              <div className="flex-1">
                <h3 className="font-semibold text-white">Crypto Payment</h3>
                <p className="text-sm text-gray-400">
