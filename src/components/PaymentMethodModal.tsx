@@ -50,7 +50,7 @@
            </DialogTitle>
            <DialogDescription className="text-gray-400 text-center">
              {roundName && entryFee ? (
-               <>Entry fee: <span className="text-primary font-bold">{formatPrice(entryFee)}</span> for {roundName}</>
+                <>Entry fee: <span className="text-green-400 font-bold">{formatPrice(entryFee)}</span> for {roundName}</>
              ) : (
                'Select how you would like to pay for your entry'
              )}
@@ -125,7 +125,7 @@
            <Button
              variant="outline"
              onClick={() => onOpenChange(false)}
-             className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white border-none font-medium"
              disabled={loading}
            >
              Cancel
@@ -133,7 +133,7 @@
            <Button
              onClick={handleConfirm}
              disabled={!selectedMethod || loading}
-             className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold shadow-[0_0_15px_rgba(0,212,255,0.3)]"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] transition-all"
            >
              {loading ? (
                <>
