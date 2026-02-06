@@ -155,6 +155,14 @@ export const roundPrizeAmount = (amount: number): number => {
 };
 
 /**
+ * Round amount to nearest whole number
+ * Makes converted currency displays cleaner (e.g., $12.60 → $13)
+ */
+export const roundToWhole = (amount: number): number => {
+  return Math.round(amount);
+};
+
+/**
  * Format prize with local currency, optionally rounded to nearest 5
  * @param pence - Amount in GBP pence
  * @param exchangeRate - Rate from GBP to local currency
@@ -177,8 +185,8 @@ export const formatPrizeWithRate = (
     const formatter = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
-      minimumFractionDigits: localAmount % 1 === 0 ? 0 : 2,
-      maximumFractionDigits: localAmount % 1 === 0 ? 0 : 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     });
 
     return formatter.format(localAmount);
@@ -187,5 +195,33 @@ export const formatPrizeWithRate = (
       ? roundPrizeAmount((pence / 100) * exchangeRate)
       : (pence / 100) * exchangeRate;
     return `$${localAmount.toFixed(0)}`;
+  }
+};
+
+/**
+ * Format amount with local currency using exchange rate, rounded to whole number
+ * @param pence - Amount in GBP pence
+ * @param exchangeRate - Rate from GBP to local currency
+ */
+export const formatWithRate = (
+  pence: number, 
+  exchangeRate: number = 1
+): string => {
+  try {
+    const locale = getUserLocale();
+    const currency = getCurrencyCode(locale);
+    const localAmount = roundToWhole((pence / 100) * exchangeRate);
+
+    const formatter = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+
+    return formatter.format(localAmount);
+  } catch {
+    const localAmount = roundToWhole((pence / 100) * exchangeRate);
+    return `$${localAmount}`;
   }
 };

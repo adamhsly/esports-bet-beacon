@@ -117,38 +117,74 @@ export const useStripeFxRate = () => {
   /**
    * Convert GBP pence to local currency amount and format as string
    * Returns the approximate local currency amount (what Stripe will charge)
+   * Rounded to nearest whole number for cleaner display
    */
-  const convertEntryFee = (pencePence: number): string => {
+  const convertEntryFee = (pence: number): string => {
     if (isGBP) {
       // For GBP users, show GBP directly
-      const amount = pencePence / 100;
+      const amount = pence / 100;
       return new Intl.NumberFormat('en-GB', {
         style: 'currency',
         currency: 'GBP',
-        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(Math.round(amount));
     }
 
-    const localAmount = (pencePence / 100) * rate;
+    const localAmount = Math.round((pence / 100) * rate);
     
     try {
       return new Intl.NumberFormat(navigator.language || 'en-US', {
         style: 'currency',
         currency: currency,
-        minimumFractionDigits: localAmount % 1 === 0 ? 0 : 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
       }).format(localAmount);
     } catch {
-      return `${currency} ${localAmount.toFixed(2)}`;
+      return `${currency} ${localAmount}`;
+    }
+  };
+
+  /**
+   * Format any GBP pence amount to local currency, rounded to whole number
+   */
+  const formatLocalAmount = (pence: number): string => {
+    if (isGBP) {
+      const amount = Math.round(pence / 100);
+      return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    }
+
+    const localAmount = Math.round((pence / 100) * rate);
+    
+    try {
+      return new Intl.NumberFormat(navigator.language || 'en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(localAmount);
+    } catch {
+      return `${currency} ${localAmount}`;
     }
   };
 
   /**
    * Get the raw converted amount (for calculations)
    */
-  const getLocalAmount = (pencePence: number): number => {
-    return (pencePence / 100) * rate;
+  const getLocalAmount = (pence: number): number => {
+    return (pence / 100) * rate;
+  };
+
+  /**
+   * Get the rounded local amount (for display calculations)
+   */
+  const getRoundedLocalAmount = (pence: number): number => {
+    return Math.round((pence / 100) * rate);
   };
 
   return {
@@ -159,6 +195,8 @@ export const useStripeFxRate = () => {
     isLoading,
     error,
     convertEntryFee,
+    formatLocalAmount,
     getLocalAmount,
+    getRoundedLocalAmount,
   };
 };
