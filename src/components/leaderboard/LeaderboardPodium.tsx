@@ -89,17 +89,8 @@ const PodiumPlace: React.FC<{
         </div>
       )}
 
-      {/* Avatar with ring */}
-      <div className={cn('relative mb-3')}>
-        {/* Glowing ring effect */}
-        <div 
-          className={cn(
-            'absolute inset-0 rounded-full ring-4 animate-pulse opacity-50',
-            c.ringColor
-          )} 
-          style={{ margin: '-4px' }}
-        />
-        
+      {/* Avatar with position badge */}
+      <div className="relative mb-3">
         {/* Position badge */}
         <div 
           className={cn(
@@ -118,7 +109,7 @@ const PodiumPlace: React.FC<{
           frameUrl={frameAsset}
           borderUrl={borderAsset}
           size={c.size}
-          className={cn(c.avatarSize, 'ring-4', c.ringColor)}
+          className={c.avatarSize}
         />
       </div>
 
