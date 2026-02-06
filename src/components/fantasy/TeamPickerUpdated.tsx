@@ -26,6 +26,7 @@ import { checkStarTeamPerformance } from '@/lib/starTeamChecker';
 import { TeamPickerWalkthrough } from './TeamPickerWalkthrough';
 import { RoundDetailsModal } from './RoundDetailsModal';
  import { PaymentMethodModal, PaymentMethod } from '@/components/PaymentMethodModal';
+import { formatCurrency } from '@/utils/currencyUtils';
 
 
 interface FantasyRound {
@@ -784,20 +785,19 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
     return `${typeLabel} Round`;
   };
 
-  // Format prize amount based on type
+  // Format prize amount based on type (using proper currency formatting)
   const formatPrize = (amount: number, prizeType: 'credits' | 'vouchers' = 'credits') => {
     if (prizeType === 'vouchers') {
-      return `$${(amount / 100).toFixed(amount % 100 === 0 ? 0 : 2)}`;
+      return formatCurrency(amount);
     }
     return amount.toString();
   };
 
-  // Format total prize pot (same as RoundSelector)
+  // Format total prize pot (same as RoundSelector - using proper currency formatting)
   const formatTotalPrize = (prize1st: number, prize2nd: number, prize3rd: number, prizeType: 'credits' | 'vouchers' = 'credits') => {
     const total = prize1st + prize2nd + prize3rd;
     if (prizeType === 'vouchers') {
-      const dollars = total / 100;
-      return `$${dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2)}`;
+      return formatCurrency(total);
     }
     return `${total} Credits`;
   };
