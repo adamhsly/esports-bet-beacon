@@ -98,36 +98,35 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   // Selection modal variant (rich styling)
   if (variant === 'selection') {
     return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : `${canAfford ? 'border-2 border-purple-500/70 shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:border-purple-400 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'opacity-50 cursor-not-allowed border-gray-700/50'}`} bg-gradient-to-br from-gray-900/90 to-gray-800/90`} onClick={canAfford ? onClick : undefined}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
+        <CardContent className="p-2.5">
+          <div className="flex items-center gap-2">
             {/* Team Logo */}
-            <div className={`relative p-2 rounded-lg ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
-              {team.logo_url ? <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain" /> : isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-blue-400" />}
+            <div className={`relative p-1.5 rounded-md ${isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
+              {team.logo_url ? <img src={team.logo_url} alt={team.name} className="w-6 h-6 object-contain" /> : isAmateur ? <Users className="w-6 h-6 text-orange-400" /> : <Trophy className="w-6 h-6 text-blue-400" />}
             </div>
             
             {/* Team Info */}
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-white truncate text-left">{team.name}</h4>
-              <div className="flex items-center gap-2 mt-1">
-                
-                {isAmateur && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+              <h4 className="font-semibold text-white truncate text-left text-sm">{team.name}</h4>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {isAmateur && <Badge className="text-[10px] px-1.5 py-0 bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
                     +25% Bonus
                   </Badge>}
               </div>
             </div>
             
             {/* Price */}
-            {showPrice && <div className="text-right ml-4">
-                <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+            {showPrice && <div className="text-right ml-2">
+                <div className={`font-bold text-base ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
                   {team.price ?? 0}
                 </div>
-                <div className="text-xs text-gray-400">credits</div>
+                <div className="text-[10px] text-gray-400">credits</div>
               </div>}
           </div>
           
           {/* Stats Row with Add/Remove Button */}
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-3">
+          <div className="mt-2 flex items-center justify-between text-[10px]">
+            <div className="flex items-center gap-2">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -155,7 +154,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                   }}
                   className={`flex items-center gap-1 hover:underline ${isAmateur ? 'text-orange-400 hover:text-orange-300' : 'text-blue-400 hover:text-blue-300'}`}
                 >
-                  <BarChart3 className="w-3 h-3" />
+                  <BarChart3 className="w-2.5 h-2.5" />
                   Stats
                 </button>
               )}
@@ -165,7 +164,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             <Button
               variant={isSelected ? "outline" : "default"}
               size="sm"
-              className={`h-7 px-3 text-xs font-semibold transition-all ${
+              className={`h-6 px-2 text-[10px] font-semibold transition-all ${
                 isSelected 
                   ? 'border-red-500/70 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400' 
                   : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_15px_rgba(168,85,247,0.6)]'
@@ -176,13 +175,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               }}
               disabled={!canAfford && !isSelected}
             >
-              {isSelected ? 'Remove Team' : 'Add Team'}
+              {isSelected ? 'Remove' : 'Add'}
             </Button>
           </div>
 
           {/* Star Team Double Points Label */}
-          {isStarred && isSelected && <div className="mt-2 pt-2 border-t border-gray-600/50">
-              <div className="text-xs text-[#F5C042] font-medium">
+          {isStarred && isSelected && <div className="mt-1.5 pt-1.5 border-t border-gray-600/50">
+              <div className="text-[10px] text-[#F5C042] font-medium">
                 DOUBLE POINTS
               </div>
             </div>}
@@ -202,39 +201,39 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   };
 
   return <Card className={`relative cursor-pointer transition-all duration-250 hover:scale-[1.02] ${isSwappedOut ? 'ring-2 ring-gray-500 bg-gray-500/10 shadow-lg shadow-gray-500/20 opacity-60' : isSwappedIn ? 'ring-2 ring-cyan-400 bg-cyan-500/10 shadow-lg shadow-cyan-400/20' : isSelected ? `ring-2 ${isAmateur ? 'ring-orange-400 bg-orange-500/10' : 'ring-blue-400 bg-blue-500/10'} shadow-lg ${isAmateur ? 'shadow-orange-400/20' : 'shadow-blue-400/20'}` : 'hover:shadow-md hover:ring-1 hover:ring-gray-400/30'} ${isBench ? 'ring-2 ring-orange-500 bg-orange-500/10' : ''} bg-gradient-to-br from-gray-900/90 to-gray-800/90 border-gray-700/50`} onClick={handleCardClick}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
+      <CardContent className="p-2.5">
+        <div className="flex items-center gap-2">
           {/* Team Logo */}
-          <div className={`relative p-2 rounded-lg ${isSwappedOut ? 'bg-gray-500/20 border border-gray-500/30' : isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
-            {team.logo_url ? <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain" /> : isAmateur ? <Users className="w-8 h-8 text-orange-400" /> : <Trophy className="w-8 h-8 text-blue-400" />}
+          <div className={`relative p-1.5 rounded-md ${isSwappedOut ? 'bg-gray-500/20 border border-gray-500/30' : isAmateur ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30' : 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30'}`}>
+            {team.logo_url ? <img src={team.logo_url} alt={team.name} className="w-6 h-6 object-contain" /> : isAmateur ? <Users className="w-6 h-6 text-orange-400" /> : <Trophy className="w-6 h-6 text-blue-400" />}
           </div>
           
           {/* Team Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-white truncate text-left">{team.name}</h4>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-xs">
+            <h4 className="font-semibold text-white truncate text-left text-sm">{team.name}</h4>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <Badge variant={isAmateur ? 'secondary' : 'default'} className="text-[10px] px-1.5 py-0">
                 {isAmateur ? 'Amateur' : 'Pro'}
               </Badge>
               {!isSwappedOut && (
                 <Badge 
-                  className={`text-xs text-white ${
+                  className={`text-[10px] px-1.5 py-0 text-white ${
                     (team.upcoming_match_count ?? 0) > 0 
                       ? 'bg-blue-600/80 border-blue-500/50' 
                       : 'bg-blue-900/70 border-blue-800/50'
                   }`}
                 >
-                  {team.upcoming_match_count ?? 0} upcoming matches
+                  {team.upcoming_match_count ?? 0} upcoming
                 </Badge>
               )}
-              {isAmateur && !isSwappedOut && <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
-                  +25% Bonus
+              {isAmateur && !isSwappedOut && <Badge className="text-[10px] px-1.5 py-0 bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-400/50">
+                  +25%
                 </Badge>}
-              {isBench && <Badge variant="outline" className="text-xs">Bench</Badge>}
-              {isSwappedIn && <Badge className="text-xs bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-cyan-400/50">
+              {isBench && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Bench</Badge>}
+              {isSwappedIn && <Badge className="text-[10px] px-1.5 py-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-cyan-400/50">
                   Swapped In
                 </Badge>}
-              {isSwappedOut && <Badge variant="outline" className="text-xs border-gray-500 text-gray-400">
+              {isSwappedOut && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-gray-500 text-gray-400">
                   Swapped Out
                 </Badge>}
             </div>
@@ -242,31 +241,31 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           
           {/* Fantasy Points */}
           <div className="text-right shrink-0">
-            <div className="font-bold text-sm text-blue-400">
+            <div className="font-bold text-xs text-blue-400">
               {fantasyPoints}
             </div>
-            <div className="text-xs text-gray-400">pts</div>
+            <div className="text-[10px] text-gray-400">pts</div>
           </div>
         </div>
         
         {/* Star Team Double Points Label */}
-        {isStarred && isSelected && !isSwappedOut && <div className="mt-2 pt-2 border-t border-gray-600/50">
-            <div className="text-xs text-[#F5C042] font-medium">
+        {isStarred && isSelected && !isSwappedOut && <div className="mt-1.5 pt-1.5 border-t border-gray-600/50">
+            <div className="text-[10px] text-[#F5C042] font-medium">
               DOUBLE POINTS
             </div>
           </div>}
         
         {/* Swapped In Label */}
-        {isSwappedIn && <div className="mt-2 pt-2 border-t border-gray-600/50">
-            <div className="text-xs text-cyan-400 font-medium">
+        {isSwappedIn && <div className="mt-1.5 pt-1.5 border-t border-gray-600/50">
+            <div className="text-[10px] text-cyan-400 font-medium">
               SWAPPED TEAM
             </div>
           </div>}
         
         {/* Swapped Out Label */}
-        {isSwappedOut && <div className="mt-2 pt-2 border-t border-gray-600/50">
-            <div className="text-xs text-gray-400 font-medium">
-              POINTS PRESERVED ({fantasyPoints} pts)
+        {isSwappedOut && <div className="mt-1.5 pt-1.5 border-t border-gray-600/50">
+            <div className="text-[10px] text-gray-400 font-medium">
+              PRESERVED ({fantasyPoints} pts)
             </div>
           </div>}
       </CardContent>
