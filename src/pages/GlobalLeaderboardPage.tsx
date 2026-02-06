@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { PositionChangeIndicator } from '@/components/ui/position-change-indicator';
+import { LeaderboardPodium } from '@/components/leaderboard/LeaderboardPodium';
 import {
   Tooltip,
   TooltipContent,
@@ -189,38 +190,50 @@ const GlobalLeaderboardPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Leaderboard - styled like RoundLeaderboard */}
-        <div className="space-y-1">
-          {loading ? (
-            // Loading skeleton matching RoundLeaderboard
-            <div className="animate-pulse space-y-1">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-2 px-1">
-                  <div className="w-6 h-4 bg-muted rounded" />
-                  <div className="w-5 h-5 bg-muted rounded-full" />
-                  <div className="w-20 h-3 bg-muted rounded flex-1" />
-                  <div className="w-12 h-3 bg-muted rounded" />
-                </div>
-              ))}
+        {/* Leaderboard */}
+        {loading ? (
+          // Loading skeleton
+          <div className="animate-pulse space-y-1">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 px-1">
+                <div className="w-6 h-4 bg-muted rounded" />
+                <div className="w-5 h-5 bg-muted rounded-full" />
+                <div className="w-20 h-3 bg-muted rounded flex-1" />
+                <div className="w-12 h-3 bg-muted rounded" />
+              </div>
+            ))}
+          </div>
+        ) : leaderboard.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <div className="text-2xl mb-2">🏆</div>
+            <p className="text-sm">No rankings yet for this timeframe</p>
+          </div>
+        ) : (
+          <>
+            {/* Podium for top 3 */}
+            <LeaderboardPodium 
+              entries={leaderboard} 
+              free={free} 
+              premium={premium} 
+            />
+
+            {/* Rest of leaderboard (positions 4+) */}
+            <div className="space-y-1">
+              {leaderboard
+                .filter(entry => entry.rank > 3)
+                .map((entry) => (
+                  <LeaderboardRow
+                    key={entry.user_id}
+                    entry={entry}
+                    free={free}
+                    premium={premium}
+                    getRankDisplay={getRankDisplay}
+                    getRowHighlight={getRowHighlight}
+                  />
+                ))}
             </div>
-          ) : leaderboard.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              <div className="text-2xl mb-2">🏆</div>
-              <p className="text-sm">No rankings yet for this timeframe</p>
-            </div>
-          ) : (
-            leaderboard.map((entry) => (
-              <LeaderboardRow
-                key={entry.user_id}
-                entry={entry}
-                free={free}
-                premium={premium}
-                getRankDisplay={getRankDisplay}
-                getRowHighlight={getRowHighlight}
-              />
-            ))
-          )}
-        </div>
+          </>
+        )}
       </main>
 
       <Footer />
