@@ -81,14 +81,7 @@ const PodiumPlace: React.FC<{
   const c = config[position];
 
   return (
-    <div className={cn('flex flex-col items-center', c.order, c.height)}>
-      {/* Crown for 1st place */}
-      {c.showCrown && (
-        <div className="mb-2">
-          <Crown className="w-8 h-8 text-[#FFCC33] fill-[#FFCC33]/30" />
-        </div>
-      )}
-
+    <div className={cn('flex flex-col items-center w-24 sm:w-28', c.height)}>
       {/* Avatar with position badge */}
       <div className="relative mb-3">
         {/* Position badge */}
@@ -120,7 +113,7 @@ const PodiumPlace: React.FC<{
           c.bgGradient
         )}
       >
-        <p className={cn('text-sm font-bold truncate max-w-[100px]', c.nameColor)}>
+        <p className={cn('text-sm font-bold truncate max-w-[80px] sm:max-w-[100px] text-center', c.nameColor)}>
           {entry.username}
           {entry.is_current_user && ' (You)'}
         </p>
@@ -156,7 +149,13 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
       {/* Subtle decorative elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#7a5cff]/5 to-transparent rounded-2xl" />
       
-      <div className="relative flex justify-center items-end gap-4 sm:gap-8 py-6 px-4">
+      {/* Centered crown above podium */}
+      <div className="flex justify-center pt-4 pb-2">
+        <Crown className="w-10 h-10 text-[#FFCC33] fill-[#FFCC33]/30" />
+      </div>
+      
+      {/* Podium positions - fixed order: 2nd, 1st, 3rd */}
+      <div className="relative flex justify-center items-end py-4">
         {second && (
           <PodiumPlace entry={second} position={2} free={free} premium={premium} />
         )}
