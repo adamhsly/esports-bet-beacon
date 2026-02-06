@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, Trophy, Star, X } from 'lucide-react';
@@ -200,8 +200,43 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
+  const [budgetAnimating, setBudgetAnimating] = useState(false);
+  const [displayedBudget, setDisplayedBudget] = useState(budgetSpent);
+  const prevBudgetRef = useRef(budgetSpent);
 
   const actualTotalBudget = totalBudget || salaryCapacity;
+
+  // Animate budget bar when budget changes
+  useEffect(() => {
+    if (budgetSpent !== prevBudgetRef.current) {
+      setBudgetAnimating(true);
+      
+      // Animate the number counting up/down
+      const startValue = prevBudgetRef.current;
+      const endValue = budgetSpent;
+      const duration = 400;
+      const startTime = Date.now();
+      
+      const animateNumber = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const currentValue = Math.round(startValue + (endValue - startValue) * easeOut);
+        setDisplayedBudget(currentValue);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateNumber);
+        }
+      };
+      
+      requestAnimationFrame(animateNumber);
+      prevBudgetRef.current = budgetSpent;
+      
+      // Remove animation class after animation completes
+      setTimeout(() => setBudgetAnimating(false), 600);
+    }
+  }, [budgetSpent]);
 
   const handleSlotClick = (index: number) => {
     if (onOpenMultiTeamSelector) {
@@ -229,26 +264,30 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       {/* Budget Progress */}
       <div 
         data-walkthrough="budget-bar"
-        className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-xl p-4 border border-gray-700/50 backdrop-blur-sm"
+        className={`bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-xl p-4 border backdrop-blur-sm transition-all duration-300 ${
+          budgetAnimating 
+            ? 'border-[#FFCC33] shadow-[0_0_20px_rgba(255,204,51,0.4),0_0_40px_rgba(255,153,0,0.2)] scale-[1.02]' 
+            : 'border-gray-700/50'
+        }`}
       >
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-gray-300 font-medium">Budget</span>
           <div className="text-right">
-            <div className="text-white font-bold">
-              {budgetSpent}/{actualTotalBudget} credits
+            <div className={`font-bold transition-all duration-300 ${budgetAnimating ? 'text-[#FFCC33] scale-110' : 'text-white'}`}>
+              {displayedBudget}/{actualTotalBudget} credits
             </div>
             {bonusCreditsUsed > 0 && (
               <div className="text-xs text-orange-400 font-medium">
                 + {bonusCreditsUsed} bonus
               </div>
             )}
-            <div className="text-green-400 text-sm">
+            <div className={`text-sm transition-all duration-300 ${budgetAnimating ? 'text-[#FFCC33]' : 'text-green-400'}`}>
               {budgetRemaining} remaining
             </div>
           </div>
         </div>
         <div 
-          className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden"
+          className={`h-2 bg-black/40 rounded-full shadow-inner overflow-hidden transition-all duration-300 ${budgetAnimating ? 'h-3' : ''}`}
           role="progressbar"
           aria-valuenow={budgetSpent}
           aria-valuemin={0}
@@ -256,10 +295,12 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
           aria-label="Budget progress"
         >
           <div 
-            className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
+            className={`h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-400 ease-out ${budgetAnimating ? 'animate-pulse' : ''}`}
             style={{ 
-              width: `${Math.min(100, Math.round(budgetSpent / actualTotalBudget * 100))}%`,
-              boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
+              width: `${Math.min(100, Math.round(displayedBudget / actualTotalBudget * 100))}%`,
+              boxShadow: budgetAnimating 
+                ? '0 0 15px rgba(255,204,51,0.9), 0 0 25px rgba(255,153,0,0.7), 0 0 35px rgba(255,204,51,0.5)'
+                : '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
             }}
           />
         </div>
