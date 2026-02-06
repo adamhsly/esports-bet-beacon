@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -145,6 +145,51 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const tempBudgetSpent = useMemo(() => tempSelectedTeams.reduce((sum, t) => sum + (t.price ?? 0), 0), [tempSelectedTeams]);
   const effectiveTotalBudget = swapMode ? (swappingTeamBudget ?? totalBudget) : totalBudget;
   const tempBudgetRemaining = Math.max(0, effectiveTotalBudget - tempBudgetSpent);
+
+  // Budget animation state
+  const [budgetAnimating, setBudgetAnimating] = useState(false);
+  const [displayedBudget, setDisplayedBudget] = useState(tempBudgetSpent);
+  const prevBudgetRef = useRef(tempBudgetSpent);
+
+  // Animate budget bar when budget changes
+  useEffect(() => {
+    if (tempBudgetSpent !== prevBudgetRef.current) {
+      setBudgetAnimating(true);
+      
+      // Animate the number counting up/down
+      const startValue = prevBudgetRef.current;
+      const endValue = tempBudgetSpent;
+      const duration = 400;
+      const startTime = Date.now();
+      
+      const animateNumber = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const currentValue = Math.round(startValue + (endValue - startValue) * easeOut);
+        setDisplayedBudget(currentValue);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateNumber);
+        }
+      };
+      
+      requestAnimationFrame(animateNumber);
+      prevBudgetRef.current = tempBudgetSpent;
+      
+      // Remove animation class after animation completes
+      setTimeout(() => setBudgetAnimating(false), 600);
+    }
+  }, [tempBudgetSpent]);
+
+  // Reset displayed budget when sheet opens
+  useEffect(() => {
+    if (isOpen) {
+      setDisplayedBudget(tempBudgetSpent);
+      prevBudgetRef.current = tempBudgetSpent;
+    }
+  }, [isOpen]);
 
   // Get unique games and price ranges
   const proGames = useMemo(() => Array.from(new Set(proTeams.map(t => t.esport_type).filter(Boolean))) as string[], [proTeams]);
@@ -339,11 +384,23 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         <SheetHeader className="border-b border-gray-700/50 pb-3">
           
           {/* Budget & Selection Status */}
-          <div className="space-y-2 mt-2">
+          <div 
+            className={`space-y-2 mt-2 p-3 rounded-lg transition-all duration-300 ${
+              budgetAnimating 
+                ? 'bg-[#FFCC33]/10 border border-[#FFCC33]/50 shadow-[0_0_20px_rgba(255,204,51,0.3)]' 
+                : 'bg-transparent border border-transparent'
+            }`}
+          >
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Budget:</span>
-              <span className={`font-medium ${tempBudgetSpent > effectiveTotalBudget ? 'text-red-400' : 'text-green-400'}`}>
-                {tempBudgetSpent} / {effectiveTotalBudget} credits
+              <span className={`font-bold transition-all duration-300 ${
+                tempBudgetSpent > effectiveTotalBudget 
+                  ? 'text-red-400' 
+                  : budgetAnimating 
+                    ? 'text-[#FFCC33] scale-110' 
+                    : 'text-green-400'
+              }`}>
+                {displayedBudget} / {effectiveTotalBudget} credits
               </span>
             </div>
             {effectiveTotalBudget > 50 && !swapMode && (
@@ -352,7 +409,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
             )}
             <div 
-              className="h-2 bg-black/40 rounded-full shadow-inner overflow-hidden w-full"
+              className={`bg-black/40 rounded-full shadow-inner overflow-hidden w-full transition-all duration-300 ${
+                budgetAnimating ? 'h-3' : 'h-2'
+              }`}
               role="progressbar"
               aria-valuenow={tempBudgetSpent}
               aria-valuemin={0}
@@ -360,10 +419,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               aria-label="Budget progress"
             >
               <div 
-                className="h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-200 ease-out"
+                className={`h-full bg-gradient-to-r from-[#FFCC33] to-[#FF9900] rounded-full transition-all duration-400 ease-out ${
+                  budgetAnimating ? 'animate-pulse' : ''
+                }`}
                 style={{ 
-                  width: `${Math.min(100, (tempBudgetSpent / totalBudget * 100))}%`,
-                  boxShadow: '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
+                  width: `${Math.min(100, (displayedBudget / totalBudget * 100))}%`,
+                  boxShadow: budgetAnimating 
+                    ? '0 0 15px rgba(255,204,51,0.9), 0 0 25px rgba(255,153,0,0.7), 0 0 35px rgba(255,204,51,0.5)'
+                    : '0 0 8px rgba(255,204,51,0.6), 0 0 12px rgba(255,153,0,0.4)'
                 }}
               />
             </div>
