@@ -150,7 +150,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
       <div className="absolute inset-0 bg-gradient-to-b from-[#7a5cff]/5 to-transparent rounded-2xl" />
       
       {/* Centered crown - positioned to touch 1st place avatar */}
-      <div className="flex justify-center pt-2 -mb-8 relative z-10">
+      <div className="flex justify-center pt-2 -mb-12 relative z-10">
         <img src={crownImage} alt="Crown" className="w-12 h-12 object-contain" />
       </div>
       
