@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-type Timeframe = 'daily' | 'weekly' | 'lifetime';
+type Timeframe = 'weekly' | 'lifetime';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -123,7 +123,6 @@ const GlobalLeaderboardPage: React.FC = () => {
   };
 
   const timeframes: { key: Timeframe; label: string }[] = [
-    { key: 'daily', label: 'Daily' },
     { key: 'weekly', label: 'Weekly' },
     { key: 'lifetime', label: 'Lifetime' }
   ];
