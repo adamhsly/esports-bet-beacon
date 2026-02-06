@@ -268,7 +268,7 @@ const LeaderboardRow: React.FC<{
 
   return (
     <div
-      className={`flex items-center gap-3 py-2 px-1 rounded transition-colors h-11 ${getRowHighlight(entry.rank, entry.is_current_user)}`}
+      className={`flex items-center gap-2 py-3 px-2 transition-colors border-b border-white/10 ${getRowHighlight(entry.rank, entry.is_current_user)}`}
     >
       {/* Rank */}
       <div className="w-6 flex items-center justify-center">
