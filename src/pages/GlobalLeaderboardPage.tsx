@@ -265,9 +265,6 @@ const LeaderboardRow: React.FC<{
         </span>
       </div>
 
-      {/* Position Change */}
-      <PositionChangeIndicator change={entry.position_change} size="sm" />
-
       {/* Avatar */}
       <EnhancedAvatar
         src={entry.avatar_url}
@@ -277,6 +274,9 @@ const LeaderboardRow: React.FC<{
         size="sm"
         className="h-5 w-5"
       />
+
+      {/* Position Change - immediately after avatar */}
+      <PositionChangeIndicator change={entry.position_change} size="sm" className="font-bold" />
 
       {/* Username */}
       <div className="flex-1 min-w-0">
