@@ -167,13 +167,6 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
           <PodiumPlace entry={third} position={3} free={free} premium={premium} />
         )}
       </div>
-
-      {/* Decorative dots/separator */}
-      <div className="flex justify-center gap-1.5 pt-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-        <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
-        <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-      </div>
     </div>
   );
 };
