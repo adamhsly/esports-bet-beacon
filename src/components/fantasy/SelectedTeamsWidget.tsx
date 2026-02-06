@@ -270,26 +270,19 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       </div>
 
       {/* Team Cards Grid */}
-      <div data-walkthrough="team-slots" className="space-y-3">
-        {/* Mobile: First row - 2 cards (85% size) */}
-        <div className="grid grid-cols-2 gap-2 md:hidden px-2">
-          {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square" style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
+      <div data-walkthrough="team-slots" className="space-y-2">
+        {/* Mobile: First row - 3 cards */}
+        <div className="grid grid-cols-3 gap-2 md:hidden px-1">
+          {slots.slice(0, 3).map((team, index) => <div key={index} className="aspect-square">
               {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
             </div>)}
         </div>
         
-        {/* Mobile: Second row - 2 cards (85% size) */}
-        <div className="grid grid-cols-2 gap-2 md:hidden px-2">
-          {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square" style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
-              {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
+        {/* Mobile: Second row - 2 cards centered */}
+        <div className="flex justify-center gap-2 md:hidden px-1">
+          {slots.slice(3, 5).map((team, index) => <div key={index + 3} className="aspect-square" style={{ width: 'calc(33.333% - 4px)' }}>
+              {team ? <TeamCard team={team} index={index + 3} onRemove={() => onRemoveTeam?.(index + 3)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index + 3} onClick={() => handleSlotClick(index + 3)} />}
             </div>)}
-        </div>
-        
-        {/* Mobile: Third row - 1 card centered (85% size) */}
-        <div className="flex justify-center md:hidden">
-          <div className="w-[42%] aspect-square" style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
-            {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
-          </div>
         </div>
 
         {/* Tablet/Desktop: 3+2 layout over two rows with 30% larger cards */}
