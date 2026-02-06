@@ -217,7 +217,7 @@ const GlobalLeaderboardPage: React.FC = () => {
             />
 
             {/* Rest of leaderboard (positions 4+) */}
-            <div className="space-y-1">
+            <div className="border-t border-white/10 pt-2">
               {leaderboard
                 .filter(entry => entry.rank > 3)
                 .map((entry) => (
