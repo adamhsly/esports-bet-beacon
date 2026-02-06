@@ -270,24 +270,24 @@ export const SelectedTeamsWidget: React.FC<SelectedTeamsWidgetProps> = ({
       </div>
 
       {/* Team Cards Grid */}
-      <div data-walkthrough="team-slots" className="space-y-4">
-        {/* Mobile: First row - 2 cards */}
-        <div className="grid grid-cols-2 gap-3 md:hidden">
-          {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square">
+      <div data-walkthrough="team-slots" className="space-y-3">
+        {/* Mobile: First row - 2 cards (85% size) */}
+        <div className="grid grid-cols-2 gap-2 md:hidden px-2">
+          {slots.slice(0, 2).map((team, index) => <div key={index} className="aspect-square" style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
               {team ? <TeamCard team={team} index={index} onRemove={() => onRemoveTeam?.(index)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index} onClick={() => handleSlotClick(index)} />}
             </div>)}
         </div>
         
-        {/* Mobile: Second row - 2 cards */}
-        <div className="grid grid-cols-2 gap-3 md:hidden">
-          {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square">
+        {/* Mobile: Second row - 2 cards (85% size) */}
+        <div className="grid grid-cols-2 gap-2 md:hidden px-2">
+          {slots.slice(2, 4).map((team, index) => <div key={index + 2} className="aspect-square" style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
               {team ? <TeamCard team={team} index={index + 2} onRemove={() => onRemoveTeam?.(index + 2)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={index + 2} onClick={() => handleSlotClick(index + 2)} />}
             </div>)}
         </div>
         
-        {/* Mobile: Third row - 1 card centered */}
+        {/* Mobile: Third row - 1 card centered (85% size) */}
         <div className="flex justify-center md:hidden">
-          <div className="w-1/2 aspect-square">
+          <div className="w-[42%] aspect-square" style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
             {slots[4] ? <TeamCard team={slots[4]} index={4} onRemove={() => onRemoveTeam?.(4)} starTeamId={starTeamId} onToggleStar={onToggleStar} /> : <PlaceholderCard index={4} onClick={() => handleSlotClick(4)} />}
           </div>
         </div>
