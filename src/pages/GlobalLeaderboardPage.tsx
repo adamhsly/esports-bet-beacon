@@ -143,9 +143,6 @@ const GlobalLeaderboardPage: React.FC = () => {
             <Trophy className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Global Leaderboard</h1>
-          <p className="text-muted-foreground">
-            Compete across all rounds and climb the ranks
-          </p>
         </div>
 
         {/* Scoring Info */}
