@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Trophy, Info } from 'lucide-react';
+import { Trophy, Info, X } from 'lucide-react';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { EnhancedAvatar } from '@/components/ui/enhanced-avatar';
@@ -13,6 +13,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  PopoverClose,
 } from '@/components/ui/popover';
 
 type Timeframe = 'weekly' | 'lifetime';
@@ -215,9 +216,12 @@ const GlobalLeaderboardPage: React.FC = () => {
                 How points are earned
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0 bg-[#0F1420] border-[#8B5CF6]/30">
+            <PopoverContent className="w-80 p-0 bg-[#0F1420] border-[#8B5CF6]/30 relative">
+              <PopoverClose className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors">
+                <X className="h-4 w-4" />
+              </PopoverClose>
               <div className="p-4">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-3 pr-6">
                   <Trophy className="h-5 w-5 text-[#8B5CF6]" />
                   <h3 className="text-lg font-semibold text-white">Scoring System</h3>
                 </div>
