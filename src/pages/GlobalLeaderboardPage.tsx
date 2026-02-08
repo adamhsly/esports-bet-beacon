@@ -215,15 +215,48 @@ const GlobalLeaderboardPage: React.FC = () => {
                 How points are earned
               </button>
             </PopoverTrigger>
-            <PopoverContent className="max-w-xs p-4 bg-card border border-border">
-              <p className="font-medium text-white mb-2">Scoring System</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>🏆 Top 1% = <span className="text-white font-medium">100 pts</span></li>
-                <li>🥇 Top 5% = <span className="text-white font-medium">70 pts</span></li>
-                <li>🥈 Top 10% = <span className="text-white font-medium">50 pts</span></li>
-                <li>🥉 Top 25% = <span className="text-white font-medium">30 pts</span></li>
-                <li>✅ Participation = <span className="text-white font-medium">10 pts</span></li>
-              </ul>
+            <PopoverContent className="w-80 p-0 bg-[#0F1420] border-[#8B5CF6]/30">
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="h-5 w-5 text-[#8B5CF6]" />
+                  <h3 className="text-lg font-semibold text-white">Scoring System</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">
+                  Earn points based on your round finish position:
+                </p>
+                <div className="space-y-2">
+                  <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-3 rounded-lg border border-[#8B5CF6]/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300">🏆 Top 1%</span>
+                      <span className="text-white font-bold">100 pts</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-3 rounded-lg border border-[#8B5CF6]/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300">🥇 Top 5%</span>
+                      <span className="text-white font-bold">70 pts</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-3 rounded-lg border border-[#8B5CF6]/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300">🥈 Top 10%</span>
+                      <span className="text-white font-bold">50 pts</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-3 rounded-lg border border-[#8B5CF6]/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300">🥉 Top 25%</span>
+                      <span className="text-white font-bold">30 pts</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#8B5CF6]/20 to-transparent p-3 rounded-lg border border-[#8B5CF6]/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300">✅ Participation</span>
+                      <span className="text-white font-bold">10 pts</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
         </div>
