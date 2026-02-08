@@ -57,7 +57,7 @@ const formatTotalPrize = (prize1st: number, prize2nd: number, prize3rd: number, 
 const SectionHeading: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => (
-  <h2 className="text-xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+  <h2 className="text-xl md:text-3xl font-bold mb-4 text-white">
     {children}
   </h2>
 );
