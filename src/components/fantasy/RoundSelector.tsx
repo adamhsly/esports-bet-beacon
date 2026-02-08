@@ -282,7 +282,7 @@ const RoundCard: React.FC<{
           {/* Round name overlay */}
           {round.round_name && (
             <div className="absolute bottom-0 left-0 right-0 bg-black px-2 py-1 flex items-center justify-between">
-              <p className="text-base font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent truncate flex-1">{round.round_name}</p>
+              <p className="text-base font-bold text-white truncate flex-1">{round.round_name}</p>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -354,7 +354,7 @@ const RoundCard: React.FC<{
           {/* Round name */}
           {round.round_name && (
             <div className="flex items-center justify-center gap-2 mb-2">
-              <p className="text-lg font-bold truncate bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{round.round_name}</p>
+              <p className="text-lg font-bold truncate text-white">{round.round_name}</p>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
