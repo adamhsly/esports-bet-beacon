@@ -139,9 +139,6 @@ const GlobalLeaderboardPage: React.FC = () => {
       <main className="flex-grow container mx-auto px-4 py-8 max-w-2xl">
         {/* Hero Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#7a5cff] to-[#8e6fff] mb-4">
-            <Trophy className="w-8 h-8 text-white" />
-          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Global Leaderboard</h1>
         </div>
 
