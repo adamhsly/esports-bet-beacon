@@ -281,14 +281,14 @@ const RoundCard: React.FC<{
           />
           {/* Round name overlay */}
           {round.round_name && (
-            <div className="absolute bottom-0 left-0 right-0 bg-black px-2 py-1 flex items-center justify-center relative">
-              <p className="text-base font-bold text-white truncate text-center">{round.round_name?.split(' - ').pop()}</p>
+            <div className="absolute bottom-0 left-0 right-0 bg-black px-2 py-1 flex items-center justify-center">
+              <p className="text-base font-bold text-white truncate text-center max-w-[calc(100%-3rem)]">{round.round_name?.split(' - ').pop()}</p>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowDetailsModal(true);
                 }}
-                className="absolute right-2 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               >
                 <Info className="h-4 w-4 text-gray-300" />
               </button>
