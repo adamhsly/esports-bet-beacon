@@ -10,11 +10,10 @@ import { useRewardsTrack } from '@/hooks/useRewardsTrack';
 import { PositionChangeIndicator } from '@/components/ui/position-change-indicator';
 import { LeaderboardPodium } from '@/components/leaderboard/LeaderboardPodium';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 type Timeframe = 'weekly' | 'lifetime';
 
@@ -145,30 +144,6 @@ const GlobalLeaderboardPage: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Global Leaderboard</h1>
         </div>
 
-        {/* Scoring Info */}
-        <div className="mb-6 flex justify-center">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
-                  <Info className="w-4 h-4" />
-                  How points are earned
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs p-4 bg-card border border-border">
-                <p className="font-medium text-white mb-2">Scoring System</p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>🏆 Top 1% = <span className="text-white font-medium">100 pts</span></li>
-                  <li>🥇 Top 5% = <span className="text-white font-medium">70 pts</span></li>
-                  <li>🥈 Top 10% = <span className="text-white font-medium">50 pts</span></li>
-                  <li>🥉 Top 25% = <span className="text-white font-medium">30 pts</span></li>
-                  <li>✅ Participation = <span className="text-white font-medium">10 pts</span></li>
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
         {/* Timeframe Tabs */}
         <div className="flex justify-center gap-2 mb-8">
           {timeframes.map(({ key, label }) => (
@@ -230,6 +205,28 @@ const GlobalLeaderboardPage: React.FC = () => {
             </div>
           </>
         )}
+
+        {/* Scoring Info - Below leaderboard */}
+        <div className="mt-6 flex justify-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
+                <Info className="w-4 h-4" />
+                How points are earned
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="max-w-xs p-4 bg-card border border-border">
+              <p className="font-medium text-white mb-2">Scoring System</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>🏆 Top 1% = <span className="text-white font-medium">100 pts</span></li>
+                <li>🥇 Top 5% = <span className="text-white font-medium">70 pts</span></li>
+                <li>🥈 Top 10% = <span className="text-white font-medium">50 pts</span></li>
+                <li>🥉 Top 25% = <span className="text-white font-medium">30 pts</span></li>
+                <li>✅ Participation = <span className="text-white font-medium">10 pts</span></li>
+              </ul>
+            </PopoverContent>
+          </Popover>
+        </div>
       </main>
 
       <Footer />
