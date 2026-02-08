@@ -80,6 +80,7 @@ const RoundCard: React.FC<{
   pickCount?: number;
   hasFreeEntry?: boolean;
   hasExistingPicks?: boolean;
+  formatLocalEntryFee?: (pence: number) => string;
 }> = ({ 
   round, 
   type, 
@@ -92,6 +93,7 @@ const RoundCard: React.FC<{
   pickCount = 0,
   hasFreeEntry = false,
   hasExistingPicks = false,
+  formatLocalEntryFee,
 }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
@@ -206,11 +208,15 @@ const RoundCard: React.FC<{
         }
         return "Use Free Entry";
       }
+      // Get formatted entry fee using local currency
+      const entryFeeText = formatLocalEntryFee && round?.entry_fee 
+        ? formatLocalEntryFee(round.entry_fee) 
+        : "";
       // Show "Submit Team Again" if user already has picks for this round
       if (hasExistingPicks) {
-        return "Submit Team Again - Paid";
+        return `Submit Team Again - ${entryFeeText}`;
       }
-      return "Submit Team - Paid";
+      return `Submit Team - ${entryFeeText}`;
     }
     return "Submit Team - Free";
   };
@@ -444,6 +450,7 @@ export const RoundSelector: React.FC<{
   const [userPromoBalance, setUserPromoBalance] = useState(0);
   const { initiateCheckout, loading: checkoutLoading } = usePaidRoundCheckout();
   const { status: welcomeOfferStatus } = useWelcomeOffer();
+  const { convertEntryFee } = useStripeFxRate();
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [pendingPaidRound, setPendingPaidRound] = useState<Round | null>(null);
   
@@ -932,6 +939,7 @@ export const RoundSelector: React.FC<{
                             pickCount={pickCounts[round.id] || 0}
                             hasFreeEntry={round.is_paid && effectivePromoBalance >= (round.entry_fee || 0)}
                             hasExistingPicks={round.is_paid && paidRoundsWithPicks.has(round.id)}
+                            formatLocalEntryFee={convertEntryFee}
                           />
                         </div>
                       );
