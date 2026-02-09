@@ -32,26 +32,25 @@ export const StarTeamConfirmModal: React.FC<StarTeamConfirmModalProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0F1420] border-border">
+      <DialogContent className="bg-[#1a2332] border border-[#2a3a4a] rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-white">{title}</DialogTitle>
-          <DialogDescription className="text-white">
+          <DialogDescription className="text-gray-300">
             {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            className="text-white"
-          >
-            {cancelText}
-          </Button>
+        <DialogFooter className="flex flex-col gap-3 sm:flex-col">
           <Button
             onClick={onConfirm}
-            className="text-white"
+            className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium rounded-lg"
           >
             {confirmText}
+          </Button>
+          <Button
+            onClick={onCancel}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] transition-all"
+          >
+            {cancelText}
           </Button>
         </DialogFooter>
       </DialogContent>
