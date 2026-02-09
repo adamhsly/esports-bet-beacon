@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
@@ -162,6 +162,7 @@ const LeaderboardBannerPreview: React.FC = () => {
 
 const FantasyPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('join');
   const [selectedRound, setSelectedRound] = useState<any>(null);
@@ -293,6 +294,14 @@ const FantasyPage: React.FC = () => {
       navigate('/welcome' + currentSearch);
     }
   }, [navigate]);
+
+  // Clear selectedRound when user navigates to / or /fantasy without roundId (e.g. clicking navbar)
+  useEffect(() => {
+    const roundId = searchParams.get('roundId');
+    if (!roundId && selectedRound) {
+      setSelectedRound(null);
+    }
+  }, [location.key]);
 
 
   // Allow deep-linking to a tab via URL (e.g. /fantasy?tab=join)
