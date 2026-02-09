@@ -110,7 +110,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
           <p className="text-gray-400">Good luck and may the best teams win!</p>
         </div>
         <div className="flex flex-col gap-2">
-          <Button onClick={handleSharePicks} disabled={isGenerating} className="w-full">
+          <Button onClick={handleSharePicks} disabled={isGenerating} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] transition-all">
             <Share2 className="mr-2 h-4 w-4" />
             {isGenerating ? 'Generating...' : 'Share Your Picks'}
           </Button>
@@ -119,8 +119,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
               onCheckProgress();
               onOpenChange(false);
             }}
-            variant="outline"
-            className="w-full text-white"
+            className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium rounded-lg"
           >
             <TrendingUp className="mr-2 h-4 w-4" />
             Check Progress
