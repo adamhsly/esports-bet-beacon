@@ -133,7 +133,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
     return (
       <>
         <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent side="bottom" className="h-auto">
+          <SheetContent side="bottom" className="h-auto bg-[#1a2332] border-t border-[#2a3a4a] rounded-t-xl">
             <ModalContent />
           </SheetContent>
         </Sheet>
@@ -154,7 +154,7 @@ export const LineupSuccessModal: React.FC<LineupSuccessModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-[#1a2332] border border-[#2a3a4a] rounded-xl">
           <ModalContent />
         </DialogContent>
       </Dialog>
