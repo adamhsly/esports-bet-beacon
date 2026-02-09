@@ -15,7 +15,7 @@ import { InProgressRounds } from '@/components/fantasy/InProgressRounds';
 import { FinishedRounds } from '@/components/fantasy/FinishedRounds';
 import { TeamPicker } from '@/components/fantasy/TeamPickerUpdated';
 import { MyPrivateRounds } from '@/components/fantasy/MyPrivateRounds';
-import { Calendar, Clock, Trophy, Home, Users } from 'lucide-react';
+import { Calendar, Clock, Trophy, Users } from 'lucide-react';
 import { useRPCActions } from '@/hooks/useRPCActions';
 import { ProgressHudSticky } from '@/components/fantasy/ProgressHudSticky';
 import { ProgressHudSidebar } from '@/components/fantasy/ProgressHudSidebar';
@@ -569,17 +569,7 @@ const FantasyPage: React.FC = () => {
           )}
 
           <div className="max-w-2xl mx-auto">
-            {selectedRound ? (
-              <div className="mb-6">
-                <Button
-                  onClick={() => setSelectedRound(null)}
-                  className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium"
-                >
-                  <Home className="h-4 w-4" />
-                  Fantasy
-                </Button>
-              </div>
-            ) : (
+            {!selectedRound && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <div className="w-full overflow-x-auto scrollbar-hide">
                   <TabsList className="inline-flex bg-gradient-to-br from-[#1e1e2a] to-[#2a2a3a] rounded-[10px] p-1.5 gap-1.5 min-w-full md:w-auto md:mx-auto">
