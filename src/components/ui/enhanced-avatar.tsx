@@ -30,7 +30,7 @@ const avatarSizeClasses = {
 // Generate a deterministic avatar URL from a seed string using DiceBear
 const generateAvatarUrl = (seed: string): string => {
   const encoded = encodeURIComponent(seed.toLowerCase().trim());
-  return `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encoded}&backgroundColor=1a1a2e`;
+  return `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encoded}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 };
 
 export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
