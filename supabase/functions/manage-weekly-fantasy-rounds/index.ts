@@ -106,7 +106,6 @@ Deno.serve(async (_req) => {
       prize_2nd: variant.prize_2nd,
       prize_3rd: variant.prize_3rd,
       section_name: variant.section_name,
-      minimum_reservations: variant.is_paid ? 35 : null,
     }));
 
     const { data: newRounds, error: insertError } = await supabase
