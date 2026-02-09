@@ -810,24 +810,20 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       <TeamPickerWalkthrough skip={sheetHasBeenOpened} />
 
       {/* Round Header */}
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <h2 className="text-2xl font-bold text-white">
-            {getRoundDisplayTitle()}
-          </h2>
-          <button 
-            onClick={() => setShowRulesModal(true)}
-            className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            <Info className="h-4 w-4 text-gray-300" />
-          </button>
+      <div className="flex items-center justify-center gap-3">
+        <h2 className="text-2xl font-bold text-white">
+          {getRoundDisplayTitle()}
+        </h2>
+        <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg px-3 py-1.5">
+          <Trophy className="h-4 w-4 text-emerald-300" />
+          <span className="text-sm font-bold text-emerald-300">{totalPrizeDisplay}</span>
         </div>
-        
-        {/* Prize Display - Aggregated like RoundSelector */}
-        <div className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg px-4 py-2">
-          <Trophy className="h-5 w-5 text-emerald-300" />
-          <span className="text-base font-bold text-emerald-300">{totalPrizeDisplay} in prizes</span>
-        </div>
+        <button 
+          onClick={() => setShowRulesModal(true)}
+          className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+        >
+          <Info className="h-4 w-4 text-gray-300" />
+        </button>
       </div>
 
       {/* Selected Teams Widget */}
