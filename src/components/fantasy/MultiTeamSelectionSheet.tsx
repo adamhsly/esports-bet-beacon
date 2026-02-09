@@ -498,7 +498,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
               
               {/* Pro Team List */}
-              <div className="space-y-3 flex-1 overflow-y-auto min-h-0 pb-4">
+              <div className="space-y-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-4">
                 {filteredProTeams.map(team => {
                 const isSelected = tempSelectedTeams.find(t => t.id === team.id);
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
@@ -580,7 +580,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
               </div>
               
               {/* Amateur Team List */}
-              <div className="space-y-3 flex-1 overflow-y-auto min-h-0 pb-4">
+              <div className="space-y-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-4">
                 {filteredAmateurTeams.map(team => {
                 const isSelected = tempSelectedTeams.find(t => t.id === team.id);
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
