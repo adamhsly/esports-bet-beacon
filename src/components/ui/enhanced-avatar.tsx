@@ -27,6 +27,12 @@ const avatarSizeClasses = {
   xl: 'h-14 w-14'
 };
 
+// Generate a deterministic avatar URL from a seed string using DiceBear
+const generateAvatarUrl = (seed: string): string => {
+  const encoded = encodeURIComponent(seed.toLowerCase().trim());
+  return `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encoded}&backgroundColor=1a1a2e`;
+};
+
 export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
   src,
   alt = 'Avatar',
@@ -37,6 +43,9 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
   fallbackClassName,
   size = 'md'
 }) => {
+  // If no src provided, auto-generate an avatar from the fallback text
+  const avatarSrc = src || (typeof fallback === 'string' && fallback ? generateAvatarUrl(fallback) : null);
+
   return (
     <div className={cn('relative', sizeClasses[size], className)}>
       {/* Border (background layer) */}
@@ -53,7 +62,7 @@ export const EnhancedAvatar: React.FC<EnhancedAvatarProps> = ({
       {/* Avatar (middle layer) - centered and smaller to show border around */}
       <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
         <Avatar className={cn('relative', avatarSizeClasses[size])}>
-          {src && <AvatarImage src={src} alt={alt} onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />}
+          {avatarSrc && <AvatarImage src={avatarSrc} alt={alt} onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />}
           <AvatarFallback className={fallbackClassName}>
             {fallback}
           </AvatarFallback>
