@@ -780,9 +780,9 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
 
   // Get display title for round
   const getRoundDisplayTitle = () => {
-    if (round.round_name) return round.round_name;
-    const typeLabel = round.type.charAt(0).toUpperCase() + round.type.slice(1);
-    return `${typeLabel} Round`;
+    const name = round.round_name || `${round.type.charAt(0).toUpperCase() + round.type.slice(1)} Round`;
+    const parts = name.split(' - ');
+    return parts[parts.length - 1].trim();
   };
 
   // Format prize amount based on type (using proper currency formatting)
@@ -812,7 +812,7 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
       {/* Round Header */}
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold text-white">
             {getRoundDisplayTitle()}
           </h2>
           <button 
