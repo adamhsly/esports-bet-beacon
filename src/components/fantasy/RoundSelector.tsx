@@ -98,28 +98,13 @@ const RoundCard: React.FC<{
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
   const getRoundImage = (roundType: string, gameType?: string | null, platform: "mobile" | "desktop" = "desktop") => {
-    // Handle private rounds separately
     if (roundType === "private") {
       return "/lovable-uploads/private_round.png";
     }
-
-    // Map game_type to image filename prefix
-    const getGameImageKey = (game: string | null | undefined): string => {
-      if (!game || game === "all") return "all";
-      const normalizedGame = game.toLowerCase();
-      if (normalizedGame === "cs2" || normalizedGame === "counter-strike" || normalizedGame === "csgo") {
-        return "cs2";
-      }
-      if (normalizedGame === "valorant") return "valorant";
-      if (normalizedGame === "dota-2" || normalizedGame === "dota2") return "dota2";
-      if (normalizedGame === "league-of-legends" || normalizedGame === "lol") return "league-of-legends";
-      return "all"; // Default to all games if unknown
-    };
-
-    const gameKey = getGameImageKey(gameType);
-    // Note: file naming is inverted - "desktop" files are for mobile, "mobile" files are for desktop/tablet
-    const fileSuffix = platform === "mobile" ? "desktop" : "mobile";
-    return `/lovable-uploads/rounds/${gameKey}-${fileSuffix}.png`;
+    if (platform === "mobile") {
+      return "/images/round-selector-mobile.png";
+    }
+    return "/images/round-selector-desktop.png";
   };
   if (type === "private") {
     return (
