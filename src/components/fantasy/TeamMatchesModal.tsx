@@ -198,7 +198,7 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
         let result: 'win' | 'loss' | 'draw' | undefined;
         let score: string | undefined;
         
-        if (!isUpcoming && match.status === 'finished') {
+        if (!isUpcoming && (match.status === 'finished' || (match.status === 'cancelled' && match.winner_id))) {
           // Use the utility function to extract scores from raw_data
           const rawData = match.raw_data as any;
           const liveScore = getPandaScoreLiveScore(rawData, [
