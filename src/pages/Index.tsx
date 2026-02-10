@@ -359,7 +359,7 @@ const Index = () => {
       alt: 'Draft your ultimate roster - Pick teams and win prizes'
     },
     {
-      src: '/lovable-uploads/team_swap_banner.png',
+      src: '/images/swap-star-banner.png',
       alt: 'Use your in-round team swap and star team change wisely'
     },
     {

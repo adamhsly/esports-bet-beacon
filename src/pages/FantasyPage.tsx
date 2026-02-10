@@ -330,7 +330,7 @@ const FantasyPage: React.FC = () => {
       link: null
     },
     {
-      src: '/lovable-uploads/team_swap_banner.png',
+      src: '/images/swap-star-banner.png',
       alt: 'Use your in-round team swap and star team change wisely',
       link: null
     },
