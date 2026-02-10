@@ -534,7 +534,8 @@ const FantasyPage: React.FC = () => {
                       {banner.isLeaderboardBanner ? (
                         <div 
                           onClick={() => navigate('/leaderboard')}
-                          className="w-full aspect-[3/1] rounded-xl bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-blue-900/80 border border-purple-500/30 px-3 md:px-6 py-3 md:py-4 cursor-pointer hover:border-purple-400/50 transition-all group flex items-center overflow-hidden"
+                          className="w-full aspect-[3/1] rounded-xl relative border border-purple-500/30 px-3 md:px-6 py-3 md:py-4 cursor-pointer hover:border-purple-400/50 transition-all group flex items-center overflow-hidden"
+                          style={{ backgroundImage: "url('/images/leaderboard-banner-bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
                         >
                           <div className="flex items-center justify-between w-full gap-2 md:gap-4">
                             <div className="flex-1 min-w-0">
