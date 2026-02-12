@@ -183,7 +183,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     pro: {
       matches: 100,
       credits: 1000,
-      winRate: 100
+      winRate: 0
     },
     amateur: {
       matches: 100,
