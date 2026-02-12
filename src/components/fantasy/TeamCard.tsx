@@ -72,7 +72,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     if (!showStarToggle) return null;
     const isDisabled = !!disabledReason;
     const StarIcon = isDisabled ? Lock : Star;
-    const button = <Button variant="ghost" size="sm" className={`absolute top-1 right-1 h-6 w-6 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
+    const button = <Button variant="ghost" size="sm" className={`absolute top-1 right-9 h-6 w-6 p-0 hover:bg-background/20 ${isStarred ? 'text-[#F5C042] hover:text-[#F5C042]/80' : 'text-white/60 hover:text-white/80'}`} onClick={e => {
       e.stopPropagation();
       if (!isDisabled && onToggleStar) {
         onToggleStar();
@@ -276,7 +276,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             e.stopPropagation();
             onSwapTeam();
           }}
-          className="absolute top-1 right-8 h-6 px-2 text-xs border-primary/50 text-white bg-gray-800 hover:bg-primary hover:text-white"
+          className="absolute top-1 right-16 h-6 px-2 text-xs border-primary/50 text-white bg-gray-800 hover:bg-primary hover:text-white"
         >
           Swap
         </Button>
