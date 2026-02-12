@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useWelcomeOffer } from '@/hooks/useWelcomeOffer';
+import { useStripeFxRate } from '@/hooks/useStripeFxRate';
 import { Gift, Clock, Sparkles, Info, Coins } from 'lucide-react';
 import {
   Tooltip,
@@ -9,11 +10,15 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import WelcomeOfferModal from './WelcomeOfferModal';
-import { formatCurrency } from '@/utils/currencyUtils';
+import { formatWithRate } from '@/utils/currencyUtils';
+
 const WelcomeOfferBadge: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { status, loading, displayState, progressPercent, daysRemaining, refetch, canClaimTier2 } = useWelcomeOffer();
+  const { rate } = useStripeFxRate();
   const [modalOpen, setModalOpen] = useState(false);
+
+  const fmt = (pence: number) => formatWithRate(pence, rate);
 
   // Refetch balance when payment success is detected
   useEffect(() => {
@@ -82,8 +87,8 @@ const WelcomeOfferBadge: React.FC = () => {
 
   // Tier 2: Spend $5 get $10 offer (progress towards threshold or ready to claim)
   if (displayState === 'progress' && status.tier === 2 && !status.offerClaimed) {
-    const spentAmount = formatCurrency(status.totalSpentPence);
-    const thresholdAmount = formatCurrency(status.thresholdPence);
+    const spentAmount = fmt(status.totalSpentPence);
+    const thresholdAmount = fmt(status.thresholdPence);
     
     return (
       <>
@@ -100,8 +105,8 @@ const WelcomeOfferBadge: React.FC = () => {
               >
                 <span className={`text-[10px] font-bold ${canClaimTier2 ? 'text-yellow-300' : 'text-purple-300'}`}>
                   {canClaimTier2 
-                    ? `Claim ${formatCurrency(status.rewardPence)}!` 
-                    : `Get ${formatCurrency(status.rewardPence)}`
+                    ? `Claim ${fmt(status.rewardPence)}!` 
+                    : `Get ${fmt(status.rewardPence)}`
                   }
                 </span>
                 <InfoButton />
@@ -111,12 +116,12 @@ const WelcomeOfferBadge: React.FC = () => {
               <div className="flex flex-col gap-1 p-1">
                 <div className="flex items-center gap-2">
                   <Coins className="w-4 h-4 text-purple-400" />
-                  <span className="font-semibold text-white">Spend {thresholdAmount} Get {formatCurrency(status.rewardPence)}!</span>
+                  <span className="font-semibold text-white">Spend {thresholdAmount} Get {fmt(status.rewardPence)}!</span>
                 </div>
                 <p className="text-sm text-gray-300">
                   {canClaimTier2 
-                    ? `You've spent ${thresholdAmount}! Click to claim your ${formatCurrency(status.rewardPence)} bonus.`
-                    : `Spend ${thresholdAmount} on paid rounds to unlock ${formatCurrency(status.rewardPence)} bonus. Progress: ${spentAmount}/${thresholdAmount}`
+                    ? `You've spent ${thresholdAmount}! Click to claim your ${fmt(status.rewardPence)} bonus.`
+                    : `Spend ${thresholdAmount} on paid rounds to unlock ${fmt(status.rewardPence)} bonus. Progress: ${spentAmount}/${thresholdAmount}`
                   }
                 </p>
                 {!canClaimTier2 && (
@@ -166,7 +171,7 @@ const WelcomeOfferBadge: React.FC = () => {
                   <span className="font-semibold text-white">Promo Balance</span>
                 </div>
                 <p className="text-sm text-gray-300">
-                  {formatCurrency(status.promoBalancePence)} available for paid entries. Click to join a round!
+                  {fmt(status.promoBalancePence)} available for paid entries. Click to join a round!
                 </p>
                 {daysRemaining !== null && (
                   <p className="text-xs text-yellow-400 flex items-center gap-1">
