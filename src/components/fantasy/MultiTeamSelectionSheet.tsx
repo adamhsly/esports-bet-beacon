@@ -104,25 +104,15 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
 
   // Upcoming match counts for all teams
   const [upcomingMatchCounts, setUpcomingMatchCounts] = useState<Record<string, number>>({});
-  const [upcomingCountsLoaded, setUpcomingCountsLoaded] = useState(false);
-
-  // Reset loaded state when sheet closes/reopens
-  useEffect(() => {
-    if (!isOpen) {
-      setUpcomingCountsLoaded(false);
-      setUpcomingMatchCounts({});
-    }
-  }, [isOpen]);
 
   // Fetch upcoming match counts when sheet opens
   useEffect(() => {
     if (!isOpen) return;
 
-    const allTeams = [...proTeams, ...amateurTeams];
-    const teamIds = allTeams.map(t => String(t.id)).filter(Boolean);
-    if (teamIds.length === 0) return;
-
     const fetchUpcomingMatchCounts = async () => {
+      const allTeams = [...proTeams, ...amateurTeams];
+      const teamIds = allTeams.map(t => String(t.id)).filter(Boolean);
+      if (teamIds.length === 0) return;
 
       const now = new Date().toISOString();
       const roundEnd = round.end_date;
@@ -156,7 +146,6 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       }
 
       setUpcomingMatchCounts(counts);
-      setUpcomingCountsLoaded(true);
     };
 
     fetchUpcomingMatchCounts();
@@ -183,7 +172,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     pro: {
       matches: 100,
       credits: 1000,
-      winRate: 0
+      winRate: 100
     },
     amateur: {
       matches: 100,
@@ -364,7 +353,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     return budgetFilteredProTeams.filter(t => {
       const matchVolumeMatch = (t.match_volume ?? 0) <= debouncedAdvancedFilters.pro.matches;
       const creditsMatch = (t.price ?? 0) <= debouncedAdvancedFilters.pro.credits;
-      const winRateMatch = (t.recent_win_rate ?? 0) >= debouncedAdvancedFilters.pro.winRate;
+      const winRateMatch = (t.recent_win_rate ?? 0) <= debouncedAdvancedFilters.pro.winRate;
       return matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
   }, [budgetFilteredProTeams, debouncedAdvancedFilters.pro]);
