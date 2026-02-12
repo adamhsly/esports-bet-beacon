@@ -127,23 +127,20 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           {/* Stats Row with Add/Remove Button */}
           <div className="mt-2 flex items-center justify-between text-[10px]">
             <div className="flex items-center gap-2">
-              <button
+              {/* Upcoming matches pill */}
+              <Badge 
+                className={`text-[10px] px-1.5 py-0 text-white cursor-pointer ${
+                  (team.upcoming_match_count ?? 0) > 0 
+                    ? 'bg-blue-600/80 border-blue-500/50' 
+                    : 'bg-blue-900/70 border-blue-800/50'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (onMatchesClick) onMatchesClick(team);
                 }}
-                className={`flex items-center gap-1 transition-colors ${
-                  onMatchesClick 
-                    ? 'hover:underline cursor-pointer ' + (isAmateur ? 'text-orange-400 hover:text-orange-300' : 'text-blue-400 hover:text-blue-300')
-                    : 'cursor-default'
-                }`}
-                disabled={!onMatchesClick}
               >
-                <span className="text-gray-400">Matches:</span>
-                <span className="font-medium">
-                  {team.match_volume ?? 0}
-                </span>
-              </button>
+                {team.upcoming_match_count ?? 0} upcoming
+              </Badge>
               
               {/* Stats Link */}
               {onStatsClick && (
