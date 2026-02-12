@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -100,6 +101,55 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [roundDetailsOpen, setRoundDetailsOpen] = useState(false);
   const [matchesModalOpen, setMatchesModalOpen] = useState(false);
   const [selectedMatchesTeam, setSelectedMatchesTeam] = useState<Team | null>(null);
+
+  // Upcoming match counts for all teams
+  const [upcomingMatchCounts, setUpcomingMatchCounts] = useState<Record<string, number>>({});
+
+  // Fetch upcoming match counts when sheet opens
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchUpcomingMatchCounts = async () => {
+      const allTeams = [...proTeams, ...amateurTeams];
+      const teamIds = allTeams.map(t => String(t.id)).filter(Boolean);
+      if (teamIds.length === 0) return;
+
+      const now = new Date().toISOString();
+      const roundEnd = round.end_date;
+
+      const { data: upcomingMatches, error } = await supabase
+        .from('pandascore_matches')
+        .select('teams')
+        .gte('start_time', now)
+        .lte('start_time', roundEnd)
+        .in('status', ['not_started', 'running']);
+
+      if (error) {
+        console.error('Error fetching upcoming matches for selection:', error);
+        return;
+      }
+
+      const idSet = new Set(teamIds);
+      const counts: Record<string, number> = {};
+
+      for (const match of (upcomingMatches || [])) {
+        const teams = match.teams as any;
+        if (!Array.isArray(teams)) continue;
+        for (const t of teams) {
+          const teamId = t?.opponent?.id ?? t?.id;
+          if (teamId == null) continue;
+          const idStr = String(teamId);
+          if (idSet.has(idStr)) {
+            counts[idStr] = (counts[idStr] ?? 0) + 1;
+          }
+        }
+      }
+
+      setUpcomingMatchCounts(counts);
+    };
+
+    fetchUpcomingMatchCounts();
+  }, [isOpen, round.end_date, proTeams, amateurTeams]);
 
   // Pro team filters
   const [proSearch, setProSearch] = useState('');
@@ -504,7 +554,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
                 const wouldExceedLimit = !isSelected && tempSelectedTeams.length >= 5;
                 return <div key={team.id} className={`${!canAfford || wouldExceedLimit ? 'opacity-50' : ''}`}>
-                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} onMatchesClick={handleMatchesClick} />
+                      <TeamCard team={{...team, upcoming_match_count: upcomingMatchCounts[team.id] ?? 0}} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} onMatchesClick={handleMatchesClick} />
                     </div>;
               })}
                 {filteredProTeams.length === 0 && <div className="text-center py-8 text-gray-400">
@@ -586,7 +636,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
                 const canAfford = (team.price ?? 0) <= tempBudgetRemaining || isSelected;
                 const wouldExceedLimit = !isSelected && tempSelectedTeams.length >= 5;
                 return <div key={team.id} className={`${!canAfford || wouldExceedLimit ? 'opacity-50' : ''}`}>
-                      <TeamCard team={team} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} onMatchesClick={handleMatchesClick} />
+                      <TeamCard team={{...team, upcoming_match_count: upcomingMatchCounts[team.id] ?? 0}} isSelected={!!isSelected} onClick={() => !wouldExceedLimit && canAfford ? handleTeamToggle(team) : undefined} showPrice={true} budgetRemaining={tempBudgetRemaining} variant="selection" onStatsClick={handleStatsClick} onMatchesClick={handleMatchesClick} />
                     </div>;
               })}
                 {filteredAmateurTeams.length === 0 && <div className="text-center py-8 text-gray-400">
