@@ -365,30 +365,18 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const matchVolumeMatch = (t.match_volume ?? 0) <= debouncedAdvancedFilters.pro.matches;
       const creditsMatch = (t.price ?? 0) <= debouncedAdvancedFilters.pro.credits;
       const winRateMatch = (t.recent_win_rate ?? 0) >= debouncedAdvancedFilters.pro.winRate;
-      // Hide teams with 0 upcoming matches unless already selected (only after counts loaded)
-      if (upcomingCountsLoaded) {
-        const isSelected = tempSelectedTeams.some(st => st.id === t.id);
-        const hasUpcoming = (upcomingMatchCounts[t.id] ?? 0) > 0;
-        if (!isSelected && !hasUpcoming) return false;
-      }
       return matchVolumeMatch && creditsMatch && winRateMatch;
     }).sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-  }, [budgetFilteredProTeams, debouncedAdvancedFilters.pro, upcomingMatchCounts, upcomingCountsLoaded, tempSelectedTeams]);
+  }, [budgetFilteredProTeams, debouncedAdvancedFilters.pro]);
 
   const filteredAmateurTeams = useMemo(() => {
     return budgetFilteredAmateurTeams.filter(t => {
       const matchVolumeMatch = (t.match_volume ?? 0) <= debouncedAdvancedFilters.amateur.matches;
       const creditsMatch = (t.price ?? 0) <= debouncedAdvancedFilters.amateur.credits;
       const abandonRateMatch = (t.abandon_rate ?? 0) <= debouncedAdvancedFilters.amateur.abandonRate;
-      // Hide teams with 0 upcoming matches unless already selected (only after counts loaded)
-      if (upcomingCountsLoaded) {
-        const isSelected = tempSelectedTeams.some(st => st.id === t.id);
-        const hasUpcoming = (upcomingMatchCounts[t.id] ?? 0) > 0;
-        if (!isSelected && !hasUpcoming) return false;
-      }
       return matchVolumeMatch && creditsMatch && abandonRateMatch;
     }).sort((a, b) => (b.recent_win_rate ?? 0) - (a.recent_win_rate ?? 0));
-  }, [budgetFilteredAmateurTeams, debouncedAdvancedFilters.amateur, upcomingMatchCounts, upcomingCountsLoaded, tempSelectedTeams]);
+  }, [budgetFilteredAmateurTeams, debouncedAdvancedFilters.amateur]);
   const handleTeamToggle = (team: Team) => {
     if (swapMode) {
       // In swap mode, only allow selecting one team
