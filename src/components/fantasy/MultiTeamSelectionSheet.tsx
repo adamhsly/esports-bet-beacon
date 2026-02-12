@@ -106,14 +106,23 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
   const [upcomingMatchCounts, setUpcomingMatchCounts] = useState<Record<string, number>>({});
   const [upcomingCountsLoaded, setUpcomingCountsLoaded] = useState(false);
 
+  // Reset loaded state when sheet closes/reopens
+  useEffect(() => {
+    if (!isOpen) {
+      setUpcomingCountsLoaded(false);
+      setUpcomingMatchCounts({});
+    }
+  }, [isOpen]);
+
   // Fetch upcoming match counts when sheet opens
   useEffect(() => {
     if (!isOpen) return;
 
+    const allTeams = [...proTeams, ...amateurTeams];
+    const teamIds = allTeams.map(t => String(t.id)).filter(Boolean);
+    if (teamIds.length === 0) return;
+
     const fetchUpcomingMatchCounts = async () => {
-      const allTeams = [...proTeams, ...amateurTeams];
-      const teamIds = allTeams.map(t => String(t.id)).filter(Boolean);
-      if (teamIds.length === 0) return;
 
       const now = new Date().toISOString();
       const roundEnd = round.end_date;
