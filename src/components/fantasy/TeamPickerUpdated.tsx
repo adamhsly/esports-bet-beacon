@@ -595,15 +595,83 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
         const isPaidRound = round.entry_fee && round.entry_fee > 0;
         
         if (isPaidRound) {
-         // Store the payment data and show payment method modal
-         setPendingPaymentData({
-           teamPicksData,
-           benchTeamData,
-           starTeamId,
-         });
-         setShowPaymentModal(true);
-         setSubmitting(false);
-         return;
+          // Check if user has enough promo balance to cover the entry fee
+          const hasUnclaimedFreeEntry = welcomeOfferStatus?.tier === 1 && !welcomeOfferStatus?.offerClaimed && !welcomeOfferStatus?.hasUsedPromoEntry;
+          const effectiveBalance = userPromoBalance > 0 ? userPromoBalance : (hasUnclaimedFreeEntry ? (welcomeOfferStatus?.rewardPence || 250) : 0);
+          const promoCovered = effectiveBalance >= round.entry_fee;
+
+          if (promoCovered) {
+            // Promo balance covers the fee — go straight through checkout (server handles promo deduction)
+            const result = await initiateCheckout(round.id, {
+              teamPicks: teamPicksData,
+              benchTeam: benchTeamData,
+              starTeamId: starTeamId,
+              paymentMethod: 'stripe', // default; server won't charge since promo covers it
+            });
+
+            if (result?.success && result?.promoCovered) {
+              // Refresh promo balance
+              try {
+                const { data } = await supabase
+                  .from('profiles')
+                  .select('promo_balance_pence')
+                  .eq('id', user.id)
+                  .single();
+                setUserPromoBalance(data?.promo_balance_pence || 0);
+              } catch {}
+
+              // Set star team
+              if (starTeamId) {
+                const starResult = await setStarTeam(starTeamId);
+                if (!starResult.success) {
+                  toast.error(starResult.error || 'Failed to set star team');
+                }
+              }
+
+              // Progress missions
+              try {
+                const { MissionBus } = await import('@/lib/missionBus');
+                MissionBus.onSubmitLineup();
+                MissionBus.onJoinRoundAny();
+                MissionBus.recordJoinType(round.type);
+                MissionBus.recordJoinTypeMonth(round.type);
+                MissionBus.onM2_JoinedType();
+                await progressMission('d_submit_lineup');
+                if (selectedTeams.length >= 3) MissionBus.onLineupHasThree();
+                const amateurCount = selectedTeams.filter(t => t.type === 'amateur').length;
+                const proCount = selectedTeams.filter(t => t.type === 'pro').length;
+                if (amateurCount >= 1) MissionBus.onLineupHasAmateur();
+                if (amateurCount >= 3) MissionBus.onLineupHasThreeAmateurs();
+                if (proCount >= 3) MissionBus.onLineupHasThreePros();
+                if (starTeamId) MissionBus.onStarTeamChosen();
+                MissionBus.onM1_SubmitLineup();
+              } catch (missionError) {
+                console.warn('Mission progression failed (non-blocking)', missionError);
+              }
+
+              clearPersistedPendingSubmission();
+              setShowSuccessModal(true);
+              setSubmitting(false);
+              return;
+            } else if (result?.success && result?.redirecting) {
+              // Unexpected redirect for promo-covered — let it proceed
+              return;
+            } else {
+              // Checkout failed — fall through or stop
+              setSubmitting(false);
+              return;
+            }
+          }
+
+          // No promo coverage — show payment method modal
+          setPendingPaymentData({
+            teamPicksData,
+            benchTeamData,
+            starTeamId,
+          });
+          setShowPaymentModal(true);
+          setSubmitting(false);
+          return;
         }
         
         // Insert new pick for free round
