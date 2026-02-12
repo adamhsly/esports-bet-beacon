@@ -187,7 +187,11 @@ export function useWelcomeOffer() {
     }
     
     // Tier 2: Spend $5 to unlock bonus
+    // CRITICAL: If user already used promo entries and balance is 0, treat as completed
     if (status.tier === 2 && !status.offerClaimed) {
+      if (status.hasUsedPromoEntry && status.promoBalancePence === 0) {
+        return 'completed';
+      }
       return 'progress';
     }
     
