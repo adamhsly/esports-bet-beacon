@@ -1,0 +1,1 @@
+UPDATE profiles SET promo_balance_pence = promo_balance_pence + 19 WHERE id = '0d5067aa-3764-4428-9278-6a43cb10fff2';
