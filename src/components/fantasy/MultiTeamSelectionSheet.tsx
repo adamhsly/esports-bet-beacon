@@ -114,15 +114,15 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const teamIds = allTeams.map(t => String(t.id)).filter(Boolean);
       if (teamIds.length === 0) return;
 
-      const now = new Date().toISOString();
+      const roundStart = round.start_date;
       const roundEnd = round.end_date;
 
       const { data: upcomingMatches, error } = await supabase
         .from('pandascore_matches')
-        .select('teams')
-        .gte('start_time', now)
+        .select('teams, status')
+        .gte('start_time', roundStart)
         .lte('start_time', roundEnd)
-        .in('status', ['not_started', 'running']);
+        .not('status', 'eq', 'canceled');
 
       if (error) {
         console.error('Error fetching upcoming matches for selection:', error);
@@ -133,6 +133,10 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const counts: Record<string, number> = {};
 
       for (const match of (upcomingMatches || [])) {
+        // Only count non-finished matches (matching modal logic)
+        const status = (match as any).status?.toLowerCase?.() ?? '';
+        if (status === 'finished') continue;
+        
         const teams = match.teams as any;
         if (!Array.isArray(teams)) continue;
         for (const t of teams) {
@@ -149,7 +153,7 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
     };
 
     fetchUpcomingMatchCounts();
-  }, [isOpen, round.end_date, proTeams, amateurTeams]);
+  }, [isOpen, round.start_date, round.end_date, proTeams, amateurTeams]);
 
   // Pro team filters
   const [proSearch, setProSearch] = useState('');
