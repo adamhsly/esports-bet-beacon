@@ -355,10 +355,6 @@ const Index = () => {
       alt: 'Play Now - Pick your teams, score points, win prizes'
     },
     {
-      src: '/lovable-uploads/build_roster_banner.png',
-      alt: 'Draft your ultimate roster - Pick teams and win prizes'
-    },
-    {
       src: '/images/swap-star-banner.png',
       alt: 'Use your in-round team swap and star team change wisely'
     },
