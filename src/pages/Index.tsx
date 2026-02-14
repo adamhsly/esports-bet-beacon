@@ -723,29 +723,6 @@ const Index = () => {
               </div>
             )}
 
-            {/* Fantasy Banner Carousel */}
-            <div className="mx-2 md:mx-4 mb-8">
-              <div className="max-w-4xl mx-auto">
-                <Link to="/fantasy" className="block hover:opacity-90 transition-opacity">
-                  <Carousel
-                    plugins={[autoplayPlugin.current] as any}
-                    className="w-full md:w-3/4 mx-auto"
-                  >
-                    <CarouselContent>
-                      {fantasyBanners.map((banner, index) => (
-                        <CarouselItem key={index}>
-                          <img 
-                            src={banner.src}
-                            alt={banner.alt}
-                            className="w-full rounded-xl"
-                          />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
-                </Link>
-              </div>
-            </div>
 
             {/* MATCH SECTIONS */}
             {loadingDateFiltered ? (
