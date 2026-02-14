@@ -325,11 +325,6 @@ const FantasyPage: React.FC = () => {
       link: null
     },
     {
-      src: '/lovable-uploads/build_roster_banner.png',
-      alt: 'Draft your ultimate roster - Pick teams and win prizes',
-      link: null
-    },
-    {
       src: '/images/swap-star-banner.png',
       alt: 'Use your in-round team swap and star team change wisely',
       link: null
