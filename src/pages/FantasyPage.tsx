@@ -524,9 +524,55 @@ const FantasyPage: React.FC = () => {
         <div className="mx-2 md:mx-4 my-8">
           {!selectedRound && (
             <div className="mb-8 max-w-4xl mx-auto">
+              <Carousel
+                plugins={[plugin.current] as any}
+                className="w-full md:w-3/4 mx-auto"
+              >
+                <CarouselContent>
+                  {banners.map((banner, index) => (
+                    <CarouselItem key={index}>
+                      {banner.isLeaderboardBanner ? (
+                        <div 
+                          onClick={() => navigate('/leaderboard')}
+                          className="w-full h-[120px] md:h-[200px] lg:h-[240px] rounded-xl relative border border-purple-500/30 px-3 md:px-6 py-3 md:py-4 cursor-pointer hover:border-purple-400/50 transition-all group flex items-center overflow-hidden"
+                          style={{ backgroundImage: "url('/images/leaderboard-banner-bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+                        >
+                          <div className="flex items-center justify-between w-full gap-2 md:gap-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base md:text-2xl font-bold text-white mb-1 md:mb-2 flex items-center gap-1.5 md:gap-2 bg-black/85 rounded-lg px-2 py-1 w-fit">
+                                <Trophy className="w-4 h-4 md:w-6 md:h-6 text-yellow-400 flex-shrink-0" />
+                                <span className="truncate">Global Leaderboard</span>
+                              </h3>
+                              <p className="text-gray-300 text-xs md:text-sm mb-1.5 md:mb-3 hidden sm:block bg-black/85 rounded-lg px-2 py-1 w-fit">See how you rank against all players</p>
+                              <div className="flex flex-wrap gap-1 md:gap-2 text-[10px] md:text-xs text-muted-foreground mb-2 md:mb-4">
+                                <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-black/85 rounded-lg text-white">🏆 Top 1% = 100pts</span>
+                                <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-black/85 rounded-lg text-white">🥇 Top 5% = 70pts</span>
+                                <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-black/85 rounded-lg hidden sm:inline-flex text-white">🥈 Top 10% = 50pts</span>
+                              </div>
+                              <Button size="sm" className="bg-purple-600 hover:bg-purple-500 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-all text-xs md:text-sm h-7 md:h-9 px-2 md:px-4">
+                                View Leaderboard
+                              </Button>
+                            </div>
+                            <div className="bg-black/85 rounded-xl p-2">
+                              <LeaderboardBannerPreview />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={banner.src!}
+                          alt={banner.alt}
+                          className={`w-full rounded-xl ${banner.link ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                          onClick={() => banner.link && navigate(banner.link)}
+                        />
+                      )}
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
               <button
                 onClick={() => setRulesModalOpen(true)}
-                className="inline-flex items-center gap-1.5 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors mt-4"
               >
                 <BookOpen className="h-4 w-4" />
                 View Rules & Scoring
