@@ -65,7 +65,8 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
             .gte('start_time', startDateTime)
             .lte('start_time', endDateTime)
             .not('teams', 'is', null)
-            .not('status', 'eq', 'canceled');
+            .not('status', 'eq', 'canceled')
+            .not('status', 'eq', 'cancelled');
 
           if (error) throw error;
 
@@ -76,9 +77,10 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
           const pastMatches = allTeamMatches.filter(m => 
             m.status.toLowerCase() === 'finished'
           );
-          const upcoming = allTeamMatches.filter(m => 
-            m.status.toLowerCase() !== 'finished'
-          ).map(m => ({ ...m, isUpcoming: true }));
+          const upcoming = allTeamMatches.filter(m => {
+            const s = m.status.toLowerCase();
+            return s !== 'finished' && s !== 'cancelled' && s !== 'canceled';
+          }).map(m => ({ ...m, isUpcoming: true }));
           
           setMatches(pastMatches);
           setUpcomingMatches(upcoming);
