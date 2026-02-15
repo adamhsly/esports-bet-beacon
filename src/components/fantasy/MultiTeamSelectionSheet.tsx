@@ -122,7 +122,8 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         .select('teams, status')
         .gte('start_time', roundStart)
         .lte('start_time', roundEnd)
-        .not('status', 'eq', 'canceled');
+        .not('status', 'eq', 'canceled')
+        .not('status', 'eq', 'cancelled');
 
       if (error) {
         console.error('Error fetching upcoming matches for selection:', error);
@@ -133,9 +134,9 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
       const counts: Record<string, number> = {};
 
       for (const match of (upcomingMatches || [])) {
-        // Only count non-finished matches (matching modal logic)
+        // Only count non-finished/cancelled matches (matching modal logic)
         const status = (match as any).status?.toLowerCase?.() ?? '';
-        if (status === 'finished') continue;
+        if (status === 'finished' || status === 'cancelled' || status === 'canceled') continue;
         
         const teams = match.teams as any;
         if (!Array.isArray(teams)) continue;
