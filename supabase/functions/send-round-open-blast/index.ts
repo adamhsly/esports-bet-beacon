@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const DAILY_EMAIL_LIMIT = 80;
+
 // Background task to send emails
 async function sendBlastEmails(
   supabase: ReturnType<typeof createClient>,
@@ -170,8 +172,8 @@ async function sendBlastEmails(
       
       sentCount++;
       
-      // Log progress every 50 emails
-      if (sentCount % 50 === 0) {
+      // Log progress every 20 emails
+      if (sentCount % 20 === 0) {
         console.log(`[Background] Progress: ${sentCount}/${eligibleUsers.length} emails sent`);
       }
     } catch (error) {
@@ -221,6 +223,39 @@ Deno.serve(async (req) => {
       throw new Error('Round must be open to send blast');
     }
 
+    // Check how many blast emails were sent in the last 24 hours (across ALL rounds)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: sentInLast24h, error: countError } = await supabase
+      .from('round_blast_emails')
+      .select('id', { count: 'exact', head: true })
+      .gte('sent_at', twentyFourHoursAgo);
+
+    if (countError) {
+      console.error('Error checking 24h email count:', countError);
+    }
+
+    const emailsSentToday = sentInLast24h || 0;
+    const remainingQuota = Math.max(0, DAILY_EMAIL_LIMIT - emailsSentToday);
+
+    console.log(`24h email quota: ${emailsSentToday}/${DAILY_EMAIL_LIMIT} used, ${remainingQuota} remaining`);
+
+    if (remainingQuota === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Daily email limit of ${DAILY_EMAIL_LIMIT} reached. Emails will resume in next batch.`,
+          eligible: 0,
+          sent: 0,
+          daily_limit_reached: true,
+          emails_sent_today: emailsSentToday
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+
     // Get users who have already reserved/picked for this round (they get separate emails)
     const { data: reservedUsers } = await supabase
       .from('fantasy_round_picks')
@@ -230,7 +265,7 @@ Deno.serve(async (req) => {
     const reservedUserIds = new Set((reservedUsers || []).map(r => r.user_id));
     console.log(`Found ${reservedUserIds.size} users who have reserved this round (will be excluded)`);
 
-    // Get users who have already received a blast email for this round
+    // Get users who have already received a blast email for this round (prevents duplicates)
     const { data: alreadyBlasted } = await supabase
       .from('round_blast_emails')
       .select('user_id')
@@ -270,9 +305,10 @@ Deno.serve(async (req) => {
       !alreadyBlastedUserIds.has(u.id)
     );
 
-    console.log(`Found ${eligibleUsers.length} eligible users to email (from ${allUsers.length} total, excluding ${reservedUserIds.size} reserved and ${alreadyBlastedUserIds.size} already blasted)`);
+    const totalEligible = eligibleUsers.length;
+    console.log(`Found ${totalEligible} eligible users to email (from ${allUsers.length} total, excluding ${reservedUserIds.size} reserved and ${alreadyBlastedUserIds.size} already blasted)`);
 
-    if (eligibleUsers.length === 0) {
+    if (totalEligible === 0) {
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -287,22 +323,31 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Cap the batch to the remaining daily quota
+    const batchUsers = eligibleUsers.slice(0, remainingQuota);
+    const remainingAfterBatch = totalEligible - batchUsers.length;
+
+    console.log(`Sending batch of ${batchUsers.length} emails (${remainingAfterBatch} remaining for future batches)`);
+
     // Create Resend client for background task
     const resend = new Resend(resendApiKey);
 
     // Start background task to send emails
     // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
-    EdgeRuntime.waitUntil(sendBlastEmails(supabase, resend, round, eligibleUsers));
+    EdgeRuntime.waitUntil(sendBlastEmails(supabase, resend, round, batchUsers));
 
     // Return immediately with the count of emails to be sent
-    console.log(`Returning immediately, ${eligibleUsers.length} emails will be sent in background`);
+    console.log(`Returning immediately, ${batchUsers.length} emails will be sent in background`);
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Sending ${eligibleUsers.length} emails in background`,
-        eligible: eligibleUsers.length,
-        sent: eligibleUsers.length, // Report as "sent" since they will be sent
+        message: `Sending ${batchUsers.length} of ${totalEligible} eligible emails (daily limit: ${DAILY_EMAIL_LIMIT})`,
+        eligible: totalEligible,
+        sent: batchUsers.length,
+        remaining: remainingAfterBatch,
+        emails_sent_today: emailsSentToday,
+        daily_limit: DAILY_EMAIL_LIMIT,
         background: true
       }),
       { 
