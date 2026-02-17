@@ -139,7 +139,7 @@ async function fetchProMatches(startDate, endDate) {
     .select('*')
     .gte('start_time', startDate)
     .lte('start_time', endDate)
-    .in('status', ['finished', 'canceled']);
+    .in('status', ['finished', 'canceled', 'cancelled']);
 
   if (error) {
     console.error('   ❌ Failed to fetch pro matches:', error.message);
