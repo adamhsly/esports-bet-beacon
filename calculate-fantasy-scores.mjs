@@ -19,6 +19,7 @@ const BASE_POINTS = {
   mapWin: 3,
   cleanSweep: 5,
   tournamentWin: 20,
+  draw: 5,
 };
 const AMATEUR_MULTIPLIER = 1.25;
 const STAR_MULTIPLIER = 2;
@@ -138,7 +139,7 @@ async function fetchProMatches(startDate, endDate) {
     .select('*')
     .gte('start_time', startDate)
     .lte('start_time', endDate)
-    .not('winner_id', 'is', null);
+    .in('status', ['finished', 'canceled']);
 
   if (error) {
     console.error('   ❌ Failed to fetch pro matches:', error.message);
@@ -522,6 +523,7 @@ function processProMatch(match, teamId, starMult) {
   // Calculate points
   let points = teamScore * BASE_POINTS.mapWin;
   if (result === 'win') points += BASE_POINTS.matchWin;
+  if (result === 'draw') points += BASE_POINTS.draw;
   if (isCleanSweep) points += BASE_POINTS.cleanSweep;
   if (isTournamentWin) points += BASE_POINTS.tournamentWin;
   points = Math.round(points * starMult);
