@@ -32,6 +32,7 @@ interface FantasyRound {
   end_date: string;
   status: 'open' | 'active' | 'finished';
   is_private?: boolean;
+  team_type?: 'pro' | 'amateur' | 'both';
 }
 interface Team {
   id: string;
@@ -330,6 +331,64 @@ export const TeamPicker: React.FC<TeamPickerProps> = ({
           fetchAvailableTeams(true);
         }, RETRY_INTERVAL);
         return;
+      }
+
+      // Parity check: ensure sibling round (same dates, opposite is_paid) has matching prices
+      // This runs in the background and doesn't block the current round from loading
+      if (hasPrices && !isRetry) {
+        (async () => {
+          try {
+            // Find sibling round with same dates but opposite is_paid
+            const { data: siblingRounds } = await supabase
+              .from('fantasy_rounds')
+              .select('id')
+              .eq('type', round.type)
+              .eq('start_date', round.start_date)
+              .eq('end_date', round.end_date)
+              .eq('is_private', false)
+              .eq('team_type', round.team_type || 'pro')
+              .neq('id', round.id)
+              .limit(1);
+
+            if (siblingRounds && siblingRounds.length > 0) {
+              const siblingId = siblingRounds[0].id;
+              
+              // Compare price counts between this round and its sibling
+              const { count: currentCount } = await supabase
+                .from('fantasy_team_prices')
+                .select('*', { count: 'exact', head: true })
+                .eq('round_id', round.id);
+
+              const { count: siblingCount } = await supabase
+                .from('fantasy_team_prices')
+                .select('*', { count: 'exact', head: true })
+                .eq('round_id', siblingId);
+
+              const diff = Math.abs((currentCount ?? 0) - (siblingCount ?? 0));
+              const threshold = Math.max(currentCount ?? 0, siblingCount ?? 0) * 0.1; // 10% threshold
+
+              if (diff > threshold && (siblingCount ?? 0) < (currentCount ?? 0)) {
+                // Sibling has significantly fewer prices — trigger recalculation for it
+                console.log(`[TeamPicker] Price parity issue: current=${currentCount}, sibling=${siblingCount}. Triggering recalc for sibling ${siblingId}`);
+                await supabase.functions.invoke('calculate-team-prices', {
+                  body: { round_id: siblingId }
+                });
+                console.log('[TeamPicker] Sibling round price recalculation triggered');
+              } else if (diff > threshold && (currentCount ?? 0) < (siblingCount ?? 0)) {
+                // Current round has fewer prices — trigger recalculation for it
+                console.log(`[TeamPicker] Price parity issue: current=${currentCount}, sibling=${siblingCount}. Triggering recalc for current ${round.id}`);
+                await supabase.functions.invoke('calculate-team-prices', {
+                  body: { round_id: round.id }
+                });
+                console.log('[TeamPicker] Current round price recalculation triggered, will refresh...');
+                // Refresh prices after a short delay
+                setTimeout(() => fetchAvailableTeams(true), 3000);
+              }
+            }
+          } catch (err) {
+            console.error('[TeamPicker] Price parity check failed (non-blocking):', err);
+          }
+        })();
       }
       
       // Update state with fetched teams
