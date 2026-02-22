@@ -139,11 +139,14 @@ export const MultiTeamSelectionSheet: React.FC<MultiTeamSelectionSheetProps> = (
         if (status === 'finished' || status === 'cancelled' || status === 'canceled') continue;
         
         const teams = match.teams as any;
-        if (!Array.isArray(teams)) continue;
+        if (!Array.isArray(teams) || teams.length < 2) continue;
+        
+        // Use same logic as TeamMatchesModal.processProMatches:
+        // strictly use opponent.id, skip entries without a valid opponent
         for (const t of teams) {
-          const teamId = t?.opponent?.id ?? t?.id;
-          if (teamId == null) continue;
-          const idStr = String(teamId);
+          const opponent = t?.opponent;
+          if (!opponent?.id) continue;
+          const idStr = String(opponent.id);
           if (idSet.has(idStr)) {
             counts[idStr] = (counts[idStr] ?? 0) + 1;
           }
