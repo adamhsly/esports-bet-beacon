@@ -45,21 +45,27 @@ serve(async (req) => {
 
     console.log(`Filtered out ${lives.length - filteredLives.length} invalid matches`);
 
-    const formatted = filteredLives.map((match: any) => ({
-      match_id: String(match.id),
-      esport_type: match.videogame.name.trim(),
-      teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
-      start_time: new Date(match.begin_at).toISOString(),
-      end_time: match.end_at ? new Date(match.end_at).toISOString() : null,
-      tournament_id: match.tournament?.id?.toString() ?? null,
-      tournament_name: match.tournament?.name ?? null,
-      league_id: match.league?.id?.toString() ?? null,
-      league_name: match.league?.name ?? null,
-      serie_id: match.serie?.id?.toString() ?? null,
-      serie_name: match.serie?.name ?? null,
-      status: match.status || "scheduled",
-      match_type: match.type ?? null,
-      number_of_games: match.number_of_games ?? 3,
+    const formatted = filteredLives.map((match: any) => {
+      // Prefer finished status when cancelled but has a winner
+      const effectiveStatus = (match.status === 'canceled' || match.status === 'cancelled') && match.winner_id
+        ? 'finished'
+        : match.status || 'scheduled';
+
+      return {
+        match_id: String(match.id),
+        esport_type: match.videogame.name.trim(),
+        teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
+        start_time: new Date(match.begin_at).toISOString(),
+        end_time: match.end_at ? new Date(match.end_at).toISOString() : null,
+        tournament_id: match.tournament?.id?.toString() ?? null,
+        tournament_name: match.tournament?.name ?? null,
+        league_id: match.league?.id?.toString() ?? null,
+        league_name: match.league?.name ?? null,
+        serie_id: match.serie?.id?.toString() ?? null,
+        serie_name: match.serie?.name ?? null,
+        status: effectiveStatus,
+        match_type: match.type ?? null,
+        number_of_games: match.number_of_games ?? 3,
       raw_data: match,
       updated_at: now,
       last_synced_at: now,
@@ -80,7 +86,7 @@ serve(async (req) => {
       modified_at: match.modified_at ? new Date(match.modified_at).toISOString() : null,
       team_a_player_ids: match.opponents?.[0]?.players?.map((p: any) => p.id) ?? [],
       team_b_player_ids: match.opponents?.[1]?.players?.map((p: any) => p.id) ?? [],
-    }));
+    }});
 
     const { error } = await supabase
       .from("pandascore_matches")
