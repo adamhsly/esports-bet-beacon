@@ -1,0 +1,1 @@
+UPDATE pandascore_matches SET raw_data = jsonb_set(raw_data, '{results}', '[{"score":2,"team_id":135712},{"score":1,"team_id":133868}]'::jsonb), updated_at = now() WHERE match_id = '1358117';
