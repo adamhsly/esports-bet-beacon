@@ -121,64 +121,54 @@ serve(async (req) => {
           }
         }
 
-        // Extract team picks from Stripe metadata (stored server-side during checkout)
-        let teamPicks: unknown[] = [];
-        let benchTeam: unknown = null;
-        try {
-          if (metadata.team_picks) {
-            teamPicks = JSON.parse(metadata.team_picks);
+        // Picks are now created at checkout time (before Stripe redirect) with full team data.
+        // The entry already has pick_id linked. Only create picks if somehow missing (fallback).
+        const existingPickId = entryData?.pick_id;
+        if (!existingPickId) {
+          console.log('No pick_id on entry - creating fallback picks from metadata');
+          let teamPicks: unknown[] = [];
+          let benchTeam: unknown = null;
+          try {
+            if (metadata.team_picks) teamPicks = JSON.parse(metadata.team_picks);
+            if (metadata.bench_team) benchTeam = JSON.parse(metadata.bench_team);
+          } catch (parseErr) {
+            console.error('Error parsing team picks from metadata:', parseErr);
           }
-          if (metadata.bench_team) {
-            benchTeam = JSON.parse(metadata.bench_team);
-          }
-        } catch (parseErr) {
-          console.error('Error parsing team picks from metadata:', parseErr);
-        }
 
-        const hasSubmittedPicks = Array.isArray(teamPicks) && teamPicks.length > 0;
-        console.log(`Team picks from metadata: ${teamPicks.length} teams, hasSubmitted=${hasSubmittedPicks}`);
+          const hasSubmittedPicks = Array.isArray(teamPicks) && teamPicks.length > 0;
 
-        // Create picks entry with the actual team selections
-        const { data: picksData, error: picksError } = await supabaseService
-          .from('fantasy_round_picks')
-          .insert({
-            round_id: metadata.round_id,
-            user_id: metadata.user_id,
-            team_picks: teamPicks,
-            bench_team: benchTeam,
-            submitted_at: hasSubmittedPicks ? new Date().toISOString() : null,
-          })
-          .select()
-          .single();
+          const { data: picksData, error: picksError } = await supabaseService
+            .from('fantasy_round_picks')
+            .insert({
+              round_id: metadata.round_id,
+              user_id: metadata.user_id,
+              team_picks: teamPicks,
+              bench_team: benchTeam,
+              submitted_at: hasSubmittedPicks ? new Date().toISOString() : null,
+            })
+            .select()
+            .single();
 
-        if (picksError) {
-          console.error('Error creating picks entry:', picksError);
-        } else {
-          // Link the picks to the entry
-          await supabaseService
-            .from('round_entries')
-            .update({ pick_id: picksData.id })
-            .eq('stripe_session_id', session.id);
+          if (!picksError && picksData) {
+            await supabaseService
+              .from('round_entries')
+              .update({ pick_id: picksData.id })
+              .eq('stripe_session_id', session.id);
+            console.log(`Fallback picks created: ${picksData.id}`);
 
-          console.log(`Created picks entry: ${picksData.id} with ${teamPicks.length} teams`);
-
-          // Set star team if provided in metadata
-          if (metadata.star_team_id && hasSubmittedPicks) {
-            const { error: starError } = await supabaseService
-              .from('fantasy_round_star_teams')
-              .upsert({
-                round_id: metadata.round_id,
-                user_id: metadata.user_id,
-                star_team_id: metadata.star_team_id,
-                change_used: false,
-              }, { onConflict: 'round_id,user_id' });
-
-            if (starError) {
-              console.error('Error setting star team:', starError);
-            } else {
-              console.log(`Star team set: ${metadata.star_team_id}`);
+            if (metadata.star_team_id && hasSubmittedPicks) {
+              await supabaseService
+                .from('fantasy_round_star_teams')
+                .upsert({
+                  round_id: metadata.round_id,
+                  user_id: metadata.user_id,
+                  star_team_id: metadata.star_team_id,
+                  change_used: false,
+                }, { onConflict: 'round_id,user_id' });
             }
           }
+        } else {
+          console.log(`Picks already linked: ${existingPickId}`);
         }
 
         // Track welcome offer spending (only count Stripe payments, not promo used)
