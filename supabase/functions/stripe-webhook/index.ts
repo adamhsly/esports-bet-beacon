@@ -121,13 +121,32 @@ serve(async (req) => {
           }
         }
 
-        // Create a new picks entry for this paid entry
+        // Extract team picks from Stripe metadata (stored server-side during checkout)
+        let teamPicks: unknown[] = [];
+        let benchTeam: unknown = null;
+        try {
+          if (metadata.team_picks) {
+            teamPicks = JSON.parse(metadata.team_picks);
+          }
+          if (metadata.bench_team) {
+            benchTeam = JSON.parse(metadata.bench_team);
+          }
+        } catch (parseErr) {
+          console.error('Error parsing team picks from metadata:', parseErr);
+        }
+
+        const hasSubmittedPicks = Array.isArray(teamPicks) && teamPicks.length > 0;
+        console.log(`Team picks from metadata: ${teamPicks.length} teams, hasSubmitted=${hasSubmittedPicks}`);
+
+        // Create picks entry with the actual team selections
         const { data: picksData, error: picksError } = await supabaseService
           .from('fantasy_round_picks')
           .insert({
             round_id: metadata.round_id,
             user_id: metadata.user_id,
-            team_picks: [],
+            team_picks: teamPicks,
+            bench_team: benchTeam,
+            submitted_at: hasSubmittedPicks ? new Date().toISOString() : null,
           })
           .select()
           .single();
@@ -141,7 +160,25 @@ serve(async (req) => {
             .update({ pick_id: picksData.id })
             .eq('stripe_session_id', session.id);
 
-          console.log(`Created picks entry: ${picksData.id}`);
+          console.log(`Created picks entry: ${picksData.id} with ${teamPicks.length} teams`);
+
+          // Set star team if provided in metadata
+          if (metadata.star_team_id && hasSubmittedPicks) {
+            const { error: starError } = await supabaseService
+              .from('fantasy_round_star_teams')
+              .upsert({
+                round_id: metadata.round_id,
+                user_id: metadata.user_id,
+                star_team_id: metadata.star_team_id,
+                change_used: false,
+              }, { onConflict: 'round_id,user_id' });
+
+            if (starError) {
+              console.error('Error setting star team:', starError);
+            } else {
+              console.log(`Star team set: ${metadata.star_team_id}`);
+            }
+          }
         }
 
         // Track welcome offer spending (only count Stripe payments, not promo used)
