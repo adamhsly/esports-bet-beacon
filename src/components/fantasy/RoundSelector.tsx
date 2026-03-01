@@ -185,6 +185,10 @@ const RoundCard: React.FC<{
 
   const getButtonText = () => {
     if (isPaidCheckoutLoading) return "Loading...";
+    // If user has paid but hasn't submitted teams yet, show simple submit CTA (no price)
+    if (hasPaidButEmptyPicks) {
+      return "Submit Teams";
+    }
     if (isPaid) {
       // Show "Use Free Entry" if user has sufficient promo balance
       if (hasFreeEntry) {
