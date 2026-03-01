@@ -206,6 +206,11 @@ serve(async () => {
       const teamAPlayerIds = await getTeamPlayerIds(teamAId)
       const teamBPlayerIds = await getTeamPlayerIds(teamBId)
 
+      // Prefer finished status from raw_data when top-level says cancelled
+      const effectiveStatus = (match.status === 'canceled' || match.status === 'cancelled') && match.winner_id
+        ? 'finished'
+        : match.status ?? 'scheduled'
+
       const mapped = {
         match_id,
         esport_type: match.videogame?.name ?? null,
@@ -224,7 +229,7 @@ serve(async () => {
         stream_url_1: match.streams_list?.[0]?.raw_url ?? null,
         stream_url_2: match.streams_list?.[1]?.raw_url ?? null,
         modified_at: match.modified_at,
-        status: match.status ?? 'scheduled',
+        status: effectiveStatus,
         match_type: match.match_type,
         number_of_games: match.number_of_games ?? 3,
         tournament_id: match.tournament?.id?.toString() ?? null,
