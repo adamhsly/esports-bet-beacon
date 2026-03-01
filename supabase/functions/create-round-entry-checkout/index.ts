@@ -328,8 +328,9 @@ serve(async (req) => {
         type: "round_entry",
         promo_used: promoToUse.toString(),
         original_fee: entryFeePence.toString(),
-        team_picks: team_picks ? JSON.stringify(team_picks) : "[]",
-        bench_team: bench_team ? JSON.stringify(bench_team) : "",
+        // Strip logo_url to stay within Stripe's 500-char metadata limit
+        team_picks: team_picks ? JSON.stringify(team_picks.map((t: any) => ({ id: t.id, name: t.name, type: t.type }))) : "[]",
+        bench_team: bench_team ? JSON.stringify(typeof bench_team === 'object' && bench_team !== null ? { id: (bench_team as any).id, name: (bench_team as any).name, type: (bench_team as any).type } : bench_team) : "",
         star_team_id: star_team_id || "",
       },
       success_url: `${siteUrl}/fantasy?payment=success&round_id=${round.id}`,
@@ -337,6 +338,41 @@ serve(async (req) => {
     });
 
     console.log(`Checkout session created: ${session.id}`);
+
+    // Create picks entry with full team data BEFORE Stripe redirect
+    let pickId: string | null = null;
+    if (team_picks && team_picks.length > 0) {
+      const { data: picksData, error: picksError } = await supabaseAdmin
+        .from("fantasy_round_picks")
+        .insert({
+          round_id: round.id,
+          user_id: user.id,
+          team_picks: team_picks,
+          bench_team: bench_team || null,
+          submitted_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (picksError) {
+        console.error("Error creating picks entry:", picksError);
+      } else {
+        pickId = picksData.id;
+        console.log(`Created picks entry at checkout: ${pickId}`);
+
+        // Set star team if provided
+        if (star_team_id) {
+          await supabaseAdmin
+            .from("fantasy_round_star_teams")
+            .upsert({
+              round_id: round.id,
+              user_id: user.id,
+              star_team_id: star_team_id,
+              change_used: false,
+            }, { onConflict: 'round_id,user_id' });
+        }
+      }
+    }
 
     // Create pending entry record
     const { error: entryError } = await supabaseAdmin
@@ -348,6 +384,7 @@ serve(async (req) => {
         amount_paid: entryFeePence,
         promo_used: promoToUse,
         status: "pending",
+        pick_id: pickId,
       });
 
     if (entryError) {
