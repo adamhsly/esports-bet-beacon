@@ -814,13 +814,23 @@ export const RoundSelector: React.FC<{
           .update({ pick_id: newPick.id })
           .eq("id", entryId);
         
-        window.location.href = `/fantasy?roundId=${round.id}&pickId=${newPick.id}`;
+        // Use React Router navigation instead of full page reload
+        if (onJoinRound) {
+          onJoinRound(round);
+        } else {
+          setSearchParams({ roundId: round.id, pickId: newPick.id });
+        }
       } catch (err) {
         console.error("Error creating pick for orphan entry:", err);
         toast.error("Failed to create entry. Please try again.");
       }
     } else {
-      window.location.href = `/fantasy?roundId=${round.id}&pickId=${pickId}`;
+      // Use React Router navigation instead of full page reload
+      if (onJoinRound) {
+        onJoinRound(round);
+      } else {
+        setSearchParams({ roundId: round.id, pickId: pickId });
+      }
     }
   };
   const handlePrivateRound = () => {
