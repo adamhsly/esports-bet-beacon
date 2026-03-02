@@ -85,7 +85,7 @@ serve(async (req) => {
         .in("status", ["not_started", "cancelled", "canceled"])
         .lt("start_time", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // started 2+ hours ago
         .gt("start_time", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // within last 7 days
-        .limit(50);
+        .limit(200);
 
       if (staleMatches && staleMatches.length > 0) {
         console.log(`Rechecking ${staleMatches.length} stale matches individually`);
