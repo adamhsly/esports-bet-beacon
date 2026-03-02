@@ -79,22 +79,27 @@ serve(async (req) => {
         return [];
       }
 
+      // Helper to extract team id from either nested or flat format
+      const getTeamId = (t: any): string => (t?.opponent?.id ?? t?.id)?.toString() ?? '';
+      const getTeamName = (t: any): string => t?.opponent?.name || t?.name || 'TBD';
+      const getTeamLogo = (t: any): string | undefined => t?.opponent?.image_url || t?.image_url;
+
       // Filter to matches where this team participates
       const teamMatches = upcomingMatchData.filter((match) => {
         const teams = match.teams as any[];
-        return teams?.some((t: any) => t?.opponent?.id?.toString() === teamIdToSearch);
+        return teams?.some((t: any) => getTeamId(t) === teamIdToSearch);
       });
 
       console.log(`Found ${teamMatches.length} upcoming matches for team ${teamIdToSearch}`);
 
       return teamMatches.map((match) => {
         const teams = match.teams as any[];
-        const opponentData = teams?.find((t: any) => t?.opponent?.id?.toString() !== teamIdToSearch);
+        const opponentData = teams?.find((t: any) => getTeamId(t) !== teamIdToSearch);
         return {
           match_id: match.match_id,
           match_date: match.start_time,
-          opponent_name: opponentData?.opponent?.name || "TBD",
-          opponent_logo: opponentData?.opponent?.image_url,
+          opponent_name: getTeamName(opponentData),
+          opponent_logo: getTeamLogo(opponentData),
           status: match.status || "not_started",
           tournament_name: match.tournament_name || "",
         };
@@ -259,18 +264,21 @@ serve(async (req) => {
         );
       }
 
+      // Helper to extract team id from either nested or flat format
+      const getTeamId = (t: any): string => (t?.opponent?.id ?? t?.id)?.toString() ?? '';
+      const getTeamName = (t: any): string => t?.opponent?.name || t?.name || 'Unknown';
+      const getTeamLogo = (t: any): string | undefined => t?.opponent?.image_url || t?.image_url;
+
       // Filter finished matches where team participated and respect swap timing
       const teamMatches = (finishedResult.data || []).filter((match) => {
         const teams = match.teams as any[];
-        const teamParticipated = teams?.some((t: any) => t?.opponent?.id?.toString() === team_id);
+        const teamParticipated = teams?.some((t: any) => getTeamId(t) === team_id);
         if (!teamParticipated) return false;
         
         // Apply swap timing filter
         if (swapTime) {
           const matchDate = new Date(match.start_time);
-          // If team was swapped out, only include matches before swap
           if (wasSwappedOut && matchDate >= swapTime) return false;
-          // If team was swapped in, only include matches after swap
           if (wasSwappedIn && matchDate < swapTime) return false;
         }
         
@@ -283,12 +291,9 @@ serve(async (req) => {
       if (!upcomingResult.error && upcomingResult.data) {
         const upcomingTeamMatches = upcomingResult.data.filter((match) => {
           const teams = match.teams as any[];
-          const teamParticipated = teams?.some((t: any) => t?.opponent?.id?.toString() === team_id);
+          const teamParticipated = teams?.some((t: any) => getTeamId(t) === team_id);
           if (!teamParticipated) return false;
-          
-          // Apply swap timing filter for upcoming matches too
-          if (swapTime && wasSwappedOut) return false; // Swapped out teams don't get future matches
-          
+          if (swapTime && wasSwappedOut) return false;
           return true;
         });
 
@@ -296,18 +301,18 @@ serve(async (req) => {
 
         upcomingMatches = upcomingTeamMatches.map((match) => {
           const teams = match.teams as any[];
-          const teamData = teams?.find((t: any) => t?.opponent?.id?.toString() === team_id);
-          const opponentData = teams?.find((t: any) => t?.opponent?.id?.toString() !== team_id);
+          const teamData = teams?.find((t: any) => getTeamId(t) === team_id);
+          const opponentData = teams?.find((t: any) => getTeamId(t) !== team_id);
 
-          if (!team_name && teamData?.opponent?.name) {
-            team_name = teamData.opponent.name;
+          if (!team_name && getTeamName(teamData)) {
+            team_name = getTeamName(teamData);
           }
 
           return {
             match_id: match.match_id,
             match_date: match.start_time,
-            opponent_name: opponentData?.opponent?.name || "TBD",
-            opponent_logo: opponentData?.opponent?.image_url,
+            opponent_name: getTeamName(opponentData),
+            opponent_logo: getTeamLogo(opponentData),
             status: match.status || "not_started",
             tournament_name: match.tournament_name || "",
           };
@@ -317,11 +322,11 @@ serve(async (req) => {
       // Process finished matches
       matches = teamMatches.map((match) => {
         const teams = match.teams as any[];
-        const teamData = teams?.find((t: any) => t?.opponent?.id?.toString() === team_id);
-        const opponentData = teams?.find((t: any) => t?.opponent?.id?.toString() !== team_id);
+        const teamData = teams?.find((t: any) => getTeamId(t) === team_id);
+        const opponentData = teams?.find((t: any) => getTeamId(t) !== team_id);
 
-        if (!team_name && teamData?.opponent?.name) {
-          team_name = teamData.opponent.name;
+        if (!team_name && getTeamName(teamData) !== 'Unknown') {
+          team_name = getTeamName(teamData);
         }
 
         // Determine result - use string comparison for winner_id
@@ -391,8 +396,8 @@ serve(async (req) => {
         return {
           match_id: match.match_id,
           match_date: match.match_date || match.start_time,
-          opponent_name: opponentData?.opponent?.name || "Unknown",
-          opponent_logo: opponentData?.opponent?.image_url,
+          opponent_name: getTeamName(opponentData),
+          opponent_logo: getTeamLogo(opponentData),
           result,
           score: scoreString,
           points_earned: Math.round(points),
