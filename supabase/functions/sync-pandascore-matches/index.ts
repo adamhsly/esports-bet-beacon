@@ -1,6 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const MAX_PAGES = 5; // Up to 500 results per endpoint (5 pages × 100 per page)
+
+async function fetchAllPages(url: string, apiKey: string): Promise<any[]> {
+  const all: any[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const separator = url.includes('?') ? '&' : '?';
+    const pagedUrl = `${url}${separator}per_page=100&page=${page}`;
+    const res = await fetch(pagedUrl, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) {
+      console.warn(`Failed fetch page ${page} of ${url}: ${res.status}`);
+      break;
+    }
+    const data = await res.json();
+    all.push(...data);
+    // If we got fewer than 100 results, there are no more pages
+    if (data.length < 100) break;
+  }
+  return all;
+}
+
 serve(async (req) => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -17,8 +39,8 @@ serve(async (req) => {
     const now = new Date().toISOString();
     let allFormatted: any[] = [];
 
-    // 1. Fetch live matches
-    const livesRes = await fetch("https://api.pandascore.co/lives", {
+    // 1. Fetch live matches (single page, no pagination needed)
+    const livesRes = await fetch("https://api.pandascore.co/lives?per_page=100", {
       headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
     });
 
@@ -31,46 +53,66 @@ serve(async (req) => {
       console.error("Failed to fetch live matches:", await livesRes.text());
     }
 
-    // 2. Fetch past matches (last 2 days) for each supported game
+    // 2. Fetch past + upcoming matches with pagination for each game
     const gameEndpoints = ["csgo", "dota2", "lol", "valorant", "ow", "rl"];
     
     for (const game of gameEndpoints) {
       try {
-        // Fetch recently finished matches (past 2 days)
+        // Fetch recently finished matches (past 2 days) with pagination
         const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-        const pastUrl = `https://api.pandascore.co/${game}/matches/past?sort=-begin_at&per_page=50&filter[begin_at]=${twoDaysAgo},`;
+        const pastUrl = `https://api.pandascore.co/${game}/matches/past?sort=-begin_at&filter[begin_at]=${twoDaysAgo},`;
         
-        const pastRes = await fetch(pastUrl, {
-          headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
-        });
+        const pastMatches = await fetchAllPages(pastUrl, PANDA_API_KEY);
+        console.log(`Fetched ${pastMatches.length} past ${game} matches`);
+        allFormatted.push(...formatMatches(pastMatches, now));
 
-        if (pastRes.ok) {
-          const pastMatches = await pastRes.json();
-          console.log(`Fetched ${pastMatches.length} past ${game} matches`);
-          const formatted = formatMatches(pastMatches, now);
-          allFormatted.push(...formatted);
-        } else {
-          console.warn(`Failed to fetch past ${game} matches: ${pastRes.status}`);
-        }
-
-        // Also fetch upcoming matches (next 2 days)
-        const upcomingUrl = `https://api.pandascore.co/${game}/matches/upcoming?sort=begin_at&per_page=50`;
+        // Fetch upcoming matches with pagination
+        const upcomingUrl = `https://api.pandascore.co/${game}/matches/upcoming?sort=begin_at`;
         
-        const upcomingRes = await fetch(upcomingUrl, {
-          headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
-        });
-
-        if (upcomingRes.ok) {
-          const upcomingMatches = await upcomingRes.json();
-          console.log(`Fetched ${upcomingMatches.length} upcoming ${game} matches`);
-          const formatted = formatMatches(upcomingMatches, now);
-          allFormatted.push(...formatted);
-        } else {
-          console.warn(`Failed to fetch upcoming ${game} matches: ${upcomingRes.status}`);
-        }
+        const upcomingMatches = await fetchAllPages(upcomingUrl, PANDA_API_KEY);
+        console.log(`Fetched ${upcomingMatches.length} upcoming ${game} matches`);
+        allFormatted.push(...formatMatches(upcomingMatches, now));
       } catch (gameErr) {
         console.error(`Error fetching ${game} matches:`, gameErr);
       }
+    }
+
+    // 3. Recheck stale matches: matches past their start_time but still not_started/cancelled in our DB
+    try {
+      const { data: staleMatches } = await supabase
+        .from("pandascore_matches")
+        .select("match_id")
+        .in("status", ["not_started", "cancelled", "canceled"])
+        .lt("start_time", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // started 2+ hours ago
+        .gt("start_time", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // within last 7 days
+        .limit(50);
+
+      if (staleMatches && staleMatches.length > 0) {
+        console.log(`Rechecking ${staleMatches.length} stale matches individually`);
+        let rechecked = 0;
+        for (const stale of staleMatches) {
+          try {
+            const res = await fetch(`https://api.pandascore.co/matches/${stale.match_id}`, {
+              headers: { Authorization: `Bearer ${PANDA_API_KEY}` },
+            });
+            if (res.ok) {
+              const match = await res.json();
+              if (match.status === 'finished' || match.winner_id) {
+                const formatted = formatMatches([match], now);
+                allFormatted.push(...formatted);
+                rechecked++;
+              }
+            } else {
+              await res.text(); // consume body
+            }
+          } catch (e) {
+            console.warn(`Failed to recheck match ${stale.match_id}:`, e);
+          }
+        }
+        console.log(`Rechecked ${rechecked} stale matches with updated results`);
+      }
+    } catch (staleErr) {
+      console.error("Error rechecking stale matches:", staleErr);
     }
 
     // Deduplicate by match_id (prefer most recent data)
@@ -114,7 +156,6 @@ serve(async (req) => {
 });
 
 function formatMatches(matches: any[], now: string): any[] {
-  // Filter out matches missing required fields
   const filtered = matches.filter(
     (match: any) =>
       typeof match.videogame?.name === "string" &&
