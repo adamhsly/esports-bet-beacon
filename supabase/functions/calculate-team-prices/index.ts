@@ -139,16 +139,19 @@ serve(async (req) => {
         if (pandaErr) throw pandaErr;
         console.log("pandaMatches in round window:", pandaMatches?.length || 0);
 
-        const proTeamMap = new Map<string, { id: string; name: string; esport_type?: string; match_volume: number }>();
+      const proTeamMap = new Map<string, { id: string; name: string; esport_type?: string; match_volume: number }>();
         (pandaMatches || []).forEach((m: any) => {
           if (Array.isArray(m.teams)) {
             m.teams.forEach((t: any) => {
-              if (t?.type === "Team" && t?.opponent?.id) {
-                const id = String(t.opponent.id);
-                const name = t.opponent.name || t.opponent.slug || "Unknown Team";
+              // Handle both nested format {"type":"Team","opponent":{"id":123}} 
+              // and flat format {"id":123,"name":"TeamName"}
+              const teamId = t?.opponent?.id ?? t?.id;
+              const teamName = t?.opponent?.name || t?.opponent?.slug || t?.name || t?.slug || "Unknown Team";
+              if (teamId) {
+                const id = String(teamId);
                 const existing = proTeamMap.get(id);
                 if (existing) existing.match_volume += 1;
-                else proTeamMap.set(id, { id, name, esport_type: m.esport_type, match_volume: 1 });
+                else proTeamMap.set(id, { id, name: teamName, esport_type: m.esport_type, match_volume: 1 });
               }
             });
           }
