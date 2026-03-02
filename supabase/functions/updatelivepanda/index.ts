@@ -35,7 +35,7 @@ serve(async (req) => {
     const formatted = lives.map((match: any) => ({
       match_id: String(match.id),
       esport_type: match.videogame?.name || null,
-      teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
+      teams: match.opponents ?? [],
       start_time: match.begin_at,
       end_time: match.end_at,
       tournament_id: match.tournament?.id?.toString() ?? null,

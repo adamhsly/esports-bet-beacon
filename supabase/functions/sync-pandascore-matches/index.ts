@@ -131,7 +131,7 @@ function formatMatches(matches: any[], now: string): any[] {
     return {
       match_id: String(match.id),
       esport_type: match.videogame.name.trim(),
-      teams: match.opponents ? match.opponents.map((o: any) => o.opponent) : [],
+      teams: match.opponents ?? [],
       start_time: new Date(match.begin_at).toISOString(),
       end_time: match.end_at ? new Date(match.end_at).toISOString() : null,
       tournament_id: match.tournament?.id?.toString() ?? null,
