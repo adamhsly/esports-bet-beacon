@@ -184,8 +184,8 @@ export const TeamMatchesModal: React.FC<TeamMatchesModalProps> = ({
       const teams = match.teams as any[];
       if (!teams || teams.length < 2) continue;
 
-      const team1 = teams[0]?.opponent;
-      const team2 = teams[1]?.opponent;
+      const team1 = teams[0]?.opponent ?? teams[0];
+      const team2 = teams[1]?.opponent ?? teams[1];
       const team1Id = String(team1?.id || '');
       const team2Id = String(team2?.id || '');
 
