@@ -422,9 +422,13 @@ function calculateTeamScore(teamId, teamName, teamType, round, proMatches, amate
 
   if (teamType === 'pro') {
     // Filter pro matches for this team
+    // Handle both flat format {"id": 123} and nested format {"opponent": {"id": 123}}
     const teamMatches = proMatches.filter(match => {
       const teams = match.teams;
-      return teams?.some(t => t?.opponent?.id?.toString() === teamId);
+      return teams?.some(t => {
+        const id = t?.opponent?.id ?? t?.id;
+        return id?.toString() === teamId;
+      });
     });
 
     for (const match of teamMatches) {
@@ -479,8 +483,10 @@ function calculateTeamScore(teamId, teamName, teamType, round, proMatches, amate
 
 function processProMatch(match, teamId, starMult) {
   const teams = match.teams;
-  const teamData = teams?.find(t => t?.opponent?.id?.toString() === teamId);
-  const opponentData = teams?.find(t => t?.opponent?.id?.toString() !== teamId);
+  // Handle both flat format {"id": 123} and nested format {"opponent": {"id": 123}}
+  const getTeamId = (t) => (t?.opponent?.id ?? t?.id)?.toString();
+  const teamData = teams?.find(t => getTeamId(t) === teamId);
+  const opponentData = teams?.find(t => getTeamId(t) !== teamId);
 
   // Determine result
   let result = 'draw';
@@ -531,8 +537,8 @@ function processProMatch(match, teamId, starMult) {
   return {
     match_id: match.match_id,
     match_date: match.start_time,
-    opponent_name: opponentData?.opponent?.name || 'Unknown',
-    opponent_logo: opponentData?.opponent?.image_url || null,
+    opponent_name: opponentData?.opponent?.name || opponentData?.name || 'Unknown',
+    opponent_logo: opponentData?.opponent?.image_url || opponentData?.image_url || null,
     result,
     score: `${teamScore}-${opponentScore}`,
     map_wins: teamScore,
