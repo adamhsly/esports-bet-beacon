@@ -541,35 +541,9 @@ export const RoundSelector: React.FC<{
       
       if (freeError) throw freeError;
 
-      // Paid rounds - scheduled ones must not have started, but open ones can have started
-      // Fetch scheduled paid rounds (not started)
-      const { data: scheduledPaidRounds, error: scheduledPaidError } = await supabase
-        .from("fantasy_rounds")
-        .select("*")
-        .eq("status", "scheduled")
-        .eq("is_private", false)
-        .eq("is_paid", true)
-        .gt("start_date", nowIso)
-        .lte("start_date", twoMonthsFromNow.toISOString())
-        .order("start_date", { ascending: true });
-      
-      if (scheduledPaidError) throw scheduledPaidError;
-
-      // Fetch open paid rounds (can have started, but must not have ended)
-      const { data: openPaidRounds, error: openPaidError } = await supabase
-        .from("fantasy_rounds")
-        .select("*")
-        .eq("status", "open")
-        .eq("is_private", false)
-        .eq("is_paid", true)
-        .gt("end_date", nowIso)
-        .order("start_date", { ascending: true });
-      
-      if (openPaidError) throw openPaidError;
-
-      // Combine all rounds and deduplicate by id
+      // Combine free rounds only (paid rounds are hidden)
       const allRoundsMap = new Map<string, Round>();
-      [...(freeRounds || []), ...(scheduledPaidRounds || []), ...(openPaidRounds || [])].forEach(r => {
+      [...(freeRounds || [])].forEach(r => {
         allRoundsMap.set(r.id, r as Round);
       });
       
