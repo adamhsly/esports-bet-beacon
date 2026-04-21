@@ -50,11 +50,19 @@ export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
         <CardContent className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-white font-semibold text-base leading-tight">{slate.name}</h3>
-            {slate.status !== 'published' && (
-              <Badge variant="outline" className={statusColor[slate.status] ?? ''}>
-                {slate.status}
-              </Badge>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {gameLabel && (
+                <Badge variant="outline" className="bg-theme-purple/15 text-theme-purple border-theme-purple/40 text-[10px]">
+                  <Gamepad2 className="h-3 w-3 mr-1" />
+                  {gameLabel}
+                </Badge>
+              )}
+              {slate.status !== 'published' && (
+                <Badge variant="outline" className={statusColor[slate.status] ?? ''}>
+                  {slate.status}
+                </Badge>
+              )}
+            </div>
           </div>
           {slate.tournament_name && (
             <p className="text-xs text-gray-300 flex items-center gap-1 font-medium">
@@ -62,14 +70,6 @@ export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
               <span className="truncate">{slate.tournament_name}</span>
             </p>
           )}
-          <div className="flex flex-wrap items-center gap-2">
-            {gameLabel && (
-              <Badge variant="outline" className="bg-theme-purple/15 text-theme-purple border-theme-purple/40 text-[10px]">
-                <Gamepad2 className="h-3 w-3 mr-1" />
-                {gameLabel}
-              </Badge>
-            )}
-          </div>
           <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
