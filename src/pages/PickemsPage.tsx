@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
-import { useSlates } from '@/hooks/usePickems';
+import { useSlates, useUserSubmittedSlateIds } from '@/hooks/usePickems';
+import { useAuth } from '@/contexts/AuthContext';
 import { PickemsSlateCard, formatEsportLabel, getEsportPillClass } from '@/components/pickems/PickemsSlateCard';
 import { Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +12,8 @@ import { cn } from '@/lib/utils';
 
 const PickemsPage: React.FC = () => {
   const { data: slates, isLoading } = useSlates();
+  const { user } = useAuth();
+  const { data: submittedIds } = useUserSubmittedSlateIds(user?.id);
   const [gameFilter, setGameFilter] = useState<string>('all');
 
   useEffect(() => {
