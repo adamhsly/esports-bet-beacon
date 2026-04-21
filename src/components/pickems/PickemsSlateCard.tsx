@@ -69,32 +69,45 @@ const statusColor: Record<string, string> = {
 
 export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
   const gameLabel = formatEsportLabel(slate.esport_type);
+  const now = Date.now();
+  const startMs = new Date(slate.start_date).getTime();
+  const isInProgress = startMs <= now && slate.status !== 'settled';
+  const phaseLabel = slate.status === 'settled'
+    ? 'Finished'
+    : isInProgress
+      ? 'In Progress'
+      : 'Upcoming';
+  const phaseClass = slate.status === 'settled'
+    ? 'bg-slate-500/20 text-slate-300 border-slate-500/40'
+    : isInProgress
+      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+      : 'bg-sky-500/20 text-sky-300 border-sky-500/40';
+
   return (
     <Link to={`/pickems/${slate.id}`}>
       <Card className="bg-slate-800/60 border-slate-700 hover:border-theme-purple/60 transition-colors">
         <CardContent className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-white font-semibold text-base leading-tight">{slate.name}</h3>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <h3 className="text-white font-semibold text-base leading-tight">{slate.name}</h3>
               {gameLabel && (
-                <Badge variant="outline" className={`${getEsportPillClass(slate.esport_type)} text-[10px]`}>
+                <Badge variant="outline" className={`${getEsportPillClass(slate.esport_type)} text-[10px] w-fit`}>
                   <Gamepad2 className="h-3 w-3 mr-1" />
                   {gameLabel}
                 </Badge>
               )}
-              {slate.status !== 'published' && (
-                <Badge variant="outline" className={statusColor[slate.status] ?? ''}>
-                  {slate.status}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Badge variant="outline" className={phaseClass}>
+                {phaseLabel}
+              </Badge>
+              {slate.status === 'closed' && (
+                <Badge variant="outline" className={statusColor.closed}>
+                  closed
                 </Badge>
               )}
             </div>
           </div>
-          {slate.tournament_name && (
-            <p className="text-xs text-gray-300 flex items-center gap-1 font-medium">
-              <Trophy className="h-3 w-3 text-amber-400" />
-              <span className="truncate">{slate.tournament_name}</span>
-            </p>
-          )}
           <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
