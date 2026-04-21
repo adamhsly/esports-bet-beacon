@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       return stage ? `${title} – ${stage}` : title;
     };
 
-    for (const tour of eligible) {
+    for (const tour of allEligible) {
       try {
         const tournamentTitle = buildTournamentTitle(tour);
         const slateName = buildSlateName(tour);
