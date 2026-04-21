@@ -43,8 +43,11 @@ Deno.serve(async (req) => {
     slates_reopened: 0,
     slates_locked: 0,
     matches_attached: 0,
+    seeded_slates: 0,
     errors: [] as string[],
   };
+
+  const newlyCreatedSlateIds: string[] = [];
 
   try {
     const nowIso = new Date().toISOString();
@@ -173,6 +176,7 @@ Deno.serve(async (req) => {
 
           if (cErr) throw cErr;
           slateId = created!.id;
+          newlyCreatedSlateIds.push(slateId);
           result.slates_created++;
         } else {
           slateId = existing.id;
