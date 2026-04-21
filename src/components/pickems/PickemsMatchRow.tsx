@@ -1,25 +1,40 @@
 import React from 'react';
-import { Lock, Check, X } from 'lucide-react';
+import { Lock, Check, X, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { PickemsEnrichedMatch } from '@/types/pickems';
 import { isMatchLocked } from '@/lib/pickems';
+import { Input } from '@/components/ui/input';
 
 interface Props {
   match: PickemsEnrichedMatch;
   pickedTeamId: string | null;
   isCorrect: boolean | null | undefined;
   onPick: (matchId: string, teamId: string) => void;
+  isTiebreaker?: boolean;
+  tiebreakerValue?: number | null;
+  onTiebreakerChange?: (matchId: string, value: number | null) => void;
 }
 
-export const PickemsMatchRow: React.FC<Props> = ({ match, pickedTeamId, isCorrect, onPick }) => {
+export const PickemsMatchRow: React.FC<Props> = ({
+  match,
+  pickedTeamId,
+  isCorrect,
+  onPick,
+  isTiebreaker,
+  tiebreakerValue,
+  onTiebreakerChange,
+}) => {
   const locked = isMatchLocked(match.start_time, match.status);
   const teamA = match.team_a;
   const teamB = match.team_b;
   const winnerId = match.winner_id != null ? String(match.winner_id) : null;
   const finished = match.status === 'finished';
+  const bo = match.number_of_games ?? 3;
+  const minMaps = Math.ceil(bo / 2);
+  const maxMaps = bo;
 
-  const renderTeam = (team: typeof teamA, side: 'a' | 'b') => {
+  const renderTeam = (team: typeof teamA) => {
     if (!team) return <div className="flex-1 p-3 text-gray-500 text-sm">TBD</div>;
     const teamId = String(team.id);
     const isPicked = pickedTeamId === teamId;
@@ -55,10 +70,20 @@ export const PickemsMatchRow: React.FC<Props> = ({ match, pickedTeamId, isCorrec
   };
 
   return (
-    <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 space-y-2">
+    <div className={cn(
+      'bg-slate-800/40 border rounded-lg p-3 space-y-2',
+      isTiebreaker ? 'border-amber-500/50' : 'border-slate-700'
+    )}>
       <div className="flex items-center justify-between text-xs text-gray-400">
-        <span className="truncate">
-          {match.tournament_name || match.league_name || match.esport_type}
+        <span className="truncate flex items-center gap-1.5">
+          {isTiebreaker && (
+            <span className="inline-flex items-center gap-1 text-amber-400 font-semibold">
+              <Star className="h-3 w-3 fill-amber-400" /> Tiebreaker
+            </span>
+          )}
+          <span className="truncate">
+            {match.tournament_name || match.league_name || match.esport_type}
+          </span>
         </span>
         <span className="flex items-center gap-2">
           {match.start_time && format(new Date(match.start_time), 'MMM d, HH:mm')}
@@ -66,10 +91,32 @@ export const PickemsMatchRow: React.FC<Props> = ({ match, pickedTeamId, isCorrec
         </span>
       </div>
       <div className="flex items-center gap-2">
-        {renderTeam(teamA, 'a')}
+        {renderTeam(teamA)}
         <span className="text-gray-500 text-xs font-bold">VS</span>
-        {renderTeam(teamB, 'b')}
+        {renderTeam(teamB)}
       </div>
+
+      {isTiebreaker && onTiebreakerChange && (
+        <div className="pt-2 border-t border-slate-700/50">
+          <label className="text-xs text-amber-300 block mb-1">
+            Tiebreaker: total maps played (Bo{bo})
+          </label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={minMaps}
+            max={maxMaps}
+            disabled={locked}
+            value={tiebreakerValue ?? ''}
+            placeholder={`${minMaps}–${maxMaps}`}
+            onChange={(e) => {
+              const v = e.target.value === '' ? null : Math.max(minMaps, Math.min(maxMaps, Number(e.target.value)));
+              onTiebreakerChange(match.match_id, v);
+            }}
+            className="h-8 w-24 bg-slate-900/60 border-slate-700"
+          />
+        </div>
+      )}
     </div>
   );
 };

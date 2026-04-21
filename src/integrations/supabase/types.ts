@@ -2621,8 +2621,13 @@ export type Database = {
           correct_picks: number
           created_at: string
           id: string
+          longest_streak: number
           slate_id: string
+          streak_bonus: number
           submitted_at: string
+          tiebreaker_actual: number | null
+          tiebreaker_delta: number | null
+          tiebreaker_total_maps: number | null
           total_picks: number
           total_score: number
           updated_at: string
@@ -2632,8 +2637,13 @@ export type Database = {
           correct_picks?: number
           created_at?: string
           id?: string
+          longest_streak?: number
           slate_id: string
+          streak_bonus?: number
           submitted_at?: string
+          tiebreaker_actual?: number | null
+          tiebreaker_delta?: number | null
+          tiebreaker_total_maps?: number | null
           total_picks?: number
           total_score?: number
           updated_at?: string
@@ -2643,8 +2653,13 @@ export type Database = {
           correct_picks?: number
           created_at?: string
           id?: string
+          longest_streak?: number
           slate_id?: string
+          streak_bonus?: number
           submitted_at?: string
+          tiebreaker_actual?: number | null
+          tiebreaker_delta?: number | null
+          tiebreaker_total_maps?: number | null
           total_picks?: number
           total_score?: number
           updated_at?: string
@@ -2671,6 +2686,7 @@ export type Database = {
           picked_team_id: string
           points_awarded: number
           slate_id: string
+          tiebreaker_total_maps: number | null
           updated_at: string
         }
         Insert: {
@@ -2683,6 +2699,7 @@ export type Database = {
           picked_team_id: string
           points_awarded?: number
           slate_id: string
+          tiebreaker_total_maps?: number | null
           updated_at?: string
         }
         Update: {
@@ -2695,6 +2712,7 @@ export type Database = {
           picked_team_id?: string
           points_awarded?: number
           slate_id?: string
+          tiebreaker_total_maps?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -2757,6 +2775,7 @@ export type Database = {
           name: string
           start_date: string
           status: string
+          tiebreaker_match_id: string | null
           tournament_id: string | null
           tournament_name: string | null
           updated_at: string
@@ -2771,6 +2790,7 @@ export type Database = {
           name: string
           start_date: string
           status?: string
+          tiebreaker_match_id?: string | null
           tournament_id?: string | null
           tournament_name?: string | null
           updated_at?: string
@@ -2785,6 +2805,7 @@ export type Database = {
           name?: string
           start_date?: string
           status?: string
+          tiebreaker_match_id?: string | null
           tournament_id?: string | null
           tournament_name?: string | null
           updated_at?: string

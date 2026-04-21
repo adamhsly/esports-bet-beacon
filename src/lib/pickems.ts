@@ -126,9 +126,10 @@ export async function fetchUserEntry(slateId: string, userId: string): Promise<{
 export async function fetchLeaderboard(slateId: string, limit = 100) {
   const { data, error } = await (supabase as any)
     .from('pickems_entries')
-    .select('id, user_id, total_score, correct_picks, total_picks, submitted_at')
+    .select('id, user_id, total_score, correct_picks, total_picks, submitted_at, streak_bonus, longest_streak, tiebreaker_total_maps, tiebreaker_actual, tiebreaker_delta')
     .eq('slate_id', slateId)
     .order('total_score', { ascending: false })
+    .order('tiebreaker_delta', { ascending: true, nullsFirst: false })
     .order('submitted_at', { ascending: true })
     .limit(limit);
   if (error) throw error;

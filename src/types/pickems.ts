@@ -13,6 +13,7 @@ export interface PickemsSlate {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  tiebreaker_match_id?: string | null;
 }
 
 export interface PickemsSlateMatch {
@@ -33,6 +34,11 @@ export interface PickemsEntry {
   submitted_at: string;
   created_at: string;
   updated_at: string;
+  streak_bonus?: number;
+  longest_streak?: number;
+  tiebreaker_total_maps?: number | null;
+  tiebreaker_actual?: number | null;
+  tiebreaker_delta?: number | null;
 }
 
 export interface PickemsPick {
@@ -46,6 +52,7 @@ export interface PickemsPick {
   locked_at: string | null;
   created_at: string;
   updated_at: string;
+  tiebreaker_total_maps?: number | null;
 }
 
 export interface PickemsMatchTeam {
