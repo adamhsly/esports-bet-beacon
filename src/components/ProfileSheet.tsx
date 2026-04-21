@@ -6,7 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProfilePage } from '@/components/GameProfileHud';
 import { useMobile } from '@/hooks/useMobile';
 import { usePremiumCheckout } from '@/hooks/usePremiumCheckout';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import * as VisuallyHiddenPrimitive from '@radix-ui/react-visually-hidden';
+const VisuallyHidden = VisuallyHiddenPrimitive.Root;
 
 interface ProfileSheetProps {
   isOpen: boolean;
