@@ -43,8 +43,11 @@ Deno.serve(async (req) => {
     slates_reopened: 0,
     slates_locked: 0,
     matches_attached: 0,
+    seeded_slates: 0,
     errors: [] as string[],
   };
+
+  const newlyCreatedSlateIds: string[] = [];
 
   try {
     const nowIso = new Date().toISOString();
@@ -173,6 +176,7 @@ Deno.serve(async (req) => {
 
           if (cErr) throw cErr;
           slateId = created!.id;
+          newlyCreatedSlateIds.push(slateId);
           result.slates_created++;
         } else {
           slateId = existing.id;
@@ -220,6 +224,30 @@ Deno.serve(async (req) => {
         }
       } catch (e: any) {
         result.errors.push(`tournament ${tour.tournament_id}: ${e?.message ?? String(e)}`);
+      }
+    }
+
+    // 1c. Seed random test-user picks for any freshly created slates so leaderboards aren't empty.
+    const fnUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/pickems-seed-test-picks`;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    for (const sid of newlyCreatedSlateIds) {
+      try {
+        const seedRes = await fetch(fnUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ slate_id: sid, min: 1, max: 1000 }),
+        });
+        if (seedRes.ok) {
+          result.seeded_slates++;
+        } else {
+          const txt = await seedRes.text().catch(() => '');
+          result.errors.push(`seed ${sid}: ${seedRes.status} ${txt}`);
+        }
+      } catch (e: any) {
+        result.errors.push(`seed ${sid}: ${e?.message ?? String(e)}`);
       }
     }
 

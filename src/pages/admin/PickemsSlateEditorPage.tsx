@@ -93,6 +93,23 @@ const PickemsSlateEditorPage: React.FC = () => {
     if (error) { toast.error(error.message); return; }
     toast.success(`Status: ${status}`);
     qc.invalidateQueries({ queryKey: ['pickems'] });
+
+    // When publishing, kick off random test-user picks (1-1000) so the
+    // leaderboard isn't empty. Fire-and-forget; don't block the UI.
+    if (status === 'published') {
+      supabase.functions
+        .invoke('pickems-seed-test-picks', {
+          body: { slate_id: slateId, min: 1, max: 1000 },
+        })
+        .then(({ data, error: seedErr }) => {
+          if (seedErr) {
+            toast.error(`Seeding test picks failed: ${seedErr.message}`);
+          } else {
+            const n = (data as any)?.inserted_entries ?? 0;
+            if (n > 0) toast.success(`Seeded ${n} test-user picks`);
+          }
+        });
+    }
   };
 
   const settleNow = async () => {
