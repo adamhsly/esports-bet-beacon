@@ -44,26 +44,41 @@ serve(async (req) => {
 
     for (const game of SUPPORTED_GAMES) {
       try {
-        console.log(`📥 Syncing ${game} tournaments...`);
-        
-        // Fetch running and upcoming tournaments
-        const response = await fetch(
-          `https://api.pandascore.co/${game}/tournaments/running?per_page=20`,
-          {
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Accept': 'application/json'
-            }
-          }
-        );
+        console.log(`📥 Syncing ${game} tournaments (running + upcoming)...`);
 
-        if (!response.ok) {
-          console.error(`PandaScore API error for ${game}:`, response.status, response.statusText);
-          continue;
+        // Fetch BOTH running and upcoming tournaments
+        const endpoints = ['running', 'upcoming'] as const;
+        const allTournaments: any[] = [];
+
+        for (const ep of endpoints) {
+          const response = await fetch(
+            `https://api.pandascore.co/${game}/tournaments/${ep}?per_page=50`,
+            {
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Accept': 'application/json'
+              }
+            }
+          );
+
+          if (!response.ok) {
+            console.error(`PandaScore API error for ${game}/${ep}:`, response.status, response.statusText);
+            continue;
+          }
+
+          const batch = await response.json();
+          console.log(`📊 Retrieved ${batch.length} ${game} ${ep} tournaments`);
+          allTournaments.push(...batch);
         }
 
-        const tournaments = await response.json();
-        console.log(`📊 Retrieved ${tournaments.length} ${game} tournaments from PandaScore`);
+        // Deduplicate by tournament id
+        const seen = new Set<string>();
+        const tournaments = allTournaments.filter((t: any) => {
+          const id = String(t.id);
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
 
         for (const tournament of tournaments) {
           try {
@@ -99,7 +114,7 @@ serve(async (req) => {
             }
 
             totalProcessed++;
-            
+
             // Check if this was an insert or update
             const { data: existing } = await supabase
               .from('pandascore_tournaments')
