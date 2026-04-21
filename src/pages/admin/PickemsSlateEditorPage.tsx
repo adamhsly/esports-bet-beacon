@@ -108,6 +108,17 @@ const PickemsSlateEditorPage: React.FC = () => {
 
   const addedIds = new Set((slateMatches ?? []).map(m => m.match_id));
 
+  const setTiebreaker = async (matchId: string | null) => {
+    if (!slateId) return;
+    const { error } = await (supabase as any)
+      .from('pickems_slates')
+      .update({ tiebreaker_match_id: matchId })
+      .eq('id', slateId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(matchId ? 'Tiebreaker set' : 'Tiebreaker cleared');
+    qc.invalidateQueries({ queryKey: ['pickems', 'slate', slateId] });
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <Helmet><title>Edit Slate | Pick'ems Admin</title></Helmet>
@@ -146,21 +157,36 @@ const PickemsSlateEditorPage: React.FC = () => {
               <p className="text-gray-400 text-sm">No matches added yet.</p>
             ) : (
               <div className="space-y-2">
-                {slateMatches!.map(m => (
-                  <div key={m.match_id} className="flex items-center justify-between gap-2 p-2 bg-slate-900/40 rounded">
-                    <div className="text-sm truncate">
-                      <span className="text-white">{m.team_a?.name ?? 'TBD'}</span>
-                      <span className="text-gray-500 mx-2">vs</span>
-                      <span className="text-white">{m.team_b?.name ?? 'TBD'}</span>
-                      <span className="text-xs text-gray-400 ml-2">
-                        {m.start_time && format(new Date(m.start_time), 'MMM d HH:mm')} · {m.tournament_name}
-                      </span>
+                {slateMatches!.map(m => {
+                  const isTb = slate?.tiebreaker_match_id === m.match_id;
+                  return (
+                    <div key={m.match_id} className={`flex items-center justify-between gap-2 p-2 rounded ${isTb ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-slate-900/40'}`}>
+                      <div className="text-sm truncate">
+                        <span className="text-white">{m.team_a?.name ?? 'TBD'}</span>
+                        <span className="text-gray-500 mx-2">vs</span>
+                        <span className="text-white">{m.team_b?.name ?? 'TBD'}</span>
+                        <span className="text-xs text-gray-400 ml-2">
+                          {m.start_time && format(new Date(m.start_time), 'MMM d HH:mm')} · {m.tournament_name}
+                        </span>
+                        {isTb && <span className="ml-2 text-xs text-amber-400 font-semibold">★ Tiebreaker</span>}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant={isTb ? 'default' : 'ghost'}
+                          className={isTb ? 'bg-amber-500 hover:bg-amber-600 text-black h-7' : 'h-7'}
+                          onClick={() => setTiebreaker(isTb ? null : m.match_id)}
+                          title={isTb ? 'Clear tiebreaker' : 'Set as tiebreaker'}
+                        >
+                          ★
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => removeMatch(m.match_id)}>
+                          <Trash2 className="h-4 w-4 text-rose-400" />
+                        </Button>
+                      </div>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => removeMatch(m.match_id)}>
-                      <Trash2 className="h-4 w-4 text-rose-400" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
