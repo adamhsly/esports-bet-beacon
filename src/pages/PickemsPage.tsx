@@ -84,22 +84,24 @@ const PickemsPage: React.FC = () => {
                   >
                     All Games
                   </Button>
-                  {gameOptions.map(g => (
-                    <Button
-                      key={g}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setGameFilter(g)}
-                      className={cn(
-                        'h-8 text-xs border-slate-700',
-                        gameFilter === g
-                          ? 'bg-theme-purple text-white border-theme-purple hover:bg-theme-purple/90'
-                          : 'bg-slate-800/60 text-gray-300 hover:bg-slate-700'
-                      )}
-                    >
-                      {formatEsportLabel(g)}
-                    </Button>
-                  ))}
+                  {gameOptions.map(g => {
+                    const selected = gameFilter === g;
+                    return (
+                      <Button
+                        key={g}
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setGameFilter(g)}
+                        className={cn(
+                          'h-8 text-xs border',
+                          getEsportPillClass(g),
+                          selected ? 'ring-1 ring-current font-semibold' : 'opacity-70 hover:opacity-100'
+                        )}
+                      >
+                        {formatEsportLabel(g)}
+                      </Button>
+                    );
+                  })}
                 </div>
               )}
 
