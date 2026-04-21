@@ -8,7 +8,7 @@ import { useSlate, useSlateMatches, useUserEntry, useSubmitPicks } from '@/hooks
 import { PickemsMatchRow } from '@/components/pickems/PickemsMatchRow';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, ChevronLeft, BarChart3 } from 'lucide-react';
+import { Trophy, ChevronLeft, BarChart3, Flame } from 'lucide-react';
 import { toast } from 'sonner';
 import { isMatchLocked } from '@/lib/pickems';
 
@@ -21,12 +21,16 @@ const PickemsSlatePage: React.FC = () => {
   const submit = useSubmitPicks(slateId, user?.id);
 
   const [pendingPicks, setPendingPicks] = useState<Record<string, string>>({});
+  const [pendingTiebreaker, setPendingTiebreaker] = useState<number | null>(null);
 
   useEffect(() => {
     if (entryData?.picks) {
       const initial: Record<string, string> = {};
       entryData.picks.forEach(p => { initial[p.match_id] = p.picked_team_id; });
       setPendingPicks(initial);
+    }
+    if (entryData?.entry?.tiebreaker_total_maps != null) {
+      setPendingTiebreaker(entryData.entry.tiebreaker_total_maps);
     }
   }, [entryData?.entry?.id]);
 
@@ -38,15 +42,24 @@ const PickemsSlatePage: React.FC = () => {
     return m;
   }, [entryData?.picks]);
 
+  const tiebreakerMatch = useMemo(
+    () => matches?.find(m => m.match_id === slate?.tiebreaker_match_id) ?? null,
+    [matches, slate?.tiebreaker_match_id]
+  );
+  const tiebreakerLocked = tiebreakerMatch ? isMatchLocked(tiebreakerMatch.start_time, tiebreakerMatch.status) : true;
+  const savedTiebreaker = entryData?.entry?.tiebreaker_total_maps ?? null;
+
   const dirty = useMemo(() => {
     if (!matches) return false;
-    return matches.some(m => {
+    const pickDirty = matches.some(m => {
       if (isMatchLocked(m.start_time, m.status)) return false;
       const cur = pendingPicks[m.match_id];
       const saved = savedById[m.match_id]?.picked_team_id;
       return cur && cur !== saved;
     });
-  }, [pendingPicks, savedById, matches]);
+    const tbDirty = !!tiebreakerMatch && !tiebreakerLocked && pendingTiebreaker !== savedTiebreaker;
+    return pickDirty || tbDirty;
+  }, [pendingPicks, savedById, matches, pendingTiebreaker, savedTiebreaker, tiebreakerMatch, tiebreakerLocked]);
 
   const handlePick = (matchId: string, teamId: string) => {
     setPendingPicks(prev => ({ ...prev, [matchId]: teamId }));
@@ -57,14 +70,24 @@ const PickemsSlatePage: React.FC = () => {
       toast.error('Please sign in to save picks');
       return;
     }
+    const tbId = slate?.tiebreaker_match_id ?? null;
+
     const payload = Object.entries(pendingPicks)
       .filter(([matchId, teamId]) => {
         const m = matches?.find(x => x.match_id === matchId);
         if (!m) return false;
         if (isMatchLocked(m.start_time, m.status)) return false;
-        return savedById[matchId]?.picked_team_id !== teamId;
+        const pickChanged = savedById[matchId]?.picked_team_id !== teamId;
+        const tbChangedHere = tbId === matchId && pendingTiebreaker !== savedTiebreaker;
+        return pickChanged || tbChangedHere;
       })
-      .map(([match_id, picked_team_id]) => ({ match_id, picked_team_id }));
+      .map(([match_id, picked_team_id]) => ({
+        match_id,
+        picked_team_id,
+        ...(tbId === match_id && pendingTiebreaker != null
+          ? { tiebreaker_total_maps: pendingTiebreaker }
+          : {}),
+      }));
 
     if (payload.length === 0) {
       toast.info('No changes to save');
@@ -85,6 +108,9 @@ const PickemsSlatePage: React.FC = () => {
 
   const correct = entryData?.entry?.correct_picks ?? 0;
   const totalScored = entryData?.entry?.total_picks ?? 0;
+  const score = entryData?.entry?.total_score ?? 0;
+  const streakBonus = entryData?.entry?.streak_bonus ?? 0;
+  const longestStreak = entryData?.entry?.longest_streak ?? 0;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -109,13 +135,24 @@ const PickemsSlatePage: React.FC = () => {
               {slate.tournament_name && (
                 <p className="text-sm text-gray-400">{slate.tournament_name}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                1 pt per correct pick · +2 bonus per 3-in-a-row streak
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-xs text-gray-400">Your score</div>
-                <div className="text-xl font-bold text-theme-purple">
-                  {correct}/{totalScored}
+                <div className="text-xs text-gray-400">Score · {correct}/{totalScored}</div>
+                <div className="text-xl font-bold text-theme-purple flex items-center gap-1.5 justify-end">
+                  {score}
+                  {streakBonus > 0 && (
+                    <span className="text-xs text-amber-400 inline-flex items-center gap-0.5">
+                      <Flame className="h-3 w-3" /> +{streakBonus}
+                    </span>
+                  )}
                 </div>
+                {longestStreak >= 3 && (
+                  <div className="text-[10px] text-amber-400/80">Best streak: {longestStreak}</div>
+                )}
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link to={`/pickems/${slate.id}/leaderboard`}>
@@ -137,15 +174,21 @@ const PickemsSlatePage: React.FC = () => {
         ) : (
           <>
             <div className="space-y-3 pb-24">
-              {matches!.map(m => (
-                <PickemsMatchRow
-                  key={m.match_id}
-                  match={m}
-                  pickedTeamId={pendingPicks[m.match_id] ?? null}
-                  isCorrect={savedById[m.match_id]?.is_correct}
-                  onPick={handlePick}
-                />
-              ))}
+              {matches!.map(m => {
+                const isTb = !!slate?.tiebreaker_match_id && m.match_id === slate.tiebreaker_match_id;
+                return (
+                  <PickemsMatchRow
+                    key={m.match_id}
+                    match={m}
+                    pickedTeamId={pendingPicks[m.match_id] ?? null}
+                    isCorrect={savedById[m.match_id]?.is_correct}
+                    onPick={handlePick}
+                    isTiebreaker={isTb}
+                    tiebreakerValue={isTb ? pendingTiebreaker : null}
+                    onTiebreakerChange={isTb ? (_id, v) => setPendingTiebreaker(v) : undefined}
+                  />
+                );
+              })}
             </div>
 
             {user ? (

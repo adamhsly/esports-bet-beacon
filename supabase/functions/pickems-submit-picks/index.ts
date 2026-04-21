@@ -8,6 +8,7 @@ const corsHeaders = {
 interface PickInput {
   match_id: string;
   picked_team_id: string;
+  tiebreaker_total_maps?: number | null;
 }
 
 interface SubmitPicksRequest {
@@ -45,10 +46,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify slate exists and is published
     const { data: slate, error: slateErr } = await supabaseClient
       .from('pickems_slates')
-      .select('id, status')
+      .select('id, status, tiebreaker_match_id')
       .eq('id', body.slate_id)
       .maybeSingle();
 
@@ -66,13 +66,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Service-role client for downstream writes (bypass RLS) — still authorized via user check
     const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Validate all match_ids belong to this slate
     const matchIds = body.picks.map(p => p.match_id);
     const { data: slateMatches } = await serviceClient
       .from('pickems_slate_matches')
@@ -89,7 +87,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch start_times from pandascore_matches to enforce locks
     const { data: pandaMatches } = await serviceClient
       .from('pandascore_matches')
       .select('match_id, start_time, status')
@@ -103,6 +100,7 @@ Deno.serve(async (req) => {
     const now = Date.now();
     const lockedMatches: string[] = [];
     const acceptedPicks: PickInput[] = [];
+    let tiebreakerForEntry: number | null = null;
 
     for (const pick of body.picks) {
       const info = matchInfo.get(pick.match_id);
@@ -117,16 +115,22 @@ Deno.serve(async (req) => {
         lockedMatches.push(pick.match_id);
       } else {
         acceptedPicks.push(pick);
+        if (
+          slate.tiebreaker_match_id &&
+          pick.match_id === slate.tiebreaker_match_id &&
+          typeof pick.tiebreaker_total_maps === 'number'
+        ) {
+          tiebreakerForEntry = pick.tiebreaker_total_maps;
+        }
       }
     }
 
-    // Upsert entry
+    const entryUpdate: Record<string, unknown> = { slate_id: body.slate_id, user_id: user.id };
+    if (tiebreakerForEntry !== null) entryUpdate.tiebreaker_total_maps = tiebreakerForEntry;
+
     const { data: entry, error: entryErr } = await serviceClient
       .from('pickems_entries')
-      .upsert(
-        { slate_id: body.slate_id, user_id: user.id },
-        { onConflict: 'slate_id,user_id' }
-      )
+      .upsert(entryUpdate, { onConflict: 'slate_id,user_id' })
       .select()
       .single();
 
@@ -138,13 +142,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Upsert accepted picks
     if (acceptedPicks.length > 0) {
       const rows = acceptedPicks.map(p => ({
         entry_id: entry.id,
         slate_id: body.slate_id,
         match_id: p.match_id,
         picked_team_id: p.picked_team_id,
+        tiebreaker_total_maps:
+          slate.tiebreaker_match_id && p.match_id === slate.tiebreaker_match_id
+            ? p.tiebreaker_total_maps ?? null
+            : null,
       }));
       const { error: picksErr } = await serviceClient
         .from('pickems_picks')
