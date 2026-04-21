@@ -40,6 +40,14 @@ const PickemsPage: React.FC = () => {
     [active, gameFilter]
   );
 
+  const { needsPicks, alreadyPicked } = useMemo(() => {
+    const picked = submittedIds ?? new Set<string>();
+    return {
+      needsPicks: filteredActive.filter(s => !picked.has(s.id)),
+      alreadyPicked: filteredActive.filter(s => picked.has(s.id)),
+    };
+  }, [filteredActive, submittedIds]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <Helmet>
@@ -111,8 +119,36 @@ const PickemsPage: React.FC = () => {
               {filteredActive.length === 0 ? (
                 <p className="text-gray-400 text-sm">No active slates for this filter.</p>
               ) : (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {filteredActive.map(s => <PickemsSlateCard key={s.id} slate={s} hasPicks={submittedIds?.has(s.id)} />)}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">
+                      Awaiting Your Picks
+                      <span className="ml-2 text-xs text-gray-500 normal-case font-normal">
+                        ({needsPicks.length})
+                      </span>
+                    </h3>
+                    {needsPicks.length === 0 ? (
+                      <p className="text-gray-500 text-sm italic">All caught up — picks submitted for every active slate.</p>
+                    ) : (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {needsPicks.map(s => <PickemsSlateCard key={s.id} slate={s} hasPicks={false} />)}
+                      </div>
+                    )}
+                  </div>
+
+                  {alreadyPicked.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-emerald-300 mb-2 uppercase tracking-wide">
+                        Already Picked
+                        <span className="ml-2 text-xs text-gray-500 normal-case font-normal">
+                          ({alreadyPicked.length})
+                        </span>
+                      </h3>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {alreadyPicked.map(s => <PickemsSlateCard key={s.id} slate={s} hasPicks />)}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
