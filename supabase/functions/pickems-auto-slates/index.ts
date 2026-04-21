@@ -52,22 +52,35 @@ Deno.serve(async (req) => {
     // 1. Pull active S/A tier tournaments (still ongoing or starting soon)
     const { data: tournaments, error: tErr } = await supabase
       .from('pandascore_tournaments')
-      .select('tournament_id, name, esport_type, start_date, end_date, raw_data')
+      .select('tournament_id, name, esport_type, start_date, end_date, raw_data, league_name, serie_name')
       .gt('end_date', nowIso)
       .lte('start_date', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
       .limit(500);
 
     if (tErr) throw tErr;
 
-    const eligible = (tournaments ?? []).filter((t: Tournament) => {
+    const eligible = (tournaments ?? []).filter((t: any) => {
       const tier = String(t.raw_data?.tier ?? '').toLowerCase();
       return ALLOWED_TIERS.has(tier);
     });
 
     result.tournaments_scanned = eligible.length;
 
+    // Build a clean tournament title: "League · Serie"; fall back to raw name
+    const buildTournamentTitle = (t: any) => {
+      const parts = [t.league_name, t.serie_name].filter((x: string | null) => x && String(x).trim().length > 0);
+      return parts.length ? parts.join(' · ') : (t.name ?? `Tournament ${t.tournament_id}`);
+    };
+    const buildSlateName = (t: any) => {
+      const title = buildTournamentTitle(t);
+      const stage = t.name && t.name !== t.league_name && t.name !== t.serie_name ? t.name : null;
+      return stage ? `${title} – ${stage}` : title;
+    };
+
     for (const tour of eligible) {
       try {
+        const tournamentTitle = buildTournamentTitle(tour);
+        const slateName = buildSlateName(tour);
         // Pull UPCOMING matches for this tournament with at least 2 opponents
         const { data: matches } = await supabase
           .from('pandascore_matches')
@@ -98,14 +111,13 @@ Deno.serve(async (req) => {
         let slateId: string;
 
         if (!existing) {
-          // Create new auto-slate (open immediately)
           const { data: created, error: cErr } = await supabase
             .from('pickems_slates')
             .insert({
-              name: tour.name ? `${tour.name}` : `Tournament ${tour.tournament_id}`,
-              description: `Auto-generated Pick'ems slate for ${tour.name ?? 'tournament'}.`,
+              name: slateName,
+              description: `Auto-generated Pick'ems slate for ${tournamentTitle}.`,
               tournament_id: tour.tournament_id,
-              tournament_name: tour.name,
+              tournament_name: tournamentTitle,
               esport_type: tour.esport_type,
               start_date: firstStart,
               end_date: lastStart,
@@ -122,11 +134,12 @@ Deno.serve(async (req) => {
           result.slates_created++;
         } else {
           slateId = existing.id;
-          // Re-open if it was prematurely closed but still has upcoming matches
           const shouldReopen = existing.status === 'closed';
           await supabase
             .from('pickems_slates')
             .update({
+              name: slateName,
+              tournament_name: tournamentTitle,
               start_date: firstStart,
               end_date: lastStart,
               tiebreaker_match_id: tiebreakerMatchId,
