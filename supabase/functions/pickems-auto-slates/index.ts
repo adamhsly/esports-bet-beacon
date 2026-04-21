@@ -222,6 +222,9 @@ Deno.serve(async (req) => {
             result.matches_attached += toInsert.length;
           }
         }
+      } catch (e: any) {
+        result.errors.push(`tournament ${tour.tournament_id}: ${e?.message ?? String(e)}`);
+      }
     }
 
     // 1c. Seed random test-user picks for any freshly created slates so leaderboards aren't empty.
