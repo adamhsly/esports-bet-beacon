@@ -222,8 +222,29 @@ Deno.serve(async (req) => {
             result.matches_attached += toInsert.length;
           }
         }
+    }
+
+    // 1c. Seed random test-user picks for any freshly created slates so leaderboards aren't empty.
+    const fnUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/pickems-seed-test-picks`;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    for (const sid of newlyCreatedSlateIds) {
+      try {
+        const seedRes = await fetch(fnUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ slate_id: sid, min: 1, max: 1000 }),
+        });
+        if (seedRes.ok) {
+          result.seeded_slates++;
+        } else {
+          const txt = await seedRes.text().catch(() => '');
+          result.errors.push(`seed ${sid}: ${seedRes.status} ${txt}`);
+        }
       } catch (e: any) {
-        result.errors.push(`tournament ${tour.tournament_id}: ${e?.message ?? String(e)}`);
+        result.errors.push(`seed ${sid}: ${e?.message ?? String(e)}`);
       }
     }
 
