@@ -112,7 +112,7 @@ const PickemsPage: React.FC = () => {
                 <p className="text-gray-400 text-sm">No active slates for this filter.</p>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
-                  {filteredActive.map(s => <PickemsSlateCard key={s.id} slate={s} />)}
+                  {filteredActive.map(s => <PickemsSlateCard key={s.id} slate={s} hasPicks={submittedIds?.has(s.id)} />)}
                 </div>
               )}
             </section>
@@ -121,7 +121,7 @@ const PickemsPage: React.FC = () => {
               <section>
                 <h2 className="text-lg font-semibold mb-3">Past Slates</h2>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {settled.map(s => <PickemsSlateCard key={s.id} slate={s} />)}
+                  {settled.map(s => <PickemsSlateCard key={s.id} slate={s} hasPicks={submittedIds?.has(s.id)} />)}
                 </div>
               </section>
             )}
