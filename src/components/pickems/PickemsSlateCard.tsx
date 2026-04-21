@@ -2,9 +2,33 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Calendar } from 'lucide-react';
+import { Trophy, Calendar, Gamepad2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { PickemsSlate } from '@/types/pickems';
+
+const ESPORT_LABELS: Record<string, string> = {
+  'counter-strike': 'CS2',
+  'cs-go': 'CS2',
+  'cs2': 'CS2',
+  'lol': 'League of Legends',
+  'league-of-legends': 'League of Legends',
+  'dota2': 'Dota 2',
+  'dota-2': 'Dota 2',
+  'valorant': 'Valorant',
+  'rainbow-6-siege': 'Rainbow Six',
+  'rocket-league': 'Rocket League',
+  'starcraft-2': 'StarCraft 2',
+  'overwatch': 'Overwatch',
+  'king-of-glory': 'Honor of Kings',
+  'call-of-duty': 'Call of Duty',
+  'lol-wild-rift': 'Wild Rift',
+  'pubg': 'PUBG',
+  'mobile-legends': 'Mobile Legends',
+  'ea-sports-fc': 'EA Sports FC',
+};
+
+export const formatEsportLabel = (val?: string | null) =>
+  val ? (ESPORT_LABELS[val] ?? val) : null;
 
 interface Props {
   slate: PickemsSlate;
