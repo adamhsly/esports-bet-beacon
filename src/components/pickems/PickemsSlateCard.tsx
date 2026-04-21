@@ -77,7 +77,7 @@ export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
             <h3 className="text-white font-semibold text-base leading-tight">{slate.name}</h3>
             <div className="flex items-center gap-1.5 shrink-0">
               {gameLabel && (
-                <Badge variant="outline" className="bg-theme-purple/15 text-theme-purple border-theme-purple/40 text-[10px]">
+                <Badge variant="outline" className={`${getEsportPillClass(slate.esport_type)} text-[10px]`}>
                   <Gamepad2 className="h-3 w-3 mr-1" />
                   {gameLabel}
                 </Badge>
