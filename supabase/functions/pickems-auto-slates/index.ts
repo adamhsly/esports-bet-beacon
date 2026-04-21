@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
               esport_type: tour.esport_type,
               start_date: firstStart,
               end_date: lastStart,
-              status: 'open',
+              status: 'published',
               auto_generated: true,
               source_tournament_id: tour.tournament_id,
               tiebreaker_match_id: tiebreakerMatchId,
