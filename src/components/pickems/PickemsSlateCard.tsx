@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Calendar, Gamepad2 } from 'lucide-react';
+import { Calendar, Gamepad2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { PickemsSlate } from '@/types/pickems';
 
