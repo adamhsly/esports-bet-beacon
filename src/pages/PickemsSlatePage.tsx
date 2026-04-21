@@ -173,8 +173,10 @@ const PickemsSlatePage: React.FC = () => {
           <p className="text-gray-400">No matches in this slate yet.</p>
         ) : (
           <>
-            <div className="space-y-3 pb-24">
-              {matches!.map(m => {
+            {(() => {
+              const open = matches!.filter(m => !isMatchLocked(m.start_time, m.status));
+              const locked = matches!.filter(m => isMatchLocked(m.start_time, m.status));
+              const renderRow = (m: (typeof matches)[number]) => {
                 const isTb = !!slate?.tiebreaker_match_id && m.match_id === slate.tiebreaker_match_id;
                 return (
                   <PickemsMatchRow
@@ -188,8 +190,28 @@ const PickemsSlatePage: React.FC = () => {
                     onTiebreakerChange={isTb ? (_id, v) => setPendingTiebreaker(v) : undefined}
                   />
                 );
-              })}
-            </div>
+              };
+              return (
+                <div className="pb-24 space-y-6">
+                  {open.length > 0 && (
+                    <section>
+                      <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">
+                        Open for picks ({open.length})
+                      </h2>
+                      <div className="space-y-3">{open.map(renderRow)}</div>
+                    </section>
+                  )}
+                  {locked.length > 0 && (
+                    <section>
+                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                        Started / Finished ({locked.length})
+                      </h2>
+                      <div className="space-y-3 opacity-90">{locked.map(renderRow)}</div>
+                    </section>
+                  )}
+                </div>
+              );
+            })()}
 
             {user ? (
               <div className="fixed bottom-4 left-0 right-0 px-4 z-30">
