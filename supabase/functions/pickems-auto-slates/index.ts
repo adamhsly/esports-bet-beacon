@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   try {
     const nowIso = new Date().toISOString();
 
-    // 1. Pull active S/A tier tournaments (still ongoing or starting soon)
+    // 1a. Pull active S/A tier tournaments from the tournaments table
     const { data: tournaments, error: tErr } = await supabase
       .from('pandascore_tournaments')
       .select('tournament_id, name, esport_type, start_date, end_date, raw_data, league_name, serie_name')
@@ -64,7 +64,49 @@ Deno.serve(async (req) => {
       return ALLOWED_TIERS.has(tier);
     });
 
-    result.tournaments_scanned = eligible.length;
+    // 1b. Fallback: derive tournaments directly from upcoming matches when the
+    //     tournament row is missing (some games like CS only sync match-level tier info).
+    const { data: upcomingMatches } = await supabase
+      .from('pandascore_matches')
+      .select('tournament_id, esport_type, raw_data, start_time')
+      .gt('start_time', nowIso)
+      .lte('start_time', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
+      .limit(5000);
+
+    const knownIds = new Set(eligible.map((t: any) => String(t.tournament_id)));
+    const derivedMap = new Map<string, any>();
+
+    for (const m of (upcomingMatches ?? []) as any[]) {
+      if (!m.tournament_id) continue;
+      const tid = String(m.tournament_id);
+      if (knownIds.has(tid) || derivedMap.has(tid)) continue;
+
+      const tier = String(m.raw_data?.tournament?.tier ?? '').toLowerCase();
+      if (!ALLOWED_TIERS.has(tier)) continue;
+
+      const tournamentBlock = m.raw_data?.tournament ?? {};
+      const leagueBlock = m.raw_data?.league ?? {};
+      const serieBlock = m.raw_data?.serie ?? {};
+
+      // Normalize esport slug to match tournaments table style (lowercase, no spaces).
+      const esportSlug = String(m.esport_type ?? '')
+        .toLowerCase()
+        .replace(/\s+/g, '-');
+
+      derivedMap.set(tid, {
+        tournament_id: tid,
+        name: tournamentBlock.name ?? null,
+        esport_type: esportSlug || null,
+        start_date: tournamentBlock.begin_at ?? m.start_time,
+        end_date: tournamentBlock.end_at ?? m.start_time,
+        raw_data: { ...tournamentBlock, tier },
+        league_name: leagueBlock.name ?? null,
+        serie_name: serieBlock.name ?? null,
+      });
+    }
+
+    const allEligible = [...eligible, ...Array.from(derivedMap.values())];
+    result.tournaments_scanned = allEligible.length;
 
     // Build a clean tournament title: "League · Serie"; fall back to raw name
     const buildTournamentTitle = (t: any) => {
@@ -77,7 +119,7 @@ Deno.serve(async (req) => {
       return stage ? `${title} – ${stage}` : title;
     };
 
-    for (const tour of eligible) {
+    for (const tour of allEligible) {
       try {
         const tournamentTitle = buildTournamentTitle(tour);
         const slateName = buildSlateName(tour);
