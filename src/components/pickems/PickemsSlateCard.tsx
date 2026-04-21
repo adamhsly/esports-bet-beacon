@@ -30,6 +30,31 @@ const ESPORT_LABELS: Record<string, string> = {
 export const formatEsportLabel = (val?: string | null) =>
   val ? (ESPORT_LABELS[val] ?? val) : null;
 
+// Brand-ish colour per game
+const ESPORT_COLORS: Record<string, string> = {
+  'counter-strike': 'bg-orange-500/15 text-orange-300 border-orange-500/40',
+  'cs-go': 'bg-orange-500/15 text-orange-300 border-orange-500/40',
+  'cs2': 'bg-orange-500/15 text-orange-300 border-orange-500/40',
+  'lol': 'bg-sky-500/15 text-sky-300 border-sky-500/40',
+  'league-of-legends': 'bg-sky-500/15 text-sky-300 border-sky-500/40',
+  'lol-wild-rift': 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40',
+  'dota2': 'bg-red-500/15 text-red-300 border-red-500/40',
+  'dota-2': 'bg-red-500/15 text-red-300 border-red-500/40',
+  'valorant': 'bg-rose-500/15 text-rose-300 border-rose-500/40',
+  'rainbow-6-siege': 'bg-yellow-500/15 text-yellow-300 border-yellow-500/40',
+  'rocket-league': 'bg-blue-500/15 text-blue-300 border-blue-500/40',
+  'starcraft-2': 'bg-indigo-500/15 text-indigo-300 border-indigo-500/40',
+  'overwatch': 'bg-amber-500/15 text-amber-300 border-amber-500/40',
+  'king-of-glory': 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40',
+  'call-of-duty': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
+  'pubg': 'bg-lime-500/15 text-lime-300 border-lime-500/40',
+  'mobile-legends': 'bg-violet-500/15 text-violet-300 border-violet-500/40',
+  'ea-sports-fc': 'bg-green-500/15 text-green-300 border-green-500/40',
+};
+
+export const getEsportPillClass = (val?: string | null) =>
+  (val && ESPORT_COLORS[val]) || 'bg-theme-purple/15 text-theme-purple border-theme-purple/40';
+
 interface Props {
   slate: PickemsSlate;
   matchCount?: number;
