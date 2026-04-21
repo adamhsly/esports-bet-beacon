@@ -1,22 +1,41 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { useSlates } from '@/hooks/usePickems';
-import { PickemsSlateCard } from '@/components/pickems/PickemsSlateCard';
+import { PickemsSlateCard, formatEsportLabel } from '@/components/pickems/PickemsSlateCard';
 import { Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const PickemsPage: React.FC = () => {
   const { data: slates, isLoading } = useSlates();
+  const [gameFilter, setGameFilter] = useState<string>('all');
 
   useEffect(() => {
     document.title = "Pick'ems | Frags & Fortunes";
   }, []);
 
-  const active = (slates ?? []).filter(s => s.status === 'published' || s.status === 'closed');
-  const settled = (slates ?? []).filter(s => s.status === 'settled');
+  const active = useMemo(
+    () => (slates ?? []).filter(s => s.status === 'published' || s.status === 'closed'),
+    [slates]
+  );
+  const settled = useMemo(
+    () => (slates ?? []).filter(s => s.status === 'settled'),
+    [slates]
+  );
+
+  const gameOptions = useMemo(() => {
+    const set = new Set<string>();
+    active.forEach(s => s.esport_type && set.add(s.esport_type));
+    return Array.from(set).sort();
+  }, [active]);
+
+  const filteredActive = useMemo(
+    () => gameFilter === 'all' ? active : active.filter(s => s.esport_type === gameFilter),
+    [active, gameFilter]
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -46,12 +65,49 @@ const PickemsPage: React.FC = () => {
         ) : (
           <>
             <section className="mb-8">
-              <h2 className="text-lg font-semibold mb-3">Active Slates</h2>
-              {active.length === 0 ? (
-                <p className="text-gray-400 text-sm">No active slates right now. Check back soon.</p>
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h2 className="text-lg font-semibold">Active Slates</h2>
+              </div>
+
+              {gameOptions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setGameFilter('all')}
+                    className={cn(
+                      'h-8 text-xs border-slate-700',
+                      gameFilter === 'all'
+                        ? 'bg-theme-purple text-white border-theme-purple hover:bg-theme-purple/90'
+                        : 'bg-slate-800/60 text-gray-300 hover:bg-slate-700'
+                    )}
+                  >
+                    All Games
+                  </Button>
+                  {gameOptions.map(g => (
+                    <Button
+                      key={g}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setGameFilter(g)}
+                      className={cn(
+                        'h-8 text-xs border-slate-700',
+                        gameFilter === g
+                          ? 'bg-theme-purple text-white border-theme-purple hover:bg-theme-purple/90'
+                          : 'bg-slate-800/60 text-gray-300 hover:bg-slate-700'
+                      )}
+                    >
+                      {formatEsportLabel(g)}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {filteredActive.length === 0 ? (
+                <p className="text-gray-400 text-sm">No active slates for this filter.</p>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
-                  {active.map(s => <PickemsSlateCard key={s.id} slate={s} />)}
+                  {filteredActive.map(s => <PickemsSlateCard key={s.id} slate={s} />)}
                 </div>
               )}
             </section>
