@@ -43,6 +43,7 @@ const statusColor: Record<string, string> = {
 };
 
 export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
+  const gameLabel = formatEsportLabel(slate.esport_type);
   return (
     <Link to={`/pickems/${slate.id}`}>
       <Card className="bg-slate-800/60 border-slate-700 hover:border-theme-purple/60 transition-colors">
@@ -53,12 +54,20 @@ export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
               {slate.status}
             </Badge>
           </div>
-          {slate.tournament_name && (
-            <p className="text-xs text-gray-400 flex items-center gap-1">
-              <Trophy className="h-3 w-3" />
-              {slate.tournament_name}
-            </p>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {gameLabel && (
+              <Badge variant="outline" className="bg-theme-purple/15 text-theme-purple border-theme-purple/40 text-[10px]">
+                <Gamepad2 className="h-3 w-3 mr-1" />
+                {gameLabel}
+              </Badge>
+            )}
+            {slate.tournament_name && (
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <Trophy className="h-3 w-3" />
+                {slate.tournament_name}
+              </p>
+            )}
+          </div>
           <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
