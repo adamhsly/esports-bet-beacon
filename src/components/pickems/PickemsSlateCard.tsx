@@ -50,9 +50,11 @@ export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
         <CardContent className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-white font-semibold text-base leading-tight">{slate.name}</h3>
-            <Badge variant="outline" className={statusColor[slate.status] ?? ''}>
-              {slate.status}
-            </Badge>
+            {slate.status !== 'published' && (
+              <Badge variant="outline" className={statusColor[slate.status] ?? ''}>
+                {slate.status}
+              </Badge>
+            )}
           </div>
           {slate.tournament_name && (
             <p className="text-xs text-gray-300 flex items-center gap-1 font-medium">
