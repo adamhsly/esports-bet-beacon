@@ -54,18 +54,18 @@ export const PickemsSlateCard: React.FC<Props> = ({ slate, matchCount }) => {
               {slate.status}
             </Badge>
           </div>
+          {slate.tournament_name && (
+            <p className="text-xs text-gray-300 flex items-center gap-1 font-medium">
+              <Trophy className="h-3 w-3 text-amber-400" />
+              <span className="truncate">{slate.tournament_name}</span>
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             {gameLabel && (
               <Badge variant="outline" className="bg-theme-purple/15 text-theme-purple border-theme-purple/40 text-[10px]">
                 <Gamepad2 className="h-3 w-3 mr-1" />
                 {gameLabel}
               </Badge>
-            )}
-            {slate.tournament_name && (
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                <Trophy className="h-3 w-3" />
-                {slate.tournament_name}
-              </p>
             )}
           </div>
           <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
