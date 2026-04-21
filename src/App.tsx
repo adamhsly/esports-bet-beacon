@@ -47,6 +47,11 @@ import BlogPostPage from '@/pages/BlogPostPage';
 import BlogAdminPage from '@/pages/BlogAdminPage';
 import PlatformDashboardPage from '@/pages/PlatformDashboardPage';
 import GlobalLeaderboardPage from '@/pages/GlobalLeaderboardPage';
+import PickemsPage from '@/pages/PickemsPage';
+import PickemsSlatePage from '@/pages/PickemsSlatePage';
+import PickemsLeaderboardPage from '@/pages/PickemsLeaderboardPage';
+import PickemsAdminPage from '@/pages/admin/PickemsAdminPage';
+import PickemsSlateEditorPage from '@/pages/admin/PickemsSlateEditorPage';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
@@ -197,6 +202,11 @@ function App() {
           <Route path="/blog-admin" element={<BlogAdminPage />} />
           <Route path="/platform-dashboard" element={<PlatformDashboardPage />} />
           <Route path="/leaderboard" element={<GlobalLeaderboardPage />} />
+          <Route path="/pickems" element={<PickemsPage />} />
+          <Route path="/pickems/:slateId" element={<PickemsSlatePage />} />
+          <Route path="/pickems/:slateId/leaderboard" element={<PickemsLeaderboardPage />} />
+          <Route path="/admin/pickems" element={<PickemsAdminPage />} />
+          <Route path="/admin/pickems/:slateId" element={<PickemsSlateEditorPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
