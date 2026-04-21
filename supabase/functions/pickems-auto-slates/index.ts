@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
     tournaments_scanned: 0,
     slates_created: 0,
     slates_updated: 0,
+    slates_reopened: 0,
     slates_locked: 0,
     matches_attached: 0,
     errors: [] as string[],
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
       .from('pandascore_tournaments')
       .select('tournament_id, name, esport_type, start_date, end_date, raw_data')
       .gt('end_date', nowIso)
-      .lte('start_date', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString())
+      .lte('start_date', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
       .limit(500);
 
     if (tErr) throw tErr;
@@ -67,11 +68,12 @@ Deno.serve(async (req) => {
 
     for (const tour of eligible) {
       try {
-        // Pull matches for this tournament that have at least 2 opponents
+        // Pull UPCOMING matches for this tournament with at least 2 opponents
         const { data: matches } = await supabase
           .from('pandascore_matches')
           .select('match_id, start_time, status, number_of_games, teams, tournament_id')
           .eq('tournament_id', tour.tournament_id)
+          .gt('start_time', nowIso)
           .order('start_time', { ascending: true });
 
         const validMatches = (matches ?? []).filter((m: Match) => {
@@ -120,17 +122,20 @@ Deno.serve(async (req) => {
           result.slates_created++;
         } else {
           slateId = existing.id;
-          // Refresh dates if matches shifted
+          // Re-open if it was prematurely closed but still has upcoming matches
+          const shouldReopen = existing.status === 'closed';
           await supabase
             .from('pickems_slates')
             .update({
               start_date: firstStart,
               end_date: lastStart,
               tiebreaker_match_id: tiebreakerMatchId,
+              ...(shouldReopen ? { status: 'published' } : {}),
               updated_at: nowIso,
             })
             .eq('id', slateId);
-          result.slates_updated++;
+          if (shouldReopen) result.slates_reopened++;
+          else result.slates_updated++;
         }
 
         // Sync matches: insert any not yet attached
@@ -163,7 +168,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Close auto-slates whose first match has started (status published -> closed)
+    // 2. Close auto-slates whose first upcoming match has started
     const { data: openAutoSlates } = await supabase
       .from('pickems_slates')
       .select('id, start_date')
