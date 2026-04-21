@@ -2616,6 +2616,181 @@ export type Database = {
         }
         Relationships: []
       }
+      pickems_entries: {
+        Row: {
+          correct_picks: number
+          created_at: string
+          id: string
+          slate_id: string
+          submitted_at: string
+          total_picks: number
+          total_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          correct_picks?: number
+          created_at?: string
+          id?: string
+          slate_id: string
+          submitted_at?: string
+          total_picks?: number
+          total_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          correct_picks?: number
+          created_at?: string
+          id?: string
+          slate_id?: string
+          submitted_at?: string
+          total_picks?: number
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickems_entries_slate_id_fkey"
+            columns: ["slate_id"]
+            isOneToOne: false
+            referencedRelation: "pickems_slates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pickems_picks: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          is_correct: boolean | null
+          locked_at: string | null
+          match_id: string
+          picked_team_id: string
+          points_awarded: number
+          slate_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          is_correct?: boolean | null
+          locked_at?: string | null
+          match_id: string
+          picked_team_id: string
+          points_awarded?: number
+          slate_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          is_correct?: boolean | null
+          locked_at?: string | null
+          match_id?: string
+          picked_team_id?: string
+          points_awarded?: number
+          slate_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickems_picks_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "pickems_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickems_picks_slate_id_fkey"
+            columns: ["slate_id"]
+            isOneToOne: false
+            referencedRelation: "pickems_slates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pickems_slate_matches: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          match_id: string
+          slate_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          match_id: string
+          slate_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          match_id?: string
+          slate_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickems_slate_matches_slate_id_fkey"
+            columns: ["slate_id"]
+            isOneToOne: false
+            referencedRelation: "pickems_slates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pickems_slates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          esport_type: string | null
+          id: string
+          name: string
+          start_date: string
+          status: string
+          tournament_id: string | null
+          tournament_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          esport_type?: string | null
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+          tournament_id?: string | null
+          tournament_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          esport_type?: string | null
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          tournament_id?: string | null
+          tournament_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           article_markdown: string | null
