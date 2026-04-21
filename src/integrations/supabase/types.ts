@@ -2766,6 +2766,7 @@ export type Database = {
       }
       pickems_slates: {
         Row: {
+          auto_generated: boolean
           created_at: string
           created_by: string | null
           description: string | null
@@ -2773,6 +2774,7 @@ export type Database = {
           esport_type: string | null
           id: string
           name: string
+          source_tournament_id: string | null
           start_date: string
           status: string
           tiebreaker_match_id: string | null
@@ -2781,6 +2783,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_generated?: boolean
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -2788,6 +2791,7 @@ export type Database = {
           esport_type?: string | null
           id?: string
           name: string
+          source_tournament_id?: string | null
           start_date: string
           status?: string
           tiebreaker_match_id?: string | null
@@ -2796,6 +2800,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_generated?: boolean
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -2803,6 +2808,7 @@ export type Database = {
           esport_type?: string | null
           id?: string
           name?: string
+          source_tournament_id?: string | null
           start_date?: string
           status?: string
           tiebreaker_match_id?: string | null
