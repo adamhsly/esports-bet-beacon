@@ -168,24 +168,38 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Close auto-slates whose first upcoming match has started
-    const { data: openAutoSlates } = await supabase
+    // 2. Close auto-slates whose source tournament has ended OR has no upcoming matches left
+    const { data: publishedAutoSlates } = await supabase
       .from('pickems_slates')
-      .select('id, start_date')
+      .select('id, source_tournament_id, end_date')
       .eq('auto_generated', true)
-      .eq('status', 'published')
-      .lte('start_date', nowIso);
+      .eq('status', 'published');
 
-    if (openAutoSlates && openAutoSlates.length > 0) {
-      const ids = openAutoSlates.map((s: any) => s.id);
-      const { error: lockErr } = await supabase
-        .from('pickems_slates')
-        .update({ status: 'closed', updated_at: nowIso })
-        .in('id', ids);
-      if (lockErr) {
-        result.errors.push(`lock: ${lockErr.message}`);
-      } else {
-        result.slates_locked = ids.length;
+    if (publishedAutoSlates && publishedAutoSlates.length > 0) {
+      const toClose: string[] = [];
+      for (const s of publishedAutoSlates as any[]) {
+        // Close if tournament window ended
+        if (s.end_date && s.end_date <= nowIso) {
+          toClose.push(s.id);
+          continue;
+        }
+        // Close if no upcoming matches remain in tournament
+        if (s.source_tournament_id) {
+          const { count } = await supabase
+            .from('pandascore_matches')
+            .select('match_id', { count: 'exact', head: true })
+            .eq('tournament_id', s.source_tournament_id)
+            .gt('start_time', nowIso);
+          if (!count || count === 0) toClose.push(s.id);
+        }
+      }
+      if (toClose.length > 0) {
+        const { error: lockErr } = await supabase
+          .from('pickems_slates')
+          .update({ status: 'closed', updated_at: nowIso })
+          .in('id', toClose);
+        if (lockErr) result.errors.push(`lock: ${lockErr.message}`);
+        else result.slates_locked = toClose.length;
       }
     }
 
