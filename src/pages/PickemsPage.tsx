@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { useSlates } from '@/hooks/usePickems';
-import { PickemsSlateCard, formatEsportLabel } from '@/components/pickems/PickemsSlateCard';
+import { PickemsSlateCard, formatEsportLabel, getEsportPillClass } from '@/components/pickems/PickemsSlateCard';
 import { Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
