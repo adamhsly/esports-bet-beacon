@@ -13,6 +13,22 @@ export function useSlates() {
   return useQuery({ queryKey: ['pickems', 'slates'], queryFn: fetchSlates });
 }
 
+export function useUserSubmittedSlateIds(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['pickems', 'user-submitted-slates', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pickems_entries')
+        .select('slate_id')
+        .eq('user_id', userId!)
+        .not('submitted_at', 'is', null);
+      if (error) throw error;
+      return new Set((data ?? []).map((r: any) => r.slate_id as string));
+    },
+  });
+}
+
 export function useAllSlatesAdmin() {
   return useQuery({ queryKey: ['pickems', 'slates', 'admin'], queryFn: fetchAllSlatesAdmin });
 }
