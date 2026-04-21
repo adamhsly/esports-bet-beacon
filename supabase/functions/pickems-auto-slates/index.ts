@@ -163,19 +163,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Lock auto-slates whose first match has started (status open -> locked)
+    // 2. Close auto-slates whose first match has started (status published -> closed)
     const { data: openAutoSlates } = await supabase
       .from('pickems_slates')
       .select('id, start_date')
       .eq('auto_generated', true)
-      .eq('status', 'open')
+      .eq('status', 'published')
       .lte('start_date', nowIso);
 
     if (openAutoSlates && openAutoSlates.length > 0) {
       const ids = openAutoSlates.map((s: any) => s.id);
       const { error: lockErr } = await supabase
         .from('pickems_slates')
-        .update({ status: 'locked', updated_at: nowIso })
+        .update({ status: 'closed', updated_at: nowIso })
         .in('id', ids);
       if (lockErr) {
         result.errors.push(`lock: ${lockErr.message}`);
