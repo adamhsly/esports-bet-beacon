@@ -1,22 +1,48 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SearchableNavbar from "@/components/SearchableNavbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Users, User, Sparkles } from "lucide-react";
-import { TRIVIA_ESPORTS, generateBoard, createSession } from "@/lib/trivia";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Users, User, Sparkles, Settings } from "lucide-react";
+import {
+  TRIVIA_ESPORTS,
+  generateBoard,
+  createSession,
+  listGridTemplates,
+  type TriviaGridTemplateRow,
+} from "@/lib/trivia";
 import { toast } from "sonner";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const TriviaPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const presetTemplateId = searchParams.get("templateId") ?? undefined;
+
   const [esport, setEsport] = useState<string>("Counter-Strike");
   const [mode, setMode] = useState<"solo" | "two_player">("solo");
   const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<TriviaGridTemplateRow[]>([]);
+  const [templateId, setTemplateId] = useState<string | undefined>(presetTemplateId);
+  const { data: isAdmin } = useIsAdmin();
+
+  useEffect(() => {
+    listGridTemplates(esport)
+      .then((rows) => setTemplates(rows.filter((r) => r.is_active)))
+      .catch(() => setTemplates([]));
+  }, [esport]);
 
   const handleStart = async () => {
     setLoading(true);
     try {
-      const board = await generateBoard(esport);
+      const board = await generateBoard(esport, { templateId });
       const session = await createSession({ mode, esport, board });
       navigate(`/trivia/${session.id}`);
     } catch (e: any) {
