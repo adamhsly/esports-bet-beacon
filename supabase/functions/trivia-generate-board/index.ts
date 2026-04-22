@@ -491,7 +491,9 @@ Deno.serve(async (req) => {
       source: "generated",
     });
   } catch (e) {
-    return json({ error: String(e) }, 500);
+    const err = e instanceof Error ? `${e.message}\n${e.stack}` : String(e);
+    console.error("trivia-generate-board failure:", err);
+    return json({ error: err }, 500);
   }
 });
 
