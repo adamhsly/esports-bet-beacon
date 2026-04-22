@@ -63,6 +63,11 @@ const TriviaAdminPage: React.FC = () => {
   const [colIds, setColIds] = useState<string[]>(["", "", ""]);
   const [savingTpl, setSavingTpl] = useState(false);
 
+  // Auto generation
+  const [generating, setGenerating] = useState(false);
+  const [genResult, setGenResult] = useState<any>(null);
+  const [genMaxBoards, setGenMaxBoards] = useState<number>(20);
+
   const reload = async () => {
     setLoading(true);
     try {
