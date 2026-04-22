@@ -1,6 +1,7 @@
 // Generates a 3x3 trivia board for a given esport.
-// Picks 3 row clues + 3 column clues from {team, nationality} such that every
-// (row,col) intersection has at least 1 active player satisfying both.
+// Picks 3 row clues + 3 column clues such that every (row,col) intersection
+// has at least 1 active player satisfying both, while enforcing diversity
+// caps and avoiding boards the user has recently seen.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -10,7 +11,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type Clue = { type: "team" | "nationality"; value: string; label: string };
+type ClueType = "team" | "nationality" | "tournament" | "role" | "attribute";
+type Clue = { type: ClueType; value: string; label: string };
 
 const NATIONALITY_LABELS: Record<string, string> = {
   US: "USA", RU: "Russia", BR: "Brazil", SE: "Sweden", CN: "China",
@@ -20,11 +22,66 @@ const NATIONALITY_LABELS: Record<string, string> = {
   CZ: "Czechia", IT: "Italy", BE: "Belgium", PT: "Portugal", JP: "Japan",
 };
 
+// Diversity caps applied across the WHOLE board (rows + cols, 6 clues total)
+const TYPE_CAPS: Record<ClueType, number> = {
+  team: 2,
+  nationality: 1,
+  role: 1,
+  tournament: 3,   // tournaments are plentiful and varied
+  attribute: 3,
+};
+
+// Recent boards (per user) we will refuse to repeat
+const USER_FRESHNESS_WINDOW = 10;
+// Global cooldown — boards used in the last hour get penalized
+const GLOBAL_COOLDOWN_MS = 60 * 60 * 1000;
+
+// ---------- helpers ----------
+const clueKey = (c: Clue) => `${c.type}:${c.value}`;
+
+function structureSignature(clues: Clue[]): string {
+  const counts: Record<string, number> = {};
+  for (const c of clues) counts[c.type] = (counts[c.type] ?? 0) + 1;
+  return Object.keys(counts).sort().map((k) => `${k}:${counts[k]}`).join(",");
+}
+
+function clueTypeCounts(clues: Clue[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const c of clues) counts[c.type] = (counts[c.type] ?? 0) + 1;
+  return counts;
+}
+
+async function fingerprintFromClues(rows: Clue[], cols: Clue[]): Promise<string> {
+  const rowKeys = rows.map(clueKey).sort();
+  const colKeys = cols.map(clueKey).sort();
+  // Order-insensitive across rows vs cols since transpose feels identical
+  const sides = [rowKeys.join("|"), colKeys.join("|")].sort().join("||");
+  const buf = new TextEncoder().encode(sides);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function passesDiversity(rows: Clue[], cols: Clue[]): boolean {
+  const all = [...rows, ...cols];
+  const counts = clueTypeCounts(all);
+  for (const [type, cap] of Object.entries(TYPE_CAPS)) {
+    if ((counts[type] ?? 0) > cap) return false;
+  }
+  // Require at least 2 distinct clue types across the board
+  return Object.keys(counts).length >= 2;
+}
+
+const shuffle = <T,>(arr: T[]) =>
+  arr.map((v) => [Math.random(), v] as const)
+     .sort((a, b) => a[0] - b[0])
+     .map(([, v]) => v);
+
+// ---------- handler ----------
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { esport, templateId } = await req.json().catch(() => ({}));
+    const { esport, templateId, userId } = await req.json().catch(() => ({}));
     if (!esport || typeof esport !== "string") {
       return new Response(JSON.stringify({ error: "esport required" }), {
         status: 400,
@@ -37,7 +94,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1) If a saved template was requested, hydrate and return it.
+    // -------- 1) Hydrate from saved template if requested --------
     if (templateId && typeof templateId === "string") {
       const { data: tpl } = await supabase
         .from("trivia_grid_templates")
@@ -51,21 +108,24 @@ Deno.serve(async (req) => {
           .select("id,label,clue_type,clue_value")
           .in("id", ids);
         const byId = new Map((clues ?? []).map((c: any) => [c.id, c]));
-        const toClue = (id: string) => {
+        const toClue = (id: string): Clue | null => {
           const c: any = byId.get(id);
           return c ? { type: c.clue_type, value: c.clue_value, label: c.label } : null;
         };
-        const rowClues = tpl.row_clue_ids.map(toClue);
-        const colClues = tpl.col_clue_ids.map(toClue);
-        if (rowClues.every(Boolean) && colClues.every(Boolean)) {
-          return new Response(JSON.stringify({ rowClues, colClues, source: "template" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+        const rowClues = tpl.row_clue_ids.map(toClue).filter(Boolean) as Clue[];
+        const colClues = tpl.col_clue_ids.map(toClue).filter(Boolean) as Clue[];
+        if (rowClues.length === 3 && colClues.length === 3) {
+          const fingerprint = await fingerprintFromClues(rowClues, colClues);
+          await registerBoard(supabase, fingerprint, esport, rowClues, colClues, userId);
+          return new Response(
+            JSON.stringify({ rowClues, colClues, fingerprint, source: "template" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
         }
       }
     }
 
-    // Pull a generous candidate pool of active players for this esport
+    // -------- 2) Build candidate pools from active players --------
     const { data: players, error } = await supabase
       .from("pandascore_players_master")
       .select("id,name,nationality,current_team_id,current_team_name")
@@ -83,7 +143,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Aggregate counts
     const teamCount = new Map<string, { label: string; count: number }>();
     const nationCount = new Map<string, number>();
     for (const p of players) {
@@ -94,7 +153,6 @@ Deno.serve(async (req) => {
       nationCount.set(p.nationality, (nationCount.get(p.nationality) ?? 0) + 1);
     }
 
-    // Build candidate clue pool: top 30 teams (≥3 players) and top 12 nationalities (≥4)
     const teamPool: Clue[] = [...teamCount.entries()]
       .filter(([, v]) => v.count >= 3)
       .sort((a, b) => b[1].count - a[1].count)
@@ -111,65 +169,102 @@ Deno.serve(async (req) => {
         label: NATIONALITY_LABELS[code] ?? code,
       }));
 
-    // Build a set lookup for fast intersection checks
-    // satisfies[playerId] = { teams:Set, nations:Set }
-    const playerHas: { teamId: string; nation: string }[] = players.map((p) => ({
+    // -------- 3) Freshness data --------
+    const recentFingerprints = new Set<string>();
+    const recentStructures = new Map<string, number>(); // structure -> count in user's recent
+    if (userId) {
+      const { data: recent } = await supabase.rpc("trivia_recent_user_fingerprints", {
+        _user_id: userId,
+        _esport: esport,
+        _limit: USER_FRESHNESS_WINDOW,
+      });
+      for (const r of (recent ?? []) as any[]) {
+        recentFingerprints.add(r.fingerprint);
+        if (r.structure_signature) {
+          recentStructures.set(
+            r.structure_signature,
+            (recentStructures.get(r.structure_signature) ?? 0) + 1,
+          );
+        }
+      }
+    }
+
+    const cooldownCutoff = new Date(Date.now() - GLOBAL_COOLDOWN_MS).toISOString();
+    const { data: hotBoards } = await supabase
+      .from("trivia_board_fingerprints")
+      .select("fingerprint")
+      .eq("esport", esport)
+      .gte("last_used_at", cooldownCutoff)
+      .limit(500);
+    const globallyHot = new Set((hotBoards ?? []).map((b: any) => b.fingerprint));
+
+    // -------- 4) Validity helpers --------
+    const playerHas = players.map((p) => ({
       teamId: String(p.current_team_id),
       nation: p.nationality,
     }));
-
     const satisfies = (clue: Clue, p: { teamId: string; nation: string }) =>
       clue.type === "team" ? p.teamId === clue.value : p.nation === clue.value;
-
     const intersectionHas = (a: Clue, b: Clue): boolean => {
       if (a.type === b.type && a.value === b.value) return false;
-      for (const p of playerHas) {
-        if (satisfies(a, p) && satisfies(b, p)) return true;
-      }
+      for (const p of playerHas) if (satisfies(a, p) && satisfies(b, p)) return true;
       return false;
     };
 
-    // Try to assemble a valid 3x3: rows = mix, cols = mix, ensure all 9 intersections solvable
-    const shuffle = <T,>(arr: T[]) => arr.map((v) => [Math.random(), v] as const)
-      .sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+    // -------- 5) Assemble a board with diversity + freshness --------
+    type Board = { rows: Clue[]; cols: Clue[]; fingerprint: string; score: number };
+    const candidates: Board[] = [];
 
-    const buildBoard = (): { rows: Clue[]; cols: Clue[] } | null => {
-      // Prefer rows = nations, cols = teams (most distinguishable). Fall back to mix.
-      const layouts: Array<[Clue[], Clue[]]> = [
-        [shuffle(nationPool), shuffle(teamPool)],
-        [shuffle(teamPool), shuffle(nationPool)],
-        [shuffle([...nationPool, ...teamPool]), shuffle([...nationPool, ...teamPool])],
-      ];
+    const layouts: Array<[Clue[], Clue[]]> = [
+      [shuffle(nationPool), shuffle(teamPool)],
+      [shuffle(teamPool), shuffle(nationPool)],
+      [shuffle([...nationPool, ...teamPool]), shuffle([...nationPool, ...teamPool])],
+    ];
 
-      for (const [rowSrc, colSrc] of layouts) {
-        for (let attempt = 0; attempt < 80; attempt++) {
-          const rs = shuffle(rowSrc).slice(0, 12);
-          const cs = shuffle(colSrc).slice(0, 12);
-          // Greedy: pick 3 rows then 3 cols with valid intersections
-          for (let r1 = 0; r1 < rs.length; r1++) {
-            for (let r2 = r1 + 1; r2 < rs.length; r2++) {
-              if (rs[r1].type === rs[r2].type && rs[r1].value === rs[r2].value) continue;
-              for (let r3 = r2 + 1; r3 < rs.length; r3++) {
-                if (rs[r3].type === rs[r1].type && rs[r3].value === rs[r1].value) continue;
-                if (rs[r3].type === rs[r2].type && rs[r3].value === rs[r2].value) continue;
-                const rows = [rs[r1], rs[r2], rs[r3]];
-                const usedKeys = new Set(rows.map((r) => `${r.type}:${r.value}`));
-                const colCandidates = cs.filter((c) => !usedKeys.has(`${c.type}:${c.value}`));
-                // For each row, find cols that intersect
-                for (let c1 = 0; c1 < colCandidates.length; c1++) {
-                  const col1 = colCandidates[c1];
-                  if (!rows.every((r) => intersectionHas(r, col1))) continue;
-                  for (let c2 = c1 + 1; c2 < colCandidates.length; c2++) {
-                    const col2 = colCandidates[c2];
-                    if (col2.type === col1.type && col2.value === col1.value) continue;
-                    if (!rows.every((r) => intersectionHas(r, col2))) continue;
-                    for (let c3 = c2 + 1; c3 < colCandidates.length; c3++) {
-                      const col3 = colCandidates[c3];
-                      if (col3.type === col1.type && col3.value === col1.value) continue;
-                      if (col3.type === col2.type && col3.value === col2.value) continue;
-                      if (!rows.every((r) => intersectionHas(r, col3))) continue;
-                      return { rows, cols: [col1, col2, col3] };
-                    }
+    outer: for (const [rowSrc, colSrc] of layouts) {
+      for (let attempt = 0; attempt < 80; attempt++) {
+        const rs = shuffle(rowSrc).slice(0, 12);
+        const cs = shuffle(colSrc).slice(0, 12);
+        for (let r1 = 0; r1 < rs.length; r1++) {
+          for (let r2 = r1 + 1; r2 < rs.length; r2++) {
+            if (rs[r1].type === rs[r2].type && rs[r1].value === rs[r2].value) continue;
+            for (let r3 = r2 + 1; r3 < rs.length; r3++) {
+              if (rs[r3].type === rs[r1].type && rs[r3].value === rs[r1].value) continue;
+              if (rs[r3].type === rs[r2].type && rs[r3].value === rs[r2].value) continue;
+              const rows = [rs[r1], rs[r2], rs[r3]];
+              const usedKeys = new Set(rows.map(clueKey));
+              const colCandidates = cs.filter((c) => !usedKeys.has(clueKey(c)));
+              for (let c1 = 0; c1 < colCandidates.length; c1++) {
+                const col1 = colCandidates[c1];
+                if (!rows.every((r) => intersectionHas(r, col1))) continue;
+                for (let c2 = c1 + 1; c2 < colCandidates.length; c2++) {
+                  const col2 = colCandidates[c2];
+                  if (col2.type === col1.type && col2.value === col1.value) continue;
+                  if (!rows.every((r) => intersectionHas(r, col2))) continue;
+                  for (let c3 = c2 + 1; c3 < colCandidates.length; c3++) {
+                    const col3 = colCandidates[c3];
+                    if (col3.type === col1.type && col3.value === col1.value) continue;
+                    if (col3.type === col2.type && col3.value === col2.value) continue;
+                    if (!rows.every((r) => intersectionHas(r, col3))) continue;
+
+                    const cols = [col1, col2, col3];
+                    if (!passesDiversity(rows, cols)) continue;
+
+                    const fp = await fingerprintFromClues(rows, cols);
+                    if (recentFingerprints.has(fp)) continue; // hard reject
+
+                    // Score: lower = better (more diverse, fresher)
+                    const sig = structureSignature([...rows, ...cols]);
+                    let score = 0;
+                    score += (recentStructures.get(sig) ?? 0) * 3; // user has seen this structure
+                    if (globallyHot.has(fp)) score += 5;
+                    // Slight penalty for boards that lean heavy on a single type
+                    const counts = clueTypeCounts([...rows, ...cols]);
+                    const maxType = Math.max(...Object.values(counts));
+                    score += Math.max(0, maxType - 2);
+
+                    candidates.push({ rows, cols, fingerprint: fp, score });
+                    if (candidates.length >= 15) break outer;
                   }
                 }
               }
@@ -177,19 +272,26 @@ Deno.serve(async (req) => {
           }
         }
       }
-      return null;
-    };
+    }
 
-    const board = buildBoard();
-    if (!board) {
+    if (candidates.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Could not assemble a solvable board" }),
+        JSON.stringify({ error: "Could not assemble a fresh, diverse board" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
+    candidates.sort((a, b) => a.score - b.score);
+    const chosen = candidates[0];
+
+    await registerBoard(supabase, chosen.fingerprint, esport, chosen.rows, chosen.cols, userId);
+
     return new Response(
-      JSON.stringify({ rowClues: board.rows, colClues: board.cols }),
+      JSON.stringify({
+        rowClues: chosen.rows,
+        colClues: chosen.cols,
+        fingerprint: chosen.fingerprint,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
@@ -199,3 +301,23 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+async function registerBoard(
+  supabase: any,
+  fingerprint: string,
+  esport: string,
+  rows: Clue[],
+  cols: Clue[],
+  userId: string | undefined,
+) {
+  const all = [...rows, ...cols];
+  await supabase.rpc("trivia_register_board_use", {
+    _fingerprint: fingerprint,
+    _esport: esport,
+    _structure_signature: structureSignature(all),
+    _clue_type_counts: clueTypeCounts(all),
+    _row_clue_keys: rows.map(clueKey),
+    _col_clue_keys: cols.map(clueKey),
+    _user_id: userId ?? null,
+  });
+}
