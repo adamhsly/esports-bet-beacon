@@ -3409,6 +3409,45 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_board_fingerprints: {
+        Row: {
+          clue_type_counts: Json
+          col_clue_keys: string[]
+          created_at: string
+          esport: string
+          fingerprint: string
+          last_used_at: string | null
+          row_clue_keys: string[]
+          similarity_score: number | null
+          structure_signature: string
+          times_used: number
+        }
+        Insert: {
+          clue_type_counts: Json
+          col_clue_keys: string[]
+          created_at?: string
+          esport: string
+          fingerprint: string
+          last_used_at?: string | null
+          row_clue_keys: string[]
+          similarity_score?: number | null
+          structure_signature: string
+          times_used?: number
+        }
+        Update: {
+          clue_type_counts?: Json
+          col_clue_keys?: string[]
+          created_at?: string
+          esport?: string
+          fingerprint?: string
+          last_used_at?: string | null
+          row_clue_keys?: string[]
+          similarity_score?: number | null
+          structure_signature?: string
+          times_used?: number
+        }
+        Relationships: []
+      }
       trivia_clues: {
         Row: {
           clue_type: string
@@ -3537,6 +3576,7 @@ export type Database = {
       trivia_sessions: {
         Row: {
           board: Json
+          board_fingerprint: string | null
           cells: Json
           created_at: string
           created_by: string | null
@@ -3553,6 +3593,7 @@ export type Database = {
         }
         Insert: {
           board: Json
+          board_fingerprint?: string | null
           cells?: Json
           created_at?: string
           created_by?: string | null
@@ -3569,6 +3610,7 @@ export type Database = {
         }
         Update: {
           board?: Json
+          board_fingerprint?: string | null
           cells?: Json
           created_at?: string
           created_by?: string | null
@@ -3582,6 +3624,33 @@ export type Database = {
           status?: string
           updated_at?: string
           winner?: string | null
+        }
+        Relationships: []
+      }
+      trivia_user_board_history: {
+        Row: {
+          esport: string
+          fingerprint: string
+          id: string
+          seen_at: string
+          structure_signature: string | null
+          user_id: string
+        }
+        Insert: {
+          esport: string
+          fingerprint: string
+          id?: string
+          seen_at?: string
+          structure_signature?: string | null
+          user_id: string
+        }
+        Update: {
+          esport?: string
+          fingerprint?: string
+          id?: string
+          seen_at?: string
+          structure_signature?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -4866,6 +4935,26 @@ export type Database = {
       trivia_player_matches_clue: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
+      }
+      trivia_recent_user_fingerprints: {
+        Args: { _esport: string; _limit?: number; _user_id: string }
+        Returns: {
+          fingerprint: string
+          seen_at: string
+          structure_signature: string
+        }[]
+      }
+      trivia_register_board_use: {
+        Args: {
+          _clue_type_counts: Json
+          _col_clue_keys: string[]
+          _esport: string
+          _fingerprint: string
+          _row_clue_keys: string[]
+          _structure_signature: string
+          _user_id: string
+        }
+        Returns: undefined
       }
       trivia_validate_pick: {
         Args: {
