@@ -251,9 +251,16 @@ const TriviaAdminPage: React.FC = () => {
               <Input
                 value={nLabel}
                 onChange={(e) => setNLabel(e.target.value)}
-                placeholder='e.g. "Played for FaZe"'
+                placeholder={canonicalTemplateHint(nType)}
                 className="bg-slate-950 border-slate-700"
               />
+              {nLabel.trim() && (
+                <p className={`text-[11px] mt-1 ${matchesCanonicalTemplate(nLabel, nType) ? "text-emerald-400" : "text-amber-400"}`}>
+                  {matchesCanonicalTemplate(nLabel, nType)
+                    ? `Normalizes to: "${normalizeClueLabel(nLabel, nType)}"`
+                    : `Must match: "${canonicalTemplateHint(nType)}"`}
+                </p>
+              )}
             </div>
             <div className="md:col-span-3">
               <Label className="text-xs text-gray-400">Type</Label>
@@ -288,7 +295,7 @@ const TriviaAdminPage: React.FC = () => {
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Value formats — team: pandascore team id · nationality: ISO country code (e.g. SE) · role: in-game role tag · tournament: tournament id or name.
+            Canonical templates — team: <code>Played for {"{team}"}</code> · nationality: <code>From {"{country}"}</code> · tournament: <code>Won {"{event}"}</code> · role: <code>Role: {"{role}"}</code> · attribute: <code>Attribute: {"{tag}"}</code>. Duplicates are auto-rejected.
           </p>
         </Card>
 
