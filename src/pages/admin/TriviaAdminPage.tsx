@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import {
   TRIVIA_ESPORTS,
   listClues,
