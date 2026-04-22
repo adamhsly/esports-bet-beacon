@@ -35,6 +35,7 @@ interface StoredClue extends ClueCandidate {
 const MIN_ANSWERS = 4;
 const MAX_ANSWERS = 30;
 const MIN_CELL_ANSWERS = 2;
+const CLUE_KEY_SEPARATOR = "\u001f";
 
 function bandFor(count: number): "easy" | "medium" | "hard" | null {
   if (count >= 15 && count <= MAX_ANSWERS) return "easy";
@@ -50,6 +51,41 @@ function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+function clueKey(type: ClueType, value: string): string {
+  return `${type}${CLUE_KEY_SEPARATOR}${value}`;
+}
+
+function parseClueKey(key: string): { type: ClueType; value: string } {
+  const idx = key.indexOf(CLUE_KEY_SEPARATOR);
+  return {
+    type: key.slice(0, idx) as ClueType,
+    value: key.slice(idx + CLUE_KEY_SEPARATOR.length),
+  };
+}
+
+async function fetchAllRows<T>(
+  loader: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
+  pageSize = 1000,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await loader(from, from + pageSize - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < pageSize) break;
+  }
+  return rows;
 }
 
 Deno.serve(async (req) => {
