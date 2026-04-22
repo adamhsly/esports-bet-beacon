@@ -81,6 +81,13 @@ const PlatformDashboardPage: React.FC = () => {
     totalCreditPrizesPaid: 0,
   });
 
+  const [retentionStats, setRetentionStats] = useState({
+    currentWeek: 0,
+    previousWeek: 0,
+    retained: 0,
+    retentionRate: 0,
+  });
+
   const statConfigs: StatConfig[] = useMemo(() => [
     { key: 'newUsers', label: 'New Users', icon: <Users className="h-4 w-4" />, color: 'text-emerald-400', borderColor: 'border-emerald-500/30', chartColor: '#10b981', getValue: (s) => s.newUsers },
     { key: 'freeRoundEntries', label: 'Free Entries', icon: <Trophy className="h-4 w-4" />, color: 'text-blue-400', borderColor: 'border-blue-500/30', chartColor: '#3b82f6', getValue: (s) => s.freeRoundEntries },
