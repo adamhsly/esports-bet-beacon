@@ -46,15 +46,25 @@ export const TRIVIA_ESPORTS = [
 
 export async function generateBoard(
   esport: string,
-  opts?: { templateId?: string },
-): Promise<TriviaBoard> {
+  opts?: { templateId?: string; isDaily?: boolean },
+): Promise<TriviaBoard & { difficulty?: "easy" | "medium" | "hard" }> {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
-    body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
+    body: {
+      esport,
+      templateId: opts?.templateId,
+      userId: userData?.user?.id ?? null,
+      isDaily: opts?.isDaily ?? false,
+    },
   });
   if (error) throw error;
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
-  return { rowClues: data.rowClues, colClues: data.colClues, fingerprint: data.fingerprint };
+  return {
+    rowClues: data.rowClues,
+    colClues: data.colClues,
+    fingerprint: data.fingerprint,
+    difficulty: data.difficulty,
+  };
 }
 
 // ---------------------------------------------------------------------------
