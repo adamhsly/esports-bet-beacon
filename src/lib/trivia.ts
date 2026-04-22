@@ -17,6 +17,7 @@ export type TriviaCell = {
 export type TriviaBoard = {
   rowClues: TriviaClue[];
   colClues: TriviaClue[];
+  fingerprint?: string;
 };
 
 export type TriviaSession = {
@@ -47,12 +48,13 @@ export async function generateBoard(
   esport: string,
   opts?: { templateId?: string },
 ): Promise<TriviaBoard> {
+  const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
-    body: { esport, templateId: opts?.templateId },
+    body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
   });
   if (error) throw error;
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
-  return { rowClues: data.rowClues, colClues: data.colClues };
+  return { rowClues: data.rowClues, colClues: data.colClues, fingerprint: data.fingerprint };
 }
 
 // ---------------------------------------------------------------------------
@@ -283,9 +285,10 @@ export async function createSession(args: {
       mode: args.mode,
       esport: args.esport,
       board: args.board as any,
+      board_fingerprint: args.board.fingerprint ?? null,
       player1_label: args.player1_label ?? "Player 1",
       player2_label: args.player2_label ?? (args.mode === "solo" ? "—" : "Player 2"),
-    })
+    } as any)
     .select()
     .single();
 
