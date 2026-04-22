@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X } from "lucide-react";
-import { searchPlayers, validatePick, type TriviaClue } from "@/lib/trivia";
+import { searchPlayers, type TriviaClue } from "@/lib/trivia";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Props {
@@ -13,11 +13,12 @@ interface Props {
   rowClue: TriviaClue | null;
   colClue: TriviaClue | null;
   currentTurnLabel: string;
+  currentTurnMark: "X" | "O";
   onSubmit: (player: { id: number; name: string; image_url?: string | null }) => Promise<{ ok: boolean }>;
 }
 
 export const TriviaAnswerModal: React.FC<Props> = ({
-  open, onOpenChange, esport, rowClue, colClue, currentTurnLabel, onSubmit,
+  open, onOpenChange, esport, rowClue, colClue, currentTurnLabel, currentTurnMark, onSubmit,
 }) => {
   const [query, setQuery] = useState("");
   const debounced = useDebounce(query, 200);
@@ -55,13 +56,13 @@ export const TriviaAnswerModal: React.FC<Props> = ({
     setSubmitting(true);
     setFeedback(null);
     try {
-      const valid = await validatePick(p.id, rowClue, colClue);
+      // Single source of truth: parent runs validatePick + DB persistence
       const result = await onSubmit({ id: p.id, name: p.name, image_url: p.image_url });
-      if (valid && result.ok) {
-        setFeedback({ ok: true, msg: `${p.name} claims the square!` });
-        setTimeout(() => onOpenChange(false), 800);
+      if (result.ok) {
+        setFeedback({ ok: true, msg: `Correct! ${p.name} claims the square.` });
+        setTimeout(() => onOpenChange(false), 700);
       } else {
-        setFeedback({ ok: false, msg: `${p.name} doesn't satisfy both clues. Turn passes.` });
+        setFeedback({ ok: false, msg: `Incorrect — ${p.name} doesn't fit both clues. Turn passes.` });
         setTimeout(() => onOpenChange(false), 1100);
       }
     } finally {
@@ -74,12 +75,19 @@ export const TriviaAnswerModal: React.FC<Props> = ({
     return `${rowClue.label}  ×  ${colClue.label}`;
   }, [rowClue, colClue]);
 
+  const markColor = currentTurnMark === "X" ? "text-emerald-400" : "text-violet-400";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-slate-900 border-slate-700 text-white">
         <DialogHeader>
-          <DialogTitle className="text-white text-lg">{title}</DialogTitle>
-          <p className="text-xs text-gray-400 mt-1">{currentTurnLabel}'s turn — name a pro who fits BOTH clues</p>
+          <DialogTitle className="text-white text-lg flex items-center gap-2">
+            <span className={`text-2xl font-black ${markColor}`}>{currentTurnMark}</span>
+            <span>{title}</span>
+          </DialogTitle>
+          <p className="text-xs text-gray-400 mt-1">
+            {currentTurnLabel}'s turn — name a pro who fits BOTH clues
+          </p>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -93,9 +101,15 @@ export const TriviaAnswerModal: React.FC<Props> = ({
           />
 
           {feedback && (
-            <div className={`flex items-center gap-2 text-sm rounded-md px-3 py-2 ${
-              feedback.ok ? "bg-emerald-500/15 text-emerald-300" : "bg-red-500/15 text-red-300"
-            }`}>
+            <div
+              role="status"
+              aria-live="polite"
+              className={`flex items-center gap-2 text-sm rounded-md px-3 py-2 border ${
+                feedback.ok
+                  ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
+                  : "bg-red-500/15 text-red-300 border-red-500/40"
+              }`}
+            >
               {feedback.ok ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />} {feedback.msg}
             </div>
           )}
@@ -107,7 +121,7 @@ export const TriviaAnswerModal: React.FC<Props> = ({
               </div>
             )}
             {!loading && debounced.length >= 2 && results.length === 0 && (
-              <div className="text-gray-500 text-sm py-3">No players found.</div>
+              <div className="text-gray-500 text-sm py-3">No players found. Only verified pros can be submitted.</div>
             )}
             {results.map((p) => (
               <button

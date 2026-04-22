@@ -118,7 +118,12 @@ export async function validatePick(
   return data === true;
 }
 
-export function checkWinner(cells: TriviaCell[][]): "p1" | "p2" | "draw" | null {
+export type WinResult =
+  | { winner: "p1" | "p2"; line: [number, number][] }
+  | { winner: "draw"; line: null }
+  | null;
+
+export function checkWinner(cells: TriviaCell[][]): WinResult {
   const lines: [number, number][][] = [
     // rows
     [[0, 0], [0, 1], [0, 2]],
@@ -134,10 +139,12 @@ export function checkWinner(cells: TriviaCell[][]): "p1" | "p2" | "draw" | null 
   ];
   for (const line of lines) {
     const owners = line.map(([r, c]) => cells[r][c]?.claimed_by);
-    if (owners[0] && owners.every((o) => o === owners[0])) return owners[0]!;
+    if (owners[0] && owners.every((o) => o === owners[0])) {
+      return { winner: owners[0] as "p1" | "p2", line };
+    }
   }
   const allFilled = cells.every((row) => row.every((c) => c));
-  return allFilled ? "draw" : null;
+  return allFilled ? { winner: "draw", line: null } : null;
 }
 
 export async function persistMove(args: {
