@@ -270,6 +270,67 @@ const TriviaAdminPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Auto-generate clues + boards */}
+        <Card className="bg-gradient-to-br from-indigo-950/60 to-slate-900/80 border-indigo-700/40 p-5 mb-6">
+          <div className="flex items-start gap-3 mb-3">
+            <Sparkles className="h-5 w-5 text-indigo-300 mt-0.5" />
+            <div className="flex-1">
+              <h2 className="font-semibold">Auto-generate from Tier S/A data</h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Builds clues (team, league, tournament, year, teammate, faced) and 3×3 boards using only validated top-tier history. Replaces previously generated content for <span className="text-indigo-300 font-medium">{esport}</span>.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <Label className="text-xs text-gray-400">Max boards</Label>
+              <Input
+                type="number"
+                min={1}
+                max={30}
+                value={genMaxBoards}
+                onChange={(e) => setGenMaxBoards(Number(e.target.value) || 20)}
+                className="bg-slate-950 border-slate-700 w-24"
+              />
+            </div>
+            <Button
+              onClick={() => handleGenerate(true)}
+              disabled={generating}
+              variant="outline"
+              className="border-indigo-700 bg-slate-900/60 text-indigo-200 hover:bg-slate-800"
+            >
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Dry run"}
+            </Button>
+            <Button
+              onClick={() => handleGenerate(false)}
+              disabled={generating}
+              className="bg-indigo-500 hover:bg-indigo-600 text-slate-950 font-semibold"
+            >
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4 mr-1" /> Generate</>}
+            </Button>
+          </div>
+          {genResult && (
+            <div className="mt-4 p-3 rounded-md bg-slate-950/60 border border-slate-800 text-xs text-gray-300 space-y-1">
+              <div>Index rows: <span className="text-white">{genResult.indexRows}</span></div>
+              <div>Candidate clues (4–30 answers): <span className="text-white">{genResult.candidateClues}</span></div>
+              <div>By type: <span className="text-white">{JSON.stringify(genResult.cluesByType)}</span></div>
+              <div>Boards built: <span className="text-white">{genResult.boardsBuilt}</span></div>
+              {genResult.boardsSample?.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-gray-400 mb-1">Sample boards:</div>
+                  {genResult.boardsSample.map((b: any, i: number) => (
+                    <div key={i} className="mt-2 p-2 rounded bg-slate-900/60">
+                      <div className="text-indigo-300">[{b.difficulty}] quality {b.quality} · avg cell {b.avgCellAnswers} · min {b.minCellAnswers}</div>
+                      <div className="text-gray-400">Rows: {b.rows.join(" · ")}</div>
+                      <div className="text-gray-400">Cols: {b.cols.join(" · ")}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+
         {/* Add clue */}
         <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
           <h2 className="font-semibold mb-3">Add a clue</h2>
