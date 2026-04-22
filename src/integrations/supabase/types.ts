@@ -3415,10 +3415,13 @@ export type Database = {
           clue_value: string
           created_at: string
           created_by: string | null
+          duplicate_group_id: string | null
           esport: string
           id: string
           is_active: boolean
           label: string
+          normalized_label: string | null
+          similarity_score: number | null
           updated_at: string
         }
         Insert: {
@@ -3426,10 +3429,13 @@ export type Database = {
           clue_value: string
           created_at?: string
           created_by?: string | null
+          duplicate_group_id?: string | null
           esport: string
           id?: string
           is_active?: boolean
           label: string
+          normalized_label?: string | null
+          similarity_score?: number | null
           updated_at?: string
         }
         Update: {
@@ -3437,10 +3443,13 @@ export type Database = {
           clue_value?: string
           created_at?: string
           created_by?: string | null
+          duplicate_group_id?: string | null
           esport?: string
           id?: string
           is_active?: boolean
           label?: string
+          normalized_label?: string | null
+          similarity_score?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -4831,6 +4840,28 @@ export type Database = {
       trivia_clue_matches_player: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
+      }
+      trivia_find_duplicate_clue: {
+        Args: {
+          _clue_type: string
+          _clue_value: string
+          _esport: string
+          _label: string
+        }
+        Returns: {
+          id: string
+          label: string
+          match_kind: string
+          normalized_label: string
+        }[]
+      }
+      trivia_label_matches_canonical: {
+        Args: { _clue_type: string; _normalized: string }
+        Returns: boolean
+      }
+      trivia_normalize_label: {
+        Args: { _clue_type: string; _clue_value: string; _label: string }
+        Returns: string
       }
       trivia_player_matches_clue: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }

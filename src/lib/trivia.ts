@@ -66,9 +66,91 @@ export type TriviaClueRow = {
   clue_value: string;
   esport: string;
   is_active: boolean;
+  normalized_label?: string | null;
+  duplicate_group_id?: string | null;
+  similarity_score?: number | null;
   created_at: string;
   updated_at: string;
 };
+
+/**
+ * Client-side normalization mirror of public.trivia_normalize_label.
+ * Use for instant feedback before hitting the DB.
+ */
+export function normalizeClueLabel(label: string, clueType: TriviaClueRow["clue_type"]): string {
+  let s = (label ?? "").toLowerCase().trim();
+  s = s.replace(/[\p{P}\p{S}]/gu, " ").replace(/\s+/g, " ").trim();
+  s = s.replace(/^(has |have |currently |formerly |previously |used to |once )+/g, "");
+  s = s.replace(/^(is |was |a |an |the )+/g, "");
+
+  if (clueType === "team") {
+    s = s.replace(/^(.+?)\s+player$/, "played for $1");
+    s = s.replace(/^(plays|play|played)\s+for\s+/g, "played for ");
+    s = s.replace(/^member of\s+/g, "played for ");
+  } else if (clueType === "nationality") {
+    s = s.replace(/^(comes from|hails from|born in|nationality)\s+/g, "from ");
+    s = s.replace(/^(.+?)\s+(player|national)$/, "from $1");
+  } else if (clueType === "tournament") {
+    s = s.replace(/^(winner of|won the|champion of|champion at)\s+/g, "won ");
+    s = s.replace(/^(played at|competed at)\s+/g, "won ");
+  } else if (clueType === "role") {
+    s = s.replace(/^(plays as|role is|main)\s+/g, "role ");
+    s = s.replace(/^role\s*[:\-]?\s*/g, "role ");
+  } else if (clueType === "attribute") {
+    s = s.replace(/^(attribute|attr|tag)\s*[:\-]?\s*/g, "attribute ");
+  }
+  return s.replace(/\s+/g, " ").trim();
+}
+
+const CANONICAL_PREFIX: Record<TriviaClueRow["clue_type"], string> = {
+  team: "played for ",
+  nationality: "from ",
+  tournament: "won ",
+  role: "role ",
+  attribute: "attribute ",
+};
+
+export function matchesCanonicalTemplate(
+  label: string,
+  clueType: TriviaClueRow["clue_type"],
+): boolean {
+  const norm = normalizeClueLabel(label, clueType);
+  const prefix = CANONICAL_PREFIX[clueType];
+  return norm.startsWith(prefix) && norm.length > prefix.length;
+}
+
+export function canonicalTemplateHint(clueType: TriviaClueRow["clue_type"]): string {
+  switch (clueType) {
+    case "team": return 'Played for {team}';
+    case "nationality": return 'From {country}';
+    case "tournament": return 'Won {event}';
+    case "role": return 'Role: {role}';
+    case "attribute": return 'Attribute: {tag}';
+  }
+}
+
+export type DuplicateMatch = {
+  id: string;
+  label: string;
+  normalized_label: string | null;
+  match_kind: "exact" | "near";
+};
+
+export async function findDuplicateClue(args: {
+  esport: string;
+  clue_type: TriviaClueRow["clue_type"];
+  clue_value: string;
+  label: string;
+}): Promise<DuplicateMatch | null> {
+  const { data, error } = await (supabase as any).rpc("trivia_find_duplicate_clue", {
+    _esport: args.esport,
+    _clue_type: args.clue_type,
+    _clue_value: args.clue_value,
+    _label: args.label,
+  });
+  if (error) throw error;
+  return (data && data.length > 0) ? (data[0] as DuplicateMatch) : null;
+}
 
 export type TriviaGridTemplateRow = {
   id: string;

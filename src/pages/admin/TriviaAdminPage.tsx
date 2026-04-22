@@ -25,6 +25,10 @@ import {
   listGridTemplates,
   upsertGridTemplate,
   deleteGridTemplate,
+  findDuplicateClue,
+  matchesCanonicalTemplate,
+  canonicalTemplateHint,
+  normalizeClueLabel,
   type TriviaClueRow,
   type TriviaGridTemplateRow,
 } from "@/lib/trivia";
@@ -79,16 +83,32 @@ const TriviaAdminPage: React.FC = () => {
   const activeClues = useMemo(() => clues.filter((c) => c.is_active), [clues]);
 
   const handleAddClue = async () => {
-    if (!nLabel.trim() || !nValue.trim()) {
+    const label = nLabel.trim();
+    const value = nValue.trim();
+    if (!label || !value) {
       toast.error("Label and value are required");
+      return;
+    }
+    if (!matchesCanonicalTemplate(label, nType)) {
+      toast.error(`Label must match canonical template: "${canonicalTemplateHint(nType)}"`);
       return;
     }
     setSavingClue(true);
     try {
+      const dup = await findDuplicateClue({ esport, clue_type: nType, clue_value: value, label });
+      if (dup) {
+        toast.error(
+          dup.match_kind === "exact"
+            ? `Exact duplicate of existing clue "${dup.label}"`
+            : `Near-duplicate of "${dup.label}" (normalizes to "${dup.normalized_label}")`,
+        );
+        setSavingClue(false);
+        return;
+      }
       await upsertClue({
-        label: nLabel.trim(),
+        label,
         clue_type: nType,
-        clue_value: nValue.trim(),
+        clue_value: value,
         esport,
         is_active: true,
       });
@@ -231,9 +251,16 @@ const TriviaAdminPage: React.FC = () => {
               <Input
                 value={nLabel}
                 onChange={(e) => setNLabel(e.target.value)}
-                placeholder='e.g. "Played for FaZe"'
+                placeholder={canonicalTemplateHint(nType)}
                 className="bg-slate-950 border-slate-700"
               />
+              {nLabel.trim() && (
+                <p className={`text-[11px] mt-1 ${matchesCanonicalTemplate(nLabel, nType) ? "text-emerald-400" : "text-amber-400"}`}>
+                  {matchesCanonicalTemplate(nLabel, nType)
+                    ? `Normalizes to: "${normalizeClueLabel(nLabel, nType)}"`
+                    : `Must match: "${canonicalTemplateHint(nType)}"`}
+                </p>
+              )}
             </div>
             <div className="md:col-span-3">
               <Label className="text-xs text-gray-400">Type</Label>
@@ -268,7 +295,7 @@ const TriviaAdminPage: React.FC = () => {
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Value formats — team: pandascore team id · nationality: ISO country code (e.g. SE) · role: in-game role tag · tournament: tournament id or name.
+            Canonical templates — team: <code>Played for {"{team}"}</code> · nationality: <code>From {"{country}"}</code> · tournament: <code>Won {"{event}"}</code> · role: <code>Role: {"{role}"}</code> · attribute: <code>Attribute: {"{tag}"}</code>. Duplicates are auto-rejected.
           </p>
         </Card>
 
