@@ -3,14 +3,17 @@
 // Pipeline:
 //   1. Build the candidate clue pool from approved (active, canonical) clues
 //      + auto-derived team/nationality clues from the live esports DB.
-//   2. Filter overused / recently-used clues (per-user and global).
-//   3. Brute-force assemble many candidate boards under diversity caps.
-//   4. Validate each candidate cell has >=2 distinct player answers.
-//   5. Score boards on solvability, difficulty balance, diversity, freshness
-//      and similarity penalty. Best score wins.
-//   6. Publish boards above QUALITY_THRESHOLD; log rejections; if every
+//   2. Compute per-clue difficulty (easy/medium/hard) from player coverage.
+//   3. Filter overused / recently-used clues (per-user and global).
+//   4. Brute-force assemble many candidate boards under diversity caps.
+//   5. Validate each candidate cell has >=2 distinct player answers.
+//   6. Score boards on solvability, difficulty balance, diversity, freshness
+//      and similarity penalty. Pick the best whose board difficulty matches
+//      the user's target band (new=easy, returning=medium/hard mix,
+//      daily=medium-only).
+//   7. Publish boards above QUALITY_THRESHOLD; log rejections; if every
 //      candidate fails, fall back to the best previously published board
-//      the user hasn't seen lately.
+//      the user hasn't seen lately (matching target difficulty if possible).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -21,7 +24,15 @@ const corsHeaders = {
 };
 
 type ClueType = "team" | "nationality" | "tournament" | "role" | "attribute";
-type Clue = { type: ClueType; value: string; label: string };
+type DifficultyBand = "easy" | "medium" | "hard";
+type Clue = {
+  type: ClueType;
+  value: string;
+  label: string;
+  difficulty?: number;       // 0..1 (0=easiest, 1=hardest)
+  difficultyBand?: DifficultyBand;
+  playerCount?: number;
+};
 
 const NATIONALITY_LABELS: Record<string, string> = {
   US: "USA", RU: "Russia", BR: "Brazil", SE: "Sweden", CN: "China",
@@ -38,10 +49,18 @@ const TYPE_CAPS: Record<ClueType, number> = {
 const USER_FRESHNESS_WINDOW = 10;
 const GLOBAL_COOLDOWN_MS = 60 * 60 * 1000;
 const CLUE_OVERUSE_RECENT_WINDOW_MS = 24 * 60 * 60 * 1000;
-const CLUE_OVERUSE_RECENT_MAX = 6;     // skip clue if used more than this in last 24h
+const CLUE_OVERUSE_RECENT_MAX = 6;
 const MIN_ANSWERS_PER_CELL = 2;
-const QUALITY_THRESHOLD = 0.55;        // 0..1; below = reject
+const QUALITY_THRESHOLD = 0.55;
 const MAX_CANDIDATES = 24;
+
+// Difficulty thresholds — number of distinct players satisfying a clue.
+// Easy = lots of valid answers; Hard = few valid answers.
+const DIFF_EASY_MIN_PLAYERS = 25;
+const DIFF_HARD_MAX_PLAYERS = 8;
+
+// Beginner status: number of completed sessions before we open up hard boards.
+const BEGINNER_SESSION_THRESHOLD = 3;
 
 // ---- helpers ----------------------------------------------------------------
 const clueKey = (c: Clue) => `${c.type}:${c.value}`;
@@ -72,12 +91,47 @@ function passesDiversity(rows: Clue[], cols: Clue[]) {
   return Object.keys(counts).length >= 2;
 }
 
+function bandFromPlayerCount(n: number): DifficultyBand {
+  if (n >= DIFF_EASY_MIN_PLAYERS) return "easy";
+  if (n <= DIFF_HARD_MAX_PLAYERS) return "hard";
+  return "medium";
+}
+function difficultyFromPlayerCount(n: number): number {
+  // Map player coverage to a 0..1 hardness score with a soft curve.
+  // 50+ players -> ~0 (easiest), 1 player -> ~1 (hardest).
+  if (n <= 0) return 1;
+  const x = Math.min(1, Math.log(n + 1) / Math.log(60));
+  return Math.max(0, Math.min(1, 1 - x));
+}
+function bandFromScore(score: number): DifficultyBand {
+  if (score < 0.34) return "easy";
+  if (score > 0.66) return "hard";
+  return "medium";
+}
+
+// Decide what difficulty band to aim for based on user history & flags.
+function targetBand(opts: { sessionCount: number; isDaily: boolean }): {
+  preferred: DifficultyBand;
+  acceptable: DifficultyBand[];
+} {
+  if (opts.isDaily) {
+    return { preferred: "medium", acceptable: ["medium"] };
+  }
+  if (opts.sessionCount < BEGINNER_SESSION_THRESHOLD) {
+    return { preferred: "easy", acceptable: ["easy", "medium"] };
+  }
+  // Returning users get the full mix; pick at random with a medium bias.
+  const roll = Math.random();
+  const preferred: DifficultyBand = roll < 0.45 ? "medium" : roll < 0.8 ? "hard" : "easy";
+  return { preferred, acceptable: ["easy", "medium", "hard"] };
+}
+
 // ---- handler ----------------------------------------------------------------
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { esport, templateId, userId } = await req.json().catch(() => ({}));
+    const { esport, templateId, userId, isDaily } = await req.json().catch(() => ({}));
     if (!esport || typeof esport !== "string") {
       return new Response(JSON.stringify({ error: "esport required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -152,7 +206,48 @@ Deno.serve(async (req) => {
     for (const c of [...derivedTeams, ...derivedNations]) poolMap.set(clueKey(c), c);
     for (const c of approvedClues) poolMap.set(clueKey(c), c);
 
-    // -------- 3) Apply usage filters --------
+    // -------- 3) Compute per-clue difficulty (player coverage) --------
+    // For team/nationality we can compute directly from `players`.
+    // For other types we leave a neutral default (medium).
+    const playerHas = players.map((p: any) => ({
+      teamId: String(p.current_team_id), nation: p.nationality,
+    }));
+    const countSatisfying = (c: Clue): number | null => {
+      if (c.type === "team") {
+        let n = 0; for (const p of playerHas) if (p.teamId === c.value) n++; return n;
+      }
+      if (c.type === "nationality") {
+        let n = 0; for (const p of playerHas) if (p.nation === c.value) n++; return n;
+      }
+      return null; // unknown coverage for tournament/role/attribute here
+    };
+    const difficultyRows: any[] = [];
+    for (const c of poolMap.values()) {
+      const n = countSatisfying(c);
+      if (n === null) {
+        c.difficulty = 0.5; c.difficultyBand = "medium"; c.playerCount = 0;
+        continue;
+      }
+      c.playerCount = n;
+      c.difficulty = difficultyFromPlayerCount(n);
+      c.difficultyBand = bandFromPlayerCount(n);
+      difficultyRows.push({
+        clue_key: clueKey(c),
+        esport,
+        clue_type: c.type,
+        clue_value: c.value,
+        player_count: n,
+        difficulty_band: c.difficultyBand,
+        difficulty_score: Number(c.difficulty.toFixed(4)),
+      });
+    }
+    if (difficultyRows.length > 0) {
+      // Best-effort cache; ignore failure.
+      await supabase.rpc("trivia_upsert_clue_difficulty", { _rows: difficultyRows })
+        .catch(() => {});
+    }
+
+    // -------- 4) Apply usage filters --------
     const cluesArr = [...poolMap.values()];
     const keys = cluesArr.map(clueKey);
     const { data: usage } = await supabase
@@ -170,17 +265,23 @@ Deno.serve(async (req) => {
     const filteredClues = cluesArr.filter((c) => {
       const u = usageByKey.get(clueKey(c));
       if (!u) return true;
-      // hard skip if hammered in the last 24h
       if (u.last >= cutoff && u.times >= CLUE_OVERUSE_RECENT_MAX) return false;
       return true;
     });
 
     if (filteredClues.length < 6) {
-      // Not enough clues after filtering — fall back without the overuse filter
       return await fallbackBoard(supabase, esport, userId, "insufficient_pool_after_filter");
     }
 
-    // -------- 4) Freshness data --------
+    // -------- 5) Determine target difficulty (user progression) --------
+    let sessionCount = 0;
+    if (userId) {
+      const { data: sc } = await supabase.rpc("trivia_user_session_count", { _user_id: userId });
+      sessionCount = typeof sc === "number" ? sc : 0;
+    }
+    const target = targetBand({ sessionCount, isDaily: !!isDaily });
+
+    // -------- 6) Freshness data --------
     const recentFingerprints = new Set<string>();
     const recentStructures = new Map<string, number>();
     if (userId) {
@@ -203,14 +304,11 @@ Deno.serve(async (req) => {
       .limit(500);
     const globallyHot = new Set((hotBoards ?? []).map((b: any) => b.fingerprint));
 
-    // -------- 5) Validity index --------
-    const playerHas = players.map((p: any) => ({
-      teamId: String(p.current_team_id), nation: p.nationality,
-    }));
+    // -------- 7) Validity index --------
     const satisfies = (c: Clue, p: { teamId: string; nation: string }) =>
       c.type === "team" ? p.teamId === c.value
         : c.type === "nationality" ? p.nation === c.value
-          : false; // tournament/role/attribute can't be checked from this slim view; skip in candidate pool below
+          : false;
 
     const checkable = filteredClues.filter((c) => c.type === "team" || c.type === "nationality");
     if (checkable.length < 6) {
@@ -224,9 +322,11 @@ Deno.serve(async (req) => {
       return n;
     };
 
-    // -------- 6) Brute-force candidate boards --------
-    type Candidate = { rows: Clue[]; cols: Clue[]; fingerprint: string;
-      cellAnswers: number[][]; sig: string };
+    // -------- 8) Brute-force candidate boards --------
+    type Candidate = {
+      rows: Clue[]; cols: Clue[]; fingerprint: string;
+      cellAnswers: number[][]; sig: string;
+    };
     const candidates: Candidate[] = [];
 
     const nationPool = checkable.filter((c) => c.type === "nationality");
@@ -288,33 +388,25 @@ Deno.serve(async (req) => {
     }
 
     if (candidates.length === 0) {
-      return await fallbackBoard(supabase, esport, userId, "no_valid_candidates");
+      return await fallbackBoard(supabase, esport, userId, "no_valid_candidates", target);
     }
 
-    // -------- 7) Score & pick --------
+    // -------- 9) Score & pick --------
     const scored = candidates.map((c) => {
       const all = [...c.rows, ...c.cols];
-      // solvability — average answer count per cell, normalized to a 0..1 range
       const flat = c.cellAnswers.flat();
       const avgAns = flat.reduce((a, b) => a + b, 0) / 9;
-      const solvability = Math.min(1, avgAns / 6); // 6+ avg answers = saturated
+      const solvability = Math.min(1, avgAns / 6);
 
-      // difficulty balance — penalize boards where any cell is much easier/harder
       const max = Math.max(...flat), min = Math.min(...flat);
       const spread = max === 0 ? 0 : (max - min) / max;
       const difficulty = 1 - Math.min(1, spread); // tighter = better
 
-      // diversity — number of distinct types / 5 possible (team, nat, tour, role, attr)
       const distinctTypes = new Set(all.map((x) => x.type)).size;
       const diversity = Math.min(1, distinctTypes / 4);
 
-      // freshness — penalize structure repeats and global hotness
       const seenStructure = recentStructures.get(c.sig) ?? 0;
       const fresh = Math.max(0, 1 - seenStructure * 0.25 - (globallyHot.has(c.fingerprint) ? 0.3 : 0));
-
-      // similarity penalty — proxy: shared clue keys with most-recent fingerprint set
-      // (recentFingerprints is a Set of hashes; we don't have their keys here, so
-      // structure overlap is the strongest signal we have)
       const similarityPenalty = Math.min(0.4, seenStructure * 0.15);
 
       const quality =
@@ -324,21 +416,44 @@ Deno.serve(async (req) => {
         fresh       * 0.25 -
         similarityPenalty;
 
-      return { ...c, scores: { solvability, difficulty, diversity, fresh, quality } };
-    }).sort((a, b) => b.scores.quality - a.scores.quality);
+      // Board difficulty: average clue difficulty, biased by how few answers each cell has.
+      const avgClueDifficulty = all.reduce((s, x) => s + (x.difficulty ?? 0.5), 0) / all.length;
+      // Cell-answer hardness: fewer answers per cell → harder. Cap at 12 answers = saturated.
+      const cellHardness = 1 - Math.min(1, avgAns / 12);
+      const boardDifficultyScore = Math.max(0, Math.min(1,
+        avgClueDifficulty * 0.65 + cellHardness * 0.35,
+      ));
+      const boardBand = bandFromScore(boardDifficultyScore);
 
-    const best = scored[0];
+      return {
+        ...c,
+        avgAns,
+        scores: { solvability, difficulty, diversity, fresh, quality },
+        boardDifficultyScore,
+        boardBand,
+      };
+    });
 
-    // -------- 8) Publish or reject --------
+    // Pick: prefer the user's target band; if none match, fall back to acceptable bands; else best overall.
+    const matchPreferred = scored
+      .filter((s) => s.boardBand === target.preferred)
+      .sort((a, b) => b.scores.quality - a.scores.quality);
+    const matchAcceptable = scored
+      .filter((s) => target.acceptable.includes(s.boardBand))
+      .sort((a, b) => b.scores.quality - a.scores.quality);
+    const sortedAll = [...scored].sort((a, b) => b.scores.quality - a.scores.quality);
+    const best = matchPreferred[0] ?? matchAcceptable[0] ?? sortedAll[0];
+
+    // -------- 10) Publish or reject --------
     if (best.scores.quality < QUALITY_THRESHOLD) {
       await supabase.rpc("trivia_log_board_rejection", {
         _esport: esport,
         _fingerprint: best.fingerprint,
         _reason: "below_quality_threshold",
         _quality: best.scores.quality,
-        _details: best.scores,
+        _details: { ...best.scores, boardBand: best.boardBand, boardDifficultyScore: best.boardDifficultyScore },
       });
-      return await fallbackBoard(supabase, esport, userId, "quality_threshold");
+      return await fallbackBoard(supabase, esport, userId, "quality_threshold", target);
     }
 
     await registerBoardUse(supabase, best.fingerprint, esport, best.rows, best.cols, userId);
@@ -351,6 +466,12 @@ Deno.serve(async (req) => {
       _freshness: best.scores.fresh,
       _published: true,
     });
+    await supabase.rpc("trivia_finalize_board_difficulty", {
+      _fingerprint: best.fingerprint,
+      _board_difficulty: best.boardBand,
+      _board_difficulty_score: Number(best.boardDifficultyScore.toFixed(4)),
+      _avg_cell_answers: Number(best.avgAns.toFixed(2)),
+    }).catch(() => {});
     await supabase.rpc("trivia_register_clue_use", {
       _clue_keys: [...best.rows, ...best.cols].map(clueKey),
       _esport: esport,
@@ -361,6 +482,9 @@ Deno.serve(async (req) => {
       colClues: best.cols,
       fingerprint: best.fingerprint,
       quality: best.scores.quality,
+      difficulty: best.boardBand,
+      difficultyScore: best.boardDifficultyScore,
+      targetDifficulty: target.preferred,
       source: "generated",
     });
   } catch (e) {
@@ -413,10 +537,14 @@ async function registerBoardUse(
 
 /**
  * Fallback: pick the highest-quality previously published board the user
- * has not seen recently. If even that fails, return an error.
+ * has not seen recently. Prefer boards matching the requested difficulty band.
  */
 async function fallbackBoard(
-  supabase: any, esport: string, userId: string | undefined, reason: string,
+  supabase: any,
+  esport: string,
+  userId: string | undefined,
+  reason: string,
+  target?: { preferred: DifficultyBand; acceptable: DifficultyBand[] },
 ) {
   const { data: top } = await supabase.rpc("trivia_top_boards", {
     _esport: esport, _limit: 25,
@@ -431,10 +559,18 @@ async function fallbackBoard(
     });
     recentSet = new Set((recent ?? []).map((r: any) => r.fingerprint));
   }
-  const pick = (top as any[]).find((b) => !recentSet.has(b.fingerprint)) ?? top[0];
+  const ranked = top as any[];
+  const fresh = ranked.filter((b) => !recentSet.has(b.fingerprint));
+  const pool = fresh.length > 0 ? fresh : ranked;
 
-  // Hydrate keys back into Clue objects (we stored "type:value" + had labels)
-  // We need labels — try the trivia_clues library first, else fall back to value
+  const matchPreferred = target
+    ? pool.find((b) => b.board_difficulty === target.preferred)
+    : null;
+  const matchAcceptable = target
+    ? pool.find((b) => target.acceptable.includes(b.board_difficulty))
+    : null;
+  const pick = matchPreferred ?? matchAcceptable ?? pool[0];
+
   const allKeys: string[] = [...pick.row_clue_keys, ...pick.col_clue_keys];
   const { data: lib } = await supabase
     .from("trivia_clues").select("clue_type,clue_value,label")
@@ -451,7 +587,12 @@ async function fallbackBoard(
   const cols = (pick.col_clue_keys as string[]).map(rebuild);
   await registerBoardUse(supabase, pick.fingerprint, esport, rows, cols, userId);
   return json({
-    rowClues: rows, colClues: cols, fingerprint: pick.fingerprint,
-    quality: pick.quality_score, source: "fallback", fallback_reason: reason,
+    rowClues: rows,
+    colClues: cols,
+    fingerprint: pick.fingerprint,
+    quality: pick.quality_score,
+    difficulty: pick.board_difficulty ?? "medium",
+    source: "fallback",
+    fallback_reason: reason,
   });
 }
