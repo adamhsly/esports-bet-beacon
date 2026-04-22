@@ -40,6 +40,9 @@ const SearchableNavbar: React.FC = () => {
               <Link to="/pickems" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
                 Pick'ems
               </Link>
+              <Link to="/trivia" className="text-gray-300 hover:text-white" onClick={handleNavigationClick}>
+                Trivia
+              </Link>
             </div>
           </div>
           
