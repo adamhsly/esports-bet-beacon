@@ -417,63 +417,54 @@ const PlatformDashboardPage: React.FC = () => {
           </div>
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
-          {/* Historical Weeks Played per User Type */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
-            <Card className="bg-gradient-to-br from-emerald-900/30 to-blue-900/20 border-emerald-500/40 hover:border-emerald-500/60 transition-all">
-              <CardContent className="p-4 md:p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/15">
-                    <Repeat className="h-6 w-6 md:h-7 md:w-7 text-emerald-400" />
-                  </div>
+          {/* Avg Rounds Played per User Type */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30 hover:border-cyan-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Repeat className="h-6 w-6 md:h-8 md:w-8 text-cyan-400" />
                   <div>
-                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Paid Users — Avg Weeks Played</p>
-                    <p className="text-2xl md:text-3xl font-bold text-white">
-                      {weeksPlayedStats.paidAvgWeeks}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs md:text-sm">
-                  <div>
-                    <p className="text-white/60">Users</p>
-                    <p className="text-white font-semibold">{weeksPlayedStats.paidUserCount.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-white/60">Median</p>
-                    <p className="text-white font-semibold">{weeksPlayedStats.paidMedianWeeks}</p>
-                  </div>
-                  <div>
-                    <p className="text-white/60">Max</p>
-                    <p className="text-emerald-400 font-semibold">{weeksPlayedStats.paidMaxWeeks}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{weeksPlayedStats.paidAvgWeeks}</p>
+                    <p className="text-xs md:text-sm text-white/70">Avg Paid Rounds / Paying User</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            <Card className="bg-gradient-to-br from-blue-900/30 to-emerald-900/20 border-blue-500/40 hover:border-blue-500/60 transition-all">
-              <CardContent className="p-4 md:p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-blue-500/15">
-                    <Repeat className="h-6 w-6 md:h-7 md:w-7 text-blue-400" />
-                  </div>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30 hover:border-cyan-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Users className="h-6 w-6 md:h-8 md:w-8 text-cyan-400" />
                   <div>
-                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Free Users — Avg Weeks Played</p>
-                    <p className="text-2xl md:text-3xl font-bold text-white">
-                      {weeksPlayedStats.freeAvgWeeks}
+                    <p className="text-xl md:text-2xl font-bold text-white">
+                      {weeksPlayedStats.paidUserCount.toLocaleString()}
+                      <span className="text-sm text-white/50 font-normal ml-1">· max {weeksPlayedStats.paidMaxWeeks}</span>
                     </p>
+                    <p className="text-xs md:text-sm text-white/70">Paying Users (median {weeksPlayedStats.paidMedianWeeks})</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs md:text-sm">
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Repeat className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
                   <div>
-                    <p className="text-white/60">Users</p>
-                    <p className="text-white font-semibold">{weeksPlayedStats.freeUserCount.toLocaleString()}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">{weeksPlayedStats.freeAvgWeeks}</p>
+                    <p className="text-xs md:text-sm text-white/70">Avg Free Rounds / Free User</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3">
+                  <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
                   <div>
-                    <p className="text-white/60">Median</p>
-                    <p className="text-white font-semibold">{weeksPlayedStats.freeMedianWeeks}</p>
-                  </div>
-                  <div>
-                    <p className="text-white/60">Max</p>
-                    <p className="text-blue-400 font-semibold">{weeksPlayedStats.freeMaxWeeks}</p>
+                    <p className="text-xl md:text-2xl font-bold text-white">
+                      {weeksPlayedStats.freeUserCount.toLocaleString()}
+                      <span className="text-sm text-white/50 font-normal ml-1">· max {weeksPlayedStats.freeMaxWeeks}</span>
+                    </p>
+                    <p className="text-xs md:text-sm text-white/70">Free Users (median {weeksPlayedStats.freeMedianWeeks})</p>
                   </div>
                 </div>
               </CardContent>
