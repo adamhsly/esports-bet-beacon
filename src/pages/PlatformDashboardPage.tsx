@@ -448,7 +448,7 @@ const PlatformDashboardPage: React.FC = () => {
           </div>
 
           {/* All-Time Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 md:gap-4 mb-8 auto-rows-fr">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30 hover:border-emerald-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
