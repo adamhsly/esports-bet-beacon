@@ -181,7 +181,10 @@ const TriviaGamePage: React.FC = () => {
               {session.esport} · {session.mode === "solo" ? "Solo" : "2 Player"}
             </div>
             {!isFinished && (
-              <div className="text-base font-semibold mt-0.5 flex items-center gap-2">
+              <div
+                key={session.current_turn}
+                className="text-base font-semibold mt-0.5 flex items-center gap-2 animate-fade-in"
+              >
                 <span className={`text-xl font-black ${session.current_turn === "p1" ? "text-emerald-400" : "text-violet-400"}`}>
                   {currentMark}
                 </span>
