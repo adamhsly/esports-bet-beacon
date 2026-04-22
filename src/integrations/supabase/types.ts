@@ -3750,6 +3750,42 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_player_history_cache: {
+        Row: {
+          esport: string
+          league_name: string | null
+          match_id: string
+          opponent_team_id: string | null
+          player_id: string
+          serie_id: string | null
+          team_id: string
+          teammate_ids: Json
+          year: number | null
+        }
+        Insert: {
+          esport: string
+          league_name?: string | null
+          match_id: string
+          opponent_team_id?: string | null
+          player_id: string
+          serie_id?: string | null
+          team_id: string
+          teammate_ids?: Json
+          year?: number | null
+        }
+        Update: {
+          esport?: string
+          league_name?: string | null
+          match_id?: string
+          opponent_team_id?: string | null
+          player_id?: string
+          serie_id?: string | null
+          team_id?: string
+          teammate_ids?: Json
+          year?: number | null
+        }
+        Relationships: []
+      }
       trivia_sessions: {
         Row: {
           board: Json
@@ -5259,6 +5295,10 @@ export type Database = {
           team_id: string
           tournament_id: string
         }[]
+      }
+      trivia_rebuild_player_history_cache: {
+        Args: { _esport: string }
+        Returns: number
       }
       trivia_recent_user_fingerprints: {
         Args: { _esport: string; _limit?: number; _user_id: string }
