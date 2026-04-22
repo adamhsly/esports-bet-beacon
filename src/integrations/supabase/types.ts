@@ -4418,6 +4418,15 @@ export type Database = {
         Args: { p_player_id: number }
         Returns: Json
       }
+      get_paying_user_wow_retention: {
+        Args: never
+        Returns: {
+          current_week_paying_users: number
+          previous_week_paying_users: number
+          retained_users: number
+          retention_rate: number
+        }[]
+      }
       get_platform_all_time_stats: {
         Args: never
         Returns: {
