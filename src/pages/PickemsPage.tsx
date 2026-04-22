@@ -100,12 +100,16 @@ const PickemsPage: React.FC = () => {
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-6 max-w-5xl">
         {gameFilter && (
-          <button
-            onClick={() => setGameFilter(null)}
-            className="text-sm text-gray-400 hover:text-white inline-flex items-center gap-1 mb-4"
-          >
-            <ChevronLeft className="h-4 w-4" /> Back to all games
-          </button>
+          <div className="mb-4 flex">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setGameFilter(null)}
+              className="border-slate-700 bg-slate-800/60 text-gray-200 hover:bg-slate-700 hover:text-white"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" /> Back to all games
+            </Button>
+          </div>
         )}
         <header className="mb-6">
           <p className="text-gray-400 text-sm mt-1">

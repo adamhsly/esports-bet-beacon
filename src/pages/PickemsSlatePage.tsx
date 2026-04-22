@@ -119,9 +119,18 @@ const PickemsSlatePage: React.FC = () => {
       </Helmet>
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-6 max-w-3xl">
-        <Link to="/pickems" className="text-sm text-gray-400 hover:text-white inline-flex items-center gap-1 mb-4">
-          <ChevronLeft className="h-4 w-4" /> Back to slates
-        </Link>
+        <div className="mb-4 flex">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-slate-700 bg-slate-800/60 text-gray-200 hover:bg-slate-700 hover:text-white"
+          >
+            <Link to="/pickems">
+              <ChevronLeft className="h-4 w-4 mr-1" /> Back to slates
+            </Link>
+          </Button>
+        </div>
 
         {slateLoading || !slate ? (
           <Skeleton className="h-20 bg-slate-800/50 mb-4" />
