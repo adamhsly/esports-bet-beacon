@@ -1,5 +1,5 @@
 // Generates production-ready trivia clues + grid templates for one esport.
-// Uses ONLY Tier S/A data via the trivia_player_clue_index table.
+// Uses ONLY Tier S/A data via the precomputed trivia_player_history_cache.
 //
 // POST body: { esport: string, maxBoards?: number, dryRun?: boolean }
 // Requires admin (checked via has_role).
