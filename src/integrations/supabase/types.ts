@@ -5134,6 +5134,12 @@ export type Database = {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
       }
+      trivia_clue_player_ids: {
+        Args: { _clue_type: string; _clue_value: string; _esport: string }
+        Returns: {
+          player_id: number
+        }[]
+      }
       trivia_count_clue_answers: {
         Args: { _clue_type: string; _clue_value: string; _esport: string }
         Returns: number
