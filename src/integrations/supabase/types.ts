@@ -3580,76 +3580,106 @@ export type Database = {
           clue_value: string
           created_at: string
           created_by: string | null
+          difficulty_band: string | null
           duplicate_group_id: string | null
           esport: string
           id: string
           is_active: boolean
+          is_generated: boolean
           label: string
           normalized_label: string | null
           similarity_score: number | null
+          source_videogame: string | null
+          tier: string | null
           updated_at: string
+          valid_answer_count: number | null
         }
         Insert: {
           clue_type: string
           clue_value: string
           created_at?: string
           created_by?: string | null
+          difficulty_band?: string | null
           duplicate_group_id?: string | null
           esport: string
           id?: string
           is_active?: boolean
+          is_generated?: boolean
           label: string
           normalized_label?: string | null
           similarity_score?: number | null
+          source_videogame?: string | null
+          tier?: string | null
           updated_at?: string
+          valid_answer_count?: number | null
         }
         Update: {
           clue_type?: string
           clue_value?: string
           created_at?: string
           created_by?: string | null
+          difficulty_band?: string | null
           duplicate_group_id?: string | null
           esport?: string
           id?: string
           is_active?: boolean
+          is_generated?: boolean
           label?: string
           normalized_label?: string | null
           similarity_score?: number | null
+          source_videogame?: string | null
+          tier?: string | null
           updated_at?: string
+          valid_answer_count?: number | null
         }
         Relationships: []
       }
       trivia_grid_templates: {
         Row: {
+          avg_cell_answers: number | null
+          board_difficulty: string | null
+          cell_min_answers: number | null
           col_clue_ids: string[]
           created_at: string
           created_by: string | null
           esport: string
           id: string
           is_active: boolean
+          is_generated: boolean
           name: string
+          quality_score: number | null
           row_clue_ids: string[]
           updated_at: string
         }
         Insert: {
+          avg_cell_answers?: number | null
+          board_difficulty?: string | null
+          cell_min_answers?: number | null
           col_clue_ids: string[]
           created_at?: string
           created_by?: string | null
           esport: string
           id?: string
           is_active?: boolean
+          is_generated?: boolean
           name: string
+          quality_score?: number | null
           row_clue_ids: string[]
           updated_at?: string
         }
         Update: {
+          avg_cell_answers?: number | null
+          board_difficulty?: string | null
+          cell_min_answers?: number | null
           col_clue_ids?: string[]
           created_at?: string
           created_by?: string | null
           esport?: string
           id?: string
           is_active?: boolean
+          is_generated?: boolean
           name?: string
+          quality_score?: number | null
           row_clue_ids?: string[]
           updated_at?: string
         }
@@ -4434,10 +4464,30 @@ export type Database = {
         Row: {
           esport: string | null
           league_id: string | null
+          league_name: string | null
+          match_id: string | null
+          opponent_team_id: string | null
           player_id: string | null
-          team_ids: Json | null
+          serie_id: string | null
+          serie_name: string | null
+          start_time: string | null
+          team_id: string | null
+          teammate_ids: Json | null
           tier: string | null
           tournament_id: string | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      trivia_top_tier_series: {
+        Row: {
+          best_tier: string | null
+          esport: string | null
+          league_name: string | null
+          match_count: number | null
+          serie_id: string | null
+          serie_name: string | null
+          year: number | null
         }
         Relationships: []
       }
@@ -5083,6 +5133,26 @@ export type Database = {
       trivia_clue_matches_player: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
+      }
+      trivia_clue_player_ids: {
+        Args: { _clue_type: string; _clue_value: string; _esport: string }
+        Returns: {
+          player_id: number
+        }[]
+      }
+      trivia_count_clue_answers: {
+        Args: { _clue_type: string; _clue_value: string; _esport: string }
+        Returns: number
+      }
+      trivia_count_intersection: {
+        Args: {
+          _col_type: string
+          _col_value: string
+          _esport: string
+          _row_type: string
+          _row_value: string
+        }
+        Returns: number
       }
       trivia_finalize_board_difficulty: {
         Args: {
