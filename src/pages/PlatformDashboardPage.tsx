@@ -178,20 +178,20 @@ const PlatformDashboardPage: React.FC = () => {
         weeklyData,
         monthlyData,
         allTimeData,
-        retentionData,
+        weeksPlayedData,
       ] = await Promise.all([
         fetchPeriodStats(todayStart),
         fetchPeriodStats(weekStart),
         fetchPeriodStats(monthStart),
         fetchAllTimeStats(),
-        fetchRetentionStats(),
+        fetchWeeksPlayedStats(),
       ]);
 
       setDailyStats(dailyData);
       setWeeklyStats(weeklyData);
       setMonthlyStats(monthlyData);
       setAllTimeStats(allTimeData);
-      setRetentionStats(retentionData);
+      setWeeksPlayedStats(weeksPlayedData);
     } catch (err) {
       console.error('Error fetching stats:', err);
       toast.error('Failed to load dashboard data');
@@ -200,18 +200,25 @@ const PlatformDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchRetentionStats = async () => {
-    const { data, error } = await (supabase.rpc as any)('get_paying_user_wow_retention');
+  const fetchWeeksPlayedStats = async () => {
+    const { data, error } = await (supabase.rpc as any)('get_user_weeks_played_stats');
     if (error) {
-      console.error('fetchRetentionStats RPC error:', error);
-      return { currentWeek: 0, previousWeek: 0, retained: 0, retentionRate: 0 };
+      console.error('fetchWeeksPlayedStats RPC error:', error);
+      return {
+        paidUserCount: 0, paidAvgWeeks: 0, paidMedianWeeks: 0, paidMaxWeeks: 0,
+        freeUserCount: 0, freeAvgWeeks: 0, freeMedianWeeks: 0, freeMaxWeeks: 0,
+      };
     }
     const row = Array.isArray(data) ? data[0] : data;
     return {
-      currentWeek: Number(row?.current_week_paying_users ?? 0),
-      previousWeek: Number(row?.previous_week_paying_users ?? 0),
-      retained: Number(row?.retained_users ?? 0),
-      retentionRate: Number(row?.retention_rate ?? 0),
+      paidUserCount: Number(row?.paid_user_count ?? 0),
+      paidAvgWeeks: Number(row?.paid_avg_weeks ?? 0),
+      paidMedianWeeks: Number(row?.paid_median_weeks ?? 0),
+      paidMaxWeeks: Number(row?.paid_max_weeks ?? 0),
+      freeUserCount: Number(row?.free_user_count ?? 0),
+      freeAvgWeeks: Number(row?.free_avg_weeks ?? 0),
+      freeMedianWeeks: Number(row?.free_median_weeks ?? 0),
+      freeMaxWeeks: Number(row?.free_max_weeks ?? 0),
     };
   };
 
