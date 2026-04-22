@@ -83,16 +83,32 @@ const TriviaAdminPage: React.FC = () => {
   const activeClues = useMemo(() => clues.filter((c) => c.is_active), [clues]);
 
   const handleAddClue = async () => {
-    if (!nLabel.trim() || !nValue.trim()) {
+    const label = nLabel.trim();
+    const value = nValue.trim();
+    if (!label || !value) {
       toast.error("Label and value are required");
+      return;
+    }
+    if (!matchesCanonicalTemplate(label, nType)) {
+      toast.error(`Label must match canonical template: "${canonicalTemplateHint(nType)}"`);
       return;
     }
     setSavingClue(true);
     try {
+      const dup = await findDuplicateClue({ esport, clue_type: nType, clue_value: value, label });
+      if (dup) {
+        toast.error(
+          dup.match_kind === "exact"
+            ? `Exact duplicate of existing clue "${dup.label}"`
+            : `Near-duplicate of "${dup.label}" (normalizes to "${dup.normalized_label}")`,
+        );
+        setSavingClue(false);
+        return;
+      }
       await upsertClue({
-        label: nLabel.trim(),
+        label,
         clue_type: nType,
-        clue_value: nValue.trim(),
+        clue_value: value,
         esport,
         is_active: true,
       });
