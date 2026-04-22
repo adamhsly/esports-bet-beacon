@@ -4435,8 +4435,7 @@ export type Database = {
           esport: string | null
           league_id: string | null
           player_id: string | null
-          team_a_id: string | null
-          team_b_id: string | null
+          team_ids: Json | null
           tier: string | null
           tournament_id: string | null
         }
