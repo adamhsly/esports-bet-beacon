@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Shield, Users, DollarSign, TrendingUp, LogIn, Trophy, Calendar, Clock, CreditCard, Gift } from 'lucide-react';
+import { Shield, Users, DollarSign, TrendingUp, LogIn, Trophy, Calendar, Clock, CreditCard, Gift, Repeat } from 'lucide-react';
 import { PaidRoundsParticipants } from '@/components/admin/PaidRoundsParticipants';
 import { PrivateRoundsParticipants } from '@/components/admin/PrivateRoundsParticipants';
 import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval } from 'date-fns';
@@ -79,6 +79,13 @@ const PlatformDashboardPage: React.FC = () => {
     totalPaidRoundEntries: 0,
     totalVoucherPrizesPaid: 0,
     totalCreditPrizesPaid: 0,
+  });
+
+  const [retentionStats, setRetentionStats] = useState({
+    currentWeek: 0,
+    previousWeek: 0,
+    retained: 0,
+    retentionRate: 0,
   });
 
   const statConfigs: StatConfig[] = useMemo(() => [
@@ -166,24 +173,42 @@ const PlatformDashboardPage: React.FC = () => {
         dailyData,
         weeklyData,
         monthlyData,
-        allTimeData
+        allTimeData,
+        retentionData,
       ] = await Promise.all([
         fetchPeriodStats(todayStart),
         fetchPeriodStats(weekStart),
         fetchPeriodStats(monthStart),
-        fetchAllTimeStats()
+        fetchAllTimeStats(),
+        fetchRetentionStats(),
       ]);
 
       setDailyStats(dailyData);
       setWeeklyStats(weeklyData);
       setMonthlyStats(monthlyData);
       setAllTimeStats(allTimeData);
+      setRetentionStats(retentionData);
     } catch (err) {
       console.error('Error fetching stats:', err);
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRetentionStats = async () => {
+    const { data, error } = await (supabase.rpc as any)('get_paying_user_wow_retention');
+    if (error) {
+      console.error('fetchRetentionStats RPC error:', error);
+      return { currentWeek: 0, previousWeek: 0, retained: 0, retentionRate: 0 };
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      currentWeek: Number(row?.current_week_paying_users ?? 0),
+      previousWeek: Number(row?.previous_week_paying_users ?? 0),
+      retained: Number(row?.retained_users ?? 0),
+      retentionRate: Number(row?.retention_rate ?? 0),
+    };
   };
 
   const fetchPeriodStats = async (startDate: Date): Promise<PeriodStats> => {
@@ -380,6 +405,39 @@ const PlatformDashboardPage: React.FC = () => {
             </h1>
           </div>
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
+
+          {/* Week-on-Week Paying User Retention */}
+          <Card className="bg-gradient-to-br from-emerald-900/30 to-blue-900/20 border-emerald-500/40 hover:border-emerald-500/60 transition-all mb-4">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/15">
+                    <Repeat className="h-6 w-6 md:h-7 md:w-7 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Week-on-Week Paying User Retention</p>
+                    <p className="text-2xl md:text-3xl font-bold text-white">
+                      {retentionStats.retentionRate}%
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
+                  <div>
+                    <p className="text-white/60">Last week</p>
+                    <p className="text-white font-semibold text-base md:text-lg">{retentionStats.previousWeek.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">Retained</p>
+                    <p className="text-emerald-400 font-semibold text-base md:text-lg">{retentionStats.retained.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">This week</p>
+                    <p className="text-white font-semibold text-base md:text-lg">{retentionStats.currentWeek.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* All-Time Stats Overview */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">
