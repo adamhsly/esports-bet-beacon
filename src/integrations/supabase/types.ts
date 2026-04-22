@@ -3414,11 +3414,17 @@ export type Database = {
           clue_type_counts: Json
           col_clue_keys: string[]
           created_at: string
+          difficulty_score: number | null
+          diversity_score: number | null
           esport: string
           fingerprint: string
+          freshness_score: number | null
           last_used_at: string | null
+          published: boolean | null
+          quality_score: number | null
           row_clue_keys: string[]
           similarity_score: number | null
+          solvability_score: number | null
           structure_signature: string
           times_used: number
         }
@@ -3426,11 +3432,17 @@ export type Database = {
           clue_type_counts: Json
           col_clue_keys: string[]
           created_at?: string
+          difficulty_score?: number | null
+          diversity_score?: number | null
           esport: string
           fingerprint: string
+          freshness_score?: number | null
           last_used_at?: string | null
+          published?: boolean | null
+          quality_score?: number | null
           row_clue_keys: string[]
           similarity_score?: number | null
+          solvability_score?: number | null
           structure_signature: string
           times_used?: number
         }
@@ -3438,12 +3450,72 @@ export type Database = {
           clue_type_counts?: Json
           col_clue_keys?: string[]
           created_at?: string
+          difficulty_score?: number | null
+          diversity_score?: number | null
           esport?: string
           fingerprint?: string
+          freshness_score?: number | null
           last_used_at?: string | null
+          published?: boolean | null
+          quality_score?: number | null
           row_clue_keys?: string[]
           similarity_score?: number | null
+          solvability_score?: number | null
           structure_signature?: string
+          times_used?: number
+        }
+        Relationships: []
+      }
+      trivia_board_rejections: {
+        Row: {
+          created_at: string
+          details: Json | null
+          esport: string
+          fingerprint: string | null
+          id: string
+          quality_score: number | null
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          esport: string
+          fingerprint?: string | null
+          id?: string
+          quality_score?: number | null
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          esport?: string
+          fingerprint?: string | null
+          id?: string
+          quality_score?: number | null
+          reason?: string
+        }
+        Relationships: []
+      }
+      trivia_clue_usage: {
+        Row: {
+          clue_key: string
+          created_at: string
+          esport: string
+          last_used_at: string | null
+          times_used: number
+        }
+        Insert: {
+          clue_key: string
+          created_at?: string
+          esport: string
+          last_used_at?: string | null
+          times_used?: number
+        }
+        Update: {
+          clue_key?: string
+          created_at?: string
+          esport?: string
+          last_used_at?: string | null
           times_used?: number
         }
         Relationships: []
@@ -4910,6 +4982,18 @@ export type Database = {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
       }
+      trivia_finalize_board_quality: {
+        Args: {
+          _difficulty: number
+          _diversity: number
+          _fingerprint: string
+          _freshness: number
+          _published: boolean
+          _quality: number
+          _solvability: number
+        }
+        Returns: undefined
+      }
       trivia_find_duplicate_clue: {
         Args: {
           _clue_type: string
@@ -4927,6 +5011,16 @@ export type Database = {
       trivia_label_matches_canonical: {
         Args: { _clue_type: string; _normalized: string }
         Returns: boolean
+      }
+      trivia_log_board_rejection: {
+        Args: {
+          _details: Json
+          _esport: string
+          _fingerprint: string
+          _quality: number
+          _reason: string
+        }
+        Returns: undefined
       }
       trivia_normalize_label: {
         Args: { _clue_type: string; _clue_value: string; _label: string }
@@ -4955,6 +5049,21 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      trivia_register_clue_use: {
+        Args: { _clue_keys: string[]; _esport: string }
+        Returns: undefined
+      }
+      trivia_top_boards: {
+        Args: { _esport: string; _limit?: number }
+        Returns: {
+          col_clue_keys: string[]
+          fingerprint: string
+          last_used_at: string
+          quality_score: number
+          row_clue_keys: string[]
+          times_used: number
+        }[]
       }
       trivia_validate_pick: {
         Args: {
