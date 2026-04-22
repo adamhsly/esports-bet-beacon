@@ -313,6 +313,16 @@ const TriviaGamePage: React.FC = () => {
         colClue={picking ? colClues[picking.c] : null}
         currentTurnLabel={currentLabel}
         currentTurnMark={currentMark}
+        turnSeconds={session.mode === "two_player" ? TURN_SECONDS : undefined}
+        onTimeout={async () => {
+          if (!session) return;
+          // Pass turn without claiming (2P only). Solo never times out.
+          if (session.mode !== "two_player") return;
+          const nextTurn: "p1" | "p2" = session.current_turn === "p1" ? "p2" : "p1";
+          await updateSession(session.id, { current_turn: nextTurn });
+          setSession({ ...session, current_turn: nextTurn });
+          toast.error("Time's up — turn passes");
+        }}
         onSubmit={handleSubmit}
       />
     </div>
