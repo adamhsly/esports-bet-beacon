@@ -426,7 +426,6 @@ const PlatformDashboardPage: React.FC = () => {
                   <div>
                     <p className="text-xl md:text-2xl font-bold text-white">
                       {weeksPlayedStats.paidAvgWeeks}
-                      <span className="text-sm text-white/50 font-normal ml-2">median {weeksPlayedStats.paidMedianWeeks} · max {weeksPlayedStats.paidMaxWeeks}</span>
                     </p>
                     <p className="text-xs md:text-sm text-white/70">Avg Paid Rounds / Paying User</p>
                   </div>
