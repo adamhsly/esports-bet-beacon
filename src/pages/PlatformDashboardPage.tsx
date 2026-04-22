@@ -173,24 +173,42 @@ const PlatformDashboardPage: React.FC = () => {
         dailyData,
         weeklyData,
         monthlyData,
-        allTimeData
+        allTimeData,
+        retentionData,
       ] = await Promise.all([
         fetchPeriodStats(todayStart),
         fetchPeriodStats(weekStart),
         fetchPeriodStats(monthStart),
-        fetchAllTimeStats()
+        fetchAllTimeStats(),
+        fetchRetentionStats(),
       ]);
 
       setDailyStats(dailyData);
       setWeeklyStats(weeklyData);
       setMonthlyStats(monthlyData);
       setAllTimeStats(allTimeData);
+      setRetentionStats(retentionData);
     } catch (err) {
       console.error('Error fetching stats:', err);
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRetentionStats = async () => {
+    const { data, error } = await (supabase.rpc as any)('get_paying_user_wow_retention');
+    if (error) {
+      console.error('fetchRetentionStats RPC error:', error);
+      return { currentWeek: 0, previousWeek: 0, retained: 0, retentionRate: 0 };
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      currentWeek: Number(row?.current_week_paying_users ?? 0),
+      previousWeek: Number(row?.previous_week_paying_users ?? 0),
+      retained: Number(row?.retained_users ?? 0),
+      retentionRate: Number(row?.retention_rate ?? 0),
+    };
   };
 
   const fetchPeriodStats = async (startDate: Date): Promise<PeriodStats> => {
