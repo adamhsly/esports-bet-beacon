@@ -25,6 +25,10 @@ import {
   listGridTemplates,
   upsertGridTemplate,
   deleteGridTemplate,
+  findDuplicateClue,
+  matchesCanonicalTemplate,
+  canonicalTemplateHint,
+  normalizeClueLabel,
   type TriviaClueRow,
   type TriviaGridTemplateRow,
 } from "@/lib/trivia";
