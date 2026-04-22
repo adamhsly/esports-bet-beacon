@@ -285,9 +285,10 @@ export async function createSession(args: {
       mode: args.mode,
       esport: args.esport,
       board: args.board as any,
+      board_fingerprint: args.board.fingerprint ?? null,
       player1_label: args.player1_label ?? "Player 1",
       player2_label: args.player2_label ?? (args.mode === "solo" ? "—" : "Player 2"),
-    })
+    } as any)
     .select()
     .single();
 
