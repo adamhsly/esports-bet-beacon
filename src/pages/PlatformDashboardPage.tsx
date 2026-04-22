@@ -81,11 +81,15 @@ const PlatformDashboardPage: React.FC = () => {
     totalCreditPrizesPaid: 0,
   });
 
-  const [retentionStats, setRetentionStats] = useState({
-    currentWeek: 0,
-    previousWeek: 0,
-    retained: 0,
-    retentionRate: 0,
+  const [weeksPlayedStats, setWeeksPlayedStats] = useState({
+    paidUserCount: 0,
+    paidAvgWeeks: 0,
+    paidMedianWeeks: 0,
+    paidMaxWeeks: 0,
+    freeUserCount: 0,
+    freeAvgWeeks: 0,
+    freeMedianWeeks: 0,
+    freeMaxWeeks: 0,
   });
 
   const statConfigs: StatConfig[] = useMemo(() => [
@@ -174,20 +178,20 @@ const PlatformDashboardPage: React.FC = () => {
         weeklyData,
         monthlyData,
         allTimeData,
-        retentionData,
+        weeksPlayedData,
       ] = await Promise.all([
         fetchPeriodStats(todayStart),
         fetchPeriodStats(weekStart),
         fetchPeriodStats(monthStart),
         fetchAllTimeStats(),
-        fetchRetentionStats(),
+        fetchWeeksPlayedStats(),
       ]);
 
       setDailyStats(dailyData);
       setWeeklyStats(weeklyData);
       setMonthlyStats(monthlyData);
       setAllTimeStats(allTimeData);
-      setRetentionStats(retentionData);
+      setWeeksPlayedStats(weeksPlayedData);
     } catch (err) {
       console.error('Error fetching stats:', err);
       toast.error('Failed to load dashboard data');
@@ -196,18 +200,25 @@ const PlatformDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchRetentionStats = async () => {
-    const { data, error } = await (supabase.rpc as any)('get_paying_user_wow_retention');
+  const fetchWeeksPlayedStats = async () => {
+    const { data, error } = await (supabase.rpc as any)('get_user_weeks_played_stats');
     if (error) {
-      console.error('fetchRetentionStats RPC error:', error);
-      return { currentWeek: 0, previousWeek: 0, retained: 0, retentionRate: 0 };
+      console.error('fetchWeeksPlayedStats RPC error:', error);
+      return {
+        paidUserCount: 0, paidAvgWeeks: 0, paidMedianWeeks: 0, paidMaxWeeks: 0,
+        freeUserCount: 0, freeAvgWeeks: 0, freeMedianWeeks: 0, freeMaxWeeks: 0,
+      };
     }
     const row = Array.isArray(data) ? data[0] : data;
     return {
-      currentWeek: Number(row?.current_week_paying_users ?? 0),
-      previousWeek: Number(row?.previous_week_paying_users ?? 0),
-      retained: Number(row?.retained_users ?? 0),
-      retentionRate: Number(row?.retention_rate ?? 0),
+      paidUserCount: Number(row?.paid_user_count ?? 0),
+      paidAvgWeeks: Number(row?.paid_avg_weeks ?? 0),
+      paidMedianWeeks: Number(row?.paid_median_weeks ?? 0),
+      paidMaxWeeks: Number(row?.paid_max_weeks ?? 0),
+      freeUserCount: Number(row?.free_user_count ?? 0),
+      freeAvgWeeks: Number(row?.free_avg_weeks ?? 0),
+      freeMedianWeeks: Number(row?.free_median_weeks ?? 0),
+      freeMaxWeeks: Number(row?.free_max_weeks ?? 0),
     };
   };
 
@@ -406,38 +417,68 @@ const PlatformDashboardPage: React.FC = () => {
           </div>
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
-          {/* Week-on-Week Paying User Retention */}
-          <Card className="bg-gradient-to-br from-emerald-900/30 to-blue-900/20 border-emerald-500/40 hover:border-emerald-500/60 transition-all mb-4">
-            <CardContent className="p-4 md:p-5">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div className="flex items-center gap-3">
+          {/* Historical Weeks Played per User Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
+            <Card className="bg-gradient-to-br from-emerald-900/30 to-blue-900/20 border-emerald-500/40 hover:border-emerald-500/60 transition-all">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 rounded-lg bg-emerald-500/15">
                     <Repeat className="h-6 w-6 md:h-7 md:w-7 text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Week-on-Week Paying User Retention</p>
+                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Paid Users — Avg Weeks Played</p>
                     <p className="text-2xl md:text-3xl font-bold text-white">
-                      {retentionStats.retentionRate}%
+                      {weeksPlayedStats.paidAvgWeeks}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
+                <div className="grid grid-cols-3 gap-2 text-xs md:text-sm">
                   <div>
-                    <p className="text-white/60">Last week</p>
-                    <p className="text-white font-semibold text-base md:text-lg">{retentionStats.previousWeek.toLocaleString()}</p>
+                    <p className="text-white/60">Users</p>
+                    <p className="text-white font-semibold">{weeksPlayedStats.paidUserCount.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-white/60">Retained</p>
-                    <p className="text-emerald-400 font-semibold text-base md:text-lg">{retentionStats.retained.toLocaleString()}</p>
+                    <p className="text-white/60">Median</p>
+                    <p className="text-white font-semibold">{weeksPlayedStats.paidMedianWeeks}</p>
                   </div>
                   <div>
-                    <p className="text-white/60">This week</p>
-                    <p className="text-white font-semibold text-base md:text-lg">{retentionStats.currentWeek.toLocaleString()}</p>
+                    <p className="text-white/60">Max</p>
+                    <p className="text-emerald-400 font-semibold">{weeksPlayedStats.paidMaxWeeks}</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-900/30 to-emerald-900/20 border-blue-500/40 hover:border-blue-500/60 transition-all">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-blue-500/15">
+                    <Repeat className="h-6 w-6 md:h-7 md:w-7 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Free Users — Avg Weeks Played</p>
+                    <p className="text-2xl md:text-3xl font-bold text-white">
+                      {weeksPlayedStats.freeAvgWeeks}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs md:text-sm">
+                  <div>
+                    <p className="text-white/60">Users</p>
+                    <p className="text-white font-semibold">{weeksPlayedStats.freeUserCount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">Median</p>
+                    <p className="text-white font-semibold">{weeksPlayedStats.freeMedianWeeks}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">Max</p>
+                    <p className="text-blue-400 font-semibold">{weeksPlayedStats.freeMaxWeeks}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* All-Time Stats Overview */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">

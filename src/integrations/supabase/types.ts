@@ -4535,6 +4535,19 @@ export type Database = {
         }[]
       }
       get_team_swap_state: { Args: { p_round_id: string }; Returns: Json }
+      get_user_weeks_played_stats: {
+        Args: never
+        Returns: {
+          free_avg_weeks: number
+          free_max_weeks: number
+          free_median_weeks: number
+          free_user_count: number
+          paid_avg_weeks: number
+          paid_max_weeks: number
+          paid_median_weeks: number
+          paid_user_count: number
+        }[]
+      }
       get_welcome_offer_status: { Args: { p_user_id: string }; Returns: Json }
       grant_bonus_credits: {
         Args: { p_amount: number; p_source: string; p_user: string }
