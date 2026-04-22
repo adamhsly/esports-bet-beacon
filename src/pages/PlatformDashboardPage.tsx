@@ -418,28 +418,17 @@ const PlatformDashboardPage: React.FC = () => {
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
           {/* Avg Rounds Played per User Type */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30 hover:border-cyan-500/60 transition-all">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center gap-3">
                   <Repeat className="h-6 w-6 md:h-8 md:w-8 text-cyan-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{weeksPlayedStats.paidAvgWeeks}</p>
-                    <p className="text-xs md:text-sm text-white/70">Avg Paid Rounds / Paying User</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-cyan-500/30 hover:border-cyan-500/60 transition-all">
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center gap-3">
-                  <Users className="h-6 w-6 md:h-8 md:w-8 text-cyan-400" />
-                  <div>
                     <p className="text-xl md:text-2xl font-bold text-white">
-                      {weeksPlayedStats.paidUserCount.toLocaleString()}
-                      <span className="text-sm text-white/50 font-normal ml-1">· max {weeksPlayedStats.paidMaxWeeks}</span>
+                      {weeksPlayedStats.paidAvgWeeks}
+                      <span className="text-sm text-white/50 font-normal ml-2">median {weeksPlayedStats.paidMedianWeeks} · max {weeksPlayedStats.paidMaxWeeks}</span>
                     </p>
-                    <p className="text-xs md:text-sm text-white/70">Paying Users (median {weeksPlayedStats.paidMedianWeeks})</p>
+                    <p className="text-xs md:text-sm text-white/70">Avg Paid Rounds / Paying User</p>
                   </div>
                 </div>
               </CardContent>
@@ -449,22 +438,11 @@ const PlatformDashboardPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Repeat className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-white">{weeksPlayedStats.freeAvgWeeks}</p>
-                    <p className="text-xs md:text-sm text-white/70">Avg Free Rounds / Free User</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-blue-500/30 hover:border-blue-500/60 transition-all">
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center gap-3">
-                  <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
-                  <div>
                     <p className="text-xl md:text-2xl font-bold text-white">
-                      {weeksPlayedStats.freeUserCount.toLocaleString()}
-                      <span className="text-sm text-white/50 font-normal ml-1">· max {weeksPlayedStats.freeMaxWeeks}</span>
+                      {weeksPlayedStats.freeAvgWeeks}
+                      <span className="text-sm text-white/50 font-normal ml-2">median {weeksPlayedStats.freeMedianWeeks} · max {weeksPlayedStats.freeMaxWeeks}</span>
                     </p>
-                    <p className="text-xs md:text-sm text-white/70">Free Users (median {weeksPlayedStats.freeMedianWeeks})</p>
+                    <p className="text-xs md:text-sm text-white/70">Avg Free Rounds / Free User</p>
                   </div>
                 </div>
               </CardContent>
