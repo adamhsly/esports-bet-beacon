@@ -3423,8 +3423,10 @@ export type Database = {
           fingerprint: string
           freshness_score: number | null
           last_used_at: string | null
+          min_clue_tier: string | null
           published: boolean | null
           quality_score: number | null
+          recognition_score: number | null
           row_clue_keys: string[]
           similarity_score: number | null
           solvability_score: number | null
@@ -3444,8 +3446,10 @@ export type Database = {
           fingerprint: string
           freshness_score?: number | null
           last_used_at?: string | null
+          min_clue_tier?: string | null
           published?: boolean | null
           quality_score?: number | null
+          recognition_score?: number | null
           row_clue_keys: string[]
           similarity_score?: number | null
           solvability_score?: number | null
@@ -3465,8 +3469,10 @@ export type Database = {
           fingerprint?: string
           freshness_score?: number | null
           last_used_at?: string | null
+          min_clue_tier?: string | null
           published?: boolean | null
           quality_score?: number | null
+          recognition_score?: number | null
           row_clue_keys?: string[]
           similarity_score?: number | null
           solvability_score?: number | null
@@ -3544,6 +3550,8 @@ export type Database = {
           created_at: string
           esport: string
           last_used_at: string | null
+          popularity_score: number | null
+          recognition_tier: string | null
           times_used: number
         }
         Insert: {
@@ -3551,6 +3559,8 @@ export type Database = {
           created_at?: string
           esport: string
           last_used_at?: string | null
+          popularity_score?: number | null
+          recognition_tier?: string | null
           times_used?: number
         }
         Update: {
@@ -3558,6 +3568,8 @@ export type Database = {
           created_at?: string
           esport?: string
           last_used_at?: string | null
+          popularity_score?: number | null
+          recognition_tier?: string | null
           times_used?: number
         }
         Relationships: []
@@ -4418,6 +4430,54 @@ export type Database = {
           },
         ]
       }
+      trivia_top_tier_player_history: {
+        Row: {
+          esport: string | null
+          league_id: string | null
+          player_id: string | null
+          team_ids: Json | null
+          tier: string | null
+          tournament_id: string | null
+        }
+        Relationships: []
+      }
+      trivia_top_tier_teams: {
+        Row: {
+          appearances: number | null
+          best_tier: string | null
+          esport: string | null
+          team_id: string | null
+          team_name: string | null
+        }
+        Relationships: []
+      }
+      trivia_top_tier_tournaments: {
+        Row: {
+          esport: string | null
+          league_id: string | null
+          league_name: string | null
+          tier: string | null
+          tournament_id: string | null
+          tournament_name: string | null
+        }
+        Insert: {
+          esport?: string | null
+          league_id?: string | null
+          league_name?: string | null
+          tier?: never
+          tournament_id?: string | null
+          tournament_name?: string | null
+        }
+        Update: {
+          esport?: string | null
+          league_id?: string | null
+          league_name?: string | null
+          tier?: never
+          tournament_id?: string | null
+          tournament_name?: string | null
+        }
+        Relationships: []
+      }
       user_credit_balances: {
         Row: {
           balance: number | null
@@ -5059,6 +5119,25 @@ export type Database = {
           normalized_label: string
         }[]
       }
+      trivia_get_top_tier_teams: {
+        Args: { _esport: string; _min_appearances?: number }
+        Returns: {
+          appearances: number
+          best_tier: string
+          team_id: string
+          team_name: string
+        }[]
+      }
+      trivia_get_top_tier_tournaments: {
+        Args: { _esport: string }
+        Returns: {
+          league_id: string
+          league_name: string
+          tier: string
+          tournament_id: string
+          tournament_name: string
+        }[]
+      }
       trivia_label_matches_canonical: {
         Args: { _clue_type: string; _normalized: string }
         Returns: boolean
@@ -5080,6 +5159,15 @@ export type Database = {
       trivia_player_matches_clue: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
+      }
+      trivia_player_top_tier_match: {
+        Args: { _esport: string; _player_ids: string[] }
+        Returns: {
+          league_id: string
+          player_id: string
+          team_id: string
+          tournament_id: string
+        }[]
       }
       trivia_recent_user_fingerprints: {
         Args: { _esport: string; _limit?: number; _user_id: string }

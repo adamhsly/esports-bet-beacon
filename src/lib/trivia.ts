@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type TriviaClue = {
-  type: "team" | "nationality" | "role" | "game";
+  type: "team" | "nationality" | "role" | "game" | "tournament" | "league" | "attribute";
   value: string;
   label: string;
 };
@@ -46,25 +46,15 @@ export const TRIVIA_ESPORTS = [
 
 export async function generateBoard(
   esport: string,
-  opts?: { templateId?: string; isDaily?: boolean },
-): Promise<TriviaBoard & { difficulty?: "easy" | "medium" | "hard" }> {
+  opts?: { templateId?: string },
+): Promise<TriviaBoard> {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
-    body: {
-      esport,
-      templateId: opts?.templateId,
-      userId: userData?.user?.id ?? null,
-      isDaily: opts?.isDaily ?? false,
-    },
+    body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
   });
   if (error) throw error;
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
-  return {
-    rowClues: data.rowClues,
-    colClues: data.colClues,
-    fingerprint: data.fingerprint,
-    difficulty: data.difficulty,
-  };
+  return { rowClues: data.rowClues, colClues: data.colClues, fingerprint: data.fingerprint };
 }
 
 // ---------------------------------------------------------------------------
