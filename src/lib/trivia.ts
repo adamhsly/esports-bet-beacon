@@ -17,6 +17,7 @@ export type TriviaCell = {
 export type TriviaBoard = {
   rowClues: TriviaClue[];
   colClues: TriviaClue[];
+  fingerprint?: string;
 };
 
 export type TriviaSession = {
