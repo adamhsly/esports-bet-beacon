@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { useSlates, useUserSubmittedSlateIds } from '@/hooks/usePickems';
 import { useAuth } from '@/contexts/AuthContext';
 import { PickemsSlateCard, formatEsportLabel, getEsportPillClass } from '@/components/pickems/PickemsSlateCard';
-import { Trophy, ArrowLeft } from 'lucide-react';
+import { Trophy, ChevronLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -99,6 +99,14 @@ const PickemsPage: React.FC = () => {
       </Helmet>
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-6 max-w-5xl">
+        {gameFilter && (
+          <button
+            onClick={() => setGameFilter(null)}
+            className="text-sm text-gray-400 hover:text-white inline-flex items-center gap-1 mb-4"
+          >
+            <ChevronLeft className="h-4 w-4" /> Back to all games
+          </button>
+        )}
         <header className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <Trophy className="h-7 w-7 text-theme-purple" />
@@ -177,26 +185,15 @@ const PickemsPage: React.FC = () => {
           </section>
         ) : (
           <>
-            {/* Back / current-game header */}
-            <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setGameFilter(null)}
-                className="h-8 text-gray-300 hover:text-white hover:bg-slate-800"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                All games
-              </Button>
-              {selectedTile && (
-                <div className="flex items-center gap-2">
-                  <img src={selectedTile.logo} alt="" className="w-7 h-7 object-contain" />
-                  <span className={cn('text-xs px-2 py-1 rounded border', getEsportPillClass(gameFilter))}>
-                    {formatEsportLabel(gameFilter)}
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* Current-game indicator */}
+            {selectedTile && (
+              <div className="mb-5 flex items-center gap-2">
+                <img src={selectedTile.logo} alt="" className="w-7 h-7 object-contain" />
+                <span className={cn('text-xs px-2 py-1 rounded border', getEsportPillClass(gameFilter))}>
+                  {formatEsportLabel(gameFilter)}
+                </span>
+              </div>
+            )}
 
             {isLoading ? (
               <div className="grid gap-3 md:grid-cols-2">
