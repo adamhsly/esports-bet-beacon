@@ -43,13 +43,145 @@ export const TRIVIA_ESPORTS = [
   "Call of Duty",
 ] as const;
 
-export async function generateBoard(esport: string): Promise<TriviaBoard> {
+export async function generateBoard(
+  esport: string,
+  opts?: { templateId?: string },
+): Promise<TriviaBoard> {
   const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
-    body: { esport },
+    body: { esport, templateId: opts?.templateId },
   });
   if (error) throw error;
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
   return { rowClues: data.rowClues, colClues: data.colClues };
+}
+
+// ---------------------------------------------------------------------------
+// Admin clue + grid-template management
+// ---------------------------------------------------------------------------
+
+export type TriviaClueRow = {
+  id: string;
+  label: string;
+  clue_type: "team" | "nationality" | "tournament" | "role" | "attribute";
+  clue_value: string;
+  esport: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TriviaGridTemplateRow = {
+  id: string;
+  name: string;
+  esport: string;
+  is_active: boolean;
+  row_clue_ids: string[];
+  col_clue_ids: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listClues(esport?: string): Promise<TriviaClueRow[]> {
+  let q = (supabase as any).from("trivia_clues").select("*").order("created_at", { ascending: false });
+  if (esport) q = q.eq("esport", esport);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function upsertClue(input: Partial<TriviaClueRow> & {
+  label: string;
+  clue_type: TriviaClueRow["clue_type"];
+  clue_value: string;
+  esport: string;
+}): Promise<TriviaClueRow> {
+  const payload = {
+    id: input.id,
+    label: input.label,
+    clue_type: input.clue_type,
+    clue_value: input.clue_value,
+    esport: input.esport,
+    is_active: input.is_active ?? true,
+  };
+  const { data, error } = await (supabase as any)
+    .from("trivia_clues")
+    .upsert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteClue(id: string) {
+  const { error } = await (supabase as any).from("trivia_clues").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function listGridTemplates(esport?: string): Promise<TriviaGridTemplateRow[]> {
+  let q = (supabase as any).from("trivia_grid_templates").select("*").order("created_at", { ascending: false });
+  if (esport) q = q.eq("esport", esport);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function upsertGridTemplate(input: Partial<TriviaGridTemplateRow> & {
+  name: string;
+  esport: string;
+  row_clue_ids: string[];
+  col_clue_ids: string[];
+}): Promise<TriviaGridTemplateRow> {
+  if (input.row_clue_ids.length !== 3 || input.col_clue_ids.length !== 3) {
+    throw new Error("Templates must have exactly 3 row clues and 3 column clues");
+  }
+  const payload = {
+    id: input.id,
+    name: input.name,
+    esport: input.esport,
+    row_clue_ids: input.row_clue_ids,
+    col_clue_ids: input.col_clue_ids,
+    is_active: input.is_active ?? true,
+  };
+  const { data, error } = await (supabase as any)
+    .from("trivia_grid_templates")
+    .upsert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteGridTemplate(id: string) {
+  const { error } = await (supabase as any).from("trivia_grid_templates").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Resolve a stored grid template into the runtime TriviaBoard shape. */
+export async function loadTemplateAsBoard(templateId: string): Promise<TriviaBoard> {
+  const { data: tpl, error } = await (supabase as any)
+    .from("trivia_grid_templates")
+    .select("*")
+    .eq("id", templateId)
+    .single();
+  if (error) throw error;
+
+  const ids = [...tpl.row_clue_ids, ...tpl.col_clue_ids];
+  const { data: clues, error: cErr } = await (supabase as any)
+    .from("trivia_clues")
+    .select("*")
+    .in("id", ids);
+  if (cErr) throw cErr;
+
+  const byId = new Map<string, TriviaClueRow>((clues ?? []).map((c: TriviaClueRow) => [c.id, c]));
+  const toClue = (id: string): TriviaClue => {
+    const c = byId.get(id);
+    if (!c) throw new Error("Missing clue in template");
+    return { type: c.clue_type as TriviaClue["type"], value: c.clue_value, label: c.label };
+  };
+  return {
+    rowClues: tpl.row_clue_ids.map(toClue),
+    colClues: tpl.col_clue_ids.map(toClue),
+  };
 }
 
 export async function createSession(args: {
