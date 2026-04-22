@@ -3409,6 +3409,78 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_clues: {
+        Row: {
+          clue_type: string
+          clue_value: string
+          created_at: string
+          created_by: string | null
+          esport: string
+          id: string
+          is_active: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          clue_type: string
+          clue_value: string
+          created_at?: string
+          created_by?: string | null
+          esport: string
+          id?: string
+          is_active?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          clue_type?: string
+          clue_value?: string
+          created_at?: string
+          created_by?: string | null
+          esport?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trivia_grid_templates: {
+        Row: {
+          col_clue_ids: string[]
+          created_at: string
+          created_by: string | null
+          esport: string
+          id: string
+          is_active: boolean
+          name: string
+          row_clue_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          col_clue_ids: string[]
+          created_at?: string
+          created_by?: string | null
+          esport: string
+          id?: string
+          is_active?: boolean
+          name: string
+          row_clue_ids: string[]
+          updated_at?: string
+        }
+        Update: {
+          col_clue_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          esport?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          row_clue_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trivia_moves: {
         Row: {
           claimed_by: string
@@ -4754,6 +4826,10 @@ export type Database = {
           p_ref_type: string
           p_user: string
         }
+        Returns: boolean
+      }
+      trivia_clue_matches_player: {
+        Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
       }
       trivia_player_matches_clue: {

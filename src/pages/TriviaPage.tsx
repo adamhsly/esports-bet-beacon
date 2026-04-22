@@ -1,22 +1,48 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SearchableNavbar from "@/components/SearchableNavbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Users, User, Sparkles } from "lucide-react";
-import { TRIVIA_ESPORTS, generateBoard, createSession } from "@/lib/trivia";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Users, User, Sparkles, Settings } from "lucide-react";
+import {
+  TRIVIA_ESPORTS,
+  generateBoard,
+  createSession,
+  listGridTemplates,
+  type TriviaGridTemplateRow,
+} from "@/lib/trivia";
 import { toast } from "sonner";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const TriviaPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const presetTemplateId = searchParams.get("templateId") ?? undefined;
+
   const [esport, setEsport] = useState<string>("Counter-Strike");
   const [mode, setMode] = useState<"solo" | "two_player">("solo");
   const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<TriviaGridTemplateRow[]>([]);
+  const [templateId, setTemplateId] = useState<string | undefined>(presetTemplateId);
+  const { data: isAdmin } = useIsAdmin();
+
+  useEffect(() => {
+    listGridTemplates(esport)
+      .then((rows) => setTemplates(rows.filter((r) => r.is_active)))
+      .catch(() => setTemplates([]));
+  }, [esport]);
 
   const handleStart = async () => {
     setLoading(true);
     try {
-      const board = await generateBoard(esport);
+      const board = await generateBoard(esport, { templateId });
       const session = await createSession({ mode, esport, board });
       navigate(`/trivia/${session.id}`);
     } catch (e: any) {
@@ -33,11 +59,25 @@ const TriviaPage: React.FC = () => {
           <div className="inline-flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="h-3.5 w-3.5" /> New
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold mt-1">Esports Trivia Grid</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            A 3×3 board. Each square needs a pro player who fits BOTH the row clue AND the column clue.
-            First to three in a row wins.
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mt-1">Esports Trivia Grid</h1>
+              <p className="text-sm text-gray-400 mt-1">
+                A 3×3 board. Each square needs a pro player who fits BOTH the row clue AND the column clue.
+                First to three in a row wins.
+              </p>
+            </div>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-slate-700 bg-slate-800/60 text-gray-200 hover:bg-slate-700 hover:text-white shrink-0"
+                onClick={() => navigate("/admin/trivia")}
+              >
+                <Settings className="h-4 w-4 mr-1" /> Manage clues
+              </Button>
+            )}
+          </div>
         </div>
 
         <Card className="bg-slate-900/60 border-slate-700 p-5 space-y-6">
@@ -89,6 +129,23 @@ const TriviaPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {templates.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-300 mb-2">Grid template (optional)</h3>
+              <Select value={templateId ?? "__random"} onValueChange={(v) => setTemplateId(v === "__random" ? undefined : v)}>
+                <SelectTrigger className="bg-slate-950 border-slate-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectItem value="__random">Random (auto-generated)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <Button
             onClick={handleStart}
