@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type TriviaClue = {
-  type: "team" | "nationality" | "role" | "game";
+  type: "team" | "nationality" | "role" | "game" | "tournament" | "league" | "attribute";
   value: string;
   label: string;
 };
