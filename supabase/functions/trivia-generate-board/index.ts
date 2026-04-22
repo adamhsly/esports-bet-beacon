@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { esport } = await req.json().catch(() => ({}));
+    const { esport, templateId } = await req.json().catch(() => ({}));
     if (!esport || typeof esport !== "string") {
       return new Response(JSON.stringify({ error: "esport required" }), {
         status: 400,
@@ -36,6 +36,34 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // 1) If a saved template was requested, hydrate and return it.
+    if (templateId && typeof templateId === "string") {
+      const { data: tpl } = await supabase
+        .from("trivia_grid_templates")
+        .select("row_clue_ids,col_clue_ids,is_active")
+        .eq("id", templateId)
+        .maybeSingle();
+      if (tpl && tpl.is_active) {
+        const ids = [...tpl.row_clue_ids, ...tpl.col_clue_ids];
+        const { data: clues } = await supabase
+          .from("trivia_clues")
+          .select("id,label,clue_type,clue_value")
+          .in("id", ids);
+        const byId = new Map((clues ?? []).map((c: any) => [c.id, c]));
+        const toClue = (id: string) => {
+          const c: any = byId.get(id);
+          return c ? { type: c.clue_type, value: c.clue_value, label: c.label } : null;
+        };
+        const rowClues = tpl.row_clue_ids.map(toClue);
+        const colClues = tpl.col_clue_ids.map(toClue);
+        if (rowClues.every(Boolean) && colClues.every(Boolean)) {
+          return new Response(JSON.stringify({ rowClues, colClues, source: "template" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
 
     // Pull a generous candidate pool of active players for this esport
     const { data: players, error } = await supabase
