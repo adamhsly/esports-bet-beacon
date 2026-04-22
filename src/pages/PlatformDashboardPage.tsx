@@ -406,6 +406,39 @@ const PlatformDashboardPage: React.FC = () => {
           </div>
           <p className="text-muted-foreground mb-8 text-sm md:text-base">Performance metrics and analytics</p>
 
+          {/* Week-on-Week Paying User Retention */}
+          <Card className="bg-gradient-to-br from-emerald-900/30 to-blue-900/20 border-emerald-500/40 hover:border-emerald-500/60 transition-all mb-4">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/15">
+                    <Repeat className="h-6 w-6 md:h-7 md:w-7 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-white/70 uppercase tracking-wide">Week-on-Week Paying User Retention</p>
+                    <p className="text-2xl md:text-3xl font-bold text-white">
+                      {retentionStats.retentionRate}%
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
+                  <div>
+                    <p className="text-white/60">Last week</p>
+                    <p className="text-white font-semibold text-base md:text-lg">{retentionStats.previousWeek.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">Retained</p>
+                    <p className="text-emerald-400 font-semibold text-base md:text-lg">{retentionStats.retained.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">This week</p>
+                    <p className="text-white font-semibold text-base md:text-lg">{retentionStats.currentWeek.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* All-Time Stats Overview */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-8">
             <Card className="bg-gradient-to-br from-[#0B0F14] to-[#12161C] border-emerald-500/30 hover:border-emerald-500/60 transition-all">
