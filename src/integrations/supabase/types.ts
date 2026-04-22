@@ -3729,6 +3729,27 @@ export type Database = {
           },
         ]
       }
+      trivia_player_clue_index: {
+        Row: {
+          clue_type: string
+          clue_value: string
+          esport: string
+          player_id: number
+        }
+        Insert: {
+          clue_type: string
+          clue_value: string
+          esport: string
+          player_id: number
+        }
+        Update: {
+          clue_type?: string
+          clue_value?: string
+          esport?: string
+          player_id?: number
+        }
+        Relationships: []
+      }
       trivia_sessions: {
         Row: {
           board: Json
@@ -5246,6 +5267,10 @@ export type Database = {
           seen_at: string
           structure_signature: string
         }[]
+      }
+      trivia_refresh_player_clue_index: {
+        Args: { _esport?: string }
+        Returns: number
       }
       trivia_register_board_use: {
         Args: {
