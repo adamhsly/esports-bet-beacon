@@ -7,6 +7,7 @@ import { useSlate, useLeaderboard } from '@/hooks/usePickems';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronLeft, Flame } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 const PickemsLeaderboardPage: React.FC = () => {
   const { slateId } = useParams<{ slateId: string }>();
