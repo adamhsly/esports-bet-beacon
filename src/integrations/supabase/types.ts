@@ -3409,6 +3409,101 @@ export type Database = {
         }
         Relationships: []
       }
+      trivia_moves: {
+        Row: {
+          claimed_by: string
+          col_idx: number
+          created_at: string
+          id: string
+          player_id: number | null
+          player_name: string
+          row_idx: number
+          session_id: string
+          was_correct: boolean
+        }
+        Insert: {
+          claimed_by: string
+          col_idx: number
+          created_at?: string
+          id?: string
+          player_id?: number | null
+          player_name: string
+          row_idx: number
+          session_id: string
+          was_correct: boolean
+        }
+        Update: {
+          claimed_by?: string
+          col_idx?: number
+          created_at?: string
+          id?: string
+          player_id?: number | null
+          player_name?: string
+          row_idx?: number
+          session_id?: string
+          was_correct?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_moves_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_sessions: {
+        Row: {
+          board: Json
+          cells: Json
+          created_at: string
+          created_by: string | null
+          current_turn: string
+          esport: string
+          finished_at: string | null
+          id: string
+          mode: string
+          player1_label: string | null
+          player2_label: string | null
+          status: string
+          updated_at: string
+          winner: string | null
+        }
+        Insert: {
+          board: Json
+          cells?: Json
+          created_at?: string
+          created_by?: string | null
+          current_turn?: string
+          esport: string
+          finished_at?: string | null
+          id?: string
+          mode: string
+          player1_label?: string | null
+          player2_label?: string | null
+          status?: string
+          updated_at?: string
+          winner?: string | null
+        }
+        Update: {
+          board?: Json
+          cells?: Json
+          created_at?: string
+          created_by?: string | null
+          current_turn?: string
+          esport?: string
+          finished_at?: string | null
+          id?: string
+          mode?: string
+          player1_label?: string | null
+          player2_label?: string | null
+          status?: string
+          updated_at?: string
+          winner?: string | null
+        }
+        Relationships: []
+      }
       user_bonus_credits: {
         Row: {
           amount: number
@@ -4658,6 +4753,20 @@ export type Database = {
           p_ref_id: string
           p_ref_type: string
           p_user: string
+        }
+        Returns: boolean
+      }
+      trivia_player_matches_clue: {
+        Args: { _clue_type: string; _clue_value: string; _player_id: number }
+        Returns: boolean
+      }
+      trivia_validate_pick: {
+        Args: {
+          _col_type: string
+          _col_value: string
+          _player_id: number
+          _row_type: string
+          _row_value: string
         }
         Returns: boolean
       }
