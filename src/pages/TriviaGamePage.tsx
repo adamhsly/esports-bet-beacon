@@ -11,6 +11,8 @@ import {
 import { TriviaAnswerModal } from "@/components/trivia/TriviaAnswerModal";
 import { toast } from "sonner";
 
+const TURN_SECONDS = 20;
+
 const markFor = (who?: "p1" | "p2") => (who === "p1" ? "X" : who === "p2" ? "O" : null);
 
 const TriviaGamePage: React.FC = () => {
@@ -179,7 +181,10 @@ const TriviaGamePage: React.FC = () => {
               {session.esport} · {session.mode === "solo" ? "Solo" : "2 Player"}
             </div>
             {!isFinished && (
-              <div className="text-base font-semibold mt-0.5 flex items-center gap-2">
+              <div
+                key={session.current_turn}
+                className="text-base font-semibold mt-0.5 flex items-center gap-2 animate-fade-in"
+              >
                 <span className={`text-xl font-black ${session.current_turn === "p1" ? "text-emerald-400" : "text-violet-400"}`}>
                   {currentMark}
                 </span>
@@ -225,17 +230,19 @@ const TriviaGamePage: React.FC = () => {
                   const cell = cells[r][c];
                   const mark = markFor(cell?.claimed_by);
                   const isWinning = winLine.has(`${r}-${c}`);
+                  const isSelected = picking?.r === r && picking?.c === c;
+                  const isJustClaimed = !!cell && cell.at && (Date.now() - new Date(cell.at).getTime() < 1500);
                   return (
                     <button
                       key={`cell-${r}-${c}`}
-                      disabled={!!cell || isFinished}
+                      disabled={!!cell || isFinished || !!picking}
                       onClick={() => setPicking({ r, c })}
                       aria-label={
                         cell
                           ? `Claimed by ${cell.claimed_by === "p1" ? "X" : "O"} with ${cell.player_name}`
                           : `Empty square ${rowClue.label} by ${_col.label}`
                       }
-                      className={`relative rounded-md border aspect-square min-h-[80px] flex flex-col items-center justify-center text-center p-1 transition-all ${cellStyle(cell, isWinning)} ${(!cell && !isFinished) ? "cursor-pointer" : "cursor-default"}`}
+                      className={`relative rounded-md border aspect-square min-h-[80px] flex flex-col items-center justify-center text-center p-1 transition-all duration-200 ${cellStyle(cell, isWinning)} ${isSelected ? "ring-2 ring-amber-400 scale-[1.02] shadow-[0_0_18px_-4px_rgba(251,191,36,0.55)]" : ""} ${(!cell && !isFinished && !picking) ? "cursor-pointer hover:scale-[1.02] active:scale-[0.98]" : "cursor-default"}`}
                     >
                       {/* X / O marker badge */}
                       {mark && (
@@ -249,14 +256,14 @@ const TriviaGamePage: React.FC = () => {
                       )}
 
                       {cell ? (
-                        <>
+                        <div className={isJustClaimed ? "animate-scale-in flex flex-col items-center" : "flex flex-col items-center"}>
                           {cell.player_image ? (
                             <img src={cell.player_image} alt={cell.player_name} className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mb-1" />
                           ) : (
                             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-slate-700 mb-1" />
                           )}
                           <div className="text-[10px] sm:text-xs font-medium leading-tight line-clamp-2">{cell.player_name}</div>
-                        </>
+                        </div>
                       ) : (
                         <span className="text-gray-500 text-xs">Tap to pick</span>
                       )}
@@ -309,6 +316,16 @@ const TriviaGamePage: React.FC = () => {
         colClue={picking ? colClues[picking.c] : null}
         currentTurnLabel={currentLabel}
         currentTurnMark={currentMark}
+        turnSeconds={session.mode === "two_player" ? TURN_SECONDS : undefined}
+        onTimeout={async () => {
+          if (!session) return;
+          // Pass turn without claiming (2P only). Solo never times out.
+          if (session.mode !== "two_player") return;
+          const nextTurn: "p1" | "p2" = session.current_turn === "p1" ? "p2" : "p1";
+          await updateSession(session.id, { current_turn: nextTurn });
+          setSession({ ...session, current_turn: nextTurn });
+          toast.error("Time's up — turn passes");
+        }}
         onSubmit={handleSubmit}
       />
     </div>
