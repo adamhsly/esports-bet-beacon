@@ -3411,6 +3411,9 @@ export type Database = {
       }
       trivia_board_fingerprints: {
         Row: {
+          avg_cell_answers: number | null
+          board_difficulty: string | null
+          board_difficulty_score: number | null
           clue_type_counts: Json
           col_clue_keys: string[]
           created_at: string
@@ -3429,6 +3432,9 @@ export type Database = {
           times_used: number
         }
         Insert: {
+          avg_cell_answers?: number | null
+          board_difficulty?: string | null
+          board_difficulty_score?: number | null
           clue_type_counts: Json
           col_clue_keys: string[]
           created_at?: string
@@ -3447,6 +3453,9 @@ export type Database = {
           times_used?: number
         }
         Update: {
+          avg_cell_answers?: number | null
+          board_difficulty?: string | null
+          board_difficulty_score?: number | null
           clue_type_counts?: Json
           col_clue_keys?: string[]
           created_at?: string
@@ -3493,6 +3502,39 @@ export type Database = {
           id?: string
           quality_score?: number | null
           reason?: string
+        }
+        Relationships: []
+      }
+      trivia_clue_difficulty: {
+        Row: {
+          clue_key: string
+          clue_type: string
+          clue_value: string
+          computed_at: string
+          difficulty_band: string
+          difficulty_score: number
+          esport: string
+          player_count: number
+        }
+        Insert: {
+          clue_key: string
+          clue_type: string
+          clue_value: string
+          computed_at?: string
+          difficulty_band?: string
+          difficulty_score?: number
+          esport: string
+          player_count?: number
+        }
+        Update: {
+          clue_key?: string
+          clue_type?: string
+          clue_value?: string
+          computed_at?: string
+          difficulty_band?: string
+          difficulty_score?: number
+          esport?: string
+          player_count?: number
         }
         Relationships: []
       }
@@ -4982,6 +5024,15 @@ export type Database = {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
       }
+      trivia_finalize_board_difficulty: {
+        Args: {
+          _avg_cell_answers: number
+          _board_difficulty: string
+          _board_difficulty_score: number
+          _fingerprint: string
+        }
+        Returns: undefined
+      }
       trivia_finalize_board_quality: {
         Args: {
           _difficulty: number
@@ -5065,6 +5116,11 @@ export type Database = {
           times_used: number
         }[]
       }
+      trivia_upsert_clue_difficulty: {
+        Args: { _rows: Json }
+        Returns: undefined
+      }
+      trivia_user_session_count: { Args: { _user_id: string }; Returns: number }
       trivia_validate_pick: {
         Args: {
           _col_type: string
