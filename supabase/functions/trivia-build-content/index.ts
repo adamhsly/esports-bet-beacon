@@ -143,16 +143,16 @@ Deno.serve(async (req) => {
       league_name: string | null;
       year: number | null;
       teammate_ids: string[] | null;
-    }>((from, to) =>
-      sb
+    }>(async (from, to) =>
+      await sb
         .from("trivia_player_history_cache")
         .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
         .eq("esport", esport)
         .range(from, to),
     );
 
-    const activePlayers = await fetchAllRows<{ id: number; name: string }>((from, to) =>
-      sb
+    const activePlayers = await fetchAllRows<{ id: number; name: string }>(async (from, to) =>
+      await sb
         .from("pandascore_players_master")
         .select("id, name")
         .eq("videogame_name", esport)
@@ -352,28 +352,9 @@ Deno.serve(async (req) => {
       storedClues = candidates.map((c) => ({ ...c, id: `${c.clue_type}|${c.clue_value}` }));
     }
 
-    // ---- 5. Build the player-set lookup for fast intersection ----
-    // We'll fetch the full index for this esport once and bucket per clue.
-    const { data: idxRows, error: idxErr } = await sb
-      .from("trivia_player_clue_index")
-      .select("clue_type, clue_value, player_id")
-      .eq("esport", esport);
-    if (idxErr) throw idxErr;
-
-    const setFor = new Map<string, Set<number>>(); // key = type|value
-    for (const r of idxRows ?? []) {
-      const k = `${r.clue_type}|${r.clue_value}`;
-      let s = setFor.get(k);
-      if (!s) {
-        s = new Set();
-        setFor.set(k, s);
-      }
-      s.add(Number(r.player_id));
-    }
-
     function intersectionSize(a: StoredClue, b: StoredClue): number {
-      const sa = setFor.get(`${a.clue_type}|${a.clue_value}`) ?? new Set<number>();
-      const sb_ = setFor.get(`${b.clue_type}|${b.clue_value}`) ?? new Set<number>();
+      const sa = setFor.get(clueKey(a.clue_type, a.clue_value)) ?? new Set<number>();
+      const sb_ = setFor.get(clueKey(b.clue_type, b.clue_value)) ?? new Set<number>();
       const [small, big] = sa.size <= sb_.size ? [sa, sb_] : [sb_, sa];
       let n = 0;
       for (const x of small) if (big.has(x)) n++;
