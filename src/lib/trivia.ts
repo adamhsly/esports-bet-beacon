@@ -48,12 +48,13 @@ export async function generateBoard(
   esport: string,
   opts?: { templateId?: string },
 ): Promise<TriviaBoard> {
+  const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
-    body: { esport, templateId: opts?.templateId },
+    body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
   });
   if (error) throw error;
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
-  return { rowClues: data.rowClues, colClues: data.colClues };
+  return { rowClues: data.rowClues, colClues: data.colClues, fingerprint: data.fingerprint };
 }
 
 // ---------------------------------------------------------------------------
