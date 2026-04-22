@@ -1,5 +1,5 @@
 // Generates production-ready trivia clues + grid templates for one esport.
-// Uses ONLY Tier S/A data via the trivia_player_clue_index table.
+// Uses ONLY Tier S/A data via the precomputed trivia_player_history_cache.
 //
 // POST body: { esport: string, maxBoards?: number, dryRun?: boolean }
 // Requires admin (checked via has_role).
@@ -35,6 +35,7 @@ interface StoredClue extends ClueCandidate {
 const MIN_ANSWERS = 4;
 const MAX_ANSWERS = 30;
 const MIN_CELL_ANSWERS = 2;
+const CLUE_KEY_SEPARATOR = "\u001f";
 
 function bandFor(count: number): "easy" | "medium" | "hard" | null {
   if (count >= 15 && count <= MAX_ANSWERS) return "easy";
@@ -50,6 +51,41 @@ function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+function clueKey(type: ClueType, value: string): string {
+  return `${type}${CLUE_KEY_SEPARATOR}${value}`;
+}
+
+function parseClueKey(key: string): { type: ClueType; value: string } {
+  const idx = key.indexOf(CLUE_KEY_SEPARATOR);
+  return {
+    type: key.slice(0, idx) as ClueType,
+    value: key.slice(idx + CLUE_KEY_SEPARATOR.length),
+  };
+}
+
+async function fetchAllRows<T>(
+  loader: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
+  pageSize = 1000,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await loader(from, from + pageSize - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < pageSize) break;
+  }
+  return rows;
 }
 
 Deno.serve(async (req) => {
@@ -98,30 +134,72 @@ Deno.serve(async (req) => {
 
     const sb = createClient(supabaseUrl, serviceKey);
 
-    // ---- 0. Refresh the player-clue index for this esport ----
-    const refresh = await sb.rpc("trivia_refresh_player_clue_index", {
-      _esport: esport,
-    });
-    if (refresh.error) throw refresh.error;
-    const indexRows = refresh.data as number;
+    // ---- 0. Read from the precomputed Tier S/A player history cache ----
+    const historyRows = await fetchAllRows<{
+      player_id: string;
+      team_id: string | null;
+      opponent_team_id: string | null;
+      serie_id: string | null;
+      league_name: string | null;
+      year: number | null;
+      teammate_ids: string[] | null;
+    }>(async (from, to) =>
+      await sb
+        .from("trivia_player_history_cache")
+        .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
+        .eq("esport", esport)
+        .range(from, to),
+    );
+
+    const activePlayers = await fetchAllRows<{ id: number; name: string }>(async (from, to) =>
+      await sb
+        .from("pandascore_players_master")
+        .select("id, name")
+        .eq("videogame_name", esport)
+        .eq("active", true)
+        .range(from, to),
+    );
+
+    const activePlayerIds = new Set(activePlayers.map((row) => String(row.id)));
+    const activePlayerName = new Map(activePlayers.map((row) => [String(row.id), row.name]));
+
+    const setFor = new Map<string, Set<number>>();
+    const addRelation = (type: ClueType, value: string | number | null | undefined, playerId: string) => {
+      if (value === null || value === undefined) return;
+      if (!activePlayerIds.has(playerId)) return;
+      const normalized = String(value).trim();
+      if (!normalized) return;
+      const key = clueKey(type, normalized);
+      let set = setFor.get(key);
+      if (!set) {
+        set = new Set<number>();
+        setFor.set(key, set);
+      }
+      set.add(Number(playerId));
+    };
+
+    for (const row of historyRows) {
+      const playerId = String(row.player_id);
+      if (!activePlayerIds.has(playerId)) continue;
+      addRelation("team", row.team_id, playerId);
+      addRelation("faced", row.opponent_team_id, playerId);
+      addRelation("tournament", row.serie_id, playerId);
+      addRelation("league", row.league_name, playerId);
+      addRelation("year", row.year, playerId);
+      for (const teammateId of row.teammate_ids ?? []) {
+        if (teammateId !== playerId && activePlayerIds.has(String(teammateId))) {
+          addRelation("teammate", teammateId, playerId);
+        }
+      }
+    }
+
+    const indexRows = Array.from(setFor.values()).reduce((sum, set) => sum + set.size, 0);
 
     // ---- 1. Build candidate pools per clue type ----
-    // For each (clue_type, clue_value), count distinct players via the index.
-    const { data: counts, error: cErr } = await sb
-      .from("trivia_player_clue_index")
-      .select("clue_type, clue_value, player_id", { count: "exact", head: false })
-      .eq("esport", esport);
-    if (cErr) throw cErr;
-
-    // aggregate client-side
     const agg = new Map<string, { type: ClueType; value: string; count: number }>();
-    for (const row of counts ?? []) {
-      const t = row.clue_type as string;
-      if (!["team", "league", "tournament", "year", "teammate", "faced"].includes(t)) continue;
-      const k = `${t}|${row.clue_value}`;
-      const cur = agg.get(k);
-      if (cur) cur.count++;
-      else agg.set(k, { type: t as ClueType, value: row.clue_value as string, count: 1 });
+    for (const [key, players] of setFor.entries()) {
+      const { type, value } = parseClueKey(key);
+      agg.set(key, { type, value, count: players.size });
     }
 
     // ---- 2. Resolve human labels ----
@@ -130,25 +208,43 @@ Deno.serve(async (req) => {
     for (const v of agg.values()) {
       if (v.type === "team" || v.type === "faced") teamIds.add(v.value);
     }
-    const { data: teamRows } = await sb
-      .from("trivia_top_tier_teams")
-      .select("team_id, team_name, esport")
-      .eq("esport", esport)
-      .in("team_id", Array.from(teamIds));
+    const teamIdList = Array.from(teamIds);
+    const teamRows = teamIdList.length === 0
+      ? []
+      : (await Promise.all(
+          chunk(teamIdList, 100).map(async (ids) => {
+            const { data, error } = await sb
+              .from("trivia_top_tier_teams")
+              .select("team_id, team_name, esport")
+              .eq("esport", esport)
+              .in("team_id", ids);
+            if (error) throw error;
+            return data ?? [];
+          }),
+        )).flat();
     const teamName = new Map<string, string>(
-      (teamRows ?? []).map((r: any) => [r.team_id, r.team_name]),
+      teamRows.map((r: any) => [r.team_id, r.team_name]),
     );
 
     // Series (tournaments) — value is serie_id
     const serieIds = new Set<string>();
     for (const v of agg.values()) if (v.type === "tournament") serieIds.add(v.value);
-    const { data: serieRows } = await sb
-      .from("trivia_top_tier_series")
-      .select("serie_id, serie_name, esport")
-      .eq("esport", esport)
-      .in("serie_id", Array.from(serieIds));
+    const serieIdList = Array.from(serieIds);
+    const serieRows = serieIdList.length === 0
+      ? []
+      : (await Promise.all(
+          chunk(serieIdList, 100).map(async (ids) => {
+            const { data, error } = await sb
+              .from("trivia_top_tier_series")
+              .select("serie_id, serie_name, esport")
+              .eq("esport", esport)
+              .in("serie_id", ids);
+            if (error) throw error;
+            return data ?? [];
+          }),
+        )).flat();
     const serieName = new Map<string, string>();
-    for (const r of serieRows ?? []) {
+    for (const r of serieRows) {
       if (!serieName.has((r as any).serie_id)) {
         serieName.set((r as any).serie_id, (r as any).serie_name);
       }
@@ -157,13 +253,11 @@ Deno.serve(async (req) => {
     // Teammates — value is player_id (text)
     const playerIds = new Set<string>();
     for (const v of agg.values()) if (v.type === "teammate") playerIds.add(v.value);
-    const { data: pRows } = await sb
-      .from("pandascore_players_master")
-      .select("id, name")
-      .in("id", Array.from(playerIds).map((s) => Number(s)).filter((n) => !Number.isNaN(n)));
-    const playerName = new Map<string, string>(
-      (pRows ?? []).map((r: any) => [String(r.id), r.name]),
-    );
+    const playerName = new Map<string, string>();
+    for (const playerId of playerIds) {
+      const name = activePlayerName.get(playerId);
+      if (name) playerName.set(playerId, name);
+    }
 
     // ---- 3. Build clue candidates that pass [4, 30] ----
     const candidates: ClueCandidate[] = [];
@@ -258,28 +352,9 @@ Deno.serve(async (req) => {
       storedClues = candidates.map((c) => ({ ...c, id: `${c.clue_type}|${c.clue_value}` }));
     }
 
-    // ---- 5. Build the player-set lookup for fast intersection ----
-    // We'll fetch the full index for this esport once and bucket per clue.
-    const { data: idxRows, error: idxErr } = await sb
-      .from("trivia_player_clue_index")
-      .select("clue_type, clue_value, player_id")
-      .eq("esport", esport);
-    if (idxErr) throw idxErr;
-
-    const setFor = new Map<string, Set<number>>(); // key = type|value
-    for (const r of idxRows ?? []) {
-      const k = `${r.clue_type}|${r.clue_value}`;
-      let s = setFor.get(k);
-      if (!s) {
-        s = new Set();
-        setFor.set(k, s);
-      }
-      s.add(Number(r.player_id));
-    }
-
     function intersectionSize(a: StoredClue, b: StoredClue): number {
-      const sa = setFor.get(`${a.clue_type}|${a.clue_value}`) ?? new Set<number>();
-      const sb_ = setFor.get(`${b.clue_type}|${b.clue_value}`) ?? new Set<number>();
+      const sa = setFor.get(clueKey(a.clue_type, a.clue_value)) ?? new Set<number>();
+      const sb_ = setFor.get(clueKey(b.clue_type, b.clue_value)) ?? new Set<number>();
       const [small, big] = sa.size <= sb_.size ? [sa, sb_] : [sb_, sa];
       let n = 0;
       for (const x of small) if (big.has(x)) n++;
