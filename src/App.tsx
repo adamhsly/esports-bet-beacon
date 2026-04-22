@@ -54,6 +54,7 @@ import PickemsAdminPage from '@/pages/admin/PickemsAdminPage';
 import PickemsSlateEditorPage from '@/pages/admin/PickemsSlateEditorPage';
 import TriviaPage from '@/pages/TriviaPage';
 import TriviaGamePage from '@/pages/TriviaGamePage';
+import TriviaAdminPage from '@/pages/admin/TriviaAdminPage';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { ProfileSheet, useProfilePanel } from '@/components/ProfileSheet';
@@ -211,6 +212,7 @@ function App() {
           <Route path="/admin/pickems/:slateId" element={<PickemsSlateEditorPage />} />
           <Route path="/trivia" element={<TriviaPage />} />
           <Route path="/trivia/:sessionId" element={<TriviaGamePage />} />
+          <Route path="/admin/trivia" element={<TriviaAdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </QueryClientWrapper>
