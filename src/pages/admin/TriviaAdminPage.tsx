@@ -188,6 +188,28 @@ const TriviaAdminPage: React.FC = () => {
     }
   };
 
+  const handleGenerate = async (dryRun: boolean) => {
+    setGenerating(true);
+    setGenResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("trivia-build-content", {
+        body: { esport, maxBoards: genMaxBoards, dryRun },
+      });
+      if (error) throw error;
+      setGenResult(data);
+      if (dryRun) {
+        toast.success(`Dry run: ${data?.candidateClues ?? 0} clues · ${data?.boardsBuilt ?? 0} boards`);
+      } else {
+        toast.success(`Generated ${data?.candidateClues ?? 0} clues and ${data?.boardsBuilt ?? 0} boards`);
+        reload();
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   if (adminLoading) {
     return (
       <div className="min-h-screen bg-theme-gray-dark text-white">
