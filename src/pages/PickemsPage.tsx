@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { useSlates, useUserSubmittedSlateIds } from '@/hooks/usePickems';
 import { useAuth } from '@/contexts/AuthContext';
 import { PickemsSlateCard, formatEsportLabel, getEsportPillClass } from '@/components/pickems/PickemsSlateCard';
-import { Trophy, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -108,10 +108,6 @@ const PickemsPage: React.FC = () => {
           </button>
         )}
         <header className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <Trophy className="h-7 w-7 text-theme-purple" />
-            Pick'ems
-          </h1>
           <p className="text-gray-400 text-sm mt-1">
             Predict match winners. 1 point per correct pick. Lock in before each match starts.
           </p>

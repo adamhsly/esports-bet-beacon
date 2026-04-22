@@ -5,7 +5,7 @@ import SearchableNavbar from '@/components/SearchableNavbar';
 import Footer from '@/components/Footer';
 import { useSlate, useLeaderboard } from '@/hooks/usePickems';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, Trophy, Flame } from 'lucide-react';
+import { ChevronLeft, Flame } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PickemsLeaderboardPage: React.FC = () => {
@@ -40,8 +40,7 @@ const PickemsLeaderboardPage: React.FC = () => {
         <Link to={slateId ? `/pickems/${slateId}` : '/pickems'} className="text-sm text-gray-400 hover:text-white inline-flex items-center gap-1 mb-4">
           <ChevronLeft className="h-4 w-4" /> Back to slate
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2 mb-1">
-          <Trophy className="h-6 w-6 text-theme-purple" />
+        <h1 className="text-2xl font-bold mb-1">
           {slate?.name ?? "Pick'em"} — Leaderboard
         </h1>
         <p className="text-xs text-gray-500 mb-4">

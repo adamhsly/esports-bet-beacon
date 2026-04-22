@@ -8,7 +8,7 @@ import { useSlate, useSlateMatches, useUserEntry, useSubmitPicks } from '@/hooks
 import { PickemsMatchRow } from '@/components/pickems/PickemsMatchRow';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, ChevronLeft, BarChart3, Flame } from 'lucide-react';
+import { ChevronLeft, BarChart3, Flame } from 'lucide-react';
 import { toast } from 'sonner';
 import { isMatchLocked } from '@/lib/pickems';
 
@@ -128,8 +128,7 @@ const PickemsSlatePage: React.FC = () => {
         ) : (
           <header className="mb-6 flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-theme-purple" />
+              <h1 className="text-2xl font-bold">
                 {slate.name}
               </h1>
               {slate.tournament_name && (
