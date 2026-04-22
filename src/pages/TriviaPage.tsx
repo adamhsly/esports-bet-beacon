@@ -130,6 +130,23 @@ const TriviaPage: React.FC = () => {
             </div>
           </div>
 
+          {templates.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-300 mb-2">Grid template (optional)</h3>
+              <Select value={templateId ?? "__random"} onValueChange={(v) => setTemplateId(v === "__random" ? undefined : v)}>
+                <SelectTrigger className="bg-slate-950 border-slate-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectItem value="__random">Random (auto-generated)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <Button
             onClick={handleStart}
             disabled={loading}
