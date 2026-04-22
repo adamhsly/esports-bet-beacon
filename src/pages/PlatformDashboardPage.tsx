@@ -81,11 +81,15 @@ const PlatformDashboardPage: React.FC = () => {
     totalCreditPrizesPaid: 0,
   });
 
-  const [retentionStats, setRetentionStats] = useState({
-    currentWeek: 0,
-    previousWeek: 0,
-    retained: 0,
-    retentionRate: 0,
+  const [weeksPlayedStats, setWeeksPlayedStats] = useState({
+    paidUserCount: 0,
+    paidAvgWeeks: 0,
+    paidMedianWeeks: 0,
+    paidMaxWeeks: 0,
+    freeUserCount: 0,
+    freeAvgWeeks: 0,
+    freeMedianWeeks: 0,
+    freeMaxWeeks: 0,
   });
 
   const statConfigs: StatConfig[] = useMemo(() => [
