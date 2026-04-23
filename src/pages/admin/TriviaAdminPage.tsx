@@ -271,11 +271,11 @@ const TriviaAdminPage: React.FC = () => {
         </div>
 
         {/* Auto-generate clues + boards */}
-        <Card className="bg-gradient-to-br from-theme-purple/15 to-slate-900/80 border-theme-purple/40 p-5 mb-6">
+        <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
           <div className="flex items-start gap-3 mb-3">
             <Sparkles className="h-5 w-5 text-theme-purple mt-0.5" />
             <div className="flex-1">
-              <h2 className="font-semibold">Auto-generate from Tier S/A data</h2>
+              <h2 className="font-semibold text-white">Auto-generate from Tier S/A data</h2>
               <p className="text-xs text-gray-400 mt-1">
                 Builds clues (team, league, tournament, year, teammate, faced) and 3×3 boards using only validated top-tier history. Replaces previously generated content for <span className="text-theme-purple font-medium">{esport}</span>.
               </p>
@@ -333,7 +333,7 @@ const TriviaAdminPage: React.FC = () => {
 
         {/* Add clue */}
         <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
-          <h2 className="font-semibold mb-3">Add a clue</h2>
+          <h2 className="font-semibold mb-3 text-white">Add a clue</h2>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div className="md:col-span-4">
               <Label className="text-xs text-gray-400">Label (shown to players)</Label>
@@ -390,7 +390,7 @@ const TriviaAdminPage: React.FC = () => {
 
         {/* Clue list */}
         <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
-          <h2 className="font-semibold mb-3">Clue library ({clues.length})</h2>
+          <h2 className="font-semibold mb-3 text-white">Clue library ({clues.length})</h2>
           {loading ? (
             <div className="py-6 text-center"><Loader2 className="h-5 w-5 animate-spin inline" /></div>
           ) : clues.length === 0 ? (
@@ -427,7 +427,7 @@ const TriviaAdminPage: React.FC = () => {
 
         {/* Template builder */}
         <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
-          <h2 className="font-semibold mb-3">Build a grid template</h2>
+          <h2 className="font-semibold mb-3 text-white">Build a grid template</h2>
           <div className="mb-3">
             <Label className="text-xs text-gray-400">Template name</Label>
             <Input
@@ -494,7 +494,7 @@ const TriviaAdminPage: React.FC = () => {
 
         {/* Templates list */}
         <Card className="bg-slate-900/60 border-slate-700 p-5">
-          <h2 className="font-semibold mb-3">Templates ({templates.length})</h2>
+          <h2 className="font-semibold mb-3 text-white">Templates ({templates.length})</h2>
           {templates.length === 0 ? (
             <p className="text-sm text-gray-400">No templates yet.</p>
           ) : (
