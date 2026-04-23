@@ -129,7 +129,7 @@ const TriviaGamePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-theme-gray-dark text-white">
+      <div className="min-h-screen bg-slate-950 text-white">
         <SearchableNavbar />
         <div className="container mx-auto px-4 py-12 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -162,7 +162,7 @@ const TriviaGamePage: React.FC = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-theme-gray-dark text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-4 max-w-2xl">
         <div className="mb-4 flex">
@@ -301,7 +301,7 @@ const TriviaGamePage: React.FC = () => {
 
         {isFinished && (
           <div className="mt-4">
-            <Button onClick={handleRestart} className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold">
+            <Button onClick={handleRestart} className="w-full bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold">
               Play again
             </Button>
           </div>
