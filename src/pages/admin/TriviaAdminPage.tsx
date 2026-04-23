@@ -271,11 +271,11 @@ const TriviaAdminPage: React.FC = () => {
         </div>
 
         {/* Auto-generate clues + boards */}
-        <Card className="bg-gradient-to-br from-theme-purple/15 to-slate-900/80 border-theme-purple/40 p-5 mb-6">
+        <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
           <div className="flex items-start gap-3 mb-3">
             <Sparkles className="h-5 w-5 text-theme-purple mt-0.5" />
             <div className="flex-1">
-              <h2 className="font-semibold">Auto-generate from Tier S/A data</h2>
+              <h2 className="font-semibold text-white">Auto-generate from Tier S/A data</h2>
               <p className="text-xs text-gray-400 mt-1">
                 Builds clues (team, league, tournament, year, teammate, faced) and 3×3 boards using only validated top-tier history. Replaces previously generated content for <span className="text-theme-purple font-medium">{esport}</span>.
               </p>
