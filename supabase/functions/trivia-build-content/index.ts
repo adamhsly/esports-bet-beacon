@@ -6,6 +6,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<unknown>): void;
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -134,34 +138,67 @@ Deno.serve(async (req) => {
 
     const sb = createClient(supabaseUrl, serviceKey);
 
-    // ---- 0. Read from the precomputed Tier S/A player history cache ----
-    const historyRows = await fetchAllRows<{
-      player_id: string;
-      team_id: string | null;
-      opponent_team_id: string | null;
-      serie_id: string | null;
-      league_name: string | null;
-      year: number | null;
-      teammate_ids: string[] | null;
-    }>(async (from, to) =>
-      await sb
-        .from("trivia_player_history_cache")
-        .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
-        .eq("esport", esport)
-        .range(from, to),
-    );
-
-    const activePlayers = await fetchAllRows<{ id: number; name: string }>(async (from, to) =>
-      await sb
-        .from("pandascore_players_master")
-        .select("id, name")
-        .eq("videogame_name", esport)
-        .eq("active", true)
-        .range(from, to),
-    );
+    // ---- 0. Read from the precomputed clue index instead of rebuilding from match history ----
+    const [activePlayers, clueIndexRows] = await Promise.all([
+      fetchAllRows<{ id: number; name: string }>(async (from, to) =>
+        await sb
+          .from("pandascore_players_master")
+          .select("id, name")
+          .eq("videogame_name", esport)
+          .eq("active", true)
+          .range(from, to),
+      ),
+      fetchAllRows<{
+        clue_type: string;
+        clue_value: string;
+        player_id: number;
+      }>(async (from, to) =>
+        await sb
+          .from("trivia_player_clue_index")
+          .select("clue_type, clue_value, player_id")
+          .eq("esport", esport)
+          .range(from, to),
+      ),
+    ]);
 
     const activePlayerIds = new Set(activePlayers.map((row) => String(row.id)));
     const activePlayerName = new Map(activePlayers.map((row) => [String(row.id), row.name]));
+
+    if (clueIndexRows.length === 0) {
+      console.warn(`[trivia-build-content] trivia_player_clue_index empty for ${esport}; scheduling refresh`);
+      EdgeRuntime.waitUntil((async () => {
+        const { data, error } = await sb.rpc("trivia_refresh_player_clue_index", { _esport: esport });
+        if (error) {
+          console.error("[trivia-build-content] trivia_refresh_player_clue_index failed", error);
+          return;
+        }
+        console.log(`[trivia-build-content] refreshed trivia_player_clue_index for ${esport}: ${data ?? 0} rows`);
+      })());
+
+      return new Response(
+        JSON.stringify({
+          esport,
+          indexRows: 0,
+          candidateClues: 0,
+          cluesByType: {},
+          boardsBuilt: 0,
+          boardsSample: [],
+          dryRun,
+          pending: true,
+          message: "Trivia data is being prepared in the background. Please try again in a moment.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 202 },
+      );
+    }
+
+    const supportedClueTypes = new Set<ClueType>([
+      "team",
+      "league",
+      "tournament",
+      "year",
+      "teammate",
+      "faced",
+    ]);
 
     const setFor = new Map<string, Set<number>>();
     const addRelation = (type: ClueType, value: string | number | null | undefined, playerId: string) => {
@@ -178,22 +215,14 @@ Deno.serve(async (req) => {
       set.add(Number(playerId));
     };
 
-    for (const row of historyRows) {
+    for (const row of clueIndexRows) {
       const playerId = String(row.player_id);
       if (!activePlayerIds.has(playerId)) continue;
-      addRelation("team", row.team_id, playerId);
-      addRelation("faced", row.opponent_team_id, playerId);
-      addRelation("tournament", row.serie_id, playerId);
-      addRelation("league", row.league_name, playerId);
-      addRelation("year", row.year, playerId);
-      for (const teammateId of row.teammate_ids ?? []) {
-        if (teammateId !== playerId && activePlayerIds.has(String(teammateId))) {
-          addRelation("teammate", teammateId, playerId);
-        }
-      }
+      if (!supportedClueTypes.has(row.clue_type as ClueType)) continue;
+      addRelation(row.clue_type as ClueType, row.clue_value, playerId);
     }
 
-    const indexRows = Array.from(setFor.values()).reduce((sum, set) => sum + set.size, 0);
+    const indexRows = clueIndexRows.length;
 
     // ---- 1. Build candidate pools per clue type ----
     const agg = new Map<string, { type: ClueType; value: string; count: number }>();
