@@ -465,14 +465,18 @@ Deno.serve(async (req) => {
       })());
     }
 
+    markStage("aggregate_clues", { distinctClueKeys: setFor.size });
     // ---- 1. Build candidate pools per clue type ----
     const agg = new Map<string, { type: ClueType; value: string; count: number }>();
     for (const [key, players] of setFor.entries()) {
       const { type, value } = parseClueKey(key);
       agg.set(key, { type, value, count: players.size });
     }
+    metrics.aggregatedClues = agg.size;
+    logEvent("info", requestId, "aggregate_complete", { ...metrics });
 
     // ---- 2. Resolve human labels ----
+    markStage("resolve_labels", { aggregatedClues: agg.size });
     // Teams & opponents
     const teamIds = new Set<string>();
     for (const v of agg.values()) {
@@ -528,8 +532,15 @@ Deno.serve(async (req) => {
       const name = activePlayerName.get(playerId);
       if (name) playerName.set(playerId, name);
     }
+    Object.assign(metrics, {
+      teamLabelRows: teamRows.length,
+      serieLabelRows: serieRows.length,
+      teammateLabelRows: playerName.size,
+    });
+    logEvent("info", requestId, "label_resolution_complete", { ...metrics });
 
     // ---- 3. Build clue candidates that pass [4, 30] ----
+    markStage("build_candidates");
     const candidates: ClueCandidate[] = [];
     const seenLabels = new Set<string>();
     for (const v of agg.values()) {
@@ -574,8 +585,14 @@ Deno.serve(async (req) => {
         difficulty_band: band,
       });
     }
+    metrics.candidateClues = candidates.length;
+    logEvent("info", requestId, "candidate_build_complete", {
+      ...metrics,
+      clueTypesPresent: Array.from(new Set(candidates.map((candidate) => candidate.clue_type))),
+    });
 
     // ---- 4. Persist clues (upsert by (esport, clue_type, clue_value)) ----
+    markStage("persist_clues", { dryRun, candidateClues: candidates.length });
     let storedClues: StoredClue[] = [];
     if (!dryRun && candidates.length > 0) {
       // Delete previously generated clues for this esport so we start fresh
@@ -621,6 +638,8 @@ Deno.serve(async (req) => {
     } else {
       storedClues = candidates.map((c) => ({ ...c, id: `${c.clue_type}|${c.clue_value}` }));
     }
+    metrics.storedClues = storedClues.length;
+    logEvent("info", requestId, "persist_clues_complete", { ...metrics });
 
     function intersectionSize(a: StoredClue, b: StoredClue): number {
       const sa = setFor.get(clueKey(a.clue_type, a.clue_value)) ?? new Set<number>();
@@ -632,6 +651,7 @@ Deno.serve(async (req) => {
     }
 
     // ---- 6. Bucket clues by type for diversity-aware selection ----
+    markStage("bucket_clues");
     const byType = new Map<ClueType, StoredClue[]>();
     for (const c of storedClues) {
       const arr = byType.get(c.clue_type) ?? [];
@@ -639,8 +659,13 @@ Deno.serve(async (req) => {
       byType.set(c.clue_type, arr);
     }
     for (const [t, arr] of byType) byType.set(t, shuffle(arr));
+    logEvent("info", requestId, "bucket_clues_complete", {
+      ...metrics,
+      cluesByType: Object.fromEntries(Array.from(byType.entries()).map(([t, arr]) => [t, arr.length])),
+    });
 
     // ---- 7. Build boards ----
+    markStage("build_boards", { maxBoards });
     interface Board {
       rowIds: string[];
       colIds: string[];
@@ -800,8 +825,14 @@ Deno.serve(async (req) => {
       usedFingerprints.add(fp);
       boards.push(b);
     }
+    Object.assign(metrics, {
+      boardAttempts: attempts,
+      boardsBuilt: boards.length,
+    });
+    logEvent("info", requestId, "build_boards_complete", { ...metrics });
 
     // ---- 8. Persist boards ----
+    markStage("persist_boards", { dryRun, boardsBuilt: boards.length });
     if (!dryRun && boards.length > 0) {
       await sb
         .from("trivia_grid_templates")
@@ -829,36 +860,57 @@ Deno.serve(async (req) => {
         if (error) throw error;
       }
     }
+    stageTimings[currentStage] = Date.now() - stageStartedAt;
+    logEvent("info", requestId, "request_complete", {
+      ...metrics,
+      stageTimings,
+      totalDurationMs: Date.now() - requestStartedAt,
+    });
 
-    return new Response(
-      JSON.stringify({
-        esport,
-        indexRows,
-        candidateClues: candidates.length,
-        cluesByType: Object.fromEntries(
-          Array.from(byType.entries()).map(([t, arr]) => [t, arr.length]),
-        ),
-        boardsBuilt: boards.length,
-        boardsSample: boards.slice(0, 3).map((b) => ({
-          difficulty: b.difficulty,
-          quality: b.quality,
-          avgCellAnswers: b.avgCellAnswers,
-          minCellAnswers: b.minCellAnswers,
-          rows: b.rowClues.map((c) => c.label),
-          cols: b.colClues.map((c) => c.label),
-        })),
-        dryRun,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (err) {
-    console.error("trivia-build-content error", err);
-    return new Response(
-      JSON.stringify({ error: (err as Error).message ?? String(err) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return respond(200, {
+      requestId,
+      esport,
+      indexRows,
+      candidateClues: candidates.length,
+      cluesByType: Object.fromEntries(
+        Array.from(byType.entries()).map(([t, arr]) => [t, arr.length]),
+      ),
+      boardsBuilt: boards.length,
+      boardsSample: boards.slice(0, 3).map((b) => ({
+        difficulty: b.difficulty,
+        quality: b.quality,
+        avgCellAnswers: b.avgCellAnswers,
+        minCellAnswers: b.minCellAnswers,
+        rows: b.rowClues.map((c) => c.label),
+        cols: b.colClues.map((c) => c.label),
+      })),
+      dryRun,
+      diagnostics: {
+        stageTimings,
+        totalDurationMs: Date.now() - requestStartedAt,
+        metrics,
       },
-    );
+    });
+  } catch (err) {
+    stageTimings[currentStage] = Date.now() - stageStartedAt;
+    const serializedError = serializeError(err);
+    logEvent("error", requestId, "request_failed", {
+      ...metrics,
+      failedStage: currentStage,
+      stageTimings,
+      totalDurationMs: Date.now() - requestStartedAt,
+      error: serializedError,
+    });
+    return respond(500, {
+      requestId,
+      error: serializedError.message,
+      diagnostics: {
+        failedStage: currentStage,
+        stageTimings,
+        totalDurationMs: Date.now() - requestStartedAt,
+        metrics,
+        error: serializedError,
+      },
+    });
   }
 });
