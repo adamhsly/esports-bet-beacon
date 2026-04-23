@@ -198,7 +198,9 @@ const TriviaAdminPage: React.FC = () => {
       if (error) throw error;
       setGenResult(data);
       if (data?.pending) {
-        toast.info(data?.message ?? "Trivia data is being prepared. Please try again in a moment.");
+        toast.info(data?.requestId
+          ? `${data?.message ?? "Trivia data is being prepared. Please try again in a moment."} · Request ${data.requestId}`
+          : (data?.message ?? "Trivia data is being prepared. Please try again in a moment."));
         return;
       }
       if (dryRun) {
@@ -208,7 +210,15 @@ const TriviaAdminPage: React.FC = () => {
         reload();
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Generation failed");
+      const details = e?.context?.json;
+      const failedStage = details?.diagnostics?.failedStage;
+      const requestId = details?.requestId;
+      toast.error(
+        [details?.error ?? e?.message ?? "Generation failed", failedStage ? `stage: ${failedStage}` : null, requestId ? `request: ${requestId}` : null]
+          .filter(Boolean)
+          .join(" · "),
+      );
+      if (details) setGenResult(details);
     } finally {
       setGenerating(false);
     }
@@ -315,10 +325,25 @@ const TriviaAdminPage: React.FC = () => {
           </div>
           {genResult && (
             <div className="mt-4 p-3 rounded-md bg-slate-950/60 border border-slate-800 text-xs text-gray-300 space-y-1">
+              {genResult.requestId && (
+                <div>Request ID: <span className="text-white font-mono">{genResult.requestId}</span></div>
+              )}
+              {genResult.diagnostics?.failedStage && (
+                <div>Failed stage: <span className="text-white">{genResult.diagnostics.failedStage}</span></div>
+              )}
+              {genResult.diagnostics?.totalDurationMs != null && (
+                <div>Total duration: <span className="text-white">{genResult.diagnostics.totalDurationMs}ms</span></div>
+              )}
               <div>Index rows: <span className="text-white">{genResult.indexRows}</span></div>
               <div>Candidate clues (4–30 answers): <span className="text-white">{genResult.candidateClues}</span></div>
               <div>By type: <span className="text-white">{JSON.stringify(genResult.cluesByType)}</span></div>
               <div>Boards built: <span className="text-white">{genResult.boardsBuilt}</span></div>
+              {genResult.diagnostics?.stageTimings && (
+                <div>Stage timings: <span className="text-white break-all">{JSON.stringify(genResult.diagnostics.stageTimings)}</span></div>
+              )}
+              {genResult.diagnostics?.error && (
+                <div>Error: <span className="text-red-300 break-all">{JSON.stringify(genResult.diagnostics.error)}</span></div>
+              )}
               {genResult.boardsSample?.length > 0 && (
                 <div className="mt-2">
                   <div className="text-gray-400 mb-1">Sample boards:</div>
