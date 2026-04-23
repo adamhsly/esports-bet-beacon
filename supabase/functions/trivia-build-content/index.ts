@@ -134,34 +134,39 @@ Deno.serve(async (req) => {
 
     const sb = createClient(supabaseUrl, serviceKey);
 
-    // ---- 0. Read from the precomputed Tier S/A player history cache ----
-    const historyRows = await fetchAllRows<{
-      player_id: string;
-      team_id: string | null;
-      opponent_team_id: string | null;
-      serie_id: string | null;
-      league_name: string | null;
-      year: number | null;
-      teammate_ids: string[] | null;
-    }>(async (from, to) =>
-      await sb
-        .from("trivia_player_history_cache")
-        .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
-        .eq("esport", esport)
-        .range(from, to),
-    );
-
-    const activePlayers = await fetchAllRows<{ id: number; name: string }>(async (from, to) =>
-      await sb
-        .from("pandascore_players_master")
-        .select("id, name")
-        .eq("videogame_name", esport)
-        .eq("active", true)
-        .range(from, to),
-    );
+    // ---- 0. Read from the precomputed clue index instead of rebuilding from match history ----
+    const [activePlayers, clueIndexRows] = await Promise.all([
+      fetchAllRows<{ id: number; name: string }>(async (from, to) =>
+        await sb
+          .from("pandascore_players_master")
+          .select("id, name")
+          .eq("videogame_name", esport)
+          .eq("active", true)
+          .range(from, to),
+      ),
+      fetchAllRows<{
+        clue_type: string;
+        clue_value: string;
+        player_id: number;
+      }>(async (from, to) =>
+        await sb
+          .from("trivia_player_clue_index")
+          .select("clue_type, clue_value, player_id")
+          .eq("esport", esport)
+          .range(from, to),
+      ),
+    ]);
 
     const activePlayerIds = new Set(activePlayers.map((row) => String(row.id)));
     const activePlayerName = new Map(activePlayers.map((row) => [String(row.id), row.name]));
+    const supportedClueTypes = new Set<ClueType>([
+      "team",
+      "league",
+      "tournament",
+      "year",
+      "teammate",
+      "faced",
+    ]);
 
     const setFor = new Map<string, Set<number>>();
     const addRelation = (type: ClueType, value: string | number | null | undefined, playerId: string) => {
@@ -178,22 +183,14 @@ Deno.serve(async (req) => {
       set.add(Number(playerId));
     };
 
-    for (const row of historyRows) {
+    for (const row of clueIndexRows) {
       const playerId = String(row.player_id);
       if (!activePlayerIds.has(playerId)) continue;
-      addRelation("team", row.team_id, playerId);
-      addRelation("faced", row.opponent_team_id, playerId);
-      addRelation("tournament", row.serie_id, playerId);
-      addRelation("league", row.league_name, playerId);
-      addRelation("year", row.year, playerId);
-      for (const teammateId of row.teammate_ids ?? []) {
-        if (teammateId !== playerId && activePlayerIds.has(String(teammateId))) {
-          addRelation("teammate", teammateId, playerId);
-        }
-      }
+      if (!supportedClueTypes.has(row.clue_type as ClueType)) continue;
+      addRelation(row.clue_type as ClueType, row.clue_value, playerId);
     }
 
-    const indexRows = Array.from(setFor.values()).reduce((sum, set) => sum + set.size, 0);
+    const indexRows = clueIndexRows.length;
 
     // ---- 1. Build candidate pools per clue type ----
     const agg = new Map<string, { type: ClueType; value: string; count: number }>();
