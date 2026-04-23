@@ -217,48 +217,77 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const requestId = crypto.randomUUID();
+  const requestStartedAt = Date.now();
+  let currentStage = "boot";
+  let stageStartedAt = Date.now();
+  const stageTimings: Record<string, number> = {};
+  const metrics: Record<string, unknown> = {};
+  const markStage = (stage: string, extra: Record<string, unknown> = {}) => {
+    stageTimings[currentStage] = Date.now() - stageStartedAt;
+    currentStage = stage;
+    stageStartedAt = Date.now();
+    logEvent("info", requestId, stage, {
+      elapsedMs: Date.now() - requestStartedAt,
+      ...metrics,
+      ...extra,
+    });
+  };
+
+  logEvent("info", requestId, "request_received", {
+    method: req.method,
+    hasAuthHeader: Boolean(req.headers.get("Authorization")),
+  });
+
   try {
+    markStage("init_env");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Auth check — must be admin
+    markStage("auth_user_lookup");
     const authHeader = req.headers.get("Authorization") ?? "";
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData } = await userClient.auth.getUser();
     if (!userData?.user) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      logEvent("warn", requestId, "auth_user_missing", {
+        elapsedMs: Date.now() - requestStartedAt,
       });
+      return respond(401, { error: "Not authenticated", requestId });
     }
+
+    markStage("auth_admin_check", { userId: userData.user.id });
     const { data: isAdmin } = await userClient.rpc("has_role", {
       _user_id: userData.user.id,
       _role: "admin",
     });
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      logEvent("warn", requestId, "auth_admin_denied", {
+        userId: userData.user.id,
+        elapsedMs: Date.now() - requestStartedAt,
       });
+      return respond(403, { error: "Admin only", requestId });
     }
 
+    markStage("parse_body");
     const body = await req.json().catch(() => ({}));
     const esport: string = body.esport;
     const maxBoards: number = Math.min(Math.max(Number(body.maxBoards ?? 20), 1), 30);
     const dryRun: boolean = !!body.dryRun;
+    Object.assign(metrics, { esport, maxBoards, dryRun, userId: userData.user.id });
+    logEvent("info", requestId, "request_parsed", metrics);
     if (!esport) {
-      return new Response(JSON.stringify({ error: "esport is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return respond(400, { error: "esport is required", requestId });
     }
 
+    markStage("create_service_client");
     const sb = createClient(supabaseUrl, serviceKey);
 
     // ---- 0. Read from the precomputed clue index instead of rebuilding from match history ----
+    markStage("load_source_rows");
     const [activePlayers, clueIndexRows] = await Promise.all([
       fetchAllRows<{ id: number; name: string }>(async (from, to) =>
         await sb
@@ -267,7 +296,7 @@ Deno.serve(async (req) => {
           .eq("videogame_name", esport)
           .eq("active", true)
           .range(from, to),
-      ),
+      , 1000, { label: "active_players", requestId, meta: { esport } }),
       fetchAllRows<{
         clue_type: string;
         clue_value: string;
@@ -278,8 +307,13 @@ Deno.serve(async (req) => {
           .select("clue_type, clue_value, player_id")
           .eq("esport", esport)
           .range(from, to),
-      ),
+      , 1000, { label: "clue_index", requestId, meta: { esport } }),
     ]);
+    Object.assign(metrics, {
+      activePlayers: activePlayers.length,
+      clueIndexRows: clueIndexRows.length,
+    });
+    logEvent("info", requestId, "source_rows_loaded", metrics);
 
     const activePlayerIds = new Set(activePlayers.map((row) => String(row.id)));
     const activePlayerName = new Map(activePlayers.map((row) => [String(row.id), row.name]));
