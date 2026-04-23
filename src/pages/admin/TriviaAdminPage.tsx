@@ -258,10 +258,10 @@ const TriviaAdminPage: React.FC = () => {
           <div className="min-w-[220px]">
             <Label className="text-xs text-gray-400">Esport</Label>
             <Select value={esport} onValueChange={setEsport}>
-              <SelectTrigger className="bg-slate-900 border-slate-700">
+              <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700">
+              <SelectContent className="bg-slate-900 border-slate-700 text-white">
                 {TRIVIA_ESPORTS.map((e) => (
                   <SelectItem key={e} value={e}>{e}</SelectItem>
                 ))}
@@ -290,7 +290,7 @@ const TriviaAdminPage: React.FC = () => {
                 max={30}
                 value={genMaxBoards}
                 onChange={(e) => setGenMaxBoards(Number(e.target.value) || 20)}
-                className="bg-slate-950 border-slate-700 w-24"
+                className="bg-slate-950 border-slate-700 text-white w-24"
               />
             </div>
             <Button
@@ -341,7 +341,7 @@ const TriviaAdminPage: React.FC = () => {
                 value={nLabel}
                 onChange={(e) => setNLabel(e.target.value)}
                 placeholder={canonicalTemplateHint(nType)}
-                className="bg-slate-950 border-slate-700"
+                className="bg-slate-950 border-slate-700 text-white placeholder:text-gray-500"
               />
               {nLabel.trim() && (
                 <p className={`text-[11px] mt-1 ${matchesCanonicalTemplate(nLabel, nType) ? "text-emerald-400" : "text-amber-400"}`}>
@@ -354,10 +354,10 @@ const TriviaAdminPage: React.FC = () => {
             <div className="md:col-span-3">
               <Label className="text-xs text-gray-400">Type</Label>
               <Select value={nType} onValueChange={(v: any) => setNType(v)}>
-                <SelectTrigger className="bg-slate-950 border-slate-700">
+                <SelectTrigger className="bg-slate-950 border-slate-700 text-white placeholder:text-gray-500">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700">
+                <SelectContent className="bg-slate-900 border-slate-700 text-white">
                   {CLUE_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
@@ -370,7 +370,7 @@ const TriviaAdminPage: React.FC = () => {
                 value={nValue}
                 onChange={(e) => setNValue(e.target.value)}
                 placeholder="team_id / country code / tournament id"
-                className="bg-slate-950 border-slate-700"
+                className="bg-slate-950 border-slate-700 text-white placeholder:text-gray-500"
               />
             </div>
             <div className="md:col-span-2 flex items-end">
@@ -434,7 +434,7 @@ const TriviaAdminPage: React.FC = () => {
               value={tplName}
               onChange={(e) => setTplName(e.target.value)}
               placeholder='e.g. "Majors special"'
-              className="bg-slate-950 border-slate-700 max-w-md"
+              className="bg-slate-950 border-slate-700 text-white placeholder:text-gray-500 max-w-md"
             />
           </div>
 
@@ -447,10 +447,10 @@ const TriviaAdminPage: React.FC = () => {
                   value={id}
                   onValueChange={(v) => setRowIds((prev) => prev.map((x, j) => (j === i ? v : x)))}
                 >
-                  <SelectTrigger className="bg-slate-950 border-slate-700 mb-2">
+                  <SelectTrigger className="bg-slate-950 border-slate-700 text-white mb-2">
                     <SelectValue placeholder={`Row ${i + 1}`} />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 max-h-72">
+                  <SelectContent className="bg-slate-900 border-slate-700 text-white max-h-72">
                     {activeClues.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         [{c.clue_type}] {c.label}
@@ -468,10 +468,10 @@ const TriviaAdminPage: React.FC = () => {
                   value={id}
                   onValueChange={(v) => setColIds((prev) => prev.map((x, j) => (j === i ? v : x)))}
                 >
-                  <SelectTrigger className="bg-slate-950 border-slate-700 mb-2">
+                  <SelectTrigger className="bg-slate-950 border-slate-700 text-white mb-2">
                     <SelectValue placeholder={`Column ${i + 1}`} />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 max-h-72">
+                  <SelectContent className="bg-slate-900 border-slate-700 text-white max-h-72">
                     {activeClues.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         [{c.clue_type}] {c.label}
@@ -511,7 +511,7 @@ const TriviaAdminPage: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-slate-700 bg-slate-800/60"
+                    className="border-slate-700 bg-slate-800/60 text-gray-100 hover:bg-slate-700 hover:text-white"
                     onClick={() => navigate(`/trivia?templateId=${t.id}`)}
                   >
                     Test play
