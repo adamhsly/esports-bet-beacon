@@ -271,13 +271,13 @@ const TriviaAdminPage: React.FC = () => {
         </div>
 
         {/* Auto-generate clues + boards */}
-        <Card className="bg-gradient-to-br from-indigo-950/60 to-slate-900/80 border-indigo-700/40 p-5 mb-6">
+        <Card className="bg-gradient-to-br from-theme-purple/15 to-slate-900/80 border-theme-purple/40 p-5 mb-6">
           <div className="flex items-start gap-3 mb-3">
-            <Sparkles className="h-5 w-5 text-indigo-300 mt-0.5" />
+            <Sparkles className="h-5 w-5 text-theme-purple mt-0.5" />
             <div className="flex-1">
               <h2 className="font-semibold">Auto-generate from Tier S/A data</h2>
               <p className="text-xs text-gray-400 mt-1">
-                Builds clues (team, league, tournament, year, teammate, faced) and 3×3 boards using only validated top-tier history. Replaces previously generated content for <span className="text-indigo-300 font-medium">{esport}</span>.
+                Builds clues (team, league, tournament, year, teammate, faced) and 3×3 boards using only validated top-tier history. Replaces previously generated content for <span className="text-theme-purple font-medium">{esport}</span>.
               </p>
             </div>
           </div>
@@ -297,14 +297,14 @@ const TriviaAdminPage: React.FC = () => {
               onClick={() => handleGenerate(true)}
               disabled={generating}
               variant="outline"
-              className="border-indigo-700 bg-slate-900/60 text-indigo-200 hover:bg-slate-800"
+              className="border-theme-purple/60 bg-slate-900/60 text-theme-purple hover:bg-slate-800 hover:text-theme-purple"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Dry run"}
             </Button>
             <Button
               onClick={() => handleGenerate(false)}
               disabled={generating}
-              className="bg-indigo-500 hover:bg-indigo-600 text-slate-950 font-semibold"
+              className="bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4 mr-1" /> Generate</>}
             </Button>
@@ -320,7 +320,7 @@ const TriviaAdminPage: React.FC = () => {
                   <div className="text-gray-400 mb-1">Sample boards:</div>
                   {genResult.boardsSample.map((b: any, i: number) => (
                     <div key={i} className="mt-2 p-2 rounded bg-slate-900/60">
-                      <div className="text-indigo-300">[{b.difficulty}] quality {b.quality} · avg cell {b.avgCellAnswers} · min {b.minCellAnswers}</div>
+                      <div className="text-theme-purple">[{b.difficulty}] quality {b.quality} · avg cell {b.avgCellAnswers} · min {b.minCellAnswers}</div>
                       <div className="text-gray-400">Rows: {b.rows.join(" · ")}</div>
                       <div className="text-gray-400">Cols: {b.cols.join(" · ")}</div>
                     </div>
@@ -377,7 +377,7 @@ const TriviaAdminPage: React.FC = () => {
               <Button
                 onClick={handleAddClue}
                 disabled={savingClue}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold"
+                className="w-full bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold"
               >
                 {savingClue ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1" /> Add</>}
               </Button>
@@ -486,7 +486,7 @@ const TriviaAdminPage: React.FC = () => {
           <Button
             onClick={handleSaveTemplate}
             disabled={savingTpl}
-            className="mt-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold"
+            className="mt-4 bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold"
           >
             {savingTpl ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save template"}
           </Button>
