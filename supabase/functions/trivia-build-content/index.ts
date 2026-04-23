@@ -289,25 +289,31 @@ Deno.serve(async (req) => {
     // ---- 0. Read from the precomputed clue index instead of rebuilding from match history ----
     markStage("load_source_rows");
     const [activePlayers, clueIndexRows] = await Promise.all([
-      fetchAllRows<{ id: number; name: string }>(async (from, to) =>
-        await sb
-          .from("pandascore_players_master")
-          .select("id, name")
-          .eq("videogame_name", esport)
-          .eq("active", true)
-          .range(from, to),
-      , 1000, { label: "active_players", requestId, meta: { esport } }),
+      fetchAllRows<{ id: number; name: string }>(
+        async (from, to) =>
+          await sb
+            .from("pandascore_players_master")
+            .select("id, name")
+            .eq("videogame_name", esport)
+            .eq("active", true)
+            .range(from, to),
+        1000,
+        { label: "active_players", requestId, meta: { esport } },
+      ),
       fetchAllRows<{
         clue_type: string;
         clue_value: string;
         player_id: number;
-      }>(async (from, to) =>
-        await sb
-          .from("trivia_player_clue_index")
-          .select("clue_type, clue_value, player_id")
-          .eq("esport", esport)
-          .range(from, to),
-      , 1000, { label: "clue_index", requestId, meta: { esport } }),
+      }>(
+        async (from, to) =>
+          await sb
+            .from("trivia_player_clue_index")
+            .select("clue_type, clue_value, player_id")
+            .eq("esport", esport)
+            .range(from, to),
+        1000,
+        { label: "clue_index", requestId, meta: { esport } },
+      ),
     ]);
     Object.assign(metrics, {
       activePlayers: activePlayers.length,
@@ -343,6 +349,7 @@ Deno.serve(async (req) => {
 
     let indexRows = clueIndexRows.length;
 
+    markStage("build_relation_index");
     if (clueIndexRows.length > 0) {
       for (const row of clueIndexRows) {
         const playerId = String(row.player_id);
@@ -351,40 +358,65 @@ Deno.serve(async (req) => {
         addRelation(row.clue_type as ClueType, row.clue_value, playerId);
       }
     } else {
-      console.warn(`[trivia-build-content] trivia_player_clue_index empty for ${esport}; falling back to history cache`);
+      logEvent("warn", requestId, "clue_index_empty_fallback_history_cache", {
+        esport,
+        activePlayers: activePlayers.length,
+      });
 
-      const historyCacheRows = await fetchAllRows<HistoryCacheRow>(async (from, to) =>
-        await sb
-          .from("trivia_player_history_cache")
-          .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
-          .eq("esport", esport)
-          .range(from, to),
+      const historyCacheRows = await fetchAllRows<HistoryCacheRow>(
+        async (from, to) =>
+          await sb
+            .from("trivia_player_history_cache")
+            .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
+            .eq("esport", esport)
+            .range(from, to),
+        1000,
+        { label: "history_cache", requestId, meta: { esport } },
       );
+      metrics.historyCacheRows = historyCacheRows.length;
+      logEvent("info", requestId, "history_cache_loaded", {
+        ...metrics,
+      });
 
       if (historyCacheRows.length === 0) {
         EdgeRuntime.waitUntil((async () => {
+          const refreshStartedAt = Date.now();
+          logEvent("info", requestId, "background_refresh_start", { esport, source: "empty_history_cache" });
           const { data, error } = await sb.rpc("trivia_refresh_player_clue_index", { _esport: esport });
           if (error) {
-            console.error("[trivia-build-content] trivia_refresh_player_clue_index failed", error);
+            logEvent("error", requestId, "background_refresh_failed", {
+              esport,
+              source: "empty_history_cache",
+              durationMs: Date.now() - refreshStartedAt,
+              error: serializeError(error),
+            });
             return;
           }
-          console.log(`[trivia-build-content] refreshed trivia_player_clue_index for ${esport}: ${data ?? 0} rows`);
+          logEvent("info", requestId, "background_refresh_complete", {
+            esport,
+            source: "empty_history_cache",
+            durationMs: Date.now() - refreshStartedAt,
+            rowsRefreshed: data ?? 0,
+          });
         })());
 
-        return new Response(
-          JSON.stringify({
-            esport,
-            indexRows: 0,
-            candidateClues: 0,
-            cluesByType: {},
-            boardsBuilt: 0,
-            boardsSample: [],
-            dryRun,
-            pending: true,
-            message: "Trivia data is being prepared in the background. Please try again in a moment.",
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 202 },
-        );
+        return respond(202, {
+          requestId,
+          esport,
+          indexRows: 0,
+          candidateClues: 0,
+          cluesByType: {},
+          boardsBuilt: 0,
+          boardsSample: [],
+          dryRun,
+          pending: true,
+          diagnostics: {
+            stage: "empty_history_cache",
+            stageTimings,
+            totalDurationMs: Date.now() - requestStartedAt,
+          },
+          message: "Trivia data is being prepared in the background. Please try again in a moment.",
+        });
       }
 
       for (const row of historyCacheRows) {
@@ -405,14 +437,31 @@ Deno.serve(async (req) => {
       }
 
       indexRows = Array.from(setFor.values()).reduce((sum, players) => sum + players.size, 0);
+      metrics.indexRows = indexRows;
+      logEvent("info", requestId, "history_cache_fallback_built", {
+        ...metrics,
+        distinctClueKeys: setFor.size,
+      });
 
       EdgeRuntime.waitUntil((async () => {
+        const refreshStartedAt = Date.now();
+        logEvent("info", requestId, "background_refresh_start", { esport, source: "history_cache_fallback" });
         const { data, error } = await sb.rpc("trivia_refresh_player_clue_index", { _esport: esport });
         if (error) {
-          console.error("[trivia-build-content] trivia_refresh_player_clue_index failed", error);
+          logEvent("error", requestId, "background_refresh_failed", {
+            esport,
+            source: "history_cache_fallback",
+            durationMs: Date.now() - refreshStartedAt,
+            error: serializeError(error),
+          });
           return;
         }
-        console.log(`[trivia-build-content] refreshed trivia_player_clue_index for ${esport}: ${data ?? 0} rows`);
+        logEvent("info", requestId, "background_refresh_complete", {
+          esport,
+          source: "history_cache_fallback",
+          durationMs: Date.now() - refreshStartedAt,
+          rowsRefreshed: data ?? 0,
+        });
       })());
     }
 
