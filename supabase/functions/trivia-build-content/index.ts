@@ -51,6 +51,70 @@ const MAX_ANSWERS = 30;
 const MIN_CELL_ANSWERS = 2;
 const CLUE_KEY_SEPARATOR = "\u001f";
 
+function serializeError(error: unknown) {
+  if (error && typeof error === "object") {
+    const err = error as {
+      name?: string;
+      message?: string;
+      code?: string;
+      details?: string | null;
+      hint?: string | null;
+      stack?: string;
+      status?: number;
+      statusCode?: number;
+    };
+
+    return {
+      name: err.name ?? "Error",
+      message: err.message ?? String(error),
+      code: err.code ?? null,
+      details: err.details ?? null,
+      hint: err.hint ?? null,
+      status: err.status ?? err.statusCode ?? null,
+      stack: err.stack?.split("\n").slice(0, 5).join("\n") ?? null,
+    };
+  }
+
+  return {
+    name: "Error",
+    message: String(error),
+    code: null,
+    details: null,
+    hint: null,
+    status: null,
+    stack: null,
+  };
+}
+
+function logEvent(
+  level: "info" | "warn" | "error",
+  requestId: string,
+  stage: string,
+  meta: Record<string, unknown> = {},
+) {
+  const payload = JSON.stringify({
+    scope: "trivia-build-content",
+    requestId,
+    stage,
+    ...meta,
+  });
+
+  if (level === "error") {
+    console.error(payload);
+  } else if (level === "warn") {
+    console.warn(payload);
+  } else {
+    console.log(payload);
+  }
+}
+
+function respond(status: number, payload: Record<string, unknown>) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 function bandFor(count: number): "easy" | "medium" | "hard" | null {
   if (count >= 15 && count <= MAX_ANSWERS) return "easy";
   if (count >= 8 && count < 15) return "medium";
@@ -90,15 +154,61 @@ function parseClueKey(key: string): { type: ClueType; value: string } {
 async function fetchAllRows<T>(
   loader: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
   pageSize = 1000,
+  opts?: { label?: string; requestId?: string; meta?: Record<string, unknown> },
 ): Promise<T[]> {
   const rows: T[] = [];
+  const startedAt = Date.now();
+  let pages = 0;
+
   for (let from = 0; ; from += pageSize) {
+    pages += 1;
+    if (opts?.label && opts.requestId) {
+      logEvent("info", opts.requestId, `${opts.label}:page_start`, {
+        ...opts.meta,
+        page: pages,
+        from,
+        to: from + pageSize - 1,
+      });
+    }
+
     const { data, error } = await loader(from, from + pageSize - 1);
-    if (error) throw error;
+    if (error) {
+      if (opts?.label && opts.requestId) {
+        logEvent("error", opts.requestId, `${opts.label}:page_error`, {
+          ...opts.meta,
+          page: pages,
+          from,
+          to: from + pageSize - 1,
+          error: serializeError(error),
+        });
+      }
+      throw error;
+    }
+
+    if (opts?.label && opts.requestId) {
+      logEvent("info", opts.requestId, `${opts.label}:page_done`, {
+        ...opts.meta,
+        page: pages,
+        from,
+        to: from + pageSize - 1,
+        count: data?.length ?? 0,
+      });
+    }
+
     if (!data || data.length === 0) break;
     rows.push(...data);
     if (data.length < pageSize) break;
   }
+
+  if (opts?.label && opts.requestId) {
+    logEvent("info", opts.requestId, `${opts.label}:complete`, {
+      ...opts.meta,
+      pages,
+      rows: rows.length,
+      durationMs: Date.now() - startedAt,
+    });
+  }
+
   return rows;
 }
 
@@ -107,69 +217,109 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const requestId = crypto.randomUUID();
+  const requestStartedAt = Date.now();
+  let currentStage = "boot";
+  let stageStartedAt = Date.now();
+  const stageTimings: Record<string, number> = {};
+  const metrics: Record<string, unknown> = {};
+  const markStage = (stage: string, extra: Record<string, unknown> = {}) => {
+    stageTimings[currentStage] = Date.now() - stageStartedAt;
+    currentStage = stage;
+    stageStartedAt = Date.now();
+    logEvent("info", requestId, stage, {
+      elapsedMs: Date.now() - requestStartedAt,
+      ...metrics,
+      ...extra,
+    });
+  };
+
+  logEvent("info", requestId, "request_received", {
+    method: req.method,
+    hasAuthHeader: Boolean(req.headers.get("Authorization")),
+  });
+
   try {
+    markStage("init_env");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Auth check — must be admin
+    markStage("auth_user_lookup");
     const authHeader = req.headers.get("Authorization") ?? "";
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData } = await userClient.auth.getUser();
     if (!userData?.user) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      logEvent("warn", requestId, "auth_user_missing", {
+        elapsedMs: Date.now() - requestStartedAt,
       });
+      return respond(401, { error: "Not authenticated", requestId });
     }
+
+    markStage("auth_admin_check", { userId: userData.user.id });
     const { data: isAdmin } = await userClient.rpc("has_role", {
       _user_id: userData.user.id,
       _role: "admin",
     });
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      logEvent("warn", requestId, "auth_admin_denied", {
+        userId: userData.user.id,
+        elapsedMs: Date.now() - requestStartedAt,
       });
+      return respond(403, { error: "Admin only", requestId });
     }
 
+    markStage("parse_body");
     const body = await req.json().catch(() => ({}));
     const esport: string = body.esport;
     const maxBoards: number = Math.min(Math.max(Number(body.maxBoards ?? 20), 1), 30);
     const dryRun: boolean = !!body.dryRun;
+    Object.assign(metrics, { esport, maxBoards, dryRun, userId: userData.user.id });
+    logEvent("info", requestId, "request_parsed", metrics);
     if (!esport) {
-      return new Response(JSON.stringify({ error: "esport is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return respond(400, { error: "esport is required", requestId });
     }
 
+    markStage("create_service_client");
     const sb = createClient(supabaseUrl, serviceKey);
 
     // ---- 0. Read from the precomputed clue index instead of rebuilding from match history ----
+    markStage("load_source_rows");
     const [activePlayers, clueIndexRows] = await Promise.all([
-      fetchAllRows<{ id: number; name: string }>(async (from, to) =>
-        await sb
-          .from("pandascore_players_master")
-          .select("id, name")
-          .eq("videogame_name", esport)
-          .eq("active", true)
-          .range(from, to),
+      fetchAllRows<{ id: number; name: string }>(
+        async (from, to) =>
+          await sb
+            .from("pandascore_players_master")
+            .select("id, name")
+            .eq("videogame_name", esport)
+            .eq("active", true)
+            .range(from, to),
+        1000,
+        { label: "active_players", requestId, meta: { esport } },
       ),
       fetchAllRows<{
         clue_type: string;
         clue_value: string;
         player_id: number;
-      }>(async (from, to) =>
-        await sb
-          .from("trivia_player_clue_index")
-          .select("clue_type, clue_value, player_id")
-          .eq("esport", esport)
-          .range(from, to),
+      }>(
+        async (from, to) =>
+          await sb
+            .from("trivia_player_clue_index")
+            .select("clue_type, clue_value, player_id")
+            .eq("esport", esport)
+            .range(from, to),
+        1000,
+        { label: "clue_index", requestId, meta: { esport } },
       ),
     ]);
+    Object.assign(metrics, {
+      activePlayers: activePlayers.length,
+      clueIndexRows: clueIndexRows.length,
+    });
+    logEvent("info", requestId, "source_rows_loaded", metrics);
 
     const activePlayerIds = new Set(activePlayers.map((row) => String(row.id)));
     const activePlayerName = new Map(activePlayers.map((row) => [String(row.id), row.name]));
@@ -199,6 +349,7 @@ Deno.serve(async (req) => {
 
     let indexRows = clueIndexRows.length;
 
+    markStage("build_relation_index");
     if (clueIndexRows.length > 0) {
       for (const row of clueIndexRows) {
         const playerId = String(row.player_id);
@@ -207,40 +358,65 @@ Deno.serve(async (req) => {
         addRelation(row.clue_type as ClueType, row.clue_value, playerId);
       }
     } else {
-      console.warn(`[trivia-build-content] trivia_player_clue_index empty for ${esport}; falling back to history cache`);
+      logEvent("warn", requestId, "clue_index_empty_fallback_history_cache", {
+        esport,
+        activePlayers: activePlayers.length,
+      });
 
-      const historyCacheRows = await fetchAllRows<HistoryCacheRow>(async (from, to) =>
-        await sb
-          .from("trivia_player_history_cache")
-          .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
-          .eq("esport", esport)
-          .range(from, to),
+      const historyCacheRows = await fetchAllRows<HistoryCacheRow>(
+        async (from, to) =>
+          await sb
+            .from("trivia_player_history_cache")
+            .select("player_id, team_id, opponent_team_id, serie_id, league_name, year, teammate_ids")
+            .eq("esport", esport)
+            .range(from, to),
+        1000,
+        { label: "history_cache", requestId, meta: { esport } },
       );
+      metrics.historyCacheRows = historyCacheRows.length;
+      logEvent("info", requestId, "history_cache_loaded", {
+        ...metrics,
+      });
 
       if (historyCacheRows.length === 0) {
         EdgeRuntime.waitUntil((async () => {
+          const refreshStartedAt = Date.now();
+          logEvent("info", requestId, "background_refresh_start", { esport, source: "empty_history_cache" });
           const { data, error } = await sb.rpc("trivia_refresh_player_clue_index", { _esport: esport });
           if (error) {
-            console.error("[trivia-build-content] trivia_refresh_player_clue_index failed", error);
+            logEvent("error", requestId, "background_refresh_failed", {
+              esport,
+              source: "empty_history_cache",
+              durationMs: Date.now() - refreshStartedAt,
+              error: serializeError(error),
+            });
             return;
           }
-          console.log(`[trivia-build-content] refreshed trivia_player_clue_index for ${esport}: ${data ?? 0} rows`);
+          logEvent("info", requestId, "background_refresh_complete", {
+            esport,
+            source: "empty_history_cache",
+            durationMs: Date.now() - refreshStartedAt,
+            rowsRefreshed: data ?? 0,
+          });
         })());
 
-        return new Response(
-          JSON.stringify({
-            esport,
-            indexRows: 0,
-            candidateClues: 0,
-            cluesByType: {},
-            boardsBuilt: 0,
-            boardsSample: [],
-            dryRun,
-            pending: true,
-            message: "Trivia data is being prepared in the background. Please try again in a moment.",
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 202 },
-        );
+        return respond(202, {
+          requestId,
+          esport,
+          indexRows: 0,
+          candidateClues: 0,
+          cluesByType: {},
+          boardsBuilt: 0,
+          boardsSample: [],
+          dryRun,
+          pending: true,
+          diagnostics: {
+            stage: "empty_history_cache",
+            stageTimings,
+            totalDurationMs: Date.now() - requestStartedAt,
+          },
+          message: "Trivia data is being prepared in the background. Please try again in a moment.",
+        });
       }
 
       for (const row of historyCacheRows) {
@@ -261,25 +437,46 @@ Deno.serve(async (req) => {
       }
 
       indexRows = Array.from(setFor.values()).reduce((sum, players) => sum + players.size, 0);
+      metrics.indexRows = indexRows;
+      logEvent("info", requestId, "history_cache_fallback_built", {
+        ...metrics,
+        distinctClueKeys: setFor.size,
+      });
 
       EdgeRuntime.waitUntil((async () => {
+        const refreshStartedAt = Date.now();
+        logEvent("info", requestId, "background_refresh_start", { esport, source: "history_cache_fallback" });
         const { data, error } = await sb.rpc("trivia_refresh_player_clue_index", { _esport: esport });
         if (error) {
-          console.error("[trivia-build-content] trivia_refresh_player_clue_index failed", error);
+          logEvent("error", requestId, "background_refresh_failed", {
+            esport,
+            source: "history_cache_fallback",
+            durationMs: Date.now() - refreshStartedAt,
+            error: serializeError(error),
+          });
           return;
         }
-        console.log(`[trivia-build-content] refreshed trivia_player_clue_index for ${esport}: ${data ?? 0} rows`);
+        logEvent("info", requestId, "background_refresh_complete", {
+          esport,
+          source: "history_cache_fallback",
+          durationMs: Date.now() - refreshStartedAt,
+          rowsRefreshed: data ?? 0,
+        });
       })());
     }
 
+    markStage("aggregate_clues", { distinctClueKeys: setFor.size });
     // ---- 1. Build candidate pools per clue type ----
     const agg = new Map<string, { type: ClueType; value: string; count: number }>();
     for (const [key, players] of setFor.entries()) {
       const { type, value } = parseClueKey(key);
       agg.set(key, { type, value, count: players.size });
     }
+    metrics.aggregatedClues = agg.size;
+    logEvent("info", requestId, "aggregate_complete", { ...metrics });
 
     // ---- 2. Resolve human labels ----
+    markStage("resolve_labels", { aggregatedClues: agg.size });
     // Teams & opponents
     const teamIds = new Set<string>();
     for (const v of agg.values()) {
@@ -335,8 +532,15 @@ Deno.serve(async (req) => {
       const name = activePlayerName.get(playerId);
       if (name) playerName.set(playerId, name);
     }
+    Object.assign(metrics, {
+      teamLabelRows: teamRows.length,
+      serieLabelRows: serieRows.length,
+      teammateLabelRows: playerName.size,
+    });
+    logEvent("info", requestId, "label_resolution_complete", { ...metrics });
 
     // ---- 3. Build clue candidates that pass [4, 30] ----
+    markStage("build_candidates");
     const candidates: ClueCandidate[] = [];
     const seenLabels = new Set<string>();
     for (const v of agg.values()) {
@@ -381,8 +585,14 @@ Deno.serve(async (req) => {
         difficulty_band: band,
       });
     }
+    metrics.candidateClues = candidates.length;
+    logEvent("info", requestId, "candidate_build_complete", {
+      ...metrics,
+      clueTypesPresent: Array.from(new Set(candidates.map((candidate) => candidate.clue_type))),
+    });
 
     // ---- 4. Persist clues (upsert by (esport, clue_type, clue_value)) ----
+    markStage("persist_clues", { dryRun, candidateClues: candidates.length });
     let storedClues: StoredClue[] = [];
     if (!dryRun && candidates.length > 0) {
       // Delete previously generated clues for this esport so we start fresh
@@ -428,6 +638,8 @@ Deno.serve(async (req) => {
     } else {
       storedClues = candidates.map((c) => ({ ...c, id: `${c.clue_type}|${c.clue_value}` }));
     }
+    metrics.storedClues = storedClues.length;
+    logEvent("info", requestId, "persist_clues_complete", { ...metrics });
 
     function intersectionSize(a: StoredClue, b: StoredClue): number {
       const sa = setFor.get(clueKey(a.clue_type, a.clue_value)) ?? new Set<number>();
@@ -439,6 +651,7 @@ Deno.serve(async (req) => {
     }
 
     // ---- 6. Bucket clues by type for diversity-aware selection ----
+    markStage("bucket_clues");
     const byType = new Map<ClueType, StoredClue[]>();
     for (const c of storedClues) {
       const arr = byType.get(c.clue_type) ?? [];
@@ -446,8 +659,13 @@ Deno.serve(async (req) => {
       byType.set(c.clue_type, arr);
     }
     for (const [t, arr] of byType) byType.set(t, shuffle(arr));
+    logEvent("info", requestId, "bucket_clues_complete", {
+      ...metrics,
+      cluesByType: Object.fromEntries(Array.from(byType.entries()).map(([t, arr]) => [t, arr.length])),
+    });
 
     // ---- 7. Build boards ----
+    markStage("build_boards", { maxBoards });
     interface Board {
       rowIds: string[];
       colIds: string[];
@@ -607,8 +825,14 @@ Deno.serve(async (req) => {
       usedFingerprints.add(fp);
       boards.push(b);
     }
+    Object.assign(metrics, {
+      boardAttempts: attempts,
+      boardsBuilt: boards.length,
+    });
+    logEvent("info", requestId, "build_boards_complete", { ...metrics });
 
     // ---- 8. Persist boards ----
+    markStage("persist_boards", { dryRun, boardsBuilt: boards.length });
     if (!dryRun && boards.length > 0) {
       await sb
         .from("trivia_grid_templates")
@@ -636,36 +860,57 @@ Deno.serve(async (req) => {
         if (error) throw error;
       }
     }
+    stageTimings[currentStage] = Date.now() - stageStartedAt;
+    logEvent("info", requestId, "request_complete", {
+      ...metrics,
+      stageTimings,
+      totalDurationMs: Date.now() - requestStartedAt,
+    });
 
-    return new Response(
-      JSON.stringify({
-        esport,
-        indexRows,
-        candidateClues: candidates.length,
-        cluesByType: Object.fromEntries(
-          Array.from(byType.entries()).map(([t, arr]) => [t, arr.length]),
-        ),
-        boardsBuilt: boards.length,
-        boardsSample: boards.slice(0, 3).map((b) => ({
-          difficulty: b.difficulty,
-          quality: b.quality,
-          avgCellAnswers: b.avgCellAnswers,
-          minCellAnswers: b.minCellAnswers,
-          rows: b.rowClues.map((c) => c.label),
-          cols: b.colClues.map((c) => c.label),
-        })),
-        dryRun,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (err) {
-    console.error("trivia-build-content error", err);
-    return new Response(
-      JSON.stringify({ error: (err as Error).message ?? String(err) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return respond(200, {
+      requestId,
+      esport,
+      indexRows,
+      candidateClues: candidates.length,
+      cluesByType: Object.fromEntries(
+        Array.from(byType.entries()).map(([t, arr]) => [t, arr.length]),
+      ),
+      boardsBuilt: boards.length,
+      boardsSample: boards.slice(0, 3).map((b) => ({
+        difficulty: b.difficulty,
+        quality: b.quality,
+        avgCellAnswers: b.avgCellAnswers,
+        minCellAnswers: b.minCellAnswers,
+        rows: b.rowClues.map((c) => c.label),
+        cols: b.colClues.map((c) => c.label),
+      })),
+      dryRun,
+      diagnostics: {
+        stageTimings,
+        totalDurationMs: Date.now() - requestStartedAt,
+        metrics,
       },
-    );
+    });
+  } catch (err) {
+    stageTimings[currentStage] = Date.now() - stageStartedAt;
+    const serializedError = serializeError(err);
+    logEvent("error", requestId, "request_failed", {
+      ...metrics,
+      failedStage: currentStage,
+      stageTimings,
+      totalDurationMs: Date.now() - requestStartedAt,
+      error: serializedError,
+    });
+    return respond(500, {
+      requestId,
+      error: serializedError.message,
+      diagnostics: {
+        failedStage: currentStage,
+        stageTimings,
+        totalDurationMs: Date.now() - requestStartedAt,
+        metrics,
+        error: serializedError,
+      },
+    });
   }
 });
