@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import SearchableNavbar from "@/components/SearchableNavbar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -20,6 +22,7 @@ import {
 } from "@/lib/trivia";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { cn } from "@/lib/utils";
 
 const TriviaPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,17 +55,25 @@ const TriviaPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-theme-gray-dark text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
+      <Helmet>
+        <title>Esports Trivia Grid | Frags & Fortunes</title>
+        <meta
+          name="description"
+          content="Play the 3×3 esports trivia grid. Name a pro player who fits both clues. Solo or same-screen 2-player. Free to play."
+        />
+        <link rel="canonical" href="https://frags-and-fortunes.lovable.app/trivia" />
+      </Helmet>
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-6 max-w-3xl">
-        <div className="mb-6">
-          <div className="inline-flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+        <header className="mb-6">
+          <div className="inline-flex items-center gap-2 text-theme-purple text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="h-3.5 w-3.5" /> New
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold mt-1">Esports Trivia Grid</h1>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-gray-400 text-sm mt-1">
                 A 3×3 board. Each square needs a pro player who fits BOTH the row clue AND the column clue.
                 First to three in a row wins.
               </p>
@@ -78,22 +89,23 @@ const TriviaPage: React.FC = () => {
               </Button>
             )}
           </div>
-        </div>
+        </header>
 
         <Card className="bg-slate-900/60 border-slate-700 p-5 space-y-6">
           {/* Esport */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-300 mb-2">Choose esport</h3>
+            <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">Choose esport</h3>
             <div className="flex flex-wrap gap-2">
               {TRIVIA_ESPORTS.map((e) => (
                 <button
                   key={e}
                   onClick={() => setEsport(e)}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm border transition-colors",
                     esport === e
-                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-200"
+                      ? "bg-theme-purple/20 border-theme-purple text-white"
                       : "bg-slate-800/60 border-slate-700 text-gray-300 hover:border-slate-600"
-                  }`}
+                  )}
                 >
                   {e}
                 </button>
@@ -103,28 +115,34 @@ const TriviaPage: React.FC = () => {
 
           {/* Mode */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-300 mb-2">Choose mode</h3>
+            <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">Choose mode</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => setMode("solo")}
-                className={`p-4 rounded-lg border text-left transition-colors ${
+                className={cn(
+                  "p-4 rounded-lg border text-left transition-colors",
                   mode === "solo"
-                    ? "bg-emerald-500/10 border-emerald-500"
+                    ? "bg-theme-purple/10 border-theme-purple"
                     : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
-                }`}
+                )}
               >
-                <div className="flex items-center gap-2 font-semibold"><User className="h-4 w-4" /> Solo practice</div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <User className="h-4 w-4" /> Solo practice
+                </div>
                 <p className="text-xs text-gray-400 mt-1">Fill the grid yourself. No turns, no opponent.</p>
               </button>
               <button
                 onClick={() => setMode("two_player")}
-                className={`p-4 rounded-lg border text-left transition-colors ${
+                className={cn(
+                  "p-4 rounded-lg border text-left transition-colors",
                   mode === "two_player"
-                    ? "bg-emerald-500/10 border-emerald-500"
+                    ? "bg-theme-purple/10 border-theme-purple"
                     : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
-                }`}
+                )}
               >
-                <div className="flex items-center gap-2 font-semibold"><Users className="h-4 w-4" /> Same-screen 2P</div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <Users className="h-4 w-4" /> Same-screen 2P
+                </div>
                 <p className="text-xs text-gray-400 mt-1">Pass the device. Get 3 in a row to win.</p>
               </button>
             </div>
@@ -132,8 +150,13 @@ const TriviaPage: React.FC = () => {
 
           {templates.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">Grid template (optional)</h3>
-              <Select value={templateId ?? "__random"} onValueChange={(v) => setTemplateId(v === "__random" ? undefined : v)}>
+              <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">
+                Grid template (optional)
+              </h3>
+              <Select
+                value={templateId ?? "__random"}
+                onValueChange={(v) => setTemplateId(v === "__random" ? undefined : v)}
+              >
                 <SelectTrigger className="bg-slate-950 border-slate-700">
                   <SelectValue />
                 </SelectTrigger>
@@ -150,9 +173,15 @@ const TriviaPage: React.FC = () => {
           <Button
             onClick={handleStart}
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold h-11"
+            className="w-full bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold h-11"
           >
-            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating board…</> : "Start game"}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating board…
+              </>
+            ) : (
+              "Start game"
+            )}
           </Button>
         </Card>
 
@@ -160,6 +189,7 @@ const TriviaPage: React.FC = () => {
           Tip: Boards are generated to be solvable — every cell has at least one valid pro player.
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

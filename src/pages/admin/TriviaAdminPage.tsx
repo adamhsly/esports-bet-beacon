@@ -212,7 +212,7 @@ const TriviaAdminPage: React.FC = () => {
 
   if (adminLoading) {
     return (
-      <div className="min-h-screen bg-theme-gray-dark text-white">
+      <div className="min-h-screen bg-slate-950 text-white">
         <SearchableNavbar />
         <div className="container mx-auto px-4 py-12 text-center">
           <Loader2 className="h-6 w-6 animate-spin inline" />
@@ -223,7 +223,7 @@ const TriviaAdminPage: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-theme-gray-dark text-white">
+      <div className="min-h-screen bg-slate-950 text-white">
         <SearchableNavbar />
         <div className="container mx-auto px-4 py-12 text-center">
           <h1 className="text-xl font-semibold">Admins only</h1>
@@ -234,7 +234,7 @@ const TriviaAdminPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-theme-gray-dark text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <SearchableNavbar />
       <main className="container mx-auto px-4 py-6 max-w-5xl">
         <div className="mb-4 flex">
