@@ -159,6 +159,34 @@ Deno.serve(async (req) => {
 
     const activePlayerIds = new Set(activePlayers.map((row) => String(row.id)));
     const activePlayerName = new Map(activePlayers.map((row) => [String(row.id), row.name]));
+
+    if (clueIndexRows.length === 0) {
+      console.warn(`[trivia-build-content] trivia_player_clue_index empty for ${esport}; scheduling refresh`);
+      EdgeRuntime.waitUntil((async () => {
+        const { data, error } = await sb.rpc("trivia_refresh_player_clue_index", { _esport: esport });
+        if (error) {
+          console.error("[trivia-build-content] trivia_refresh_player_clue_index failed", error);
+          return;
+        }
+        console.log(`[trivia-build-content] refreshed trivia_player_clue_index for ${esport}: ${data ?? 0} rows`);
+      })());
+
+      return new Response(
+        JSON.stringify({
+          esport,
+          indexRows: 0,
+          candidateClues: 0,
+          cluesByType: {},
+          boardsBuilt: 0,
+          boardsSample: [],
+          dryRun,
+          pending: true,
+          message: "Trivia data is being prepared in the background. Please try again in a moment.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 202 },
+      );
+    }
+
     const supportedClueTypes = new Set<ClueType>([
       "team",
       "league",

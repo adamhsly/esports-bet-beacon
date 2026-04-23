@@ -197,6 +197,10 @@ const TriviaAdminPage: React.FC = () => {
       });
       if (error) throw error;
       setGenResult(data);
+      if (data?.pending) {
+        toast.info(data?.message ?? "Trivia data is being prepared. Please try again in a moment.");
+        return;
+      }
       if (dryRun) {
         toast.success(`Dry run: ${data?.candidateClues ?? 0} clues · ${data?.boardsBuilt ?? 0} boards`);
       } else {
