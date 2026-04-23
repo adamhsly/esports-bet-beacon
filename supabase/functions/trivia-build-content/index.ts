@@ -51,6 +51,70 @@ const MAX_ANSWERS = 30;
 const MIN_CELL_ANSWERS = 2;
 const CLUE_KEY_SEPARATOR = "\u001f";
 
+function serializeError(error: unknown) {
+  if (error && typeof error === "object") {
+    const err = error as {
+      name?: string;
+      message?: string;
+      code?: string;
+      details?: string | null;
+      hint?: string | null;
+      stack?: string;
+      status?: number;
+      statusCode?: number;
+    };
+
+    return {
+      name: err.name ?? "Error",
+      message: err.message ?? String(error),
+      code: err.code ?? null,
+      details: err.details ?? null,
+      hint: err.hint ?? null,
+      status: err.status ?? err.statusCode ?? null,
+      stack: err.stack?.split("\n").slice(0, 5).join("\n") ?? null,
+    };
+  }
+
+  return {
+    name: "Error",
+    message: String(error),
+    code: null,
+    details: null,
+    hint: null,
+    status: null,
+    stack: null,
+  };
+}
+
+function logEvent(
+  level: "info" | "warn" | "error",
+  requestId: string,
+  stage: string,
+  meta: Record<string, unknown> = {},
+) {
+  const payload = JSON.stringify({
+    scope: "trivia-build-content",
+    requestId,
+    stage,
+    ...meta,
+  });
+
+  if (level === "error") {
+    console.error(payload);
+  } else if (level === "warn") {
+    console.warn(payload);
+  } else {
+    console.log(payload);
+  }
+}
+
+function respond(status: number, payload: Record<string, unknown>) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 function bandFor(count: number): "easy" | "medium" | "hard" | null {
   if (count >= 15 && count <= MAX_ANSWERS) return "easy";
   if (count >= 8 && count < 15) return "medium";
@@ -90,15 +154,61 @@ function parseClueKey(key: string): { type: ClueType; value: string } {
 async function fetchAllRows<T>(
   loader: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
   pageSize = 1000,
+  opts?: { label?: string; requestId?: string; meta?: Record<string, unknown> },
 ): Promise<T[]> {
   const rows: T[] = [];
+  const startedAt = Date.now();
+  let pages = 0;
+
   for (let from = 0; ; from += pageSize) {
+    pages += 1;
+    if (opts?.label && opts.requestId) {
+      logEvent("info", opts.requestId, `${opts.label}:page_start`, {
+        ...opts.meta,
+        page: pages,
+        from,
+        to: from + pageSize - 1,
+      });
+    }
+
     const { data, error } = await loader(from, from + pageSize - 1);
-    if (error) throw error;
+    if (error) {
+      if (opts?.label && opts.requestId) {
+        logEvent("error", opts.requestId, `${opts.label}:page_error`, {
+          ...opts.meta,
+          page: pages,
+          from,
+          to: from + pageSize - 1,
+          error: serializeError(error),
+        });
+      }
+      throw error;
+    }
+
+    if (opts?.label && opts.requestId) {
+      logEvent("info", opts.requestId, `${opts.label}:page_done`, {
+        ...opts.meta,
+        page: pages,
+        from,
+        to: from + pageSize - 1,
+        count: data?.length ?? 0,
+      });
+    }
+
     if (!data || data.length === 0) break;
     rows.push(...data);
     if (data.length < pageSize) break;
   }
+
+  if (opts?.label && opts.requestId) {
+    logEvent("info", opts.requestId, `${opts.label}:complete`, {
+      ...opts.meta,
+      pages,
+      rows: rows.length,
+      durationMs: Date.now() - startedAt,
+    });
+  }
+
   return rows;
 }
 
