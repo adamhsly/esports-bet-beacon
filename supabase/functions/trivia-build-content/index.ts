@@ -494,41 +494,24 @@ Deno.serve(async (req) => {
       : (await Promise.all(
           chunk(teamIdList, 100).map(async (ids) => {
             const { data, error } = await sb
-              .from("trivia_top_tier_teams")
-              .select("team_id, team_name, esport")
-              .eq("esport", esport)
+              .from("pandascore_teams")
+              .select("team_id, name, esport_type")
+              .eq("esport_type", esport)
               .in("team_id", ids);
             if (error) throw error;
             return data ?? [];
           }),
         )).flat();
     const teamName = new Map<string, string>(
-      teamRows.map((r: any) => [r.team_id, r.team_name]),
+      teamRows.map((r: any) => [r.team_id, r.name]),
     );
 
     // Series (tournaments) — value is serie_id
     const serieIds = new Set<string>();
     for (const v of agg.values()) if (v.type === "tournament") serieIds.add(v.value);
     const serieIdList = Array.from(serieIds);
-    const serieRows = serieIdList.length === 0
-      ? []
-      : (await Promise.all(
-          chunk(serieIdList, 100).map(async (ids) => {
-            const { data, error } = await sb
-              .from("trivia_top_tier_series")
-              .select("serie_id, serie_name, esport")
-              .eq("esport", esport)
-              .in("serie_id", ids);
-            if (error) throw error;
-            return data ?? [];
-          }),
-        )).flat();
-    const serieName = new Map<string, string>();
-    for (const r of serieRows) {
-      if (!serieName.has((r as any).serie_id)) {
-        serieName.set((r as any).serie_id, (r as any).serie_name);
-      }
-    }
+    const serieRows: any[] = [];
+    const serieName = new Map<string, string>(fallbackSerieName);
 
     // Teammates — value is player_id (text)
     const playerIds = new Set<string>();
