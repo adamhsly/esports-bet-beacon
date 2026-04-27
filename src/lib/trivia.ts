@@ -52,7 +52,28 @@ export async function generateBoard(
   const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
     body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
   });
-  if (error) throw error;
+  if (error) {
+    // supabase-js stuffs the function's response into error.context (a Response).
+    // Extract the JSON body so the UI shows the real reason instead of "Edge Function returned a non-2xx status code".
+    let detail = "";
+    let snapshot: unknown = undefined;
+    let requestId: string | undefined;
+    try {
+      const ctx: any = (error as any).context;
+      if (ctx && typeof ctx.json === "function") {
+        const body = await ctx.json();
+        detail = body?.error ?? "";
+        snapshot = body?.snapshot;
+        requestId = body?.requestId;
+      }
+    } catch { /* ignore parse failure */ }
+    const headline = detail || (error as any).message || "generateBoard failed";
+    const richMessage = requestId ? `${headline} [rid:${requestId}]` : headline;
+    const err = new Error(richMessage);
+    (err as any).snapshot = snapshot;
+    (err as any).requestId = requestId;
+    throw err;
+  }
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
   return { rowClues: data.rowClues, colClues: data.colClues, fingerprint: data.fingerprint };
 }
