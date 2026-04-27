@@ -304,20 +304,29 @@ Deno.serve(async (req) => {
         type: "nationality", value: code, label: NATIONALITY_LABELS[code] ?? code,
       }));
 
+    log("derived_clues", {
+      teams: derivedTeams.length,
+      tournaments: derivedTournaments.length,
+      leagues: derivedLeagues.length,
+      nations: derivedNations.length,
+    });
+
     // Merge approved + derived (approved labels take precedence on the same key)
     const poolMap = new Map<string, Clue>();
     for (const c of [...derivedTeams, ...derivedTournaments, ...derivedLeagues, ...derivedNations]) {
       poolMap.set(clueKey(c), c);
     }
     for (const c of approvedClues) poolMap.set(clueKey(c), c);
+    log("pool_merged", { size: poolMap.size });
 
     // -------- 6) Apply usage filters --------
     const cluesArr = [...poolMap.values()];
     const keys = cluesArr.map(clueKey);
-    const { data: usage } = await supabase
+    const { data: usage, error: usageErr } = await supabase
       .from("trivia_clue_usage")
       .select("clue_key,times_used,last_used_at")
       .in("clue_key", keys);
+    log("usage_query", { count: usage?.length ?? 0, error: usageErr?.message ?? null });
     const usageByKey = new Map<string, { times: number; last: number }>();
     for (const u of (usage ?? []) as any[]) {
       usageByKey.set(u.clue_key, {
@@ -332,9 +341,15 @@ Deno.serve(async (req) => {
       if (u.last >= cutoff && u.times >= CLUE_OVERUSE_RECENT_MAX) return false;
       return true;
     });
+    log("filtered_clues", {
+      kept: filteredClues.length,
+      byType: filteredClues.reduce((acc, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc; }, {} as Record<string, number>),
+    });
+    snapshot.poolSize = poolMap.size;
+    snapshot.filteredClues = filteredClues.length;
 
     if (filteredClues.length < 6) {
-      return await fallbackBoard(supabase, esport, userId, "insufficient_pool_after_filter");
+      return await fallbackBoard(supabase, esport, userId, "insufficient_pool_after_filter", log, snapshot);
     }
 
     // -------- 7) Freshness data --------
