@@ -333,6 +333,7 @@ Deno.serve(async (req) => {
     ]);
 
     const setFor = new Map<string, Set<number>>();
+    const fallbackSerieName = new Map<string, string>();
     const addRelation = (type: ClueType, value: string | number | null | undefined, playerId: string) => {
       if (value === null || value === undefined) return;
       if (!activePlayerIds.has(playerId)) return;
@@ -428,6 +429,11 @@ Deno.serve(async (req) => {
         addRelation("tournament", row.serie_id, playerId);
         addRelation("league", row.league_name, playerId);
         addRelation("year", row.year, playerId);
+
+        if (row.serie_id && !fallbackSerieName.has(String(row.serie_id))) {
+          const fallbackLabel = [row.league_name, row.year].filter(Boolean).join(" ").trim();
+          fallbackSerieName.set(String(row.serie_id), fallbackLabel || `Series ${row.serie_id}`);
+        }
 
         const teammateIds = Array.isArray(row.teammate_ids) ? row.teammate_ids : [];
         for (const teammateId of teammateIds) {
