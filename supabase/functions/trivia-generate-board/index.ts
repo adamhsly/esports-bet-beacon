@@ -527,6 +527,9 @@ Deno.serve(async (req) => {
 
     const best = scored[0];
 
+    log("best_candidate", { quality: best.scores.quality, threshold: QUALITY_THRESHOLD, scores: best.scores });
+    snapshot.bestQuality = best.scores.quality;
+
     // -------- 11) Publish or reject --------
     if (best.scores.quality < QUALITY_THRESHOLD) {
       await supabase.rpc("trivia_log_board_rejection", {
@@ -536,7 +539,7 @@ Deno.serve(async (req) => {
         _quality: best.scores.quality,
         _details: best.scores,
       });
-      return await fallbackBoard(supabase, esport, userId, "quality_threshold");
+      return await fallbackBoard(supabase, esport, userId, "quality_threshold", log, snapshot);
     }
 
     await registerBoardUse(supabase, best.fingerprint, esport, best.rows, best.cols, userId);
