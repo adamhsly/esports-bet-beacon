@@ -4567,22 +4567,6 @@ export type Database = {
           tournament_id: string | null
           tournament_name: string | null
         }
-        Insert: {
-          esport?: string | null
-          league_id?: string | null
-          league_name?: string | null
-          tier?: never
-          tournament_id?: string | null
-          tournament_name?: string | null
-        }
-        Update: {
-          esport?: string | null
-          league_id?: string | null
-          league_name?: string | null
-          tier?: never
-          tournament_id?: string | null
-          tournament_name?: string | null
-        }
         Relationships: []
       }
       user_credit_balances: {
@@ -5312,6 +5296,7 @@ export type Database = {
         Args: { _esport?: string }
         Returns: number
       }
+      trivia_refresh_top_tier_caches: { Args: never; Returns: undefined }
       trivia_register_board_use: {
         Args: {
           _clue_type_counts: Json
