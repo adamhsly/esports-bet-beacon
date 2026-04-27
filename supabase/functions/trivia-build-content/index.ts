@@ -151,6 +151,16 @@ function parseClueKey(key: string): { type: ClueType; value: string } {
   };
 }
 
+function isUsableLabelName(name: string | null | undefined): name is string {
+  const trimmed = String(name ?? "").trim();
+  if (trimmed.length < 2) return false;
+  const normalized = trimmed.toLowerCase().replace(/[\s._-]+/g, "");
+  if (["?", "??", "tba", "tbd", "unknown", "none", "null", "na", "n/a"].includes(normalized)) {
+    return false;
+  }
+  return /[\p{L}\p{N}]/u.test(trimmed);
+}
+
 async function fetchAllRows<T>(
   loader: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
   pageSize = 1000,
@@ -503,7 +513,9 @@ Deno.serve(async (req) => {
           }),
         )).flat();
     const teamName = new Map<string, string>(
-      teamRows.map((r: any) => [r.team_id, r.name]),
+      teamRows
+        .filter((r: any) => isUsableLabelName(r.name))
+        .map((r: any) => [String(r.team_id), String(r.name).trim()]),
     );
 
     // Series (tournaments) — value is serie_id
@@ -539,11 +551,11 @@ Deno.serve(async (req) => {
       let label = "";
       if (v.type === "team") {
         const n = teamName.get(v.value);
-        if (!n) continue;
+        if (!isUsableLabelName(n)) continue;
         label = `Played for ${n}`;
       } else if (v.type === "faced") {
         const n = teamName.get(v.value);
-        if (!n) continue;
+        if (!isUsableLabelName(n)) continue;
         label = `Faced ${n}`;
       } else if (v.type === "league") {
         if (!v.value || v.value.length < 2) continue;

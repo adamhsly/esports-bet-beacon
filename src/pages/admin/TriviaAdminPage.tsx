@@ -210,7 +210,11 @@ const TriviaAdminPage: React.FC = () => {
         reload();
       }
     } catch (e: any) {
-      const details = e?.context?.json;
+      const details = e?.context instanceof Response
+        ? await e.context.clone().json().catch(() => null)
+        : e?.context?.json && typeof e.context.json !== "function"
+          ? e.context.json
+          : null;
       const failedStage = details?.diagnostics?.failedStage;
       const requestId = details?.requestId;
       toast.error(
