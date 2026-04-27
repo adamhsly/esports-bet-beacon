@@ -627,12 +627,26 @@ async function registerBoardUse(
 
 async function fallbackBoard(
   supabase: any, esport: string, userId: string | undefined, reason: string,
+  log?: (stage: string, data?: Record<string, unknown>) => void,
+  snapshot?: Record<string, unknown>,
 ) {
-  const { data: top } = await supabase.rpc("trivia_top_boards", {
+  log?.("fallback_attempt", { reason });
+  const { data: top, error: topErr } = await supabase.rpc("trivia_top_boards", {
     _esport: esport, _limit: 25,
   });
+  log?.("fallback_top_boards", { count: top?.length ?? 0, error: topErr?.message ?? null });
+  if (snapshot) {
+    snapshot.fallbackReason = reason;
+    snapshot.fallbackTopBoards = top?.length ?? 0;
+    snapshot.fallbackTopBoardsError = topErr?.message ?? null;
+  }
   if (!top || top.length === 0) {
-    return json({ error: `Could not generate a board (${reason}) and no fallback exists` }, 500);
+    return json({
+      error: `Could not generate a board (${reason}) and no fallback exists`,
+      requestId: snapshot?.requestId,
+      reason,
+      snapshot,
+    }, 500);
   }
   let recentSet = new Set<string>();
   if (userId) {
@@ -658,8 +672,10 @@ async function fallbackBoard(
   const rows = (pick.row_clue_keys as string[]).map(rebuild);
   const cols = (pick.col_clue_keys as string[]).map(rebuild);
   await registerBoardUse(supabase, pick.fingerprint, esport, rows, cols, userId);
+  log?.("fallback_success", { fingerprint: pick.fingerprint, reason });
   return json({
     rowClues: rows, colClues: cols, fingerprint: pick.fingerprint,
     quality: pick.quality_score, source: "fallback", fallback_reason: reason,
+    requestId: snapshot?.requestId,
   });
 }
