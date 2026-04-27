@@ -473,9 +473,11 @@ Deno.serve(async (req) => {
         }
       }
     }
+    log("candidates", { count: candidates.length });
+    snapshot.candidates = candidates.length;
 
     if (candidates.length === 0) {
-      return await fallbackBoard(supabase, esport, userId, "no_valid_candidates");
+      return await fallbackBoard(supabase, esport, userId, "no_valid_candidates", log, snapshot);
     }
 
     // -------- 10) Score & pick --------
