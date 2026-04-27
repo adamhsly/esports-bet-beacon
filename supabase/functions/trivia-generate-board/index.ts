@@ -389,8 +389,16 @@ Deno.serve(async (req) => {
     const checkable = filteredClues.filter((c) =>
       ["team", "tournament", "league", "nationality"].includes(c.type),
     );
+    log("checkable", {
+      total: checkable.length,
+      teams: checkable.filter((c) => c.type === "team").length,
+      tournaments: checkable.filter((c) => c.type === "tournament").length,
+      leagues: checkable.filter((c) => c.type === "league").length,
+      nations: checkable.filter((c) => c.type === "nationality").length,
+    });
+    snapshot.checkable = checkable.length;
     if (checkable.length < 6) {
-      return await fallbackBoard(supabase, esport, userId, "checkable_pool_too_small");
+      return await fallbackBoard(supabase, esport, userId, "checkable_pool_too_small", log, snapshot);
     }
 
     const intersectionAnswers = (a: Clue, b: Clue): number => {
