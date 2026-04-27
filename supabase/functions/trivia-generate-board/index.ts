@@ -86,13 +86,25 @@ function passesDiversity(rows: Clue[], cols: Clue[]) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const requestId = crypto.randomUUID().slice(0, 8);
+  const t0 = Date.now();
+  const log = (stage: string, data: Record<string, unknown> = {}) => {
+    console.log(JSON.stringify({ rid: requestId, t: Date.now() - t0, stage, ...data }));
+  };
+  // Snapshot of counts so far — included in every fallback/error response so the
+  // UI gets a useful picture even without log access.
+  const snapshot: Record<string, unknown> = { requestId };
+
   try {
     const { esport, templateId, userId } = await req.json().catch(() => ({}));
+    log("request", { esport, templateId, userId });
     if (!esport || typeof esport !== "string") {
-      return new Response(JSON.stringify({ error: "esport required" }), {
+      log("bad_request", { reason: "esport_missing" });
+      return new Response(JSON.stringify({ error: "esport required", requestId }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    snapshot.esport = esport;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -101,6 +113,7 @@ Deno.serve(async (req) => {
 
     // -------- 1) Saved template short-circuit --------
     if (templateId && typeof templateId === "string") {
+      log("template_lookup", { templateId });
       const board = await hydrateTemplate(supabase, templateId);
       if (board) {
         const fingerprint = await fingerprintFromClues(board.rows, board.cols);
@@ -109,8 +122,10 @@ Deno.serve(async (req) => {
           _clue_keys: [...board.rows, ...board.cols].map(clueKey),
           _esport: esport,
         });
-        return json({ rowClues: board.rows, colClues: board.cols, fingerprint, source: "template" });
+        log("template_hit", { fingerprint });
+        return json({ rowClues: board.rows, colClues: board.cols, fingerprint, source: "template", requestId });
       }
+      log("template_miss", { templateId });
     }
 
     // -------- 2) Fetch the Tier S/A recognition universe --------
@@ -120,14 +135,25 @@ Deno.serve(async (req) => {
       }),
       supabase.rpc("trivia_get_top_tier_tournaments", { _esport: esport }),
     ]);
+    log("top_tier_rpcs", {
+      topTeamsCount: topTeamsRes.data?.length ?? 0,
+      topTeamsError: topTeamsRes.error?.message ?? null,
+      topToursCount: topTourRes.data?.length ?? 0,
+      topToursError: topTourRes.error?.message ?? null,
+      topTeamSample: (topTeamsRes.data ?? []).slice(0, 3),
+    });
     const topTeams: Array<{ team_id: string; team_name: string; appearances: number; best_tier: string }> =
       topTeamsRes.data ?? [];
     const topTournaments: Array<{ tournament_id: string; tournament_name: string; league_id: string; league_name: string; tier: string }> =
       topTourRes.data ?? [];
+    snapshot.topTeamsCount = topTeams.length;
+    snapshot.topTournamentsCount = topTournaments.length;
+    snapshot.topTeamsError = topTeamsRes.error?.message ?? null;
+    snapshot.topToursError = topTourRes.error?.message ?? null;
 
     if (topTeams.length < 4) {
       // Not enough Tier S/A coverage to make a recognizable board — fall back.
-      return await fallbackBoard(supabase, esport, userId, "no_top_tier_coverage");
+      return await fallbackBoard(supabase, esport, userId, "no_top_tier_coverage", log, snapshot);
     }
 
     const topTeamIds = new Set(topTeams.map((t) => t.team_id));
