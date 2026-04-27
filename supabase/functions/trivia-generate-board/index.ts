@@ -86,13 +86,25 @@ function passesDiversity(rows: Clue[], cols: Clue[]) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const requestId = crypto.randomUUID().slice(0, 8);
+  const t0 = Date.now();
+  const log = (stage: string, data: Record<string, unknown> = {}) => {
+    console.log(JSON.stringify({ rid: requestId, t: Date.now() - t0, stage, ...data }));
+  };
+  // Snapshot of counts so far — included in every fallback/error response so the
+  // UI gets a useful picture even without log access.
+  const snapshot: Record<string, unknown> = { requestId };
+
   try {
     const { esport, templateId, userId } = await req.json().catch(() => ({}));
+    log("request", { esport, templateId, userId });
     if (!esport || typeof esport !== "string") {
-      return new Response(JSON.stringify({ error: "esport required" }), {
+      log("bad_request", { reason: "esport_missing" });
+      return new Response(JSON.stringify({ error: "esport required", requestId }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    snapshot.esport = esport;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -101,6 +113,7 @@ Deno.serve(async (req) => {
 
     // -------- 1) Saved template short-circuit --------
     if (templateId && typeof templateId === "string") {
+      log("template_lookup", { templateId });
       const board = await hydrateTemplate(supabase, templateId);
       if (board) {
         const fingerprint = await fingerprintFromClues(board.rows, board.cols);
@@ -109,8 +122,10 @@ Deno.serve(async (req) => {
           _clue_keys: [...board.rows, ...board.cols].map(clueKey),
           _esport: esport,
         });
-        return json({ rowClues: board.rows, colClues: board.cols, fingerprint, source: "template" });
+        log("template_hit", { fingerprint });
+        return json({ rowClues: board.rows, colClues: board.cols, fingerprint, source: "template", requestId });
       }
+      log("template_miss", { templateId });
     }
 
     // -------- 2) Fetch the Tier S/A recognition universe --------
@@ -120,14 +135,25 @@ Deno.serve(async (req) => {
       }),
       supabase.rpc("trivia_get_top_tier_tournaments", { _esport: esport }),
     ]);
+    log("top_tier_rpcs", {
+      topTeamsCount: topTeamsRes.data?.length ?? 0,
+      topTeamsError: topTeamsRes.error?.message ?? null,
+      topToursCount: topTourRes.data?.length ?? 0,
+      topToursError: topTourRes.error?.message ?? null,
+      topTeamSample: (topTeamsRes.data ?? []).slice(0, 3),
+    });
     const topTeams: Array<{ team_id: string; team_name: string; appearances: number; best_tier: string }> =
       topTeamsRes.data ?? [];
     const topTournaments: Array<{ tournament_id: string; tournament_name: string; league_id: string; league_name: string; tier: string }> =
       topTourRes.data ?? [];
+    snapshot.topTeamsCount = topTeams.length;
+    snapshot.topTournamentsCount = topTournaments.length;
+    snapshot.topTeamsError = topTeamsRes.error?.message ?? null;
+    snapshot.topToursError = topTourRes.error?.message ?? null;
 
     if (topTeams.length < 4) {
       // Not enough Tier S/A coverage to make a recognizable board — fall back.
-      return await fallbackBoard(supabase, esport, userId, "no_top_tier_coverage");
+      return await fallbackBoard(supabase, esport, userId, "no_top_tier_coverage", log, snapshot);
     }
 
     const topTeamIds = new Set(topTeams.map((t) => t.team_id));
@@ -136,48 +162,68 @@ Deno.serve(async (req) => {
     const teamRecognition = new Map(topTeams.map((t) => [t.team_id, t.appearances]));
 
     // -------- 3) Approved clues, filtered to recognizable universe --------
-    const { data: approvedRaw } = await supabase
+    const { data: approvedRaw, error: approvedErr } = await supabase
       .from("trivia_clues")
       .select("clue_type,clue_value,label,is_active")
       .eq("esport", esport).eq("is_active", true);
+    log("approved_clues", {
+      raw: approvedRaw?.length ?? 0,
+      error: approvedErr?.message ?? null,
+    });
     const approvedClues: Clue[] = ((approvedRaw ?? []) as any[])
       .map((c) => ({ type: c.clue_type, value: c.clue_value, label: c.label }))
       .filter((c) => {
-        // Keep only recognizable clues
         if (c.type === "team") return topTeamIds.has(c.value);
         if (c.type === "tournament") return topTournamentIds.has(c.value);
         if (c.type === "league") return topLeagueIds.has(c.value);
-        return true; // nationality/role/attribute pass through
+        return true;
       });
+    log("approved_clues_filtered", {
+      kept: approvedClues.length,
+      byType: approvedClues.reduce((acc, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc; }, {} as Record<string, number>),
+    });
+    snapshot.approvedRaw = approvedRaw?.length ?? 0;
+    snapshot.approvedKept = approvedClues.length;
 
     // -------- 4) Players: only those with Tier S/A appearances --------
-    // Pull active players for this esport, then keep only those that appear in
-    // top-tier history. We'll also build a per-player set of (teamIds,
-    // tournamentIds, leagueIds) directly from match history rather than relying
-    // on `current_team`, since recognition needs the full played-for list.
     const { data: playersRaw, error: playersErr } = await supabase
       .from("pandascore_players_master")
       .select("id,name,nationality,current_team_id,current_team_name")
       .eq("active", true).eq("videogame_name", esport)
       .not("nationality", "is", null)
       .limit(5000);
+    log("players_query", {
+      count: playersRaw?.length ?? 0,
+      error: playersErr?.message ?? null,
+    });
     if (playersErr) throw playersErr;
     const players = (playersRaw ?? []) as Array<{
       id: number | string; name: string; nationality: string;
       current_team_id: number | string | null; current_team_name: string | null;
     }>;
+    snapshot.playersCount = players.length;
     if (players.length < 30) {
-      return json({ error: "Not enough players for this esport" }, 400);
+      log("early_return", { reason: "not_enough_players", count: players.length });
+      return json({ error: "Not enough players for this esport", requestId, snapshot }, 400);
     }
 
     // Resolve per-player top-tier history in batches (RPC accepts text[])
     const playerIdStrings = players.map((p) => String(p.id));
     const historyByPlayer = new Map<string, { teams: Set<string>; tournaments: Set<string>; leagues: Set<string> }>();
     const BATCH = 500;
+    let totalHistRows = 0;
+    let firstHistError: string | null = null;
     for (let i = 0; i < playerIdStrings.length; i += BATCH) {
       const slice = playerIdStrings.slice(i, i + BATCH);
-      const { data: hist } = await supabase.rpc("trivia_player_top_tier_match", {
+      const { data: hist, error: histErr } = await supabase.rpc("trivia_player_top_tier_match", {
         _esport: esport, _player_ids: slice,
+      });
+      if (histErr && !firstHistError) firstHistError = histErr.message;
+      const rowsCount = (hist ?? []).length;
+      totalHistRows += rowsCount;
+      log("player_history_batch", {
+        batch: i / BATCH, sliceSize: slice.length, rows: rowsCount,
+        error: histErr?.message ?? null,
       });
       for (const row of (hist ?? []) as any[]) {
         const pid = String(row.player_id);
@@ -191,8 +237,15 @@ Deno.serve(async (req) => {
         if (row.league_id && topLeagueIds.has(String(row.league_id))) bucket.leagues.add(String(row.league_id));
       }
     }
+    log("player_history_total", {
+      historyRows: totalHistRows,
+      uniquePlayers: historyByPlayer.size,
+      firstError: firstHistError,
+    });
+    snapshot.historyRows = totalHistRows;
+    snapshot.playersWithHistory = historyByPlayer.size;
+    snapshot.firstHistError = firstHistError;
 
-    // Keep only players with at least one Tier S/A appearance
     const recognizablePlayers = players
       .filter((p) => historyByPlayer.has(String(p.id)))
       .map((p) => ({
@@ -200,9 +253,11 @@ Deno.serve(async (req) => {
         nation: p.nationality,
         history: historyByPlayer.get(String(p.id))!,
       }));
+    log("recognizable_players", { count: recognizablePlayers.length });
+    snapshot.recognizablePlayers = recognizablePlayers.length;
 
     if (recognizablePlayers.length < 30) {
-      return await fallbackBoard(supabase, esport, userId, "insufficient_top_tier_players");
+      return await fallbackBoard(supabase, esport, userId, "insufficient_top_tier_players", log, snapshot);
     }
 
     // -------- 5) Derived clues from the recognition universe --------
@@ -249,20 +304,29 @@ Deno.serve(async (req) => {
         type: "nationality", value: code, label: NATIONALITY_LABELS[code] ?? code,
       }));
 
+    log("derived_clues", {
+      teams: derivedTeams.length,
+      tournaments: derivedTournaments.length,
+      leagues: derivedLeagues.length,
+      nations: derivedNations.length,
+    });
+
     // Merge approved + derived (approved labels take precedence on the same key)
     const poolMap = new Map<string, Clue>();
     for (const c of [...derivedTeams, ...derivedTournaments, ...derivedLeagues, ...derivedNations]) {
       poolMap.set(clueKey(c), c);
     }
     for (const c of approvedClues) poolMap.set(clueKey(c), c);
+    log("pool_merged", { size: poolMap.size });
 
     // -------- 6) Apply usage filters --------
     const cluesArr = [...poolMap.values()];
     const keys = cluesArr.map(clueKey);
-    const { data: usage } = await supabase
+    const { data: usage, error: usageErr } = await supabase
       .from("trivia_clue_usage")
       .select("clue_key,times_used,last_used_at")
       .in("clue_key", keys);
+    log("usage_query", { count: usage?.length ?? 0, error: usageErr?.message ?? null });
     const usageByKey = new Map<string, { times: number; last: number }>();
     for (const u of (usage ?? []) as any[]) {
       usageByKey.set(u.clue_key, {
@@ -277,9 +341,15 @@ Deno.serve(async (req) => {
       if (u.last >= cutoff && u.times >= CLUE_OVERUSE_RECENT_MAX) return false;
       return true;
     });
+    log("filtered_clues", {
+      kept: filteredClues.length,
+      byType: filteredClues.reduce((acc, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc; }, {} as Record<string, number>),
+    });
+    snapshot.poolSize = poolMap.size;
+    snapshot.filteredClues = filteredClues.length;
 
     if (filteredClues.length < 6) {
-      return await fallbackBoard(supabase, esport, userId, "insufficient_pool_after_filter");
+      return await fallbackBoard(supabase, esport, userId, "insufficient_pool_after_filter", log, snapshot);
     }
 
     // -------- 7) Freshness data --------
@@ -319,8 +389,16 @@ Deno.serve(async (req) => {
     const checkable = filteredClues.filter((c) =>
       ["team", "tournament", "league", "nationality"].includes(c.type),
     );
+    log("checkable", {
+      total: checkable.length,
+      teams: checkable.filter((c) => c.type === "team").length,
+      tournaments: checkable.filter((c) => c.type === "tournament").length,
+      leagues: checkable.filter((c) => c.type === "league").length,
+      nations: checkable.filter((c) => c.type === "nationality").length,
+    });
+    snapshot.checkable = checkable.length;
     if (checkable.length < 6) {
-      return await fallbackBoard(supabase, esport, userId, "checkable_pool_too_small");
+      return await fallbackBoard(supabase, esport, userId, "checkable_pool_too_small", log, snapshot);
     }
 
     const intersectionAnswers = (a: Clue, b: Clue): number => {
@@ -395,9 +473,11 @@ Deno.serve(async (req) => {
         }
       }
     }
+    log("candidates", { count: candidates.length });
+    snapshot.candidates = candidates.length;
 
     if (candidates.length === 0) {
-      return await fallbackBoard(supabase, esport, userId, "no_valid_candidates");
+      return await fallbackBoard(supabase, esport, userId, "no_valid_candidates", log, snapshot);
     }
 
     // -------- 10) Score & pick --------
@@ -447,6 +527,9 @@ Deno.serve(async (req) => {
 
     const best = scored[0];
 
+    log("best_candidate", { quality: best.scores.quality, threshold: QUALITY_THRESHOLD, scores: best.scores });
+    snapshot.bestQuality = best.scores.quality;
+
     // -------- 11) Publish or reject --------
     if (best.scores.quality < QUALITY_THRESHOLD) {
       await supabase.rpc("trivia_log_board_rejection", {
@@ -456,7 +539,7 @@ Deno.serve(async (req) => {
         _quality: best.scores.quality,
         _details: best.scores,
       });
-      return await fallbackBoard(supabase, esport, userId, "quality_threshold");
+      return await fallbackBoard(supabase, esport, userId, "quality_threshold", log, snapshot);
     }
 
     await registerBoardUse(supabase, best.fingerprint, esport, best.rows, best.cols, userId);
@@ -482,6 +565,7 @@ Deno.serve(async (req) => {
       _esport: esport,
     });
 
+    log("success", { fingerprint: best.fingerprint, quality: best.scores.quality });
     return json({
       rowClues: best.rows,
       colClues: best.cols,
@@ -489,11 +573,12 @@ Deno.serve(async (req) => {
       quality: best.scores.quality,
       recognition: best.scores.recognition,
       source: "generated",
+      requestId,
     });
   } catch (e) {
     const err = e instanceof Error ? `${e.message}\n${e.stack}` : String(e);
-    console.error("trivia-generate-board failure:", err);
-    return json({ error: err }, 500);
+    console.error(JSON.stringify({ rid: requestId, stage: "fatal", error: err }));
+    return json({ error: err, requestId, snapshot }, 500);
   }
 });
 
@@ -542,12 +627,26 @@ async function registerBoardUse(
 
 async function fallbackBoard(
   supabase: any, esport: string, userId: string | undefined, reason: string,
+  log?: (stage: string, data?: Record<string, unknown>) => void,
+  snapshot?: Record<string, unknown>,
 ) {
-  const { data: top } = await supabase.rpc("trivia_top_boards", {
+  log?.("fallback_attempt", { reason });
+  const { data: top, error: topErr } = await supabase.rpc("trivia_top_boards", {
     _esport: esport, _limit: 25,
   });
+  log?.("fallback_top_boards", { count: top?.length ?? 0, error: topErr?.message ?? null });
+  if (snapshot) {
+    snapshot.fallbackReason = reason;
+    snapshot.fallbackTopBoards = top?.length ?? 0;
+    snapshot.fallbackTopBoardsError = topErr?.message ?? null;
+  }
   if (!top || top.length === 0) {
-    return json({ error: `Could not generate a board (${reason}) and no fallback exists` }, 500);
+    return json({
+      error: `Could not generate a board (${reason}) and no fallback exists`,
+      requestId: snapshot?.requestId,
+      reason,
+      snapshot,
+    }, 500);
   }
   let recentSet = new Set<string>();
   if (userId) {
@@ -573,8 +672,10 @@ async function fallbackBoard(
   const rows = (pick.row_clue_keys as string[]).map(rebuild);
   const cols = (pick.col_clue_keys as string[]).map(rebuild);
   await registerBoardUse(supabase, pick.fingerprint, esport, rows, cols, userId);
+  log?.("fallback_success", { fingerprint: pick.fingerprint, reason });
   return json({
     rowClues: rows, colClues: cols, fingerprint: pick.fingerprint,
     quality: pick.quality_score, source: "fallback", fallback_reason: reason,
+    requestId: snapshot?.requestId,
   });
 }
