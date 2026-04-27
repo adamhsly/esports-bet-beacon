@@ -162,48 +162,68 @@ Deno.serve(async (req) => {
     const teamRecognition = new Map(topTeams.map((t) => [t.team_id, t.appearances]));
 
     // -------- 3) Approved clues, filtered to recognizable universe --------
-    const { data: approvedRaw } = await supabase
+    const { data: approvedRaw, error: approvedErr } = await supabase
       .from("trivia_clues")
       .select("clue_type,clue_value,label,is_active")
       .eq("esport", esport).eq("is_active", true);
+    log("approved_clues", {
+      raw: approvedRaw?.length ?? 0,
+      error: approvedErr?.message ?? null,
+    });
     const approvedClues: Clue[] = ((approvedRaw ?? []) as any[])
       .map((c) => ({ type: c.clue_type, value: c.clue_value, label: c.label }))
       .filter((c) => {
-        // Keep only recognizable clues
         if (c.type === "team") return topTeamIds.has(c.value);
         if (c.type === "tournament") return topTournamentIds.has(c.value);
         if (c.type === "league") return topLeagueIds.has(c.value);
-        return true; // nationality/role/attribute pass through
+        return true;
       });
+    log("approved_clues_filtered", {
+      kept: approvedClues.length,
+      byType: approvedClues.reduce((acc, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc; }, {} as Record<string, number>),
+    });
+    snapshot.approvedRaw = approvedRaw?.length ?? 0;
+    snapshot.approvedKept = approvedClues.length;
 
     // -------- 4) Players: only those with Tier S/A appearances --------
-    // Pull active players for this esport, then keep only those that appear in
-    // top-tier history. We'll also build a per-player set of (teamIds,
-    // tournamentIds, leagueIds) directly from match history rather than relying
-    // on `current_team`, since recognition needs the full played-for list.
     const { data: playersRaw, error: playersErr } = await supabase
       .from("pandascore_players_master")
       .select("id,name,nationality,current_team_id,current_team_name")
       .eq("active", true).eq("videogame_name", esport)
       .not("nationality", "is", null)
       .limit(5000);
+    log("players_query", {
+      count: playersRaw?.length ?? 0,
+      error: playersErr?.message ?? null,
+    });
     if (playersErr) throw playersErr;
     const players = (playersRaw ?? []) as Array<{
       id: number | string; name: string; nationality: string;
       current_team_id: number | string | null; current_team_name: string | null;
     }>;
+    snapshot.playersCount = players.length;
     if (players.length < 30) {
-      return json({ error: "Not enough players for this esport" }, 400);
+      log("early_return", { reason: "not_enough_players", count: players.length });
+      return json({ error: "Not enough players for this esport", requestId, snapshot }, 400);
     }
 
     // Resolve per-player top-tier history in batches (RPC accepts text[])
     const playerIdStrings = players.map((p) => String(p.id));
     const historyByPlayer = new Map<string, { teams: Set<string>; tournaments: Set<string>; leagues: Set<string> }>();
     const BATCH = 500;
+    let totalHistRows = 0;
+    let firstHistError: string | null = null;
     for (let i = 0; i < playerIdStrings.length; i += BATCH) {
       const slice = playerIdStrings.slice(i, i + BATCH);
-      const { data: hist } = await supabase.rpc("trivia_player_top_tier_match", {
+      const { data: hist, error: histErr } = await supabase.rpc("trivia_player_top_tier_match", {
         _esport: esport, _player_ids: slice,
+      });
+      if (histErr && !firstHistError) firstHistError = histErr.message;
+      const rowsCount = (hist ?? []).length;
+      totalHistRows += rowsCount;
+      log("player_history_batch", {
+        batch: i / BATCH, sliceSize: slice.length, rows: rowsCount,
+        error: histErr?.message ?? null,
       });
       for (const row of (hist ?? []) as any[]) {
         const pid = String(row.player_id);
@@ -217,8 +237,15 @@ Deno.serve(async (req) => {
         if (row.league_id && topLeagueIds.has(String(row.league_id))) bucket.leagues.add(String(row.league_id));
       }
     }
+    log("player_history_total", {
+      historyRows: totalHistRows,
+      uniquePlayers: historyByPlayer.size,
+      firstError: firstHistError,
+    });
+    snapshot.historyRows = totalHistRows;
+    snapshot.playersWithHistory = historyByPlayer.size;
+    snapshot.firstHistError = firstHistError;
 
-    // Keep only players with at least one Tier S/A appearance
     const recognizablePlayers = players
       .filter((p) => historyByPlayer.has(String(p.id)))
       .map((p) => ({
@@ -226,9 +253,11 @@ Deno.serve(async (req) => {
         nation: p.nationality,
         history: historyByPlayer.get(String(p.id))!,
       }));
+    log("recognizable_players", { count: recognizablePlayers.length });
+    snapshot.recognizablePlayers = recognizablePlayers.length;
 
     if (recognizablePlayers.length < 30) {
-      return await fallbackBoard(supabase, esport, userId, "insufficient_top_tier_players");
+      return await fallbackBoard(supabase, esport, userId, "insufficient_top_tier_players", log, snapshot);
     }
 
     // -------- 5) Derived clues from the recognition universe --------
