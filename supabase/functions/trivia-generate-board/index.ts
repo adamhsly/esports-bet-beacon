@@ -565,6 +565,7 @@ Deno.serve(async (req) => {
       _esport: esport,
     });
 
+    log("success", { fingerprint: best.fingerprint, quality: best.scores.quality });
     return json({
       rowClues: best.rows,
       colClues: best.cols,
@@ -572,11 +573,12 @@ Deno.serve(async (req) => {
       quality: best.scores.quality,
       recognition: best.scores.recognition,
       source: "generated",
+      requestId,
     });
   } catch (e) {
     const err = e instanceof Error ? `${e.message}\n${e.stack}` : String(e);
-    console.error("trivia-generate-board failure:", err);
-    return json({ error: err }, 500);
+    console.error(JSON.stringify({ rid: requestId, stage: "fatal", error: err }));
+    return json({ error: err, requestId, snapshot }, 500);
   }
 });
 
