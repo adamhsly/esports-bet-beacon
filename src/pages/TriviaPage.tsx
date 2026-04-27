@@ -49,7 +49,15 @@ const TriviaPage: React.FC = () => {
       const session = await createSession({ mode, esport, board });
       navigate(`/trivia/${session.id}`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Could not start a game");
+      const snapshot = e?.snapshot;
+      const description = snapshot
+        ? Object.entries(snapshot)
+            .filter(([k]) => k !== "requestId")
+            .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+            .join(" · ")
+        : undefined;
+      console.error("[trivia] handleStart failed", { message: e?.message, snapshot, requestId: e?.requestId });
+      toast.error(e?.message ?? "Could not start a game", description ? { description } : undefined);
       setLoading(false);
     }
   };
