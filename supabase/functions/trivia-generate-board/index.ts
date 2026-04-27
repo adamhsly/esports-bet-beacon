@@ -186,21 +186,31 @@ Deno.serve(async (req) => {
     snapshot.approvedKept = approvedClues.length;
 
     // -------- 4) Players: only those with Tier S/A appearances --------
-    const { data: playersRaw, error: playersErr } = await supabase
-      .from("pandascore_players_master")
-      .select("id,name,nationality,current_team_id,current_team_name")
-      .eq("active", true).eq("videogame_name", esport)
-      .not("nationality", "is", null)
-      .limit(5000);
+    // Paginate to bypass PostgREST's default 1000-row cap.
+    const playerPage = 1000;
+    const allPlayers: Array<{
+      id: number | string; name: string; nationality: string;
+      current_team_id: number | string | null; current_team_name: string | null;
+    }> = [];
+    let playersErr: any = null;
+    for (let from = 0; from < 10000; from += playerPage) {
+      const { data: page, error } = await supabase
+        .from("pandascore_players_master")
+        .select("id,name,nationality,current_team_id,current_team_name")
+        .eq("active", true).eq("videogame_name", esport)
+        .not("nationality", "is", null)
+        .range(from, from + playerPage - 1);
+      if (error) { playersErr = error; break; }
+      const rows = (page ?? []) as typeof allPlayers;
+      allPlayers.push(...rows);
+      if (rows.length < playerPage) break;
+    }
     log("players_query", {
-      count: playersRaw?.length ?? 0,
+      count: allPlayers.length,
       error: playersErr?.message ?? null,
     });
     if (playersErr) throw playersErr;
-    const players = (playersRaw ?? []) as Array<{
-      id: number | string; name: string; nationality: string;
-      current_team_id: number | string | null; current_team_name: string | null;
-    }>;
+    const players = allPlayers;
     snapshot.playersCount = players.length;
     if (players.length < 30) {
       log("early_return", { reason: "not_enough_players", count: players.length });
