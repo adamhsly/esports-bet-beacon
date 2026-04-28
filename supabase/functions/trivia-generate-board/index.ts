@@ -453,63 +453,78 @@ Deno.serve(async (req) => {
       cellAnswers: number[][]; sig: string;
     };
     const candidates: Candidate[] = [];
+    const candidateFingerprints = new Set<string>();
+    const pickThree = (pool: Clue[], blocked = new Set<string>()): Clue[] | null => {
+      const out: Clue[] = [];
+      const used = new Set(blocked);
+      for (const c of shuffle(pool)) {
+        const k = clueKey(c);
+        if (used.has(k)) continue;
+        used.add(k);
+        out.push(c);
+        if (out.length === 3) return out;
+      }
+      return null;
+    };
+    const addCandidate = async (rows: Clue[], cols: Clue[]) => {
+      if (candidates.length >= MAX_CANDIDATES) return;
+      const keys = [...rows, ...cols].map(clueKey);
+      if (new Set(keys).size !== 6 || !passesDiversity(rows, cols)) return;
+
+      const cellAnswers: number[][] = [[], [], []].map(() => []);
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const n = intersectionAnswers(rows[i], cols[j]);
+          if (n < MIN_ANSWERS_PER_CELL) return;
+          cellAnswers[i][j] = n;
+        }
+      }
+
+      const fp = await fingerprintFromClues(rows, cols);
+      if (recentFingerprints.has(fp) || candidateFingerprints.has(fp)) return;
+      candidateFingerprints.add(fp);
+      candidates.push({
+        rows, cols, fingerprint: fp, cellAnswers,
+        sig: structureSignature([...rows, ...cols]),
+      });
+    };
 
     const teamPool = checkable.filter((c) => c.type === "team");
+    const nationPool = checkable.filter((c) => c.type === "nationality");
     const otherPool = checkable.filter((c) => c.type !== "team");
-    // Bias: teams on one axis vs mixed on the other tend to feel solvable
-    const layouts: Array<[Clue[], Clue[]]> = [
-      [shuffle(teamPool), shuffle(otherPool)],
-      [shuffle(otherPool), shuffle(teamPool)],
-      [shuffle(checkable), shuffle(checkable)],
-    ];
 
-    outer: for (const [rowSrc, colSrc] of layouts) {
-      for (let attempt = 0; attempt < 60; attempt++) {
-        const rs = shuffle(rowSrc).slice(0, 12);
-        const cs = shuffle(colSrc).slice(0, 12);
-        for (let r1 = 0; r1 < rs.length; r1++) {
-          for (let r2 = r1 + 1; r2 < rs.length; r2++) {
-            if (clueKey(rs[r1]) === clueKey(rs[r2])) continue;
-            for (let r3 = r2 + 1; r3 < rs.length; r3++) {
-              if (clueKey(rs[r3]) === clueKey(rs[r1])) continue;
-              if (clueKey(rs[r3]) === clueKey(rs[r2])) continue;
-              const rows = [rs[r1], rs[r2], rs[r3]];
-              const used = new Set(rows.map(clueKey));
-              const colCand = cs.filter((c) => !used.has(clueKey(c)));
-              for (let c1 = 0; c1 < colCand.length; c1++) {
-                for (let c2 = c1 + 1; c2 < colCand.length; c2++) {
-                  if (clueKey(colCand[c2]) === clueKey(colCand[c1])) continue;
-                  for (let c3 = c2 + 1; c3 < colCand.length; c3++) {
-                    if (clueKey(colCand[c3]) === clueKey(colCand[c1])) continue;
-                    if (clueKey(colCand[c3]) === clueKey(colCand[c2])) continue;
-                    const cols = [colCand[c1], colCand[c2], colCand[c3]];
-                    if (!passesDiversity(rows, cols)) continue;
-
-                    const cellAnswers: number[][] = [[], [], []].map(() => []);
-                    let ok = true;
-                    for (let i = 0; i < 3 && ok; i++) {
-                      for (let j = 0; j < 3 && ok; j++) {
-                        const n = intersectionAnswers(rows[i], cols[j]);
-                        if (n < MIN_ANSWERS_PER_CELL) ok = false;
-                        cellAnswers[i][j] = n;
-                      }
-                    }
-                    if (!ok) continue;
-
-                    const fp = await fingerprintFromClues(rows, cols);
-                    if (recentFingerprints.has(fp)) continue;
-
-                    candidates.push({
-                      rows, cols, fingerprint: fp, cellAnswers,
-                      sig: structureSignature([...rows, ...cols]),
-                    });
-                    if (candidates.length >= MAX_CANDIDATES) break outer;
-                  }
-                }
-              }
-            }
+    // Deterministic team × nationality boards first. This is the most readable
+    // format and avoids the previous exhaustive six-clue nested search.
+    const topNations = nationPool
+      .sort((a, b) => (answerSets.get(clueKey(b))?.size ?? 0) - (answerSets.get(clueKey(a))?.size ?? 0))
+      .slice(0, 10);
+    for (let a = 0; a < topNations.length && candidates.length < MAX_CANDIDATES; a++) {
+      for (let b = a + 1; b < topNations.length && candidates.length < MAX_CANDIDATES; b++) {
+        for (let c = b + 1; c < topNations.length && candidates.length < MAX_CANDIDATES; c++) {
+          const cols = [topNations[a], topNations[b], topNations[c]];
+          const viableTeams = shuffle(teamPool.filter((team) =>
+            cols.every((nation) => intersectionAnswers(team, nation) >= MIN_ANSWERS_PER_CELL),
+          )).slice(0, 9);
+          for (let t = 0; t + 2 < viableTeams.length && candidates.length < MAX_CANDIDATES; t += 3) {
+            await addCandidate([viableTeams[t], viableTeams[t + 1], viableTeams[t + 2]], cols);
           }
         }
+      }
+    }
+
+    // Small random sampler for extra variety without burning CPU.
+    const layouts: Array<[Clue[], Clue[]]> = [
+      [teamPool, otherPool],
+      [otherPool, teamPool],
+      [checkable, checkable],
+    ];
+    for (const [rowSrc, colSrc] of layouts) {
+      for (let attempt = 0; attempt < 1500 && candidates.length < MAX_CANDIDATES; attempt++) {
+        const rows = pickThree(rowSrc);
+        if (!rows) continue;
+        const cols = pickThree(colSrc, new Set(rows.map(clueKey)));
+        if (!cols) continue;
+        await addCandidate(rows, cols);
       }
     }
     log("candidates", { count: candidates.length });
