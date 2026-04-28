@@ -5296,6 +5296,7 @@ export type Database = {
         Args: { _esport: string; _player_ids: string[] }
         Returns: {
           league_id: string
+          opponent_team_id: string
           player_id: string
           team_id: string
           tournament_id: string

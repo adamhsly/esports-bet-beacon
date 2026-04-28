@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
             Authorization: `Bearer ${SERVICE_KEY}`,
             apikey: SERVICE_KEY,
           },
-          body: JSON.stringify({ esport }),
+          body: JSON.stringify({ esport, bakeMode: true }),
         });
         const body = await resp.json().catch(() => ({}));
         if (!resp.ok) {

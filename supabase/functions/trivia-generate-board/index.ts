@@ -24,7 +24,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type ClueType = "team" | "nationality" | "tournament" | "league" | "role" | "attribute";
+type ClueType = "team" | "nationality" | "tournament" | "league" | "role" | "attribute" | "faced";
 type Clue = { type: ClueType; value: string; label: string };
 
 const NATIONALITY_LABELS: Record<string, string> = {
@@ -37,14 +37,14 @@ const NATIONALITY_LABELS: Record<string, string> = {
 
 // ---- Tunables ----------------------------------------------------------------
 const TYPE_CAPS: Record<ClueType, number> = {
-  team: 2, nationality: 1, role: 1, tournament: 2, league: 2, attribute: 2,
+  team: 3, nationality: 3, role: 1, tournament: 3, league: 3, attribute: 2, faced: 2,
 };
 const USER_FRESHNESS_WINDOW = 10;
 const GLOBAL_COOLDOWN_MS = 60 * 60 * 1000;
 const CLUE_OVERUSE_RECENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const CLUE_OVERUSE_RECENT_MAX = 6;
-const MIN_ANSWERS_PER_CELL = 2;
-const QUALITY_THRESHOLD = 0.55;
+const MIN_ANSWERS_PER_CELL = 1;
+const QUALITY_THRESHOLD = 0.45;
 const MAX_CANDIDATES = 24;
 
 // Tier-S/A recognition tunables
@@ -96,8 +96,8 @@ Deno.serve(async (req) => {
   const snapshot: Record<string, unknown> = { requestId };
 
   try {
-    const { esport, templateId, userId } = await req.json().catch(() => ({}));
-    log("request", { esport, templateId, userId });
+    const { esport, templateId, userId, bakeMode } = await req.json().catch(() => ({}));
+    log("request", { esport, templateId, userId, bakeMode });
     if (!esport || typeof esport !== "string") {
       log("bad_request", { reason: "esport_missing" });
       return new Response(JSON.stringify({ error: "esport required", requestId }), {
@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
 
     // Resolve per-player top-tier history in batches (RPC accepts text[])
     const playerIdStrings = players.map((p) => String(p.id));
-    const historyByPlayer = new Map<string, { teams: Set<string>; tournaments: Set<string>; leagues: Set<string> }>();
+    const historyByPlayer = new Map<string, { teams: Set<string>; opponents: Set<string>; tournaments: Set<string>; leagues: Set<string> }>();
     const BATCH = 500;
     let totalHistRows = 0;
     let firstHistError: string | null = null;
@@ -239,10 +239,11 @@ Deno.serve(async (req) => {
         const pid = String(row.player_id);
         let bucket = historyByPlayer.get(pid);
         if (!bucket) {
-          bucket = { teams: new Set(), tournaments: new Set(), leagues: new Set() };
+          bucket = { teams: new Set(), opponents: new Set(), tournaments: new Set(), leagues: new Set() };
           historyByPlayer.set(pid, bucket);
         }
         if (row.team_id && topTeamIds.has(String(row.team_id))) bucket.teams.add(String(row.team_id));
+        if (row.opponent_team_id && topTeamIds.has(String(row.opponent_team_id))) bucket.opponents.add(String(row.opponent_team_id));
         if (row.tournament_id && topTournamentIds.has(String(row.tournament_id))) bucket.tournaments.add(String(row.tournament_id));
         if (row.league_id && topLeagueIds.has(String(row.league_id))) bucket.leagues.add(String(row.league_id));
       }
@@ -365,7 +366,7 @@ Deno.serve(async (req) => {
     // -------- 7) Freshness data --------
     const recentFingerprints = new Set<string>();
     const recentStructures = new Map<string, number>();
-    if (userId) {
+    if (userId && !bakeMode) {
       const { data: recent } = await supabase.rpc("trivia_recent_user_fingerprints", {
         _user_id: userId, _esport: esport, _limit: USER_FRESHNESS_WINDOW,
       });
@@ -378,17 +379,21 @@ Deno.serve(async (req) => {
       }
     }
     const cooldownCutoff = new Date(Date.now() - GLOBAL_COOLDOWN_MS).toISOString();
-    const { data: hotBoards } = await supabase
+    const hotQuery = supabase
       .from("trivia_board_fingerprints")
       .select("fingerprint")
-      .eq("esport", esport).gte("last_used_at", cooldownCutoff)
-      .limit(500);
+      .eq("esport", esport)
+      .limit(1000);
+    const { data: hotBoards } = bakeMode
+      ? await hotQuery.eq("published", true)
+      : await hotQuery.gte("last_used_at", cooldownCutoff);
     const globallyHot = new Set((hotBoards ?? []).map((b: any) => b.fingerprint));
 
     // -------- 8) Validity index (Tier S/A only) --------
     const satisfies = (c: Clue, p: typeof recognizablePlayers[number]) => {
       switch (c.type) {
         case "team":        return p.history.teams.has(c.value);
+        case "faced":       return p.history.opponents?.has(c.value) ?? false;
         case "tournament":  return p.history.tournaments.has(c.value);
         case "league":      return p.history.leagues.has(c.value);
         case "nationality": return p.nation === c.value;
@@ -397,7 +402,7 @@ Deno.serve(async (req) => {
     };
 
     const checkable = filteredClues.filter((c) =>
-      ["team", "tournament", "league", "nationality"].includes(c.type),
+      ["team", "faced", "tournament", "league", "nationality"].includes(c.type),
     );
     log("checkable", {
       total: checkable.length,
@@ -411,10 +416,39 @@ Deno.serve(async (req) => {
       return await fallbackBoard(supabase, esport, userId, "checkable_pool_too_small", log, snapshot);
     }
 
+    // Pre-index clue -> satisfying player ids once. The previous path scanned
+    // every recognizable player for every candidate cell, which exhausted Edge
+    // CPU before any board could be persisted.
+    const answerSets = new Map<string, Set<string>>();
+    for (const c of checkable) {
+      const ids = new Set<string>();
+      for (const p of recognizablePlayers) {
+        if (satisfies(c, p)) ids.add(p.id);
+      }
+      answerSets.set(clueKey(c), ids);
+    }
+    const answerSetSizes = [...answerSets.values()].map((s) => s.size);
+    log("answer_index", {
+      clues: answerSets.size,
+      minAnswers: Math.min(...answerSetSizes),
+      maxAnswers: Math.max(...answerSetSizes),
+    });
+
+    const intersectionMemo = new Map<string, number>();
     const intersectionAnswers = (a: Clue, b: Clue): number => {
       if (a.type === b.type && a.value === b.value) return 0;
+      const ak = clueKey(a);
+      const bk = clueKey(b);
+      const memoKey = ak < bk ? `${ak}||${bk}` : `${bk}||${ak}`;
+      const cached = intersectionMemo.get(memoKey);
+      if (cached !== undefined) return cached;
+      const aSet = answerSets.get(ak);
+      const bSet = answerSets.get(bk);
+      if (!aSet || !bSet) return 0;
       let n = 0;
-      for (const p of recognizablePlayers) if (satisfies(a, p) && satisfies(b, p)) n++;
+      const [small, large] = aSet.size <= bSet.size ? [aSet, bSet] : [bSet, aSet];
+      for (const id of small) if (large.has(id)) n++;
+      intersectionMemo.set(memoKey, n);
       return n;
     };
 
@@ -424,63 +458,78 @@ Deno.serve(async (req) => {
       cellAnswers: number[][]; sig: string;
     };
     const candidates: Candidate[] = [];
+    const candidateFingerprints = new Set<string>();
+    const pickThree = (pool: Clue[], blocked = new Set<string>()): Clue[] | null => {
+      const out: Clue[] = [];
+      const used = new Set(blocked);
+      for (const c of shuffle(pool)) {
+        const k = clueKey(c);
+        if (used.has(k)) continue;
+        used.add(k);
+        out.push(c);
+        if (out.length === 3) return out;
+      }
+      return null;
+    };
+    const addCandidate = async (rows: Clue[], cols: Clue[]) => {
+      if (candidates.length >= MAX_CANDIDATES) return;
+      const keys = [...rows, ...cols].map(clueKey);
+      if (new Set(keys).size !== 6 || !passesDiversity(rows, cols)) return;
+
+      const cellAnswers: number[][] = [[], [], []].map(() => []);
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const n = intersectionAnswers(rows[i], cols[j]);
+          if (n < MIN_ANSWERS_PER_CELL) return;
+          cellAnswers[i][j] = n;
+        }
+      }
+
+      const fp = await fingerprintFromClues(rows, cols);
+      if (recentFingerprints.has(fp) || candidateFingerprints.has(fp) || (bakeMode && globallyHot.has(fp))) return;
+      candidateFingerprints.add(fp);
+      candidates.push({
+        rows, cols, fingerprint: fp, cellAnswers,
+        sig: structureSignature([...rows, ...cols]),
+      });
+    };
 
     const teamPool = checkable.filter((c) => c.type === "team");
+    const nationPool = checkable.filter((c) => c.type === "nationality");
     const otherPool = checkable.filter((c) => c.type !== "team");
-    // Bias: teams on one axis vs mixed on the other tend to feel solvable
-    const layouts: Array<[Clue[], Clue[]]> = [
-      [shuffle(teamPool), shuffle(otherPool)],
-      [shuffle(otherPool), shuffle(teamPool)],
-      [shuffle(checkable), shuffle(checkable)],
-    ];
 
-    outer: for (const [rowSrc, colSrc] of layouts) {
-      for (let attempt = 0; attempt < 60; attempt++) {
-        const rs = shuffle(rowSrc).slice(0, 12);
-        const cs = shuffle(colSrc).slice(0, 12);
-        for (let r1 = 0; r1 < rs.length; r1++) {
-          for (let r2 = r1 + 1; r2 < rs.length; r2++) {
-            if (clueKey(rs[r1]) === clueKey(rs[r2])) continue;
-            for (let r3 = r2 + 1; r3 < rs.length; r3++) {
-              if (clueKey(rs[r3]) === clueKey(rs[r1])) continue;
-              if (clueKey(rs[r3]) === clueKey(rs[r2])) continue;
-              const rows = [rs[r1], rs[r2], rs[r3]];
-              const used = new Set(rows.map(clueKey));
-              const colCand = cs.filter((c) => !used.has(clueKey(c)));
-              for (let c1 = 0; c1 < colCand.length; c1++) {
-                for (let c2 = c1 + 1; c2 < colCand.length; c2++) {
-                  if (clueKey(colCand[c2]) === clueKey(colCand[c1])) continue;
-                  for (let c3 = c2 + 1; c3 < colCand.length; c3++) {
-                    if (clueKey(colCand[c3]) === clueKey(colCand[c1])) continue;
-                    if (clueKey(colCand[c3]) === clueKey(colCand[c2])) continue;
-                    const cols = [colCand[c1], colCand[c2], colCand[c3]];
-                    if (!passesDiversity(rows, cols)) continue;
-
-                    const cellAnswers: number[][] = [[], [], []].map(() => []);
-                    let ok = true;
-                    for (let i = 0; i < 3 && ok; i++) {
-                      for (let j = 0; j < 3 && ok; j++) {
-                        const n = intersectionAnswers(rows[i], cols[j]);
-                        if (n < MIN_ANSWERS_PER_CELL) ok = false;
-                        cellAnswers[i][j] = n;
-                      }
-                    }
-                    if (!ok) continue;
-
-                    const fp = await fingerprintFromClues(rows, cols);
-                    if (recentFingerprints.has(fp)) continue;
-
-                    candidates.push({
-                      rows, cols, fingerprint: fp, cellAnswers,
-                      sig: structureSignature([...rows, ...cols]),
-                    });
-                    if (candidates.length >= MAX_CANDIDATES) break outer;
-                  }
-                }
-              }
-            }
+    // Deterministic team × nationality boards first. This is the most readable
+    // format and avoids the previous exhaustive six-clue nested search.
+    const topNations = nationPool
+      .sort((a, b) => (answerSets.get(clueKey(b))?.size ?? 0) - (answerSets.get(clueKey(a))?.size ?? 0))
+      .slice(0, 10);
+    for (let a = 0; a < topNations.length && candidates.length < MAX_CANDIDATES; a++) {
+      for (let b = a + 1; b < topNations.length && candidates.length < MAX_CANDIDATES; b++) {
+        for (let c = b + 1; c < topNations.length && candidates.length < MAX_CANDIDATES; c++) {
+          const cols = [topNations[a], topNations[b], topNations[c]];
+          const viableTeams = shuffle(teamPool.filter((team) =>
+            cols.every((nation) => intersectionAnswers(team, nation) >= MIN_ANSWERS_PER_CELL),
+          )).slice(0, 9);
+          for (let t = 0; t + 2 < viableTeams.length && candidates.length < MAX_CANDIDATES; t += 3) {
+            await addCandidate([viableTeams[t], viableTeams[t + 1], viableTeams[t + 2]], cols);
           }
         }
+      }
+    }
+
+    // Small random sampler for extra variety without burning CPU.
+    const layouts: Array<[Clue[], Clue[]]> = [
+      [teamPool, otherPool],
+      [otherPool, teamPool],
+      [checkable, checkable],
+    ];
+    for (const [rowSrc, colSrc] of layouts) {
+      for (let attempt = 0; attempt < 1500 && candidates.length < MAX_CANDIDATES; attempt++) {
+        const rows = pickThree(rowSrc);
+        if (!rows) continue;
+        const cols = pickThree(colSrc, new Set(rows.map(clueKey)));
+        if (!cols) continue;
+        await addCandidate(rows, cols);
       }
     }
     log("candidates", { count: candidates.length });
