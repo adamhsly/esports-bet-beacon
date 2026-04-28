@@ -111,6 +111,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Canonical esport slug used by trivia_top_tier_player_history (e.g. "cs", "lol").
+    // Other tables use the human videogame_name (e.g. "Counter-Strike").
+    const { data: canonRow } = await supabase.rpc("trivia_canonical_esport", { _raw: esport });
+    const esportCanonical = (typeof canonRow === "string" && canonRow) ? canonRow : esport;
+    snapshot.esportCanonical = esportCanonical;
+    log("esport_canonical", { raw: esport, canonical: esportCanonical });
+
     // -------- 1) Saved template short-circuit --------
     if (templateId && typeof templateId === "string") {
       log("template_lookup", { templateId });
