@@ -49,12 +49,13 @@ export async function generateBoard(
   opts?: { templateId?: string },
 ): Promise<TriviaBoard> {
   const { data: userData } = await supabase.auth.getUser();
-  const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
+  // If a specific template is requested (admin testing), fall through to the
+  // legacy generator. Otherwise serve a pre-baked board instantly.
+  const fnName = opts?.templateId ? "trivia-generate-board" : "trivia-pick-board";
+  const { data, error } = await supabase.functions.invoke(fnName, {
     body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
   });
   if (error) {
-    // supabase-js stuffs the function's response into error.context (a Response).
-    // Extract the JSON body so the UI shows the real reason instead of "Edge Function returned a non-2xx status code".
     let detail = "";
     let snapshot: unknown = undefined;
     let requestId: string | undefined;
