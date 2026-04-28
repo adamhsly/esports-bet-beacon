@@ -5171,6 +5171,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      trivia_canonical_esport: { Args: { _raw: string }; Returns: string }
       trivia_clue_matches_player: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
         Returns: boolean
