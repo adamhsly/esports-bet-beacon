@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
 
     // Resolve per-player top-tier history in batches (RPC accepts text[])
     const playerIdStrings = players.map((p) => String(p.id));
-    const historyByPlayer = new Map<string, { teams: Set<string>; tournaments: Set<string>; leagues: Set<string> }>();
+    const historyByPlayer = new Map<string, { teams: Set<string>; opponents: Set<string>; tournaments: Set<string>; leagues: Set<string> }>();
     const BATCH = 500;
     let totalHistRows = 0;
     let firstHistError: string | null = null;
@@ -239,10 +239,11 @@ Deno.serve(async (req) => {
         const pid = String(row.player_id);
         let bucket = historyByPlayer.get(pid);
         if (!bucket) {
-          bucket = { teams: new Set(), tournaments: new Set(), leagues: new Set() };
+          bucket = { teams: new Set(), opponents: new Set(), tournaments: new Set(), leagues: new Set() };
           historyByPlayer.set(pid, bucket);
         }
         if (row.team_id && topTeamIds.has(String(row.team_id))) bucket.teams.add(String(row.team_id));
+        if (row.opponent_team_id && topTeamIds.has(String(row.opponent_team_id))) bucket.opponents.add(String(row.opponent_team_id));
         if (row.tournament_id && topTournamentIds.has(String(row.tournament_id))) bucket.tournaments.add(String(row.tournament_id));
         if (row.league_id && topLeagueIds.has(String(row.league_id))) bucket.leagues.add(String(row.league_id));
       }
