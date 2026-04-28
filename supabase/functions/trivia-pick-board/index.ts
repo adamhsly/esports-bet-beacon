@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type ClueType = "team" | "nationality" | "tournament" | "league" | "role" | "attribute";
+type ClueType = "team" | "nationality" | "tournament" | "league" | "role" | "attribute" | "faced";
 type Clue = { type: ClueType; value: string; label: string };
 
 Deno.serve(async (req) => {
