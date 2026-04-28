@@ -96,8 +96,8 @@ Deno.serve(async (req) => {
   const snapshot: Record<string, unknown> = { requestId };
 
   try {
-    const { esport, templateId, userId } = await req.json().catch(() => ({}));
-    log("request", { esport, templateId, userId });
+    const { esport, templateId, userId, bakeMode } = await req.json().catch(() => ({}));
+    log("request", { esport, templateId, userId, bakeMode });
     if (!esport || typeof esport !== "string") {
       log("bad_request", { reason: "esport_missing" });
       return new Response(JSON.stringify({ error: "esport required", requestId }), {
@@ -365,7 +365,7 @@ Deno.serve(async (req) => {
     // -------- 7) Freshness data --------
     const recentFingerprints = new Set<string>();
     const recentStructures = new Map<string, number>();
-    if (userId) {
+    if (userId && !bakeMode) {
       const { data: recent } = await supabase.rpc("trivia_recent_user_fingerprints", {
         _user_id: userId, _esport: esport, _limit: USER_FRESHNESS_WINDOW,
       });
@@ -378,11 +378,14 @@ Deno.serve(async (req) => {
       }
     }
     const cooldownCutoff = new Date(Date.now() - GLOBAL_COOLDOWN_MS).toISOString();
-    const { data: hotBoards } = await supabase
+    const hotQuery = supabase
       .from("trivia_board_fingerprints")
       .select("fingerprint")
-      .eq("esport", esport).gte("last_used_at", cooldownCutoff)
-      .limit(500);
+      .eq("esport", esport)
+      .limit(1000);
+    const { data: hotBoards } = bakeMode
+      ? await hotQuery.eq("published", true)
+      : await hotQuery.gte("last_used_at", cooldownCutoff);
     const globallyHot = new Set((hotBoards ?? []).map((b: any) => b.fingerprint));
 
     // -------- 8) Validity index (Tier S/A only) --------
