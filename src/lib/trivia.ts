@@ -80,6 +80,46 @@ export async function generateBoard(
 }
 
 // ---------------------------------------------------------------------------
+// Pre-baked board pool (instant Start Game)
+// ---------------------------------------------------------------------------
+
+/** Count of pre-baked boards available for an esport. */
+export async function countBakedBoards(esport: string): Promise<number> {
+  const { count, error } = await (supabase as any)
+    .from("trivia_board_fingerprints")
+    .select("fingerprint", { head: true, count: "exact" })
+    .eq("esport", esport)
+    .eq("published", true)
+    .not("clue_labels", "is", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** Bake N more boards into the pool for an esport. */
+export async function bakeBoards(esport: string, count: number) {
+  const { data, error } = await supabase.functions.invoke("trivia-bake-boards", {
+    body: { esport, count },
+  });
+  if (error) {
+    let detail = "";
+    try {
+      const ctx: any = (error as any).context;
+      if (ctx?.json) detail = (await ctx.json())?.error ?? "";
+    } catch { /* ignore */ }
+    throw new Error(detail || (error as any).message || "bakeBoards failed");
+  }
+  return data as {
+    esport: string;
+    attempts: number;
+    baked: number;
+    duplicates: number;
+    fallbacks: number;
+    failed: number;
+    elapsedMs: number;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Admin clue + grid-template management
 // ---------------------------------------------------------------------------
 
