@@ -37,7 +37,7 @@ const NATIONALITY_LABELS: Record<string, string> = {
 
 // ---- Tunables ----------------------------------------------------------------
 const TYPE_CAPS: Record<ClueType, number> = {
-  team: 2, nationality: 1, role: 1, tournament: 2, league: 2, attribute: 2,
+  team: 3, nationality: 3, role: 1, tournament: 3, league: 3, attribute: 2,
 };
 const USER_FRESHNESS_WINDOW = 10;
 const GLOBAL_COOLDOWN_MS = 60 * 60 * 1000;
