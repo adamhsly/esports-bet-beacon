@@ -562,11 +562,15 @@ Deno.serve(async (req) => {
       _freshness: best.scores.fresh,
       _published: true,
     });
-    // Persist recognition score directly (no RPC needed; column added in migration)
+    // Persist recognition score + per-clue labels so the pre-baked pool can
+    // serve boards instantly without re-resolving derived team/tournament names.
+    const clueLabels: Record<string, string> = {};
+    for (const c of [...best.rows, ...best.cols]) clueLabels[clueKey(c)] = c.label;
     await supabase.from("trivia_board_fingerprints")
       .update({
         recognition_score: best.scores.recognition,
         min_clue_tier: "a",
+        clue_labels: clueLabels,
       })
       .eq("fingerprint", best.fingerprint);
 

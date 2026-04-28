@@ -49,12 +49,13 @@ export async function generateBoard(
   opts?: { templateId?: string },
 ): Promise<TriviaBoard> {
   const { data: userData } = await supabase.auth.getUser();
-  const { data, error } = await supabase.functions.invoke("trivia-generate-board", {
+  // If a specific template is requested (admin testing), fall through to the
+  // legacy generator. Otherwise serve a pre-baked board instantly.
+  const fnName = opts?.templateId ? "trivia-generate-board" : "trivia-pick-board";
+  const { data, error } = await supabase.functions.invoke(fnName, {
     body: { esport, templateId: opts?.templateId, userId: userData?.user?.id ?? null },
   });
   if (error) {
-    // supabase-js stuffs the function's response into error.context (a Response).
-    // Extract the JSON body so the UI shows the real reason instead of "Edge Function returned a non-2xx status code".
     let detail = "";
     let snapshot: unknown = undefined;
     let requestId: string | undefined;
@@ -76,6 +77,46 @@ export async function generateBoard(
   }
   if (!data?.rowClues || !data?.colClues) throw new Error("Invalid board response");
   return { rowClues: data.rowClues, colClues: data.colClues, fingerprint: data.fingerprint };
+}
+
+// ---------------------------------------------------------------------------
+// Pre-baked board pool (instant Start Game)
+// ---------------------------------------------------------------------------
+
+/** Count of pre-baked boards available for an esport. */
+export async function countBakedBoards(esport: string): Promise<number> {
+  const { count, error } = await (supabase as any)
+    .from("trivia_board_fingerprints")
+    .select("fingerprint", { head: true, count: "exact" })
+    .eq("esport", esport)
+    .eq("published", true)
+    .not("clue_labels", "is", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** Bake N more boards into the pool for an esport. */
+export async function bakeBoards(esport: string, count: number) {
+  const { data, error } = await supabase.functions.invoke("trivia-bake-boards", {
+    body: { esport, count },
+  });
+  if (error) {
+    let detail = "";
+    try {
+      const ctx: any = (error as any).context;
+      if (ctx?.json) detail = (await ctx.json())?.error ?? "";
+    } catch { /* ignore */ }
+    throw new Error(detail || (error as any).message || "bakeBoards failed");
+  }
+  return data as {
+    esport: string;
+    attempts: number;
+    baked: number;
+    duplicates: number;
+    fallbacks: number;
+    failed: number;
+    elapsedMs: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
