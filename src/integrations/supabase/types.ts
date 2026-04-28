@@ -3414,6 +3414,7 @@ export type Database = {
           avg_cell_answers: number | null
           board_difficulty: string | null
           board_difficulty_score: number | null
+          clue_labels: Json | null
           clue_type_counts: Json
           col_clue_keys: string[]
           created_at: string
@@ -3422,6 +3423,7 @@ export type Database = {
           esport: string
           fingerprint: string
           freshness_score: number | null
+          last_served_at: string | null
           last_used_at: string | null
           min_clue_tier: string | null
           published: boolean | null
@@ -3437,6 +3439,7 @@ export type Database = {
           avg_cell_answers?: number | null
           board_difficulty?: string | null
           board_difficulty_score?: number | null
+          clue_labels?: Json | null
           clue_type_counts: Json
           col_clue_keys: string[]
           created_at?: string
@@ -3445,6 +3448,7 @@ export type Database = {
           esport: string
           fingerprint: string
           freshness_score?: number | null
+          last_served_at?: string | null
           last_used_at?: string | null
           min_clue_tier?: string | null
           published?: boolean | null
@@ -3460,6 +3464,7 @@ export type Database = {
           avg_cell_answers?: number | null
           board_difficulty?: string | null
           board_difficulty_score?: number | null
+          clue_labels?: Json | null
           clue_type_counts?: Json
           col_clue_keys?: string[]
           created_at?: string
@@ -3468,6 +3473,7 @@ export type Database = {
           esport?: string
           fingerprint?: string
           freshness_score?: number | null
+          last_served_at?: string | null
           last_used_at?: string | null
           min_clue_tier?: string | null
           published?: boolean | null
@@ -5271,9 +5277,16 @@ export type Database = {
         Args: { _clue_type: string; _clue_value: string; _label: string }
         Returns: string
       }
-      trivia_pick_random_generated_board: {
+      trivia_pick_baked_board: {
         Args: { _esport: string; _recent_window?: number; _user_id?: string }
-        Returns: string
+        Returns: {
+          clue_labels: Json
+          col_clue_keys: string[]
+          fingerprint: string
+          quality_score: number
+          recognition_score: number
+          row_clue_keys: string[]
+        }[]
       }
       trivia_player_matches_clue: {
         Args: { _clue_type: string; _clue_value: string; _player_id: number }
