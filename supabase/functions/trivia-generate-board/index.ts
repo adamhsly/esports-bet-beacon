@@ -44,7 +44,7 @@ const GLOBAL_COOLDOWN_MS = 60 * 60 * 1000;
 const CLUE_OVERUSE_RECENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const CLUE_OVERUSE_RECENT_MAX = 6;
 const MIN_ANSWERS_PER_CELL = 1;
-const QUALITY_THRESHOLD = 0.55;
+const QUALITY_THRESHOLD = 0.45;
 const MAX_CANDIDATES = 24;
 
 // Tier-S/A recognition tunables
@@ -486,7 +486,7 @@ Deno.serve(async (req) => {
       }
 
       const fp = await fingerprintFromClues(rows, cols);
-      if (recentFingerprints.has(fp) || candidateFingerprints.has(fp)) return;
+      if (recentFingerprints.has(fp) || candidateFingerprints.has(fp) || (bakeMode && globallyHot.has(fp))) return;
       candidateFingerprints.add(fp);
       candidates.push({
         rows, cols, fingerprint: fp, cellAnswers,
