@@ -24,7 +24,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type ClueType = "team" | "nationality" | "tournament" | "league" | "role" | "attribute";
+type ClueType = "team" | "nationality" | "tournament" | "league" | "role" | "attribute" | "faced";
 type Clue = { type: ClueType; value: string; label: string };
 
 const NATIONALITY_LABELS: Record<string, string> = {
@@ -37,7 +37,7 @@ const NATIONALITY_LABELS: Record<string, string> = {
 
 // ---- Tunables ----------------------------------------------------------------
 const TYPE_CAPS: Record<ClueType, number> = {
-  team: 3, nationality: 3, role: 1, tournament: 3, league: 3, attribute: 2,
+  team: 3, nationality: 3, role: 1, tournament: 3, league: 3, attribute: 2, faced: 2,
 };
 const USER_FRESHNESS_WINDOW = 10;
 const GLOBAL_COOLDOWN_MS = 60 * 60 * 1000;
