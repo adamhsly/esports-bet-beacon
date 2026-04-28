@@ -392,6 +392,7 @@ Deno.serve(async (req) => {
     const satisfies = (c: Clue, p: typeof recognizablePlayers[number]) => {
       switch (c.type) {
         case "team":        return p.history.teams.has(c.value);
+        case "faced":       return p.history.opponents?.has(c.value) ?? false;
         case "tournament":  return p.history.tournaments.has(c.value);
         case "league":      return p.history.leagues.has(c.value);
         case "nationality": return p.nation === c.value;
@@ -400,7 +401,7 @@ Deno.serve(async (req) => {
     };
 
     const checkable = filteredClues.filter((c) =>
-      ["team", "tournament", "league", "nationality"].includes(c.type),
+      ["team", "faced", "tournament", "league", "nationality"].includes(c.type),
     );
     log("checkable", {
       total: checkable.length,
