@@ -411,10 +411,39 @@ Deno.serve(async (req) => {
       return await fallbackBoard(supabase, esport, userId, "checkable_pool_too_small", log, snapshot);
     }
 
+    // Pre-index clue -> satisfying player ids once. The previous path scanned
+    // every recognizable player for every candidate cell, which exhausted Edge
+    // CPU before any board could be persisted.
+    const answerSets = new Map<string, Set<string>>();
+    for (const c of checkable) {
+      const ids = new Set<string>();
+      for (const p of recognizablePlayers) {
+        if (satisfies(c, p)) ids.add(p.id);
+      }
+      answerSets.set(clueKey(c), ids);
+    }
+    const answerSetSizes = [...answerSets.values()].map((s) => s.size);
+    log("answer_index", {
+      clues: answerSets.size,
+      minAnswers: Math.min(...answerSetSizes),
+      maxAnswers: Math.max(...answerSetSizes),
+    });
+
+    const intersectionMemo = new Map<string, number>();
     const intersectionAnswers = (a: Clue, b: Clue): number => {
       if (a.type === b.type && a.value === b.value) return 0;
+      const ak = clueKey(a);
+      const bk = clueKey(b);
+      const memoKey = ak < bk ? `${ak}||${bk}` : `${bk}||${ak}`;
+      const cached = intersectionMemo.get(memoKey);
+      if (cached !== undefined) return cached;
+      const aSet = answerSets.get(ak);
+      const bSet = answerSets.get(bk);
+      if (!aSet || !bSet) return 0;
       let n = 0;
-      for (const p of recognizablePlayers) if (satisfies(a, p) && satisfies(b, p)) n++;
+      const [small, large] = aSet.size <= bSet.size ? [aSet, bSet] : [bSet, aSet];
+      for (const id of small) if (large.has(id)) n++;
+      intersectionMemo.set(memoKey, n);
       return n;
     };
 
