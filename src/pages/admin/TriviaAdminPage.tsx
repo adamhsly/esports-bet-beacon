@@ -201,6 +201,41 @@ const TriviaAdminPage: React.FC = () => {
     }
   };
 
+  const handleBake = async () => {
+    if (baking) return;
+    setBaking(true);
+    setBakeProgress("");
+    const CHUNK = 5;
+    let totalBaked = 0;
+    let totalAttempts = 0;
+    let consecutiveZero = 0;
+    try {
+      let current = await countBakedBoards(esport).catch(() => poolCount);
+      setPoolCount(current);
+      while (current < bakeTarget) {
+        const remaining = bakeTarget - current;
+        const ask = Math.min(CHUNK, remaining);
+        setBakeProgress(`Pool ${current}/${bakeTarget} — baking ${ask}…`);
+        const res = await bakeBoards(esport, ask);
+        totalBaked += res.baked;
+        totalAttempts += res.attempts;
+        // If a chunk produces no new boards twice in a row, stop (avoids infinite loop).
+        if (res.baked === 0) consecutiveZero += 1; else consecutiveZero = 0;
+        current = await countBakedBoards(esport).catch(() => current + res.baked);
+        setPoolCount(current);
+        if (consecutiveZero >= 2) {
+          setBakeProgress(`Stopped — generator returned no new boards (pool ${current}).`);
+          break;
+        }
+      }
+      toast.success(`Baked ${totalBaked} new boards (${totalAttempts} attempts). Pool now ${current}.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Bake failed");
+    } finally {
+      setBaking(false);
+    }
+  };
+
   const handleGenerate = async (dryRun: boolean) => {
     setGenerating(true);
     setGenResult(null);
