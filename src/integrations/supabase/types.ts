@@ -3646,6 +3646,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_generated: boolean
+          last_served_at: string | null
           name: string
           quality_score: number | null
           row_clue_ids: string[]
@@ -3662,6 +3663,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_generated?: boolean
+          last_served_at?: string | null
           name: string
           quality_score?: number | null
           row_clue_ids: string[]
@@ -3678,6 +3680,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_generated?: boolean
+          last_served_at?: string | null
           name?: string
           quality_score?: number | null
           row_clue_ids?: string[]
@@ -5266,6 +5269,10 @@ export type Database = {
       }
       trivia_normalize_label: {
         Args: { _clue_type: string; _clue_value: string; _label: string }
+        Returns: string
+      }
+      trivia_pick_random_generated_board: {
+        Args: { _esport: string; _recent_window?: number; _user_id?: string }
         Returns: string
       }
       trivia_player_matches_clue: {
