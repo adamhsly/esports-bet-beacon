@@ -71,18 +71,20 @@ Deno.serve(async (req) => {
     // Track that this user saw this board.
     if (userId) {
       try {
+        const all = [...rowClues, ...colClues];
+        const counts = all.reduce((acc: Record<string, number>, c) => {
+          acc[c.type] = (acc[c.type] ?? 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        const signature = Object.entries(counts)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([t, n]) => `${t}:${n}`)
+          .join(",");
         await supabase.rpc("trivia_register_board_use", {
           _fingerprint: row.fingerprint,
           _esport: esport,
-          _structure_signature: rowClues.concat(colClues)
-            .reduce((acc: Record<string, number>, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc; }, {})
-            && Object.entries(
-              rowClues.concat(colClues).reduce((acc: Record<string, number>, c) => {
-                acc[c.type] = (acc[c.type] ?? 0) + 1; return acc;
-              }, {} as Record<string, number>),
-            ).sort(([a],[b]) => a.localeCompare(b)).map(([t,n]) => `${t}:${n}`).join(","),
-          _clue_type_counts: rowClues.concat(colClues)
-            .reduce((acc: Record<string, number>, c) => { acc[c.type] = (acc[c.type] ?? 0) + 1; return acc; }, {}),
+          _structure_signature: signature,
+          _clue_type_counts: counts,
           _row_clue_keys: row.row_clue_keys,
           _col_clue_keys: row.col_clue_keys,
           _user_id: userId,
