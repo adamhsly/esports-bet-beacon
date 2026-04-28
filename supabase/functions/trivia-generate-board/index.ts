@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < playerIdStrings.length; i += BATCH) {
       const slice = playerIdStrings.slice(i, i + BATCH);
       const { data: hist, error: histErr } = await supabase.rpc("trivia_player_top_tier_match", {
-        _esport: esport, _player_ids: slice,
+        _esport: esportCanonical, _player_ids: slice,
       });
       if (histErr && !firstHistError) firstHistError = histErr.message;
       const rowsCount = (hist ?? []).length;
