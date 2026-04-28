@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Users, User, Sparkles, Settings } from "lucide-react";
+import { Loader2, Users, User, Sparkles, Settings, ChevronLeft } from "lucide-react";
 import {
   TRIVIA_ESPORTS,
   generateBoard,
@@ -24,12 +24,34 @@ import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/utils";
 
+import counterStrike2Logo from "@/assets/logos/esports/counter-strike-2.png";
+import leagueOfLegendsLogo from "@/assets/logos/esports/league-of-legends.png";
+import dota2Logo from "@/assets/logos/esports/dota-2.png";
+import valorantLogo from "@/assets/logos/esports/valorant.png";
+import rainbowSixSiegeLogo from "@/assets/logos/esports/rainbow-six-siege.png";
+import rocketLeagueLogo from "@/assets/logos/esports/rocket-league.png";
+import overwatchLogo from "@/assets/logos/esports/overwatch.png";
+import callOfDutyLogo from "@/assets/logos/esports/call-of-duty.png";
+
+type TriviaEsport = (typeof TRIVIA_ESPORTS)[number];
+
+const GAME_TILES: { value: TriviaEsport; label: string; logo: string }[] = [
+  { value: "Counter-Strike", label: "Counter-Strike 2", logo: counterStrike2Logo },
+  { value: "LoL", label: "League of Legends", logo: leagueOfLegendsLogo },
+  { value: "Valorant", label: "Valorant", logo: valorantLogo },
+  { value: "Dota 2", label: "Dota 2", logo: dota2Logo },
+  { value: "Rainbow 6 Siege", label: "Rainbow Six Siege", logo: rainbowSixSiegeLogo },
+  { value: "Rocket League", label: "Rocket League", logo: rocketLeagueLogo },
+  { value: "Overwatch", label: "Overwatch", logo: overwatchLogo },
+  { value: "Call of Duty", label: "Call of Duty", logo: callOfDutyLogo },
+];
+
 const TriviaPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const presetTemplateId = searchParams.get("templateId") ?? undefined;
 
-  const [esport, setEsport] = useState<string>("Counter-Strike");
+  const [esport, setEsport] = useState<TriviaEsport | null>(null);
   const [mode, setMode] = useState<"solo" | "two_player">("solo");
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<TriviaGridTemplateRow[]>([]);
@@ -37,12 +59,17 @@ const TriviaPage: React.FC = () => {
   const { data: isAdmin } = useIsAdmin();
 
   useEffect(() => {
+    if (!esport) {
+      setTemplates([]);
+      return;
+    }
     listGridTemplates(esport)
       .then((rows) => setTemplates(rows.filter((r) => r.is_active)))
       .catch(() => setTemplates([]));
   }, [esport]);
 
   const handleStart = async () => {
+    if (!esport) return;
     setLoading(true);
     try {
       const board = await generateBoard(esport, { templateId });
@@ -62,6 +89,8 @@ const TriviaPage: React.FC = () => {
     }
   };
 
+  const selectedTile = esport ? GAME_TILES.find((t) => t.value === esport) : null;
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <Helmet>
@@ -73,7 +102,23 @@ const TriviaPage: React.FC = () => {
         <link rel="canonical" href="https://frags-and-fortunes.lovable.app/trivia" />
       </Helmet>
       <SearchableNavbar />
-      <main className="container mx-auto px-4 py-6 max-w-3xl">
+      <main className="container mx-auto px-4 py-6 max-w-5xl">
+        {esport && (
+          <div className="mb-4 flex">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEsport(null);
+                setTemplateId(undefined);
+              }}
+              className="border-slate-700 bg-slate-800/60 text-gray-200 hover:bg-slate-700 hover:text-white"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" /> Back to games
+            </Button>
+          </div>
+        )}
+
         <header className="mb-6">
           <div className="inline-flex items-center gap-2 text-theme-purple text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="h-3.5 w-3.5" /> New
@@ -99,99 +144,130 @@ const TriviaPage: React.FC = () => {
           </div>
         </header>
 
-        <Card className="bg-slate-900/60 border-slate-700 p-5 space-y-6">
-          {/* Esport */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">Choose esport</h3>
-            <div className="flex flex-wrap gap-2">
-              {TRIVIA_ESPORTS.map((e) => (
+        {/* Step 1: Game selection */}
+        {!esport ? (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Pick a game to get started</h2>
+            <p className="text-gray-400 text-sm mb-5">
+              Choose which esport you want to play trivia on. Then pick your mode.
+            </p>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+              {GAME_TILES.map((tile) => (
                 <button
-                  key={e}
-                  onClick={() => setEsport(e)}
+                  key={tile.value}
+                  onClick={() => setEsport(tile.value)}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-sm border transition-colors",
-                    esport === e
-                      ? "bg-theme-purple/20 border-theme-purple text-white"
-                      : "bg-slate-800/60 border-slate-700 text-gray-300 hover:border-slate-600"
+                    "group relative flex flex-col items-center justify-center gap-2 p-3",
+                    "rounded-xl transition-all duration-[250ms] ease-in-out",
+                    "h-32 lg:h-36",
+                    "bg-gradient-to-b from-[#2B2F3A] to-[#1B1F28]",
+                    "shadow-[0_4px_15px_rgba(0,0,0,0.4)]",
+                    "border-2 border-transparent",
+                    "before:absolute before:inset-0 before:rounded-xl before:border before:border-white/10 before:pointer-events-none",
+                    "focus:outline-none touch-manipulation select-none",
+                    "hover:translate-y-[-3px] hover:scale-[1.02] hover:border-[#965AFF] hover:shadow-[0_0_20px_rgba(150,90,255,0.4),0_4px_15px_rgba(0,0,0,0.4)]"
                   )}
+                  aria-label={`Play ${tile.label} trivia`}
+                  title={tile.label}
                 >
-                  {e}
+                  <img
+                    src={tile.logo}
+                    alt={tile.label}
+                    className="w-16 h-16 object-contain"
+                    draggable={false}
+                  />
+                  <span className="text-[11px] font-medium text-[#E8EAF5] text-center leading-tight line-clamp-2">
+                    {tile.label}
+                  </span>
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Mode */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">Choose mode</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={() => setMode("solo")}
-                className={cn(
-                  "p-4 rounded-lg border text-left transition-colors",
-                  mode === "solo"
-                    ? "bg-theme-purple/10 border-theme-purple"
-                    : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
-                )}
-              >
-                <div className="flex items-center gap-2 font-semibold">
-                  <User className="h-4 w-4" /> Solo practice
+          </section>
+        ) : (
+          /* Step 2: Mode selection */
+          <Card className="bg-slate-900/60 border-slate-700 p-5 space-y-6 max-w-3xl">
+            {selectedTile && (
+              <div className="flex items-center gap-3">
+                <img src={selectedTile.logo} alt="" className="w-10 h-10 object-contain" />
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-400">Selected game</div>
+                  <div className="font-semibold">{selectedTile.label}</div>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Fill the grid yourself. No turns, no opponent.</p>
-              </button>
-              <button
-                onClick={() => setMode("two_player")}
-                className={cn(
-                  "p-4 rounded-lg border text-left transition-colors",
-                  mode === "two_player"
-                    ? "bg-theme-purple/10 border-theme-purple"
-                    : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
-                )}
-              >
-                <div className="flex items-center gap-2 font-semibold">
-                  <Users className="h-4 w-4" /> Same-screen 2P
-                </div>
-                <p className="text-xs text-gray-400 mt-1">Pass the device. Get 3 in a row to win.</p>
-              </button>
-            </div>
-          </div>
-
-          {templates.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">
-                Grid template (optional)
-              </h3>
-              <Select
-                value={templateId ?? "__random"}
-                onValueChange={(v) => setTemplateId(v === "__random" ? undefined : v)}
-              >
-                <SelectTrigger className="bg-slate-950 border-slate-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="__random">Random (auto-generated)</SelectItem>
-                  {templates.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <Button
-            onClick={handleStart}
-            disabled={loading}
-            className="w-full bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold h-11"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating board…
-              </>
-            ) : (
-              "Start game"
+              </div>
             )}
-          </Button>
-        </Card>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">Choose mode</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={() => setMode("solo")}
+                  className={cn(
+                    "p-4 rounded-lg border text-left transition-colors",
+                    mode === "solo"
+                      ? "bg-theme-purple/10 border-theme-purple"
+                      : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
+                  )}
+                >
+                  <div className="flex items-center gap-2 font-semibold">
+                    <User className="h-4 w-4" /> Solo practice
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Fill the grid yourself. No turns, no opponent.</p>
+                </button>
+                <button
+                  onClick={() => setMode("two_player")}
+                  className={cn(
+                    "p-4 rounded-lg border text-left transition-colors",
+                    mode === "two_player"
+                      ? "bg-theme-purple/10 border-theme-purple"
+                      : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
+                  )}
+                >
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Users className="h-4 w-4" /> Same-screen 2P
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Pass the device. Get 3 in a row to win.</p>
+                </button>
+              </div>
+            </div>
+
+            {templates.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">
+                  Grid template (optional)
+                </h3>
+                <Select
+                  value={templateId ?? "__random"}
+                  onValueChange={(v) => setTemplateId(v === "__random" ? undefined : v)}
+                >
+                  <SelectTrigger className="bg-slate-950 border-slate-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value="__random">Random (auto-generated)</SelectItem>
+                    {templates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Button
+              onClick={handleStart}
+              disabled={loading}
+              className="w-full bg-theme-purple hover:bg-theme-purple/90 text-white font-semibold h-11"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating board…
+                </>
+              ) : (
+                "Start game"
+              )}
+            </Button>
+          </Card>
+        )}
 
         <div className="mt-6 text-xs text-gray-500">
           Tip: Boards are generated to be solvable — every cell has at least one valid pro player.
