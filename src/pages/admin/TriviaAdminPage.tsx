@@ -70,12 +70,23 @@ const TriviaAdminPage: React.FC = () => {
   const [genResult, setGenResult] = useState<any>(null);
   const [genMaxBoards, setGenMaxBoards] = useState<number>(20);
 
+  // Pre-baked board pool
+  const [poolCount, setPoolCount] = useState<number>(0);
+  const [baking, setBaking] = useState(false);
+  const [bakeTarget, setBakeTarget] = useState<number>(100);
+  const [bakeProgress, setBakeProgress] = useState<string>("");
+
   const reload = async () => {
     setLoading(true);
     try {
-      const [c, t] = await Promise.all([listClues(esport), listGridTemplates(esport)]);
+      const [c, t, pc] = await Promise.all([
+        listClues(esport),
+        listGridTemplates(esport),
+        countBakedBoards(esport).catch(() => 0),
+      ]);
       setClues(c);
       setTemplates(t);
+      setPoolCount(pc);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not load");
     } finally {
