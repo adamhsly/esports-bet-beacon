@@ -30,6 +30,8 @@ import {
   matchesCanonicalTemplate,
   canonicalTemplateHint,
   normalizeClueLabel,
+  countBakedBoards,
+  bakeBoards,
   type TriviaClueRow,
   type TriviaGridTemplateRow,
 } from "@/lib/trivia";
