@@ -412,6 +412,64 @@ const TriviaAdminPage: React.FC = () => {
           )}
         </Card>
 
+        {/* Pre-baked board pool */}
+        <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
+          <div className="flex items-start gap-3 mb-3">
+            <Sparkles className="h-5 w-5 text-emerald-400 mt-0.5" />
+            <div className="flex-1">
+              <h2 className="font-semibold text-white">Pre-baked board pool</h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Pre-generates a pool of validated boards so <span className="text-emerald-400 font-medium">Start Game</span> is instant.
+                Re-bake whenever you add new clues. Currently <span className="text-white font-mono">{poolCount}</span> boards available for <span className="text-emerald-400 font-medium">{esport}</span>.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <Label className="text-xs text-gray-400">Target pool size</Label>
+              <Input
+                type="number"
+                min={1}
+                max={500}
+                value={bakeTarget}
+                onChange={(e) => setBakeTarget(Number(e.target.value) || 100)}
+                className="bg-slate-950 border-slate-700 text-white w-24"
+              />
+            </div>
+            <Button
+              onClick={handleBake}
+              disabled={baking}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+            >
+              {baking
+                ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Baking…</>
+                : <>Bake until {bakeTarget}</>}
+            </Button>
+            <Button
+              onClick={async () => {
+                setBaking(true);
+                try {
+                  const res = await bakeBoards(esport, 5);
+                  toast.success(`Baked ${res.baked} (${res.attempts} attempts)`);
+                  setPoolCount(await countBakedBoards(esport).catch(() => poolCount));
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Bake failed");
+                } finally {
+                  setBaking(false);
+                }
+              }}
+              disabled={baking}
+              variant="outline"
+              className="border-emerald-500/60 bg-slate-900/60 text-emerald-300 hover:bg-slate-800 hover:text-emerald-200"
+            >
+              Bake +5
+            </Button>
+          </div>
+          {bakeProgress && (
+            <div className="mt-3 text-xs text-gray-400">{bakeProgress}</div>
+          )}
+        </Card>
+
         {/* Add clue */}
         <Card className="bg-slate-900/60 border-slate-700 p-5 mb-6">
           <h2 className="font-semibold mb-3 text-white">Add a clue</h2>
