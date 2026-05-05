@@ -23,6 +23,27 @@ const TriviaGamePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [picking, setPicking] = useState<{ r: number; c: number } | null>(null);
   const [winLine, setWinLine] = useState<Set<string>>(new Set());
+  const [soloTimeLeft, setSoloTimeLeft] = useState<number>(SOLO_GAME_SECONDS);
+
+  // Solo whole-game timer
+  useEffect(() => {
+    if (!session || session.mode !== "solo" || session.status !== "in_progress") return;
+    if (soloTimeLeft <= 0) {
+      (async () => {
+        await updateSession(session.id, {
+          status: "draw",
+          winner: "draw" as any,
+          finished_at: new Date().toISOString(),
+        });
+        setSession({ ...session, status: "draw", winner: "draw" });
+        setPicking(null);
+        toast.error("Time's up — game over!");
+      })();
+      return;
+    }
+    const id = window.setTimeout(() => setSoloTimeLeft((s) => s - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [session, soloTimeLeft]);
 
   useEffect(() => {
     if (!sessionId) return;
