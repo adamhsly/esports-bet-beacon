@@ -11,11 +11,42 @@ import {
 import { TriviaAnswerModal } from "@/components/trivia/TriviaAnswerModal";
 import { toast } from "sonner";
 import { getEnhancedTeamLogoUrl } from "@/utils/teamLogoUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 const TURN_SECONDS = 20;
 const SOLO_GAME_SECONDS = 120;
 
 const markFor = (who?: "p1" | "p2") => (who === "p1" ? "X" : who === "p2" ? "O" : null);
+
+const ClueVisual: React.FC<{
+  clue: { type: string; value: string; label: string };
+  teamLogoMap: Record<string, { name: string; logo_url: string | null }>;
+}> = ({ clue, teamLogoMap }) => {
+  if (clue.type === "team") {
+    const t = teamLogoMap[String(clue.value)];
+    const src = t?.logo_url || getEnhancedTeamLogoUrl({ name: t?.name || clue.label, logo: t?.logo_url ?? null });
+    if (!src) return null;
+    return (
+      <img
+        src={src}
+        alt=""
+        className="h-6 w-6 sm:h-7 sm:w-7 object-contain"
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+      />
+    );
+  }
+  if (clue.type === "nationality" && clue.value) {
+    return (
+      <img
+        src={`https://flagcdn.com/24x18/${String(clue.value).toLowerCase()}.png`}
+        alt=""
+        className="h-4 w-6 rounded-[2px] object-cover"
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+      />
+    );
+  }
+  return null;
+};
 
 const TriviaGamePage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -25,6 +56,27 @@ const TriviaGamePage: React.FC = () => {
   const [picking, setPicking] = useState<{ r: number; c: number } | null>(null);
   const [winLine, setWinLine] = useState<Set<string>>(new Set());
   const [soloTimeLeft, setSoloTimeLeft] = useState<number>(SOLO_GAME_SECONDS);
+  const [teamLogoMap, setTeamLogoMap] = useState<Record<string, { name: string; logo_url: string | null }>>({});
+
+  // Fetch team logos for any team-type clues in the board
+  useEffect(() => {
+    if (!session) return;
+    const teamIds = [...session.board.rowClues, ...session.board.colClues]
+      .filter((c) => c.type === "team")
+      .map((c) => String(c.value));
+    if (teamIds.length === 0) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("pandascore_teams")
+        .select("team_id,name,logo_url")
+        .in("team_id", teamIds);
+      if (data) {
+        const map: Record<string, { name: string; logo_url: string | null }> = {};
+        for (const t of data) map[String(t.team_id)] = { name: t.name, logo_url: t.logo_url };
+        setTeamLogoMap(map);
+      }
+    })();
+  }, [session]);
 
   // Solo whole-game timer
   useEffect(() => {
@@ -251,16 +303,18 @@ const TriviaGamePage: React.FC = () => {
             {colClues.map((c, i) => (
               <div
                 key={`col-${i}`}
-                className="text-center text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex items-center justify-center min-h-[56px]"
+                className="text-center text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex flex-col items-center justify-center gap-1 min-h-[56px]"
               >
-                {c.label}
+                <ClueVisual clue={c} teamLogoMap={teamLogoMap} />
+                <span className="leading-tight">{c.label}</span>
               </div>
             ))}
 
             {rowClues.map((rowClue, r) => (
               <React.Fragment key={`row-${r}`}>
-                <div className="text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex items-center justify-center min-h-[80px] text-center">
-                  {rowClue.label}
+                <div className="text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex flex-col items-center justify-center gap-1 min-h-[80px] text-center">
+                  <ClueVisual clue={rowClue} teamLogoMap={teamLogoMap} />
+                  <span className="leading-tight">{rowClue.label}</span>
                 </div>
                 {colClues.map((_col, c) => {
                   const cell = cells[r][c];
