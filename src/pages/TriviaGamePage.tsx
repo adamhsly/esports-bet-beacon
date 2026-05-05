@@ -292,13 +292,31 @@ const TriviaGamePage: React.FC = () => {
                       )}
 
                       {cell ? (
-                        <div className={isJustClaimed ? "animate-scale-in flex flex-col items-center" : "flex flex-col items-center"}>
+                        <div className={isJustClaimed ? "animate-scale-in flex flex-col items-center w-full" : "flex flex-col items-center w-full"}>
+                          {cell.team_name && (
+                            <img
+                              src={getEnhancedTeamLogoUrl({ name: cell.team_name })}
+                              alt={cell.team_name}
+                              className="absolute top-1 left-1 h-4 w-4 sm:h-5 sm:w-5 object-contain"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                            />
+                          )}
                           {cell.player_image ? (
                             <img src={cell.player_image} alt={cell.player_name} className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mb-1" />
                           ) : (
                             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-slate-700 mb-1" />
                           )}
-                          <div className="text-[10px] sm:text-xs font-medium leading-tight line-clamp-2">{cell.player_name}</div>
+                          <div className="flex items-center gap-1 leading-tight">
+                            {cell.nationality && (
+                              <img
+                                src={`https://flagcdn.com/24x18/${cell.nationality.toLowerCase()}.png`}
+                                alt={cell.nationality}
+                                className="h-3 w-4 rounded-[2px] object-cover"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                              />
+                            )}
+                            <div className="text-[10px] sm:text-xs font-medium line-clamp-1">{cell.player_name}</div>
+                          </div>
                         </div>
                       ) : (
                         <span className="text-gray-500 text-xs">Tap to pick</span>
