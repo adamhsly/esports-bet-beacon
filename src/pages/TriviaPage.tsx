@@ -32,6 +32,8 @@ import rainbowSixSiegeLogo from "@/assets/logos/esports/rainbow-six-siege.png";
 import rocketLeagueLogo from "@/assets/logos/esports/rocket-league.png";
 import overwatchLogo from "@/assets/logos/esports/overwatch.png";
 import callOfDutyLogo from "@/assets/logos/esports/call-of-duty.png";
+import modeSoloImg from "@/assets/trivia/mode-solo.png";
+import mode2pImg from "@/assets/trivia/mode-2p.png";
 
 type TriviaEsport = (typeof TRIVIA_ESPORTS)[number];
 
@@ -197,13 +199,21 @@ const TriviaPage: React.FC = () => {
                 <button
                   onClick={() => setMode("solo")}
                   className={cn(
-                    "p-4 rounded-lg border text-left transition-colors",
+                    "p-4 rounded-lg border text-center transition-colors flex flex-col items-center",
                     mode === "solo"
                       ? "bg-theme-purple/10 border-theme-purple"
                       : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
                   )}
                 >
-                  <div className="flex items-center gap-2 font-semibold">
+                  <img
+                    src={modeSoloImg}
+                    alt=""
+                    loading="lazy"
+                    width={512}
+                    height={512}
+                    className="h-20 w-20 object-contain mb-2"
+                  />
+                  <div className="flex items-center justify-center gap-2 font-semibold text-white">
                     <User className="h-4 w-4" /> Solo practice
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Fill the grid yourself. No turns, no opponent.</p>
@@ -211,13 +221,21 @@ const TriviaPage: React.FC = () => {
                 <button
                   onClick={() => setMode("two_player")}
                   className={cn(
-                    "p-4 rounded-lg border text-left transition-colors",
+                    "p-4 rounded-lg border text-center transition-colors flex flex-col items-center",
                     mode === "two_player"
                       ? "bg-theme-purple/10 border-theme-purple"
                       : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
                   )}
                 >
-                  <div className="flex items-center gap-2 font-semibold">
+                  <img
+                    src={mode2pImg}
+                    alt=""
+                    loading="lazy"
+                    width={512}
+                    height={512}
+                    className="h-20 w-20 object-contain mb-2"
+                  />
+                  <div className="flex items-center justify-center gap-2 font-semibold text-white">
                     <Users className="h-4 w-4" /> Same-screen 2P
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Pass the device. Get 3 in a row to win.</p>
