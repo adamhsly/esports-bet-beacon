@@ -68,7 +68,7 @@ const TriviaGamePage: React.FC = () => {
     return session.current_turn === "p1" ? session.player1_label : session.player2_label;
   }, [session]);
 
-  const handleSubmit = async (player: { id: number; name: string; image_url?: string | null }) => {
+  const handleSubmit = async (player: { id: number; name: string; image_url?: string | null; nationality?: string | null; current_team_name?: string | null }) => {
     if (!session || !picking) return { ok: false };
     const { r, c } = picking;
     // Defensive: never overwrite a claimed square
@@ -87,6 +87,8 @@ const TriviaGamePage: React.FC = () => {
         player_id: player.id,
         player_name: player.name,
         player_image: player.image_url ?? null,
+        nationality: player.nationality ?? null,
+        team_name: player.current_team_name ?? null,
         claimed_by: claimer,
         at: new Date().toISOString(),
       };
