@@ -349,7 +349,7 @@ const TriviaGamePage: React.FC = () => {
         colClue={picking ? colClues[picking.c] : null}
         currentTurnLabel={currentLabel}
         currentTurnMark={currentMark}
-          turnSeconds={TURN_SECONDS}
+          turnSeconds={session.mode === "two_player" ? TURN_SECONDS : undefined}
           onTimeout={async () => {
             if (!session) return;
             if (session.mode === "two_player") {
@@ -357,8 +357,6 @@ const TriviaGamePage: React.FC = () => {
               await updateSession(session.id, { current_turn: nextTurn });
               setSession({ ...session, current_turn: nextTurn });
               toast.error("Time's up — turn passes");
-            } else {
-              toast.error("Time's up — try another square");
             }
           }}
         onSubmit={handleSubmit}
