@@ -225,9 +225,20 @@ const TriviaGamePage: React.FC = () => {
               </div>
             )}
           </div>
-          <Button size="sm" variant="ghost" onClick={handleRestart} className="text-gray-300">
-            <RotateCw className="h-4 w-4 mr-1" /> New game
-          </Button>
+          <div className="flex items-center gap-2">
+            {session.mode === "solo" && !isFinished && (
+              <div className={`text-sm font-mono font-semibold px-2.5 py-1 rounded-md border ${
+                soloTimeLeft <= 15
+                  ? "bg-red-500/15 border-red-500/50 text-red-300 animate-pulse"
+                  : "bg-slate-800/60 border-slate-700 text-amber-300"
+              }`}>
+                {Math.floor(soloTimeLeft / 60)}:{String(soloTimeLeft % 60).padStart(2, "0")}
+              </div>
+            )}
+            <Button size="sm" variant="ghost" onClick={handleRestart} className="text-gray-300">
+              <RotateCw className="h-4 w-4 mr-1" /> New game
+            </Button>
+          </div>
         </div>
 
         {/* Board */}
