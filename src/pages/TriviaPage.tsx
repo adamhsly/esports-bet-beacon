@@ -205,14 +205,16 @@ const TriviaPage: React.FC = () => {
                       : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
                   )}
                 >
-                  <img
-                    src={modeSoloImg}
-                    alt=""
-                    loading="lazy"
-                    width={512}
-                    height={512}
-                    className="h-20 w-20 object-contain mb-2"
-                  />
+                  <div className="h-24 w-24 rounded-full mb-2 flex items-center justify-center bg-gradient-to-br from-theme-purple/30 to-slate-950 ring-1 ring-white/10 shadow-[0_0_24px_-6px_rgba(150,90,255,0.5)]">
+                    <img
+                      src={modeSoloImg}
+                      alt=""
+                      loading="lazy"
+                      width={512}
+                      height={512}
+                      className="h-20 w-20 object-contain"
+                    />
+                  </div>
                   <div className="flex items-center justify-center gap-2 font-semibold text-white">
                     <User className="h-4 w-4" /> Solo practice
                   </div>
@@ -227,14 +229,16 @@ const TriviaPage: React.FC = () => {
                       : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
                   )}
                 >
-                  <img
-                    src={mode2pImg}
-                    alt=""
-                    loading="lazy"
-                    width={512}
-                    height={512}
-                    className="h-20 w-20 object-contain mb-2"
-                  />
+                  <div className="h-24 w-24 rounded-full mb-2 flex items-center justify-center bg-gradient-to-br from-theme-purple/30 to-slate-950 ring-1 ring-white/10 shadow-[0_0_24px_-6px_rgba(150,90,255,0.5)]">
+                    <img
+                      src={mode2pImg}
+                      alt=""
+                      loading="lazy"
+                      width={512}
+                      height={512}
+                      className="h-20 w-20 object-contain"
+                    />
+                  </div>
                   <div className="flex items-center justify-center gap-2 font-semibold text-white">
                     <Users className="h-4 w-4" /> Same-screen 2P
                   </div>
