@@ -17,7 +17,7 @@ interface Props {
   currentTurnMark: "X" | "O";
   /** Optional countdown in seconds. When it elapses, modal auto-closes (turn passes). */
   turnSeconds?: number;
-  onSubmit: (player: { id: number; name: string; image_url?: string | null }) => Promise<{ ok: boolean }>;
+  onSubmit: (player: { id: number; name: string; image_url?: string | null; nationality?: string | null; current_team_name?: string | null }) => Promise<{ ok: boolean }>;
   /** Called when the timer hits 0 with no submission. */
   onTimeout?: () => void;
 }
