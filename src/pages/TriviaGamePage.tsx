@@ -11,6 +11,7 @@ import {
 import { TriviaAnswerModal } from "@/components/trivia/TriviaAnswerModal";
 import { toast } from "sonner";
 import { getEnhancedTeamLogoUrl } from "@/utils/teamLogoUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 const TURN_SECONDS = 20;
 const SOLO_GAME_SECONDS = 120;
