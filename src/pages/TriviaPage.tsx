@@ -180,9 +180,9 @@ const TriviaPage: React.FC = () => {
           </section>
         ) : (
           /* Step 2: Mode selection */
-          <Card className="bg-slate-900/60 border-slate-700 p-5 space-y-6 max-w-3xl">
+          <Card className="bg-slate-900/60 border-slate-700 p-5 space-y-6 max-w-3xl mx-auto">
             {selectedTile && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center gap-3">
                 <img src={selectedTile.logo} alt="" className="w-10 h-10 object-contain" />
                 <div>
                   <div className="text-xs uppercase tracking-wide text-gray-400">Selected game</div>
