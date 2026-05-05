@@ -205,7 +205,7 @@ const TriviaPage: React.FC = () => {
                       : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
                   )}
                 >
-                  <div className="h-24 w-24 rounded-full mb-2 flex items-center justify-center bg-gradient-to-br from-theme-purple/30 to-slate-950 ring-1 ring-white/10 shadow-[0_0_24px_-6px_rgba(150,90,255,0.5)]">
+                  <div className="h-24 w-24 rounded-full mb-2 flex items-center justify-center bg-gradient-to-br from-white to-slate-200 ring-2 ring-theme-purple/60 shadow-[0_0_28px_-4px_rgba(150,90,255,0.7)]">
                     <img
                       src={modeSoloImg}
                       alt=""
@@ -229,7 +229,7 @@ const TriviaPage: React.FC = () => {
                       : "bg-slate-800/60 border-slate-700 hover:border-slate-600"
                   )}
                 >
-                  <div className="h-24 w-24 rounded-full mb-2 flex items-center justify-center bg-gradient-to-br from-theme-purple/30 to-slate-950 ring-1 ring-white/10 shadow-[0_0_24px_-6px_rgba(150,90,255,0.5)]">
+                  <div className="h-24 w-24 rounded-full mb-2 flex items-center justify-center bg-gradient-to-br from-white to-slate-200 ring-2 ring-theme-purple/60 shadow-[0_0_28px_-4px_rgba(150,90,255,0.7)]">
                     <img
                       src={mode2pImg}
                       alt=""
