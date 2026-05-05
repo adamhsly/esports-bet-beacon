@@ -268,21 +268,24 @@ const TriviaGamePage: React.FC = () => {
 
         {/* Board */}
         <Card className="bg-slate-900/60 border-slate-700 p-3">
+          {(() => null)()}
           <div className="grid grid-cols-[minmax(70px,90px)_repeat(3,minmax(0,1fr))] gap-2">
             <div />
             {colClues.map((c, i) => (
               <div
                 key={`col-${i}`}
-                className="text-center text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex items-center justify-center min-h-[56px]"
+                className="text-center text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex flex-col items-center justify-center gap-1 min-h-[56px]"
               >
-                {c.label}
+                <ClueVisual clue={c} teamLogoMap={teamLogoMap} />
+                <span className="leading-tight">{c.label}</span>
               </div>
             ))}
 
             {rowClues.map((rowClue, r) => (
               <React.Fragment key={`row-${r}`}>
-                <div className="text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex items-center justify-center min-h-[80px] text-center">
-                  {rowClue.label}
+                <div className="text-xs sm:text-sm font-semibold text-gray-200 bg-slate-800/70 border border-slate-700 rounded-md p-2 flex flex-col items-center justify-center gap-1 min-h-[80px] text-center">
+                  <ClueVisual clue={rowClue} teamLogoMap={teamLogoMap} />
+                  <span className="leading-tight">{rowClue.label}</span>
                 </div>
                 {colClues.map((_col, c) => {
                   const cell = cells[r][c];
