@@ -18,6 +18,36 @@ const SOLO_GAME_SECONDS = 120;
 
 const markFor = (who?: "p1" | "p2") => (who === "p1" ? "X" : who === "p2" ? "O" : null);
 
+const ClueVisual: React.FC<{
+  clue: { type: string; value: string; label: string };
+  teamLogoMap: Record<string, { name: string; logo_url: string | null }>;
+}> = ({ clue, teamLogoMap }) => {
+  if (clue.type === "team") {
+    const t = teamLogoMap[String(clue.value)];
+    const src = t?.logo_url || getEnhancedTeamLogoUrl({ name: t?.name || clue.label, logo: t?.logo_url ?? null });
+    if (!src) return null;
+    return (
+      <img
+        src={src}
+        alt=""
+        className="h-6 w-6 sm:h-7 sm:w-7 object-contain"
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+      />
+    );
+  }
+  if (clue.type === "nationality" && clue.value) {
+    return (
+      <img
+        src={`https://flagcdn.com/24x18/${String(clue.value).toLowerCase()}.png`}
+        alt=""
+        className="h-4 w-6 rounded-[2px] object-cover"
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+      />
+    );
+  }
+  return null;
+};
+
 const TriviaGamePage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
