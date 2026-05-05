@@ -32,6 +32,8 @@ import rainbowSixSiegeLogo from "@/assets/logos/esports/rainbow-six-siege.png";
 import rocketLeagueLogo from "@/assets/logos/esports/rocket-league.png";
 import overwatchLogo from "@/assets/logos/esports/overwatch.png";
 import callOfDutyLogo from "@/assets/logos/esports/call-of-duty.png";
+import modeSoloImg from "@/assets/trivia/mode-solo.png";
+import mode2pImg from "@/assets/trivia/mode-2p.png";
 
 type TriviaEsport = (typeof TRIVIA_ESPORTS)[number];
 
