@@ -10,6 +10,7 @@ import {
 } from "@/lib/trivia";
 import { TriviaAnswerModal } from "@/components/trivia/TriviaAnswerModal";
 import { toast } from "sonner";
+import { getEnhancedTeamLogoUrl } from "@/utils/teamLogoUtils";
 
 const TURN_SECONDS = 20;
 const SOLO_GAME_SECONDS = 120;
