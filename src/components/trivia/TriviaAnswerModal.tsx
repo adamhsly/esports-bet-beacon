@@ -91,7 +91,7 @@ export const TriviaAnswerModal: React.FC<Props> = ({
     setSubmitting(true);
     setFeedback(null);
     try {
-      const result = await onSubmit({ id: p.id, name: p.name, image_url: p.image_url });
+      const result = await onSubmit({ id: p.id, name: p.name, image_url: p.image_url, nationality: p.nationality, current_team_name: p.current_team_name });
       if (result.ok) {
         triviaSfx.correct();
         setFeedback({ ok: true, msg: `Correct! ${p.name} claims the square.` });
