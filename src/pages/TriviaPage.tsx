@@ -119,13 +119,10 @@ const TriviaPage: React.FC = () => {
           </div>
         )}
 
-        <header className="mb-6">
-          <div className="inline-flex items-center gap-2 text-theme-purple text-xs font-semibold uppercase tracking-wider">
-            <Sparkles className="h-3.5 w-3.5" /> New
-          </div>
-          <div className="flex items-start justify-between gap-3">
+        <header className="mb-6 text-center">
+          <div className="flex items-start justify-center gap-3 relative">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mt-1">Esports Trivia Grid</h1>
+              <h1 className="text-2xl md:text-3xl font-bold">Esports Trivia Grid</h1>
               <p className="text-gray-400 text-sm mt-1">
                 A 3×3 board. Each square needs a pro player who fits BOTH the row clue AND the column clue.
                 First to three in a row wins.
@@ -135,7 +132,7 @@ const TriviaPage: React.FC = () => {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-slate-700 bg-slate-800/60 text-gray-200 hover:bg-slate-700 hover:text-white shrink-0"
+                className="border-slate-700 bg-slate-800/60 text-gray-200 hover:bg-slate-700 hover:text-white shrink-0 absolute right-0 top-0"
                 onClick={() => navigate("/admin/trivia")}
               >
                 <Settings className="h-4 w-4 mr-1" /> Manage clues
