@@ -26,6 +26,27 @@ const TriviaGamePage: React.FC = () => {
   const [picking, setPicking] = useState<{ r: number; c: number } | null>(null);
   const [winLine, setWinLine] = useState<Set<string>>(new Set());
   const [soloTimeLeft, setSoloTimeLeft] = useState<number>(SOLO_GAME_SECONDS);
+  const [teamLogoMap, setTeamLogoMap] = useState<Record<string, { name: string; logo_url: string | null }>>({});
+
+  // Fetch team logos for any team-type clues in the board
+  useEffect(() => {
+    if (!session) return;
+    const teamIds = [...session.board.rowClues, ...session.board.colClues]
+      .filter((c) => c.type === "team")
+      .map((c) => String(c.value));
+    if (teamIds.length === 0) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("pandascore_teams")
+        .select("team_id,name,logo_url")
+        .in("team_id", teamIds);
+      if (data) {
+        const map: Record<string, { name: string; logo_url: string | null }> = {};
+        for (const t of data) map[String(t.team_id)] = { name: t.name, logo_url: t.logo_url };
+        setTeamLogoMap(map);
+      }
+    })();
+  }, [session]);
 
   // Solo whole-game timer
   useEffect(() => {
