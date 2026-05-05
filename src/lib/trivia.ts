@@ -10,6 +10,8 @@ export type TriviaCell = {
   player_id: number;
   player_name: string;
   player_image?: string | null;
+  nationality?: string | null;
+  team_name?: string | null;
   claimed_by: "p1" | "p2";
   at: string;
 } | null;

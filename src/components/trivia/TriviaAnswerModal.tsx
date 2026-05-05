@@ -17,7 +17,7 @@ interface Props {
   currentTurnMark: "X" | "O";
   /** Optional countdown in seconds. When it elapses, modal auto-closes (turn passes). */
   turnSeconds?: number;
-  onSubmit: (player: { id: number; name: string; image_url?: string | null }) => Promise<{ ok: boolean }>;
+  onSubmit: (player: { id: number; name: string; image_url?: string | null; nationality?: string | null; current_team_name?: string | null }) => Promise<{ ok: boolean }>;
   /** Called when the timer hits 0 with no submission. */
   onTimeout?: () => void;
 }
@@ -91,7 +91,7 @@ export const TriviaAnswerModal: React.FC<Props> = ({
     setSubmitting(true);
     setFeedback(null);
     try {
-      const result = await onSubmit({ id: p.id, name: p.name, image_url: p.image_url });
+      const result = await onSubmit({ id: p.id, name: p.name, image_url: p.image_url, nationality: p.nationality, current_team_name: p.current_team_name });
       if (result.ok) {
         triviaSfx.correct();
         setFeedback({ ok: true, msg: `Correct! ${p.name} claims the square.` });
