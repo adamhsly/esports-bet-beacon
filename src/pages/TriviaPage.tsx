@@ -144,10 +144,7 @@ const TriviaPage: React.FC = () => {
         {/* Step 1: Game selection */}
         {!esport ? (
           <section className="text-center">
-            <h2 className="text-lg font-semibold mb-2">Pick a game to get started</h2>
-            <p className="text-gray-400 text-sm mb-5">
-              Choose which esport you want to play trivia on. Then pick your mode.
-            </p>
+            <h2 className="text-lg font-semibold mb-5">Pick a game to get started</h2>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
               {GAME_TILES.map((tile) => (
