@@ -12,6 +12,7 @@ import { TriviaAnswerModal } from "@/components/trivia/TriviaAnswerModal";
 import { toast } from "sonner";
 
 const TURN_SECONDS = 20;
+const SOLO_GAME_SECONDS = 120;
 
 const markFor = (who?: "p1" | "p2") => (who === "p1" ? "X" : who === "p2" ? "O" : null);
 
@@ -22,6 +23,27 @@ const TriviaGamePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [picking, setPicking] = useState<{ r: number; c: number } | null>(null);
   const [winLine, setWinLine] = useState<Set<string>>(new Set());
+  const [soloTimeLeft, setSoloTimeLeft] = useState<number>(SOLO_GAME_SECONDS);
+
+  // Solo whole-game timer
+  useEffect(() => {
+    if (!session || session.mode !== "solo" || session.status !== "in_progress") return;
+    if (soloTimeLeft <= 0) {
+      (async () => {
+        await updateSession(session.id, {
+          status: "draw",
+          winner: "draw" as any,
+          finished_at: new Date().toISOString(),
+        });
+        setSession({ ...session, status: "draw", winner: "draw" });
+        setPicking(null);
+        toast.error("Time's up — game over!");
+      })();
+      return;
+    }
+    const id = window.setTimeout(() => setSoloTimeLeft((s) => s - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [session, soloTimeLeft]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -203,9 +225,20 @@ const TriviaGamePage: React.FC = () => {
               </div>
             )}
           </div>
-          <Button size="sm" variant="ghost" onClick={handleRestart} className="text-gray-300">
-            <RotateCw className="h-4 w-4 mr-1" /> New game
-          </Button>
+          <div className="flex items-center gap-2">
+            {session.mode === "solo" && !isFinished && (
+              <div className={`text-sm font-mono font-semibold px-2.5 py-1 rounded-md border ${
+                soloTimeLeft <= 15
+                  ? "bg-red-500/15 border-red-500/50 text-red-300 animate-pulse"
+                  : "bg-slate-800/60 border-slate-700 text-amber-300"
+              }`}>
+                {Math.floor(soloTimeLeft / 60)}:{String(soloTimeLeft % 60).padStart(2, "0")}
+              </div>
+            )}
+            <Button size="sm" variant="ghost" onClick={handleRestart} className="text-gray-300">
+              <RotateCw className="h-4 w-4 mr-1" /> New game
+            </Button>
+          </div>
         </div>
 
         {/* Board */}
@@ -316,7 +349,7 @@ const TriviaGamePage: React.FC = () => {
         colClue={picking ? colClues[picking.c] : null}
         currentTurnLabel={currentLabel}
         currentTurnMark={currentMark}
-          turnSeconds={TURN_SECONDS}
+          turnSeconds={session.mode === "two_player" ? TURN_SECONDS : undefined}
           onTimeout={async () => {
             if (!session) return;
             if (session.mode === "two_player") {
@@ -324,8 +357,6 @@ const TriviaGamePage: React.FC = () => {
               await updateSession(session.id, { current_turn: nextTurn });
               setSession({ ...session, current_turn: nextTurn });
               toast.error("Time's up — turn passes");
-            } else {
-              toast.error("Time's up — try another square");
             }
           }}
         onSubmit={handleSubmit}
