@@ -298,7 +298,6 @@ const TriviaGamePage: React.FC = () => {
 
         {/* Board */}
         <Card className="bg-slate-900/60 border-slate-700 p-3">
-          {(() => null)()}
           <div className="grid grid-cols-[minmax(70px,90px)_repeat(3,minmax(0,1fr))] gap-2">
             <div />
             {colClues.map((c, i) => (
