@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Users, User, Sparkles, Settings, ChevronLeft } from "lucide-react";
+import { Loader2, Users, User, Settings, ChevronLeft } from "lucide-react";
 import {
   TRIVIA_ESPORTS,
   generateBoard,
