@@ -12,6 +12,7 @@ import { TriviaAnswerModal } from "@/components/trivia/TriviaAnswerModal";
 import { toast } from "sonner";
 
 const TURN_SECONDS = 20;
+const SOLO_GAME_SECONDS = 120;
 
 const markFor = (who?: "p1" | "p2") => (who === "p1" ? "X" : who === "p2" ? "O" : null);
 
