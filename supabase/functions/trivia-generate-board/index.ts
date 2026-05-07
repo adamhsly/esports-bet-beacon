@@ -511,9 +511,9 @@ Deno.serve(async (req) => {
       });
     };
 
-    const teamPool = checkable.filter((c) => c.type === "team");
-    const nationPool = checkable.filter((c) => c.type === "nationality");
-    const otherPool = checkable.filter((c) => c.type !== "team");
+    const teamPool = checkableNonEmpty.filter((c) => c.type === "team");
+    const nationPool = checkableNonEmpty.filter((c) => c.type === "nationality");
+    const otherPool = checkableNonEmpty.filter((c) => c.type !== "team");
 
     // Deterministic team × nationality boards first. This is the most readable
     // format and avoids the previous exhaustive six-clue nested search.
