@@ -538,7 +538,7 @@ Deno.serve(async (req) => {
     const layouts: Array<[Clue[], Clue[]]> = [
       [teamPool, otherPool],
       [otherPool, teamPool],
-      [checkable, checkable],
+      [checkableNonEmpty, checkableNonEmpty],
     ];
     for (const [rowSrc, colSrc] of layouts) {
       for (let attempt = 0; attempt < 1500 && candidates.length < MAX_CANDIDATES; attempt++) {
