@@ -523,19 +523,24 @@ Deno.serve(async (req) => {
     const topNations = nationPool
       .sort((a, b) => (answerSets.get(clueKey(b))?.size ?? 0) - (answerSets.get(clueKey(a))?.size ?? 0))
       .slice(0, 10);
+    let detTriples = 0, detViableSum = 0, detLoops = 0;
     for (let a = 0; a < topNations.length && candidates.length < MAX_CANDIDATES; a++) {
       for (let b = a + 1; b < topNations.length && candidates.length < MAX_CANDIDATES; b++) {
         for (let c = b + 1; c < topNations.length && candidates.length < MAX_CANDIDATES; c++) {
+          detLoops++;
           const cols = [topNations[a], topNations[b], topNations[c]];
           const viableTeams = shuffle(teamPool.filter((team) =>
             cols.every((nation) => intersectionAnswers(team, nation) >= MIN_ANSWERS_PER_CELL),
           )).slice(0, 9);
+          detViableSum += viableTeams.length;
           for (let t = 0; t + 2 < viableTeams.length && candidates.length < MAX_CANDIDATES; t += 3) {
+            detTriples++;
             await addCandidate([viableTeams[t], viableTeams[t + 1], viableTeams[t + 2]], cols);
           }
         }
       }
     }
+    log("deterministic_pass", { detLoops, detTriples, avgViable: detLoops ? (detViableSum / detLoops).toFixed(2) : 0, candidatesAfter: candidates.length });
 
     // Small random sampler for extra variety without burning CPU.
     const layouts: Array<[Clue[], Clue[]]> = [
