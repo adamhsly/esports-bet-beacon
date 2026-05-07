@@ -552,8 +552,9 @@ Deno.serve(async (req) => {
         await addCandidate(rows, cols);
       }
     }
-    log("candidates", { count: candidates.length });
+    log("candidates", { count: candidates.length, rejectStats, teamPool: teamPool.length, nationPool: nationPool.length, otherPool: otherPool.length });
     snapshot.candidates = candidates.length;
+    snapshot.rejectStats = rejectStats;
 
     if (candidates.length === 0) {
       return await fallbackBoard(supabase, esport, userId, "no_valid_candidates", log, snapshot);
