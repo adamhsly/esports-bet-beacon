@@ -488,23 +488,26 @@ Deno.serve(async (req) => {
       }
       return null;
     };
+    const rejectStats = { dup: 0, diversity: 0, cell: 0, fp: 0, accepted: 0 };
     const addCandidate = async (rows: Clue[], cols: Clue[]) => {
       if (candidates.length >= MAX_CANDIDATES) return;
       const keys = [...rows, ...cols].map(clueKey);
-      if (new Set(keys).size !== 6 || !passesDiversity(rows, cols)) return;
+      if (new Set(keys).size !== 6) { rejectStats.dup++; return; }
+      if (!passesDiversity(rows, cols)) { rejectStats.diversity++; return; }
 
       const cellAnswers: number[][] = [[], [], []].map(() => []);
       for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
           const n = intersectionAnswers(rows[i], cols[j]);
-          if (n < MIN_ANSWERS_PER_CELL) return;
+          if (n < MIN_ANSWERS_PER_CELL) { rejectStats.cell++; return; }
           cellAnswers[i][j] = n;
         }
       }
 
       const fp = await fingerprintFromClues(rows, cols);
-      if (recentFingerprints.has(fp) || candidateFingerprints.has(fp) || (bakeMode && globallyHot.has(fp))) return;
+      if (recentFingerprints.has(fp) || candidateFingerprints.has(fp) || (bakeMode && globallyHot.has(fp))) { rejectStats.fp++; return; }
       candidateFingerprints.add(fp);
+      rejectStats.accepted++;
       candidates.push({
         rows, cols, fingerprint: fp, cellAnswers,
         sig: structureSignature([...rows, ...cols]),
