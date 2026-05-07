@@ -434,11 +434,21 @@ Deno.serve(async (req) => {
       }
       answerSets.set(clueKey(c), ids);
     }
+    // Drop clues with no satisfying players — they poison every cell they touch.
+    let droppedEmpty = 0;
+    for (const [k, ids] of [...answerSets.entries()]) {
+      if (ids.size < MIN_ANSWERS_PER_CELL) {
+        answerSets.delete(k);
+        droppedEmpty++;
+      }
+    }
+    const checkableNonEmpty = checkable.filter((c) => answerSets.has(clueKey(c)));
     const answerSetSizes = [...answerSets.values()].map((s) => s.size);
     log("answer_index", {
       clues: answerSets.size,
-      minAnswers: Math.min(...answerSetSizes),
-      maxAnswers: Math.max(...answerSetSizes),
+      droppedEmpty,
+      minAnswers: answerSetSizes.length ? Math.min(...answerSetSizes) : 0,
+      maxAnswers: answerSetSizes.length ? Math.max(...answerSetSizes) : 0,
     });
 
     const intersectionMemo = new Map<string, number>();
